@@ -20,10 +20,6 @@ public class Fantasy_furniture {
     public static final String MODID = "fantasy_furniture";
     private static final Logger LOGGER = LogUtils.getLogger();
 
-    /**
-     * Forge 47.3.10+ 可将 {@link FMLJavaModLoadingContext} 注入构造函数，用 {@link FMLJavaModLoadingContext#getModEventBus()}
-     * 取得模组事件总线，避免使用已弃用的静态方法 {@link FMLJavaModLoadingContext#get()}。
-     */
     public Fantasy_furniture(FMLJavaModLoadingContext context) {
         var modEventBus = context.getModEventBus();
         ModBlocks.register(modEventBus);

@@ -74,6 +74,17 @@ public final class ModBlocks {
     public static final RegistryObject<Block> PURPLE_WALLPAPER_BLOCK = BLOCKS.register("purple_wallpaper", () -> new Block(wallpaperProperties(MapColor.TERRACOTTA_PURPLE)));
     public static final RegistryObject<Item> PURPLE_WALLPAPER_ITEM = BLOCK_ITEMS.register("purple_wallpaper", () -> new BlockItem(PURPLE_WALLPAPER_BLOCK.get(), new Item.Properties()));
 
+    /**
+     * 屏风：逻辑上两格高（与门类似），无交互；碰撞与 {@link DecorativeScreenBlock} 见类注释。
+     * 方块模型不在 Java 中定义，勿随意改动 {@code models/block/decorative_screen*.json} 等资源。
+     */
+    public static final RegistryObject<Block> DECORATIVE_SCREEN_BLOCK = BLOCKS.register("decorative_screen", () -> new DecorativeScreenBlock(BlockBehaviour.Properties.of()
+            .mapColor(MapColor.WOOD)
+            .strength(1.0f)
+            .sound(SoundType.CHERRY_WOOD)
+            .noOcclusion()));
+    public static final RegistryObject<Item> DECORATIVE_SCREEN_ITEM = BLOCK_ITEMS.register("decorative_screen", () -> new BlockItem(DECORATIVE_SCREEN_BLOCK.get(), new Item.Properties()));
+
     public static void register(IEventBus modEventBus) {
         BLOCKS.register(modEventBus);
         BLOCK_ITEMS.register(modEventBus);

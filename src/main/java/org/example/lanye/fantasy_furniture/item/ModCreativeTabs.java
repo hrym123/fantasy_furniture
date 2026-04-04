@@ -40,6 +40,7 @@ public final class ModCreativeTabs {
                         output.accept(ModBlocks.BLUE_WALLPAPER_ITEM.get());
                         output.accept(ModBlocks.GREEN_WALLPAPER_ITEM.get());
                         output.accept(ModBlocks.PURPLE_WALLPAPER_ITEM.get());
+                        output.accept(ModBlocks.DECORATIVE_SCREEN_ITEM.get());
                     })
                     .build());
 
