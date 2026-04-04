@@ -1,0 +1,12 @@
+{
+  "parent": "minecraft:block/cube",
+  "textures": {
+    "particle": "fantasy_furniture:block/pink_wallpaper_side",
+    "down": "fantasy_furniture:block/pink_wallpaper_top",
+    "up": "fantasy_furniture:block/pink_wallpaper_top",
+    "north": "fantasy_furniture:block/pink_wallpaper_side",
+    "south": "fantasy_furniture:block/pink_wallpaper_side",
+    "east": "fantasy_furniture:block/pink_wallpaper_side",
+    "west": "fantasy_furniture:block/pink_wallpaper_side"
+  }
+}
