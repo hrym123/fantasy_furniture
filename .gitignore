@@ -1,4 +1,4 @@
-# User-specific stuff
+# 用户个人配置
 .idea/
 
 *.iml
@@ -7,22 +7,22 @@
 
 # IntelliJ
 out/
-# mpeltonen/sbt-idea plugin
+# mpeltonen/sbt-idea 插件
 .idea_modules/
 
-# JIRA plugin
+# JIRA 插件
 atlassian-ide-plugin.xml
 
-# Compiled class file
+# 编译产物
 *.class
 
-# Log file
+# 日志
 *.log
 
-# BlueJ files
+# BlueJ
 *.ctxt
 
-# Package Files #
+# 打包文件 #
 *.jar
 *.war
 *.nar
@@ -31,35 +31,35 @@ atlassian-ide-plugin.xml
 *.tar.gz
 *.rar
 
-# virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
+# 虚拟机崩溃日志，见 http://www.java.com/en/download/help/error_hotspot.xml
 hs_err_pid*
 
 *~
 
-# temporary files which can be created if a process still has a handle open of a deleted file
+# 进程仍持有已删除文件句柄时可能产生的临时文件
 .fuse_hidden*
 
-# KDE directory preferences
+# KDE 目录偏好
 .directory
 
-# Linux trash folder which might appear on any partition or disk
+# 可能出现在任意分区上的 Linux 回收站
 .Trash-*
 
-# .nfs files are created when an open file is removed but is still being accessed
+# 打开的文件被删除但仍被访问时产生的 .nfs 文件
 .nfs*
 
-# General
+# 通用
 .DS_Store
 .AppleDouble
 .LSOverride
 
-# Icon must end with two \r
+# 图标须以两个 \r 结尾
 Icon
 
-# Thumbnails
+# 缩略图
 ._*
 
-# Files that might appear in the root of a volume
+# 可能出现在卷根目录的文件
 .DocumentRevisions-V100
 .fseventsd
 .Spotlight-V100
@@ -68,52 +68,52 @@ Icon
 .VolumeIcon.icns
 .com.apple.timemachine.donotpresent
 
-# Directories potentially created on remote AFP share
+# 远程 AFP 共享可能产生的目录
 .AppleDB
 .AppleDesktop
 Network Trash Folder
 Temporary Items
 .apdisk
 
-# Windows thumbnail cache files
+# Windows 缩略图缓存
 Thumbs.db
 Thumbs.db:encryptable
 ehthumbs.db
 ehthumbs_vista.db
 
-# Dump file
+# 转储文件
 *.stackdump
 
-# Folder config file
+# 文件夹配置文件
 [Dd]esktop.ini
 
-# Recycle Bin used on file shares
+# 网络共享上的回收站
 $RECYCLE.BIN/
 
-# Windows Installer files
+# Windows 安装包
 *.cab
 *.msi
 *.msix
 *.msm
 *.msp
 
-# Windows shortcuts
+# Windows 快捷方式
 *.lnk
 
 .gradle
 build/
 
-# Ignore Gradle GUI config
+# Gradle GUI 配置
 gradle-app.setting
 
-# Cache of project
+# 项目缓存
 .gradletasknamecache
 
 **/build/
 
-# Common working directory
+# 常用运行/工作目录
 run/
 runs/
 
-# Avoid ignoring Gradle wrapper jar file (.jar files are usually ignored)
+# 勿忽略 Gradle Wrapper 的 jar（通常 *.jar 被忽略）
 !gradle-wrapper.jar
