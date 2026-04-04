@@ -4,6 +4,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
@@ -15,16 +16,22 @@ import net.minecraft.world.level.LevelReader;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.HorizontalDirectionalBlock;
+import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.DoubleBlockHalf;
 import net.minecraft.world.level.material.PushReaction;
+import net.minecraft.world.level.storage.loot.LootParams;
+import net.minecraft.world.level.storage.loot.parameters.LootContextParamSets;
+import net.minecraft.world.level.storage.loot.parameters.LootContextParams;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import org.jetbrains.annotations.Nullable;
+
+import java.util.List;
 
 /**
  * 屏风：游戏逻辑上为<strong>两格高</strong>（下半块 + 上半块）、带朝向，与门在占用空间上类似；右键不交互。
@@ -113,6 +120,47 @@ public class DecorativeScreenBlock extends HorizontalDirectionalBlock {
             }
         }
         super.playerWillDestroy(level, pos, state, player);
+    }
+
+    /**
+     * Forge {@code ServerPlayerGameMode#destroyBlock} 在创造模式下仍会调用此方法；若调用 {@code super.destroy}，
+     * 会通过 {@code Block.dropResources}（无玩家实体）仍执行战利品表，导致下半格在创造模式异常掉落。
+     * 生存破坏的掉落由 {@code playerDestroy} 负责；本方块无方块实体，无需执行 {@code super.destroy} 中其余逻辑。
+     */
+    @Override
+    public void destroy(LevelAccessor level, BlockPos pos, BlockState state) {
+    }
+
+    /**
+     * 第二道防线：部分环境下仍可能通过 {@link Block#dropResources} 调用战利品；
+     * 创造玩家、以及无实体且空手上下文下的下半格（对应 {@link #destroy} 路径）不产出掉落。
+     * 爆炸破坏保留战利品：存在 {@link LootContextParams#EXPLOSION_RADIUS} 时不拦截。
+     */
+    @Override
+    @SuppressWarnings("deprecation")
+    public List<ItemStack> getDrops(BlockState state, LootParams.Builder builder) {
+        LootParams params = builder.create(LootContextParamSets.BLOCK);
+        // 1.20.1：getOptionalParameter 返回可空 T，不是 java.util.Optional
+        Entity breaker = params.getOptionalParameter(LootContextParams.THIS_ENTITY);
+        if (breaker instanceof Player p && p.isCreative()) {
+            return List.of();
+        }
+        Float explosionRadius = params.getOptionalParameter(LootContextParams.EXPLOSION_RADIUS);
+        if (state.getValue(HALF) == DoubleBlockHalf.LOWER
+                && breaker == null
+                && params.getParameter(LootContextParams.TOOL).isEmpty()
+                && explosionRadius == null) {
+            return List.of();
+        }
+        return super.getDrops(state, builder);
+    }
+
+    @Override
+    public void playerDestroy(Level level, Player player, BlockPos pos, BlockState state, @Nullable BlockEntity blockEntity, ItemStack tool) {
+        if (player.isCreative()) {
+            return;
+        }
+        super.playerDestroy(level, player, pos, state, blockEntity, tool);
     }
 
     @Override
