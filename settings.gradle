@@ -1,0 +1,19 @@
+pluginManagement {
+    repositories {
+        // 国内镜像：华为优先，阿里云兜底；Forge / 插件门户放后以保证解析到专用构件
+        maven { url = 'https://repo.huaweicloud.com/repository/maven/' }
+        maven { url = 'https://maven.aliyun.com/repository/gradle-plugin' }
+        maven { url = 'https://maven.aliyun.com/repository/public' }
+        maven {
+            name = 'MinecraftForge'
+            url = 'https://maven.minecraftforge.net/'
+        }
+        gradlePluginPortal()
+    }
+}
+
+plugins {
+    id 'org.gradle.toolchains.foojay-resolver-convention' version '0.7.0'
+}
+
+rootProject.name = 'fantasy_furniture'
