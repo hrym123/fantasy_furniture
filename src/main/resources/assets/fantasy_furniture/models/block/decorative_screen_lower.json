@@ -6,6 +6,7 @@
 		64
 	],
 	"ambientocclusion": false,
+	"render_type": "minecraft:cutout",
 	"textures": {
 		"1": "fantasy_furniture:block/decorative_screen",
 		"particle": "fantasy_furniture:block/decorative_screen"
