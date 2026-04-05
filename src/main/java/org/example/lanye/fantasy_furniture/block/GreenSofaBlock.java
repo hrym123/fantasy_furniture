@@ -13,12 +13,11 @@ import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.LevelReader;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
-import net.minecraft.world.level.block.HorizontalDirectionalBlock;
 import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
-import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.level.block.state.properties.EnumProperty;
 import net.minecraft.world.level.material.PushReaction;
 import net.minecraft.world.phys.shapes.CollisionContext;
@@ -26,14 +25,15 @@ import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import org.example.lanye.fantasy_furniture.block.entity.GreenSofaBlockEntity;
 import org.example.lanye.fantasy_furniture.block.state.SofaPart;
-import org.example.lanye.fantasy_furniture.geolib.GeolibEntityBlock;
+import org.example.lanye.fantasy_furniture.geolib.GeolibFacingEntityBlock;
 
 /**
  * 绿色沙发：占地横向三格（左 / 中 / 右），仅中间格含 {@link GreenSofaBlockEntity} 与 GeckoLib 模型。
+ * 水平 {@link org.example.lanye.fantasy_furniture.geolib.GeolibFacingEntityBlock#FACING} 与放置逻辑见
+ * {@link org.example.lanye.fantasy_furniture.geolib.GeolibFacingEntityBlock}（{@link #getStateForPlacement} 覆盖以摆三联）。
  */
-public class GreenSofaBlock extends GeolibEntityBlock {
+public class GreenSofaBlock extends GeolibFacingEntityBlock {
 
-    public static final DirectionProperty FACING = HorizontalDirectionalBlock.FACING;
     public static final EnumProperty<SofaPart> PART = EnumProperty.create("part", SofaPart.class);
 
     private static final VoxelShape SHAPE = Shapes.block();
@@ -41,20 +41,22 @@ public class GreenSofaBlock extends GeolibEntityBlock {
     /** 拆除三联中一格时避免连锁 {@link #onRemove} 重复拆 sibling。 */
     private static final ThreadLocal<Boolean> SUPPRESS_SIBLING_BREAK = ThreadLocal.withInitial(() -> false);
 
-    public GreenSofaBlock(Properties properties) {
+    public GreenSofaBlock(BlockBehaviour.Properties properties) {
         super(properties);
         registerDefaultState(stateDefinition.any().setValue(FACING, Direction.NORTH).setValue(PART, SofaPart.CENTER));
     }
 
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
-        builder.add(FACING, PART);
+        super.createBlockStateDefinition(builder);
+        builder.add(PART);
     }
 
     @Nullable
     @Override
     public BlockState getStateForPlacement(BlockPlaceContext context) {
-        Direction facing = context.getHorizontalDirection();
+        // 与烤箱、卡座等一致：朝向玩家（模型正面朝向放置者视线反方向）。
+        Direction facing = context.getHorizontalDirection().getOpposite();
         // BlockPlaceContext#getClickedPos() 已是目标放置格（含替换可替换方块 / 贴在相邻面），勿再 relative(clickedFace)。
         BlockPos center = context.getClickedPos();
         Direction toLeft = facing.getCounterClockWise();

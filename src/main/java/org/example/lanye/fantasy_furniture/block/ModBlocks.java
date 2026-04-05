@@ -4,6 +4,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.material.MapColor;
@@ -14,6 +15,7 @@ import net.minecraftforge.registries.RegistryObject;
 import org.example.lanye.fantasy_furniture.Fantasy_furniture;
 import org.example.lanye.fantasy_furniture.block.entity.BanquetteBlockEntity;
 import org.example.lanye.fantasy_furniture.block.entity.GreenSofaBlockEntity;
+import org.example.lanye.fantasy_furniture.block.entity.HalfHalfPotBlockEntity;
 import org.example.lanye.fantasy_furniture.block.entity.JamPotBlockEntity;
 import org.example.lanye.fantasy_furniture.block.entity.MixingBowlBlockEntity;
 import org.example.lanye.fantasy_furniture.block.entity.OvenBlockEntity;
@@ -100,6 +102,12 @@ public final class ModBlocks {
     public static final RegistryObject<Item> DECORATIVE_SCREEN_ITEM =
             BLOCK_ITEMS.register("decorative_screen", () -> new BlockItem(DECORATIVE_SCREEN_BLOCK.get(), new Item.Properties()));
 
+    /** 玻璃窗：与原版玻璃相近的透明整格方块（无方块实体）。 */
+    public static final RegistryObject<Block> GLASS_WINDOW_BLOCK =
+            BLOCKS.register("glass_window", () -> new Block(BlockBehaviour.Properties.copy(Blocks.GLASS)));
+    public static final RegistryObject<Item> GLASS_WINDOW_ITEM =
+            BLOCK_ITEMS.register("glass_window", () -> new BlockItem(GLASS_WINDOW_BLOCK.get(), new Item.Properties()));
+
     private static BlockBehaviour.Properties banquetteProperties() {
         return BlockBehaviour.Properties.of()
                 .mapColor(MapColor.WOOD)
@@ -161,6 +169,14 @@ public final class ModBlocks {
     }
 
     private static BlockBehaviour.Properties pestleBowlProperties() {
+        return BlockBehaviour.Properties.of()
+                .mapColor(MapColor.TERRACOTTA_WHITE)
+                .strength(1.2f, 6.0f)
+                .sound(SoundType.DEEPSLATE_TILES)
+                .noOcclusion();
+    }
+
+    private static BlockBehaviour.Properties halfHalfPotProperties() {
         return BlockBehaviour.Properties.of()
                 .mapColor(MapColor.TERRACOTTA_WHITE)
                 .strength(1.2f, 6.0f)
@@ -250,6 +266,24 @@ public final class ModBlocks {
                                             p,
                                             GeolibItemAssets.blockAsset(
                                                     Fantasy_furniture.MODID, "pestle_bowl"))));
+
+    /** 半半锅：GeckoLib 静态模型（MoonStarfish）。 */
+    public static final AnimatedBlockEntry<HalfHalfPotBlockEntity> HALF_HALF_POT =
+            AnimatedBlockRegistration.registerSpec(
+                    BLOCKS,
+                    BLOCK_ITEMS,
+                    ModBlockEntities.BLOCK_ENTITY_TYPES,
+                    AnimatedBlockRegistration.spec(
+                            "half_half_pot",
+                            ModBlocks::halfHalfPotProperties,
+                            HalfHalfPotBlock::new,
+                            HalfHalfPotBlockEntity::new,
+                            (block, p) ->
+                                    new GeolibBlockItem(
+                                            block,
+                                            p,
+                                            GeolibItemAssets.blockAsset(
+                                                    Fantasy_furniture.MODID, "half_half_pot"))));
 
     /** 绿色沙发（三连）：GeckoLib 静态模型。 */
     public static final AnimatedBlockEntry<GreenSofaBlockEntity> GREEN_SOFA =

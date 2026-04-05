@@ -8,21 +8,23 @@ import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import org.example.lanye.fantasy_furniture.block.entity.MixingBowlBlockEntity;
-import org.example.lanye.fantasy_furniture.geolib.GeolibEntityBlockWithFactory;
+import org.example.lanye.fantasy_furniture.geolib.GeolibFacingEntityBlockWithFactory;
 
 /**
  * 搅拌碗：对方块交互一次（原版 {@link net.minecraft.world.level.block.Block#use}）即由服务端触发一次搅拌动画。
+ * 水平朝向见 {@link org.example.lanye.fantasy_furniture.geolib.GeolibFacingEntityBlock}。
  */
-public class MixingBowlBlock extends GeolibEntityBlockWithFactory<MixingBowlBlockEntity> {
+public class MixingBowlBlock extends GeolibFacingEntityBlockWithFactory<MixingBowlBlockEntity> {
 
     private static final VoxelShape SHAPE = Block.box(2, 0, 2, 14, 8, 14);
 
-    public MixingBowlBlock(Properties properties) {
+    public MixingBowlBlock(BlockBehaviour.Properties properties) {
         super(properties, MixingBowlBlockEntity::new);
     }
 

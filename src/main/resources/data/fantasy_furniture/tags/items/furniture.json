@@ -2,10 +2,12 @@
   "replace": false,
   "values": [
     "fantasy_furniture:decorative_screen",
+    "fantasy_furniture:glass_window",
     "fantasy_furniture:mixing_bowl",
     "fantasy_furniture:jam_pot",
     "fantasy_furniture:oven",
     "fantasy_furniture:pestle_bowl",
+    "fantasy_furniture:half_half_pot",
     "fantasy_furniture:green_sofa",
     "fantasy_furniture:banquette"
   ]

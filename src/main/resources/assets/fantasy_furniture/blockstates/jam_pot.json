@@ -1,7 +1,8 @@
 {
   "variants": {
-    "": {
-      "model": "fantasy_furniture:block/jam_pot"
-    }
+    "facing=east": { "model": "fantasy_furniture:block/jam_pot" },
+    "facing=north": { "model": "fantasy_furniture:block/jam_pot" },
+    "facing=south": { "model": "fantasy_furniture:block/jam_pot" },
+    "facing=west": { "model": "fantasy_furniture:block/jam_pot" }
   }
 }

@@ -30,6 +30,9 @@ public final class ClientModEvents {
                 ModBlocks.PESTLE_BOWL,
                 GeolibAnimatedBlockRenderers.defaultGeoRendererProvider(Fantasy_furniture.MODID, "pestle_bowl"));
         AnimatedBlockClientRegistration.registerBlockEntityRenderer(
+                ModBlocks.HALF_HALF_POT,
+                GeolibAnimatedBlockRenderers.defaultGeoRendererProvider(Fantasy_furniture.MODID, "half_half_pot"));
+        AnimatedBlockClientRegistration.registerBlockEntityRenderer(
                 ModBlocks.GREEN_SOFA,
                 GeolibAnimatedBlockRenderers.defaultGeoRendererProvider(Fantasy_furniture.MODID, "green_sofa"));
         AnimatedBlockClientRegistration.registerBlockEntityRenderer(

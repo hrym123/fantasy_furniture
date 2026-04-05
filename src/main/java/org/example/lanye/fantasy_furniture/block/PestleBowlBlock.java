@@ -8,23 +8,25 @@ import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import org.example.lanye.fantasy_furniture.block.entity.PestleBowlBlockEntity;
-import org.example.lanye.fantasy_furniture.geolib.GeolibEntityBlockWithFactory;
+import org.example.lanye.fantasy_furniture.geolib.GeolibFacingEntityBlockWithFactory;
 
 /**
  * 捣蒜碗：对方块交互一次即触发一次捣碎动画（{@link PestleBowlBlockEntity#onServerMash}）。
  * <p>
- * 碰撞与 {@code pestle_bowl.bbmodel} 全体元素包围盒一致（模型空间并集经 +8 平移至 0～16）。
+ * 碰撞仅对应 Geo 中 {@code group2} 五个立方体并集：模型坐标下 x/z 加 8 得到方块内 0～16，y 与方块竖直一致；
+ * 并集为 {@code [3,13)×[0,7)×[3,13)}。水平朝向见 {@link org.example.lanye.fantasy_furniture.geolib.GeolibFacingEntityBlock}。
  */
-public class PestleBowlBlock extends GeolibEntityBlockWithFactory<PestleBowlBlockEntity> {
+public class PestleBowlBlock extends GeolibFacingEntityBlockWithFactory<PestleBowlBlockEntity> {
 
-    private static final VoxelShape SHAPE = Block.box(3.0, 0.0, 3.0, 13.0, 11.9, 13.0);
+    private static final VoxelShape SHAPE = Block.box(3.0, 0.0, 3.0, 13.0, 7.0, 13.0);
 
-    public PestleBowlBlock(Properties properties) {
+    public PestleBowlBlock(BlockBehaviour.Properties properties) {
         super(properties, PestleBowlBlockEntity::new);
     }
 
