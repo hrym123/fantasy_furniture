@@ -11,7 +11,10 @@ import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
 import org.example.lanye.fantasy_furniture.Fantasy_furniture;
+import org.example.lanye.fantasy_furniture.block.entity.JamPotBlockEntity;
 import org.example.lanye.fantasy_furniture.block.entity.MixingBowlBlockEntity;
+import org.example.lanye.fantasy_furniture.block.entity.OvenBlockEntity;
+import org.example.lanye.fantasy_furniture.block.entity.PestleBowlBlockEntity;
 import org.example.lanye.fantasy_furniture.geolib.AnimatedBlockEntry;
 import org.example.lanye.fantasy_furniture.geolib.AnimatedBlockRegistration;
 import org.example.lanye.fantasy_furniture.geolib.GeolibBlockItem;
@@ -102,6 +105,30 @@ public final class ModBlocks {
                 .noOcclusion();
     }
 
+    private static BlockBehaviour.Properties jamPotProperties() {
+        return BlockBehaviour.Properties.of()
+                .mapColor(MapColor.COLOR_RED)
+                .strength(1.2f, 6.0f)
+                .sound(SoundType.DEEPSLATE_TILES)
+                .noOcclusion();
+    }
+
+    private static BlockBehaviour.Properties ovenProperties() {
+        return BlockBehaviour.Properties.of()
+                .mapColor(MapColor.METAL)
+                .strength(1.5f, 6.0f)
+                .sound(SoundType.METAL)
+                .noOcclusion();
+    }
+
+    private static BlockBehaviour.Properties pestleBowlProperties() {
+        return BlockBehaviour.Properties.of()
+                .mapColor(MapColor.TERRACOTTA_WHITE)
+                .strength(1.2f, 6.0f)
+                .sound(SoundType.DEEPSLATE_TILES)
+                .noOcclusion();
+    }
+
     /**
      * 搅拌碗：GeckoLib 动画方块；由 {@link AnimatedBlockRegistration} 按设计书顺序登记
      * {@link net.minecraft.world.level.block.entity.BlockEntityType} 与物品。
@@ -122,6 +149,60 @@ public final class ModBlocks {
                                             p,
                                             GeolibItemAssets.blockAsset(
                                                     Fantasy_furniture.MODID, "mixing_bowl"))));
+
+    /** 果酱锅：GeckoLib 动画方块。 */
+    public static final AnimatedBlockEntry<JamPotBlockEntity> JAM_POT =
+            AnimatedBlockRegistration.registerSpec(
+                    BLOCKS,
+                    BLOCK_ITEMS,
+                    ModBlockEntities.BLOCK_ENTITY_TYPES,
+                    AnimatedBlockRegistration.spec(
+                            "jam_pot",
+                            ModBlocks::jamPotProperties,
+                            JamPotBlock::new,
+                            JamPotBlockEntity::new,
+                            (block, p) ->
+                                    new GeolibBlockItem(
+                                            block,
+                                            p,
+                                            GeolibItemAssets.blockAsset(
+                                                    Fantasy_furniture.MODID, "jam_pot"))));
+
+    /** 烤箱：GeckoLib 方块实体渲染，无玩法动画。 */
+    public static final AnimatedBlockEntry<OvenBlockEntity> OVEN =
+            AnimatedBlockRegistration.registerSpec(
+                    BLOCKS,
+                    BLOCK_ITEMS,
+                    ModBlockEntities.BLOCK_ENTITY_TYPES,
+                    AnimatedBlockRegistration.spec(
+                            "oven",
+                            ModBlocks::ovenProperties,
+                            OvenBlock::new,
+                            OvenBlockEntity::new,
+                            (block, p) ->
+                                    new GeolibBlockItem(
+                                            block,
+                                            p,
+                                                    GeolibItemAssets.blockAsset(
+                                                    Fantasy_furniture.MODID, "oven"))));
+
+    /** 捣蒜碗：GeckoLib 捣碎动画。 */
+    public static final AnimatedBlockEntry<PestleBowlBlockEntity> PESTLE_BOWL =
+            AnimatedBlockRegistration.registerSpec(
+                    BLOCKS,
+                    BLOCK_ITEMS,
+                    ModBlockEntities.BLOCK_ENTITY_TYPES,
+                    AnimatedBlockRegistration.spec(
+                            "pestle_bowl",
+                            ModBlocks::pestleBowlProperties,
+                            PestleBowlBlock::new,
+                            PestleBowlBlockEntity::new,
+                            (block, p) ->
+                                    new GeolibBlockItem(
+                                            block,
+                                            p,
+                                            GeolibItemAssets.blockAsset(
+                                                    Fantasy_furniture.MODID, "pestle_bowl"))));
 
     public static void register(IEventBus modEventBus) {
         BLOCKS.register(modEventBus);

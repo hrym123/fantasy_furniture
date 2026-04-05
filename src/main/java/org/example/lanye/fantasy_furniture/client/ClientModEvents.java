@@ -18,6 +18,15 @@ public final class ClientModEvents {
         AnimatedBlockClientRegistration.registerBlockEntityRenderer(
                 ModBlocks.MIXING_BOWL,
                 GeolibAnimatedBlockRenderers.defaultGeoRendererProvider(Fantasy_furniture.MODID, "mixing_bowl"));
+        AnimatedBlockClientRegistration.registerBlockEntityRenderer(
+                ModBlocks.JAM_POT,
+                GeolibAnimatedBlockRenderers.defaultGeoRendererProvider(Fantasy_furniture.MODID, "jam_pot"));
+        AnimatedBlockClientRegistration.registerBlockEntityRenderer(
+                ModBlocks.OVEN,
+                GeolibAnimatedBlockRenderers.defaultGeoRendererProvider(Fantasy_furniture.MODID, "oven"));
+        AnimatedBlockClientRegistration.registerBlockEntityRenderer(
+                ModBlocks.PESTLE_BOWL,
+                GeolibAnimatedBlockRenderers.defaultGeoRendererProvider(Fantasy_furniture.MODID, "pestle_bowl"));
     }
 
     @SubscribeEvent

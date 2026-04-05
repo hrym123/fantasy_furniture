@@ -1,0 +1,6 @@
+{
+  "parent": "builtin/entity",
+  "textures": {
+    "particle": "fantasy_furniture:block/oven"
+  }
+}
