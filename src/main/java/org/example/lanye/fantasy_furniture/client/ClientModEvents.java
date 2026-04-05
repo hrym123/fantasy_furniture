@@ -6,6 +6,8 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import org.example.lanye.fantasy_furniture.Fantasy_furniture;
 import org.example.lanye.fantasy_furniture.block.ModBlocks;
+import org.example.lanye.fantasy_furniture.client.model.BanquetteBlockGeoModel;
+import org.example.lanye.fantasy_furniture.client.renderer.BanquetteGeoBlockRenderer;
 import org.example.lanye.fantasy_furniture.geolib.client.AnimatedBlockClientRegistration;
 import org.example.lanye.fantasy_furniture.geolib.client.GeolibAnimatedBlockRenderers;
 
@@ -30,6 +32,8 @@ public final class ClientModEvents {
         AnimatedBlockClientRegistration.registerBlockEntityRenderer(
                 ModBlocks.GREEN_SOFA,
                 GeolibAnimatedBlockRenderers.defaultGeoRendererProvider(Fantasy_furniture.MODID, "green_sofa"));
+        AnimatedBlockClientRegistration.registerBlockEntityRenderer(
+                ModBlocks.BANQUETTE, ctx -> new BanquetteGeoBlockRenderer(new BanquetteBlockGeoModel()));
     }
 
     @SubscribeEvent

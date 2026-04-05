@@ -1,5 +1,6 @@
 package org.example.lanye.fantasy_furniture.block;
 
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
@@ -11,6 +12,7 @@ import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
 import org.example.lanye.fantasy_furniture.Fantasy_furniture;
+import org.example.lanye.fantasy_furniture.block.entity.BanquetteBlockEntity;
 import org.example.lanye.fantasy_furniture.block.entity.GreenSofaBlockEntity;
 import org.example.lanye.fantasy_furniture.block.entity.JamPotBlockEntity;
 import org.example.lanye.fantasy_furniture.block.entity.MixingBowlBlockEntity;
@@ -97,6 +99,42 @@ public final class ModBlocks {
             BLOCKS.register("decorative_screen", () -> new DecorativeScreenBlock(decorativeScreenProperties()));
     public static final RegistryObject<Item> DECORATIVE_SCREEN_ITEM =
             BLOCK_ITEMS.register("decorative_screen", () -> new BlockItem(DECORATIVE_SCREEN_BLOCK.get(), new Item.Properties()));
+
+    private static BlockBehaviour.Properties banquetteProperties() {
+        return BlockBehaviour.Properties.of()
+                .mapColor(MapColor.WOOD)
+                .strength(1.0f, 6.0f)
+                .sound(SoundType.CHERRY_WOOD)
+                .noOcclusion();
+    }
+
+    /**
+     * 卡座物品：geo/动画 basename 为 {@code banquette_straight}，贴图与方块内渲染一致为 {@code banquette.png}（勿用
+     * {@link GeolibItemAssets#blockAsset} 单 basename，否则会错误指向 {@code banquette_straight.png}）。
+     */
+    private static GeolibItemAssets geolibBanquetteItemAssets() {
+        return new GeolibItemAssets(
+                ResourceLocation.fromNamespaceAndPath(Fantasy_furniture.MODID, "geo/block/banquette_straight.geo.json"),
+                ResourceLocation.fromNamespaceAndPath(Fantasy_furniture.MODID, "textures/block/banquette.png"),
+                ResourceLocation.fromNamespaceAndPath(
+                        Fantasy_furniture.MODID, "animations/block/banquette_straight.animation.json"));
+    }
+
+    /**
+     * 卡座：直段 / 拐角两套 Geo；方块实体渲染见
+     * {@link org.example.lanye.fantasy_furniture.geolib.client.GeolibAnimatedBlockRenderers#variableBasenameGeoRendererProvider}。
+     */
+    public static final AnimatedBlockEntry<BanquetteBlockEntity> BANQUETTE =
+            AnimatedBlockRegistration.registerSpec(
+                    BLOCKS,
+                    BLOCK_ITEMS,
+                    ModBlockEntities.BLOCK_ENTITY_TYPES,
+                    AnimatedBlockRegistration.spec(
+                            "banquette",
+                            ModBlocks::banquetteProperties,
+                            BanquetteBlock::new,
+                            BanquetteBlockEntity::new,
+                            (block, p) -> new GeolibBlockItem(block, p, geolibBanquetteItemAssets())));
 
     private static BlockBehaviour.Properties mixingBowlProperties() {
         return BlockBehaviour.Properties.of()

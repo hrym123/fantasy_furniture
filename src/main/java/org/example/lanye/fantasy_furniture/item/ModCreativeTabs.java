@@ -41,6 +41,7 @@ public final class ModCreativeTabs {
                         output.accept(ModBlocks.GREEN_WALLPAPER_ITEM.get());
                         output.accept(ModBlocks.PURPLE_WALLPAPER_ITEM.get());
                         output.accept(ModBlocks.DECORATIVE_SCREEN_ITEM.get());
+                        output.accept(ModBlocks.BANQUETTE.item().get());
                         output.accept(ModBlocks.MIXING_BOWL.item().get());
                         output.accept(ModBlocks.JAM_POT.item().get());
                         output.accept(ModBlocks.OVEN.item().get());

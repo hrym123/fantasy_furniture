@@ -1,0 +1,16 @@
+{
+  "variants": {
+    "facing=east,shape=straight": { "model": "fantasy_furniture:block/banquette" },
+    "facing=east,shape=corner_left": { "model": "fantasy_furniture:block/banquette" },
+    "facing=east,shape=corner_right": { "model": "fantasy_furniture:block/banquette" },
+    "facing=north,shape=straight": { "model": "fantasy_furniture:block/banquette" },
+    "facing=north,shape=corner_left": { "model": "fantasy_furniture:block/banquette" },
+    "facing=north,shape=corner_right": { "model": "fantasy_furniture:block/banquette" },
+    "facing=south,shape=straight": { "model": "fantasy_furniture:block/banquette" },
+    "facing=south,shape=corner_left": { "model": "fantasy_furniture:block/banquette" },
+    "facing=south,shape=corner_right": { "model": "fantasy_furniture:block/banquette" },
+    "facing=west,shape=straight": { "model": "fantasy_furniture:block/banquette" },
+    "facing=west,shape=corner_left": { "model": "fantasy_furniture:block/banquette" },
+    "facing=west,shape=corner_right": { "model": "fantasy_furniture:block/banquette" }
+  }
+}

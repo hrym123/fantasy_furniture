@@ -1,0 +1,40 @@
+{
+  "credit": "Made with Blockbench",
+  "parent": "builtin/entity",
+  "texture_size": [128, 128],
+  "textures": {
+    "particle": "fantasy_furniture:block/banquette"
+  },
+  "display": {
+    "thirdperson_righthand": {
+      "scale": [0.44, 0.44, 0.44]
+    },
+    "thirdperson_lefthand": {
+      "scale": [0.44, 0.44, 0.44]
+    },
+    "firstperson_righthand": {
+      "scale": [0.44, 0.44, -0.44]
+    },
+    "firstperson_lefthand": {
+      "scale": [0.44, 0.44, -0.44]
+    },
+    "ground": {
+      "scale": [0.44, 0.44, 0.44]
+    },
+    "gui": {
+      "rotation": [30, 45, 0],
+      "translation": [0, -4.75, 0],
+      "scale": [0.625, 0.625, -0.625]
+    },
+    "head": {
+      "translation": [0, 6.5, 0],
+      "scale": [0.44, 0.44, 0.44]
+    },
+    "fixed": {
+      "translation": [0, -8.25, -5.5]
+    },
+    "on_shelf": {
+      "scale": [1, 1, -1]
+    }
+  }
+}
