@@ -1,6 +1,7 @@
 {
   "replace": false,
   "values": [
-    "#fantasy_furniture:ceramic_tiles"
+    "#fantasy_furniture:ceramic_tiles",
+    "fantasy_furniture:mixing_bowl"
   ]
 }

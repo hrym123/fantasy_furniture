@@ -114,6 +114,7 @@ gradle-app.setting
 # 常用运行/工作目录
 run/
 runs/
+run-data/
 
 # 勿忽略 Gradle Wrapper 的 jar（通常 *.jar 被忽略）
 !gradle-wrapper.jar

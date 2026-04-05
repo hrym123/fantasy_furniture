@@ -7,7 +7,10 @@
 ## 运行环境
 
 - **Minecraft**：1.20.1  
-- **模组加载器**：Forge（请使用与当前 Minecraft 版本匹配的 Forge 安装包）
+- **模组加载器**：Forge（请使用与当前 Minecraft 版本匹配的 Forge 安装包）  
+- **前置模组**：[GeckoLib](https://www.curseforge.com/minecraft/mc-mods/geckolib)（须与本模组 **Minecraft 主版本一致**，并放入同一 `mods` 文件夹）
+
+未安装 GeckoLib 时，游戏通常会提示缺少依赖或无法正常加载本模组。
 
 ---
 

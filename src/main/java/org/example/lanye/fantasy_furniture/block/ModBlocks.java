@@ -1,5 +1,6 @@
 package org.example.lanye.fantasy_furniture.block;
 
+import net.minecraft.world.InteractionResult;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
@@ -11,6 +12,12 @@ import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
 import org.example.lanye.fantasy_furniture.Fantasy_furniture;
+import org.example.lanye.fantasy_furniture.block.entity.MixingBowlBlockEntity;
+import org.example.lanye.fantasy_furniture.geolib.AnimatedBlockEntry;
+import org.example.lanye.fantasy_furniture.geolib.AnimatedBlockRegistration;
+import org.example.lanye.fantasy_furniture.geolib.GeolibAnimatedFactories;
+import org.example.lanye.fantasy_furniture.geolib.GeolibItemAssets;
+import org.example.lanye.fantasy_furniture.registry.ModBlockEntities;
 
 /**
  * 本模组方块及对应 {@link BlockItem} 的注册与引用。
@@ -87,6 +94,31 @@ public final class ModBlocks {
             BLOCKS.register("decorative_screen", () -> new DecorativeScreenBlock(decorativeScreenProperties()));
     public static final RegistryObject<Item> DECORATIVE_SCREEN_ITEM =
             BLOCK_ITEMS.register("decorative_screen", () -> new BlockItem(DECORATIVE_SCREEN_BLOCK.get(), new Item.Properties()));
+
+    private static BlockBehaviour.Properties mixingBowlProperties() {
+        return BlockBehaviour.Properties.of()
+                .mapColor(MapColor.TERRACOTTA_WHITE)
+                .strength(1.2f, 6.0f)
+                .sound(SoundType.DEEPSLATE_TILES)
+                .noOcclusion();
+    }
+
+    /**
+     * 搅拌碗：GeckoLib 动画方块；由 {@link AnimatedBlockRegistration} 按设计书顺序登记
+     * {@link net.minecraft.world.level.block.entity.BlockEntityType} 与物品。
+     */
+    public static final AnimatedBlockEntry<MixingBowlBlockEntity> MIXING_BOWL =
+            AnimatedBlockRegistration.registerSpec(
+                    BLOCKS,
+                    BLOCK_ITEMS,
+                    ModBlockEntities.BLOCK_ENTITY_TYPES,
+                    GeolibAnimatedFactories.spec(
+                            "mixing_bowl",
+                            ModBlocks::mixingBowlProperties,
+                            MixingBowlBlockEntity::new,
+                            GeolibItemAssets.blockAsset(Fantasy_furniture.MODID, "mixing_bowl"),
+                            Block.box(2, 0, 2, 14, 8, 14),
+                            InteractionResult.SUCCESS));
 
     public static void register(IEventBus modEventBus) {
         BLOCKS.register(modEventBus);

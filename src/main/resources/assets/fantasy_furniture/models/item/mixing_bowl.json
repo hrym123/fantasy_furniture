@@ -1,0 +1,47 @@
+{
+  "credit": "Made with Blockbench",
+  "parent": "builtin/entity",
+  "texture_size": [64, 64],
+  "textures": {
+    "particle": "fantasy_furniture:block/mixing_bowl"
+  },
+  "display": {
+    "thirdperson_righthand": {
+      "translation": [0, -3.5, -3],
+      "scale": [0.55, 0.55, 0.55]
+    },
+    "thirdperson_lefthand": {
+      "translation": [0, -3.5, -3],
+      "scale": [0.55, 0.55, 0.55]
+    },
+    "firstperson_righthand": {
+      "rotation": [103.02, -54.77, 83.81],
+      "translation": [1.13, 3.2, -0.87],
+      "scale": [0.68, 0.68, 0.68]
+    },
+    "firstperson_lefthand": {
+      "rotation": [-8.62, 29.15, 33.03],
+      "translation": [1.13, 0.7, -1.37],
+      "scale": [0.68, 0.68, 0.68]
+    },
+    "ground": {
+      "translation": [0, 2, 0],
+      "scale": [0.5, 0.5, 0.5]
+    },
+    "gui": {
+      "rotation": [23, -69, 0],
+      "translation": [0, -5.5, 0],
+      "scale": [0.8, 0.8, 0.8]
+    },
+    "head": {
+      "rotation": [0, -180, 0],
+      "translation": [0, 6.25, 0]
+    },
+    "fixed": {
+      "translation": [0, -7, 0]
+    },
+    "on_shelf": {
+      "rotation": [0, -180, 0]
+    }
+  }
+}

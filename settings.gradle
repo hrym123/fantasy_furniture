@@ -1,5 +1,9 @@
 pluginManagement {
     repositories {
+        // GeckoLib 依赖自带 Mixin；须能解析 Sponge mixin 插件（见 GeckoLib Wiki「Installation」）
+        maven { url = 'https://repo.spongepowered.org/repository/maven-public/' }
+        // Parchment Librarian 插件（与 parchment 映射通道配合）
+        maven { url = 'https://maven.parchmentmc.org' }
         // 国内镜像：华为优先，阿里云兜底；Forge / 插件门户放后以保证解析到专用构件
         maven { url = 'https://repo.huaweicloud.com/repository/maven/' }
         maven { url = 'https://maven.aliyun.com/repository/gradle-plugin' }

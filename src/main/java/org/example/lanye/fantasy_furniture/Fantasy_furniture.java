@@ -6,6 +6,8 @@ import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import org.example.lanye.fantasy_furniture.block.ModBlocks;
 import org.example.lanye.fantasy_furniture.item.ModCreativeTabs;
+import org.example.lanye.fantasy_furniture.network.ModNetwork;
+import org.example.lanye.fantasy_furniture.registry.ModBlockEntities;
 import org.slf4j.Logger;
 
 /**
@@ -23,11 +25,13 @@ public class Fantasy_furniture {
     public Fantasy_furniture(FMLJavaModLoadingContext context) {
         var modEventBus = context.getModEventBus();
         ModBlocks.register(modEventBus);
+        ModBlockEntities.register(modEventBus);
         ModCreativeTabs.register(modEventBus);
         modEventBus.addListener(this::onCommonSetup);
     }
 
     private void onCommonSetup(final FMLCommonSetupEvent event) {
+        event.enqueueWork(ModNetwork::register);
         LOGGER.info("{} 通用初始化完成", MODID);
     }
 }

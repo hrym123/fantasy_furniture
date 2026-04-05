@@ -1,0 +1,30 @@
+{
+	"format_version": "1.8.0",
+	"animations": {
+		"animation.mixing_bowl.stir": {
+			"loop": true,
+			"animation_length": 1,
+			"bones": {
+				"group3": {
+					"rotation": {
+						"0.0": {
+							"vector": [0, 0, 0]
+						},
+						"0.25": {
+							"vector": [-4, 42, 7.5]
+						},
+						"0.5": {
+							"vector": [0, 0, 15]
+						},
+						"0.75": {
+							"vector": [4, -42, 7.5]
+						},
+						"1.0": {
+							"vector": [0, 0, 0]
+						}
+					}
+				}
+			}
+		}
+	}
+}

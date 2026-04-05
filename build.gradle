@@ -2,6 +2,10 @@ plugins {
     id 'eclipse'
     id 'idea'
     id 'net.minecraftforge.gradle' version '[6.0.16,6.2)'
+    // 与 mapping_channel=parchment 配套；否则 GeckoLib 等 Mixin 在 dev 下无法对齐方法名
+    id 'org.parchmentmc.librarian.forgegradle' version '1.+'
+    // GeckoLib 在 Forge 上使用 Mixin；须在开发环境应用该插件并重新生成运行配置（见 GeckoLib Wiki / Issue #440）
+    id 'org.spongepowered.mixin' version '0.7.+'
 }
 
 
@@ -57,19 +61,26 @@ sourceSets.main.resources { srcDir 'src/generated/resources' }
 repositories {
     maven { url = 'https://repo.huaweicloud.com/repository/maven/' }
     maven { url = 'https://maven.aliyun.com/repository/public' }
+    maven { url = 'https://maven.parchmentmc.org' }
+    maven {
+        name = 'GeckoLib'
+        url = 'https://dl.cloudsmith.io/public/geckolib3/geckolib/maven/'
+    }
     mavenCentral()
 }
 
 dependencies {
     minecraft "net.minecraftforge:forge:${minecraft_version}-${forge_version}"
+    implementation fg.deobf("software.bernie.geckolib:geckolib-forge-${minecraft_version}:${geckolib_version}")
 }
 
 tasks.named('processResources', ProcessResources).configure {
-    var replaceProperties = [minecraft_version   : minecraft_version, minecraft_version_range: minecraft_version_range,
-                             forge_version       : forge_version, forge_version_range: forge_version_range,
-                             loader_version_range: loader_version_range,
-                             mod_id              : mod_id, mod_name: mod_name, mod_license: mod_license, mod_version: mod_version,
-                             mod_authors         : mod_authors, mod_description: mod_description,]
+    var replaceProperties = [minecraft_version        : minecraft_version, minecraft_version_range: minecraft_version_range,
+                             forge_version          : forge_version, forge_version_range: forge_version_range,
+                             loader_version_range   : loader_version_range,
+                             geckolib_version_range : geckolib_version_range,
+                             mod_id                 : mod_id, mod_name: mod_name, mod_license: mod_license, mod_version: mod_version,
+                             mod_authors            : mod_authors, mod_description: mod_description,]
 
     inputs.properties replaceProperties
 
