@@ -6,8 +6,8 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import org.example.lanye.fantasy_furniture.Fantasy_furniture;
 import org.example.lanye.fantasy_furniture.block.ModBlocks;
-import org.example.lanye.fantasy_furniture.client.renderer.MixingBowlBlockRenderer;
 import org.example.lanye.fantasy_furniture.geolib.client.AnimatedBlockClientRegistration;
+import org.example.lanye.fantasy_furniture.geolib.client.GeolibAnimatedBlockRenderers;
 
 @Mod.EventBusSubscriber(modid = Fantasy_furniture.MODID, bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
 public final class ClientModEvents {
@@ -16,7 +16,8 @@ public final class ClientModEvents {
 
     static {
         AnimatedBlockClientRegistration.registerBlockEntityRenderer(
-                ModBlocks.MIXING_BOWL, ctx -> new MixingBowlBlockRenderer());
+                ModBlocks.MIXING_BOWL,
+                GeolibAnimatedBlockRenderers.defaultGeoRendererProvider(Fantasy_furniture.MODID, "mixing_bowl"));
     }
 
     @SubscribeEvent
