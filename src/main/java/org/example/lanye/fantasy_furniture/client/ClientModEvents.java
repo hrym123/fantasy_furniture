@@ -27,6 +27,9 @@ public final class ClientModEvents {
         AnimatedBlockClientRegistration.registerBlockEntityRenderer(
                 ModBlocks.PESTLE_BOWL,
                 GeolibAnimatedBlockRenderers.defaultGeoRendererProvider(Fantasy_furniture.MODID, "pestle_bowl"));
+        AnimatedBlockClientRegistration.registerBlockEntityRenderer(
+                ModBlocks.GREEN_SOFA,
+                GeolibAnimatedBlockRenderers.defaultGeoRendererProvider(Fantasy_furniture.MODID, "green_sofa"));
     }
 
     @SubscribeEvent

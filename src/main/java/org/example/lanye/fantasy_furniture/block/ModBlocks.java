@@ -11,6 +11,7 @@ import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
 import org.example.lanye.fantasy_furniture.Fantasy_furniture;
+import org.example.lanye.fantasy_furniture.block.entity.GreenSofaBlockEntity;
 import org.example.lanye.fantasy_furniture.block.entity.JamPotBlockEntity;
 import org.example.lanye.fantasy_furniture.block.entity.MixingBowlBlockEntity;
 import org.example.lanye.fantasy_furniture.block.entity.OvenBlockEntity;
@@ -129,6 +130,14 @@ public final class ModBlocks {
                 .noOcclusion();
     }
 
+    private static BlockBehaviour.Properties greenSofaProperties() {
+        return BlockBehaviour.Properties.of()
+                .mapColor(MapColor.COLOR_GREEN)
+                .strength(0.8f, 6.0f)
+                .sound(SoundType.WOOL)
+                .noOcclusion();
+    }
+
     /**
      * 搅拌碗：GeckoLib 动画方块；由 {@link AnimatedBlockRegistration} 按设计书顺序登记
      * {@link net.minecraft.world.level.block.entity.BlockEntityType} 与物品。
@@ -203,6 +212,24 @@ public final class ModBlocks {
                                             p,
                                             GeolibItemAssets.blockAsset(
                                                     Fantasy_furniture.MODID, "pestle_bowl"))));
+
+    /** 绿色沙发（三连）：GeckoLib 静态模型。 */
+    public static final AnimatedBlockEntry<GreenSofaBlockEntity> GREEN_SOFA =
+            AnimatedBlockRegistration.registerSpec(
+                    BLOCKS,
+                    BLOCK_ITEMS,
+                    ModBlockEntities.BLOCK_ENTITY_TYPES,
+                    AnimatedBlockRegistration.spec(
+                            "green_sofa",
+                            ModBlocks::greenSofaProperties,
+                            GreenSofaBlock::new,
+                            GreenSofaBlockEntity::new,
+                            (block, p) ->
+                                    new GeolibBlockItem(
+                                            block,
+                                            p,
+                                            GeolibItemAssets.blockAsset(
+                                                    Fantasy_furniture.MODID, "green_sofa"))));
 
     public static void register(IEventBus modEventBus) {
         BLOCKS.register(modEventBus);

@@ -45,6 +45,7 @@ public final class ModCreativeTabs {
                         output.accept(ModBlocks.JAM_POT.item().get());
                         output.accept(ModBlocks.OVEN.item().get());
                         output.accept(ModBlocks.PESTLE_BOWL.item().get());
+                        output.accept(ModBlocks.GREEN_SOFA.item().get());
                     })
                     .build());
 

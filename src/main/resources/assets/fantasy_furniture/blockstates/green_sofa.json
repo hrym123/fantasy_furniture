@@ -1,0 +1,16 @@
+{
+  "variants": {
+    "facing=east,part=left": { "model": "fantasy_furniture:block/green_sofa_part" },
+    "facing=east,part=center": { "model": "fantasy_furniture:block/green_sofa" },
+    "facing=east,part=right": { "model": "fantasy_furniture:block/green_sofa_part" },
+    "facing=north,part=left": { "model": "fantasy_furniture:block/green_sofa_part" },
+    "facing=north,part=center": { "model": "fantasy_furniture:block/green_sofa" },
+    "facing=north,part=right": { "model": "fantasy_furniture:block/green_sofa_part" },
+    "facing=south,part=left": { "model": "fantasy_furniture:block/green_sofa_part" },
+    "facing=south,part=center": { "model": "fantasy_furniture:block/green_sofa" },
+    "facing=south,part=right": { "model": "fantasy_furniture:block/green_sofa_part" },
+    "facing=west,part=left": { "model": "fantasy_furniture:block/green_sofa_part" },
+    "facing=west,part=center": { "model": "fantasy_furniture:block/green_sofa" },
+    "facing=west,part=right": { "model": "fantasy_furniture:block/green_sofa_part" }
+  }
+}
