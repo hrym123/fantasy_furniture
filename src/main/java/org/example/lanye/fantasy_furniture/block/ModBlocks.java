@@ -1,6 +1,5 @@
 package org.example.lanye.fantasy_furniture.block;
 
-import net.minecraft.world.InteractionResult;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
@@ -15,7 +14,7 @@ import org.example.lanye.fantasy_furniture.Fantasy_furniture;
 import org.example.lanye.fantasy_furniture.block.entity.MixingBowlBlockEntity;
 import org.example.lanye.fantasy_furniture.geolib.AnimatedBlockEntry;
 import org.example.lanye.fantasy_furniture.geolib.AnimatedBlockRegistration;
-import org.example.lanye.fantasy_furniture.geolib.GeolibAnimatedFactories;
+import org.example.lanye.fantasy_furniture.geolib.GeolibBlockItem;
 import org.example.lanye.fantasy_furniture.geolib.GeolibItemAssets;
 import org.example.lanye.fantasy_furniture.registry.ModBlockEntities;
 
@@ -112,13 +111,17 @@ public final class ModBlocks {
                     BLOCKS,
                     BLOCK_ITEMS,
                     ModBlockEntities.BLOCK_ENTITY_TYPES,
-                    GeolibAnimatedFactories.spec(
+                    AnimatedBlockRegistration.spec(
                             "mixing_bowl",
                             ModBlocks::mixingBowlProperties,
+                            MixingBowlBlock::new,
                             MixingBowlBlockEntity::new,
-                            GeolibItemAssets.blockAsset(Fantasy_furniture.MODID, "mixing_bowl"),
-                            Block.box(2, 0, 2, 14, 8, 14),
-                            InteractionResult.SUCCESS));
+                            (block, p) ->
+                                    new GeolibBlockItem(
+                                            block,
+                                            p,
+                                            GeolibItemAssets.blockAsset(
+                                                    Fantasy_furniture.MODID, "mixing_bowl"))));
 
     public static void register(IEventBus modEventBus) {
         BLOCKS.register(modEventBus);
