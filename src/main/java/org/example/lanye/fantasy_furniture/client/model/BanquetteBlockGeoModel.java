@@ -2,7 +2,7 @@ package org.example.lanye.fantasy_furniture.client.model;
 
 import net.minecraft.resources.ResourceLocation;
 import org.example.lanye.fantasy_furniture.Fantasy_furniture;
-import org.example.lanye.fantasy_furniture.block.BanquetteBlock;
+import org.example.lanye.fantasy_furniture.block.facing.BanquetteBlock;
 import org.example.lanye.fantasy_furniture.block.entity.BanquetteBlockEntity;
 import org.example.lanye.fantasy_furniture.block.state.BanquetteShape;
 import software.bernie.geckolib.model.GeoModel;

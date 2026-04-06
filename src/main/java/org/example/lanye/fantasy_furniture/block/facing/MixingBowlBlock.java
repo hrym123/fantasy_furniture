@@ -1,4 +1,4 @@
-package org.example.lanye.fantasy_furniture.block;
+package org.example.lanye.fantasy_furniture.block.facing;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.InteractionHand;

@@ -39,6 +39,13 @@ public final class ClientModEvents {
                 ModBlocks.GREEN_SOFA,
                 GeolibAnimatedBlockRenderers.defaultGeoRendererProvider(Fantasy_furniture.MODID, "green_sofa"));
         AnimatedBlockClientRegistration.registerBlockEntityRenderer(
+                ModBlocks.KITCHEN_COUNTER_CABINET,
+                GeolibAnimatedBlockRenderers.defaultGeoRendererProvider(
+                        Fantasy_furniture.MODID, "kitchen_counter_cabinet"));
+        AnimatedBlockClientRegistration.registerBlockEntityRenderer(
+                ModBlocks.KITCHEN_COUNTER,
+                GeolibAnimatedBlockRenderers.defaultGeoRendererProvider(Fantasy_furniture.MODID, "kitchen_counter"));
+        AnimatedBlockClientRegistration.registerBlockEntityRenderer(
                 ModBlocks.BANQUETTE, ctx -> new BanquetteGeoBlockRenderer(new BanquetteBlockGeoModel()));
     }
 

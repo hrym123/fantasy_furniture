@@ -13,10 +13,21 @@ import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
 import org.example.lanye.fantasy_furniture.Fantasy_furniture;
+import org.example.lanye.fantasy_furniture.block.facing.BanquetteBlock;
+import org.example.lanye.fantasy_furniture.block.facing.HalfHalfPotBlock;
+import org.example.lanye.fantasy_furniture.block.facing.JamPotBlock;
+import org.example.lanye.fantasy_furniture.block.facing.KitchenCounterBlock;
+import org.example.lanye.fantasy_furniture.block.facing.KitchenCounterCabinetBlock;
+import org.example.lanye.fantasy_furniture.block.facing.LotteryMachineBlock;
+import org.example.lanye.fantasy_furniture.block.facing.MixingBowlBlock;
+import org.example.lanye.fantasy_furniture.block.facing.OvenBlock;
+import org.example.lanye.fantasy_furniture.block.facing.PestleBowlBlock;
 import org.example.lanye.fantasy_furniture.block.entity.BanquetteBlockEntity;
 import org.example.lanye.fantasy_furniture.block.entity.GreenSofaBlockEntity;
 import org.example.lanye.fantasy_furniture.block.entity.HalfHalfPotBlockEntity;
 import org.example.lanye.fantasy_furniture.block.entity.JamPotBlockEntity;
+import org.example.lanye.fantasy_furniture.block.entity.KitchenCounterBlockEntity;
+import org.example.lanye.fantasy_furniture.block.entity.KitchenCounterCabinetBlockEntity;
 import org.example.lanye.fantasy_furniture.block.entity.LotteryMachineBlockEntity;
 import org.example.lanye.fantasy_furniture.block.entity.MixingBowlBlockEntity;
 import org.example.lanye.fantasy_furniture.block.entity.OvenBlockEntity;
@@ -207,6 +218,18 @@ public final class ModBlocks {
                 .noOcclusion();
     }
 
+    private static BlockBehaviour.Properties kitchenCounterCabinetProperties() {
+        return BlockBehaviour.Properties.of()
+                .mapColor(MapColor.WOOD)
+                .strength(1.0f, 6.0f)
+                .sound(SoundType.WOOD)
+                .noOcclusion();
+    }
+
+    private static BlockBehaviour.Properties kitchenCounterProperties() {
+        return kitchenCounterCabinetProperties();
+    }
+
     /**
      * 搅拌碗：GeckoLib 动画方块；由 {@link AnimatedBlockRegistration} 按设计书顺序登记
      * {@link net.minecraft.world.level.block.entity.BlockEntityType} 与物品。
@@ -335,6 +358,42 @@ public final class ModBlocks {
                                             p,
                                             GeolibItemAssets.blockAsset(
                                                     Fantasy_furniture.MODID, "green_sofa"))));
+
+    /** 橱柜：GeckoLib 静态模型（MoonStarfish）。 */
+    public static final AnimatedBlockEntry<KitchenCounterCabinetBlockEntity> KITCHEN_COUNTER_CABINET =
+            AnimatedBlockRegistration.registerSpec(
+                    BLOCKS,
+                    BLOCK_ITEMS,
+                    ModBlockEntities.BLOCK_ENTITY_TYPES,
+                    AnimatedBlockRegistration.spec(
+                            "kitchen_counter_cabinet",
+                            ModBlocks::kitchenCounterCabinetProperties,
+                            KitchenCounterCabinetBlock::new,
+                            KitchenCounterCabinetBlockEntity::new,
+                            (block, p) ->
+                                    new GeolibBlockItem(
+                                            block,
+                                            p,
+                                            GeolibItemAssets.blockAsset(
+                                                    Fantasy_furniture.MODID, "kitchen_counter_cabinet"))));
+
+    /** 料理台：GeckoLib 静态模型（MoonStarfish）。 */
+    public static final AnimatedBlockEntry<KitchenCounterBlockEntity> KITCHEN_COUNTER =
+            AnimatedBlockRegistration.registerSpec(
+                    BLOCKS,
+                    BLOCK_ITEMS,
+                    ModBlockEntities.BLOCK_ENTITY_TYPES,
+                    AnimatedBlockRegistration.spec(
+                            "kitchen_counter",
+                            ModBlocks::kitchenCounterProperties,
+                            KitchenCounterBlock::new,
+                            KitchenCounterBlockEntity::new,
+                            (block, p) ->
+                                    new GeolibBlockItem(
+                                            block,
+                                            p,
+                                            GeolibItemAssets.blockAsset(
+                                                    Fantasy_furniture.MODID, "kitchen_counter"))));
 
     public static void register(IEventBus modEventBus) {
         BLOCKS.register(modEventBus);

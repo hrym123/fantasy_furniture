@@ -22,5 +22,9 @@
   "block.fantasy_furniture.lottery_machine": "抽奖机",
   "block.fantasy_furniture.green_sofa": "绿色沙发",
   "block.fantasy_furniture.banquette": "卡座",
+  "block.fantasy_furniture.kitchen_counter": "料理台",
+  "block.fantasy_furniture.kitchen_counter_cabinet": "橱柜",
+  "item.fantasy_furniture.paint_brush": "刷子",
+  "item.fantasy_furniture.tanghulu": "糖葫芦",
   "itemGroup.fantasy_furniture.main": "幻想家具"
 }

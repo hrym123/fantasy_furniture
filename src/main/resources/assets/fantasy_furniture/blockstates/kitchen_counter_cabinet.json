@@ -1,0 +1,8 @@
+{
+  "variants": {
+    "facing=east": { "model": "fantasy_furniture:block/kitchen_counter_cabinet" },
+    "facing=north": { "model": "fantasy_furniture:block/kitchen_counter_cabinet" },
+    "facing=south": { "model": "fantasy_furniture:block/kitchen_counter_cabinet" },
+    "facing=west": { "model": "fantasy_furniture:block/kitchen_counter_cabinet" }
+  }
+}

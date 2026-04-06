@@ -18,7 +18,7 @@ import software.bernie.geckolib.util.GeckoLibUtil;
 
 import javax.annotation.Nullable;
 
-/** 果酱锅：仅在放置时由 {@link org.example.lanye.fantasy_furniture.block.JamPotBlock#setPlacedBy} 触发 {@code animation.jam_pot.enter}。 */
+/** 果酱锅：仅在放置时由 {@link org.example.lanye.fantasy_furniture.block.facing.JamPotBlock#setPlacedBy} 触发 {@code animation.jam_pot.enter}。 */
 public class JamPotBlockEntity extends BlockEntity implements GeoBlockEntity {
 
     public static final String MAIN_CONTROLLER = "main";

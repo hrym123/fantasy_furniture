@@ -6,6 +6,7 @@ import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import org.example.lanye.fantasy_furniture.block.ModBlocks;
 import org.example.lanye.fantasy_furniture.item.ModCreativeTabs;
+import org.example.lanye.fantasy_furniture.item.ModItems;
 import org.example.lanye.fantasy_furniture.registry.ModBlockEntities;
 import org.slf4j.Logger;
 
@@ -25,6 +26,7 @@ public class Fantasy_furniture {
         var modEventBus = context.getModEventBus();
         ModBlocks.register(modEventBus);
         ModBlockEntities.register(modEventBus);
+        ModItems.register(modEventBus);
         ModCreativeTabs.register(modEventBus);
         modEventBus.addListener(this::onCommonSetup);
     }

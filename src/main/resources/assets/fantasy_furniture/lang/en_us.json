@@ -22,5 +22,9 @@
   "block.fantasy_furniture.lottery_machine": "Lottery Machine",
   "block.fantasy_furniture.green_sofa": "Green Sofa",
   "block.fantasy_furniture.banquette": "Banquette",
+  "block.fantasy_furniture.kitchen_counter": "Kitchen Counter",
+  "block.fantasy_furniture.kitchen_counter_cabinet": "Kitchen Cabinet",
+  "item.fantasy_furniture.paint_brush": "Paint Brush",
+  "item.fantasy_furniture.tanghulu": "Tanghulu",
   "itemGroup.fantasy_furniture.main": "Fantasy Furniture"
 }

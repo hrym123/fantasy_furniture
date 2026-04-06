@@ -1,4 +1,4 @@
-package org.example.lanye.fantasy_furniture.block;
+package org.example.lanye.fantasy_furniture.block.facing;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -13,6 +13,7 @@ import net.minecraft.world.level.block.state.properties.EnumProperty;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
+import org.example.lanye.fantasy_furniture.block.VoxelShapeRotation;
 import org.example.lanye.fantasy_furniture.block.entity.BanquetteBlockEntity;
 import org.example.lanye.fantasy_furniture.block.state.BanquetteShape;
 import org.example.lanye.fantasy_furniture.geolib.GeolibFacingEntityBlockWithFactory;
@@ -133,7 +134,7 @@ public class BanquetteBlock extends GeolibFacingEntityBlockWithFactory<Banquette
 
     /**
      * 本座左侧（{@code pos.relative(facing.getCounterClockWise())}）已有卡座，且其朝向为与本座相同或「朝左」
-     *（{@code facing.getClockWise()}）时，不因前方朝左卡座而变为左拼拐角。
+     * （{@code facing.getClockWise()}）时，不因前方朝左卡座而变为左拼拐角。
      */
     private static boolean shouldSuppressCornerLeft(BlockGetter level, BlockPos pos, Direction facing) {
         BlockState left = level.getBlockState(pos.relative(facing.getCounterClockWise()));
@@ -146,7 +147,7 @@ public class BanquetteBlock extends GeolibFacingEntityBlockWithFactory<Banquette
 
     /**
      * 本座右侧（{@code pos.relative(facing.getClockWise())}）已有卡座，且其朝向为与本座相同或「朝右」
-     *（{@code facing.getCounterClockWise()}）时，不因前方朝右卡座而变为右拼拐角。
+     * （{@code facing.getCounterClockWise()}）时，不因前方朝右卡座而变为右拼拐角。
      */
     private static boolean shouldSuppressCornerRight(BlockGetter level, BlockPos pos, Direction facing) {
         BlockState right = level.getBlockState(pos.relative(facing.getClockWise()));
