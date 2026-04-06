@@ -33,6 +33,9 @@ public final class ClientModEvents {
                 ModBlocks.HALF_HALF_POT,
                 GeolibAnimatedBlockRenderers.defaultGeoRendererProvider(Fantasy_furniture.MODID, "half_half_pot"));
         AnimatedBlockClientRegistration.registerBlockEntityRenderer(
+                ModBlocks.LOTTERY_MACHINE,
+                GeolibAnimatedBlockRenderers.defaultGeoRendererProvider(Fantasy_furniture.MODID, "lottery_machine"));
+        AnimatedBlockClientRegistration.registerBlockEntityRenderer(
                 ModBlocks.GREEN_SOFA,
                 GeolibAnimatedBlockRenderers.defaultGeoRendererProvider(Fantasy_furniture.MODID, "green_sofa"));
         AnimatedBlockClientRegistration.registerBlockEntityRenderer(

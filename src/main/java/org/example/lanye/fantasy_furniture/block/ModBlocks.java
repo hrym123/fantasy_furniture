@@ -17,6 +17,7 @@ import org.example.lanye.fantasy_furniture.block.entity.BanquetteBlockEntity;
 import org.example.lanye.fantasy_furniture.block.entity.GreenSofaBlockEntity;
 import org.example.lanye.fantasy_furniture.block.entity.HalfHalfPotBlockEntity;
 import org.example.lanye.fantasy_furniture.block.entity.JamPotBlockEntity;
+import org.example.lanye.fantasy_furniture.block.entity.LotteryMachineBlockEntity;
 import org.example.lanye.fantasy_furniture.block.entity.MixingBowlBlockEntity;
 import org.example.lanye.fantasy_furniture.block.entity.OvenBlockEntity;
 import org.example.lanye.fantasy_furniture.block.entity.PestleBowlBlockEntity;
@@ -78,6 +79,12 @@ public final class ModBlocks {
 
     public static final RegistryObject<Block> YELLOW_WALLPAPER_BLOCK = BLOCKS.register("yellow_wallpaper", () -> new Block(wallpaperProperties(MapColor.TERRACOTTA_YELLOW)));
     public static final RegistryObject<Item> YELLOW_WALLPAPER_ITEM = BLOCK_ITEMS.register("yellow_wallpaper", () -> new BlockItem(YELLOW_WALLPAPER_BLOCK.get(), new Item.Properties()));
+
+    /** 黄色墙裙：顶 / 侧 / 底分贴图（与壁纸同类属性，锄头可挖）。 */
+    public static final RegistryObject<Block> YELLOW_WAINSCOT_BLOCK =
+            BLOCKS.register("yellow_wainscot", () -> new Block(wallpaperProperties(MapColor.TERRACOTTA_YELLOW)));
+    public static final RegistryObject<Item> YELLOW_WAINSCOT_ITEM =
+            BLOCK_ITEMS.register("yellow_wainscot", () -> new BlockItem(YELLOW_WAINSCOT_BLOCK.get(), new Item.Properties()));
 
     public static final RegistryObject<Block> BLUE_WALLPAPER_BLOCK = BLOCKS.register("blue_wallpaper", () -> new Block(wallpaperProperties(MapColor.TERRACOTTA_BLUE)));
     public static final RegistryObject<Item> BLUE_WALLPAPER_ITEM = BLOCK_ITEMS.register("blue_wallpaper", () -> new BlockItem(BLUE_WALLPAPER_BLOCK.get(), new Item.Properties()));
@@ -184,6 +191,43 @@ public final class ModBlocks {
                 .noOcclusion();
     }
 
+    private static final java.util.concurrent.atomic.AtomicBoolean LOTTERY_PROPS_LOGGED =
+            new java.util.concurrent.atomic.AtomicBoolean();
+
+    private static BlockBehaviour.Properties lotteryMachineProperties() {
+        BlockBehaviour.Properties p = BlockBehaviour.Properties.of()
+                .mapColor(MapColor.METAL)
+                .strength(1.5f, 6.0f)
+                .sound(SoundType.METAL)
+                .noOcclusion();
+        // #region agent log
+        if (LOTTERY_PROPS_LOGGED.compareAndSet(false, true)) {
+            try {
+                long ts = System.currentTimeMillis();
+                String line = String.format(
+                        "{\"sessionId\":\"34ccf7\",\"runId\":\"post-fix\",\"hypothesisId\":\"perf\",\"location\":\"ModBlocks.lotteryMachineProperties\",\"message\":\"props\",\"data\":{\"dynamicShape\":false,\"note\":\"shape per FACING only; cache OK\"},\"timestamp\":%d}%n",
+                        ts);
+                String ud = System.getProperty("user.dir");
+                java.nio.file.Path[] logPaths = new java.nio.file.Path[] {
+                    java.nio.file.Paths.get(ud, "debug-34ccf7.log"),
+                    java.nio.file.Paths.get(ud, "run", "debug-34ccf7.log")
+                };
+                synchronized (LOTTERY_PROPS_LOGGED) {
+                    for (java.nio.file.Path logPath : logPaths) {
+                        java.nio.file.Files.writeString(
+                                logPath,
+                                line,
+                                java.nio.file.StandardOpenOption.CREATE,
+                                java.nio.file.StandardOpenOption.APPEND);
+                    }
+                }
+            } catch (Throwable ignored) {
+            }
+        }
+        // #endregion
+        return p;
+    }
+
     private static BlockBehaviour.Properties greenSofaProperties() {
         return BlockBehaviour.Properties.of()
                 .mapColor(MapColor.COLOR_GREEN)
@@ -266,6 +310,24 @@ public final class ModBlocks {
                                             p,
                                             GeolibItemAssets.blockAsset(
                                                     Fantasy_furniture.MODID, "pestle_bowl"))));
+
+    /** 抽奖机：MoonStarfish Geo；右键播放抽奖动画。 */
+    public static final AnimatedBlockEntry<LotteryMachineBlockEntity> LOTTERY_MACHINE =
+            AnimatedBlockRegistration.registerSpec(
+                    BLOCKS,
+                    BLOCK_ITEMS,
+                    ModBlockEntities.BLOCK_ENTITY_TYPES,
+                    AnimatedBlockRegistration.spec(
+                            "lottery_machine",
+                            ModBlocks::lotteryMachineProperties,
+                            LotteryMachineBlock::new,
+                            LotteryMachineBlockEntity::new,
+                            (block, p) ->
+                                    new GeolibBlockItem(
+                                            block,
+                                            p,
+                                            GeolibItemAssets.blockAsset(
+                                                    Fantasy_furniture.MODID, "lottery_machine"))));
 
     /** 半半锅：GeckoLib 静态模型（MoonStarfish）。 */
     public static final AnimatedBlockEntry<HalfHalfPotBlockEntity> HALF_HALF_POT =

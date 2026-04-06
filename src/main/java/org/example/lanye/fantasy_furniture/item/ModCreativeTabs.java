@@ -37,6 +37,7 @@ public final class ModCreativeTabs {
                         output.accept(ModBlocks.PINK_WALLPAPER_ITEM.get());
                         output.accept(ModBlocks.RED_WALLPAPER_ITEM.get());
                         output.accept(ModBlocks.YELLOW_WALLPAPER_ITEM.get());
+                        output.accept(ModBlocks.YELLOW_WAINSCOT_ITEM.get());
                         output.accept(ModBlocks.BLUE_WALLPAPER_ITEM.get());
                         output.accept(ModBlocks.GREEN_WALLPAPER_ITEM.get());
                         output.accept(ModBlocks.PURPLE_WALLPAPER_ITEM.get());
@@ -48,6 +49,7 @@ public final class ModCreativeTabs {
                         output.accept(ModBlocks.OVEN.item().get());
                         output.accept(ModBlocks.PESTLE_BOWL.item().get());
                         output.accept(ModBlocks.HALF_HALF_POT.item().get());
+                        output.accept(ModBlocks.LOTTERY_MACHINE.item().get());
                         output.accept(ModBlocks.GREEN_SOFA.item().get());
                     })
                     .build());

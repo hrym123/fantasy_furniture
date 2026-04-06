@@ -1,0 +1,12 @@
+{
+  "parent": "minecraft:block/cube",
+  "textures": {
+    "particle": "fantasy_furniture:block/yellow_wainscot_side",
+    "down": "fantasy_furniture:block/yellow_wainscot_bottom",
+    "up": "fantasy_furniture:block/yellow_wainscot_top",
+    "north": "fantasy_furniture:block/yellow_wainscot_side",
+    "south": "fantasy_furniture:block/yellow_wainscot_side",
+    "east": "fantasy_furniture:block/yellow_wainscot_side",
+    "west": "fantasy_furniture:block/yellow_wainscot_side"
+  }
+}
