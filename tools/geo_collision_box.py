@@ -1,14 +1,23 @@
 """
 从 Bedrock / GeckoLib 的 geo.json（minecraft:geometry）估算「单格方块」用的轴对齐碰撞箱。
 
+**默认要算什么**
+----------------
+在**不**加 ``--emit-java`` 时，本脚本输出的是**一个**轴对齐长方体：先把每个 cube 裁到单格内，再对所有裁切盒取
+**全局 min/max**，得到**包住整段模型的最小外接盒**（单条 ``Block.box``）。中间镂空、分体式结构会被「糊成」一整块，
+体积大于真实并集——这是外接盒的定义，不是 bug。
+
+若需要**多个矩形拼合、保留镂空**的具体碰撞，请用 ``tools/block_collision_detail.py``（逐 cube 列表、JSON、
+``orParts`` 等）。本脚本的 ``--emit-java`` 也能生成多盒 ``Shapes.or``，但不做明细报表。
+
 算法概要
 --------
 1. 遍历 geometry 下所有 bone 的 cubes（与 Blockbench 导出一致：cube 坐标已在模型空间）。
 2. 每个 cube：无 rotation 时用 origin/size 直接得 AABB；有 rotation 时对 8 个角点绕 pivot 做 XYZ 欧拉旋转（度），
    再取轴对齐包围盒（与开发时用于抽奖机的脚本一致）。
 3. 将模型坐标映射到方块内 0～16：x' = x + 8，z' = z + 8，y' = y（与模组内 Pestle/果酱锅等约定一致）。
-4. **默认输出**：各 cube 裁切后与 [0,16]³ 求交，再对所有交盒取 **全局 min/max**，得到包住全部几何的 **外接轴对齐盒**（不是布尔并集的体积，中间空洞仍会算进「外接盒」里）。
-5. 真·并集（保留中间空隙）需用 ``--emit-java`` 生成多盒 ``Shapes.or``。
+4. **默认输出**：各 cube 与 **水平单格 [0,16]×[0,16]、竖直不裁顶** 求交（y 可 >16，以包含超高模型），再对所有交盒取 **全局 min/max**，得到外接轴对齐盒（非布尔并集体积）。
+5. **``--emit-java``**：对每个裁切盒输出 ``Shapes.or`` 链（真并集），与 ``block_collision_detail.py`` 的 Java 片段类似，但无逐条说明。
 
 注意
 ----
@@ -23,6 +32,8 @@
     python tools/geo_collision_box.py src/main/resources/assets/fantasy_furniture/geo/block/lottery_machine.geo.json
 
 可选：``--raw`` 仅打印模型空间并集（映射到方块坐标但未与单格求交），用于排查模型是否超出格子。
+
+逐 cube 明细、骨骼名与 ``orParts`` 片段见 ``tools/block_collision_detail.py``。
 """
 
 from __future__ import annotations
@@ -124,14 +135,17 @@ def _model_aabb_to_block_space(
     )
 
 
-def _intersect_block(
+def _intersect_block_xz_single_cell_unbounded_y(
     bx0: float, bx1: float, by0: float, by1: float, bz0: float, bz1: float
 ) -> tuple[float, float, float, float, float, float] | None:
-    """与单格 [0,16]³ 求交。"""
+    """
+    与「水平投影落在单格 [0,16]×[0,16] 内」的竖直棱柱求交：x/z 裁到单格，y 允许 >16（模型可高于一格）。
+    Minecraft 中 Block.box 的 y 可大于 16，碰撞会延伸到上方相邻空气格。
+    """
     x0, x1 = max(0.0, bx0), min(16.0, bx1)
-    y0, y1 = max(0.0, by0), min(16.0, by1)
     z0, z1 = max(0.0, bz0), min(16.0, bz1)
-    if x0 >= x1 or y0 >= y1 or z0 >= z1:
+    y0, y1 = max(0.0, by0), by1
+    if x0 >= x1 or z0 >= z1 or y0 >= y1:
         return None
     return (x0, x1, y0, y1, z0, z1)
 
@@ -142,10 +156,10 @@ def _cube_block_aabb_clipped(
     rotation: list[float] | None,
     pivot: tuple[float, float, float],
 ) -> tuple[float, float, float, float, float, float] | None:
-    """单个 cube：模型空间 AABB → 方块坐标 → 与 [0,16]³ 求交。"""
+    """单个 cube：模型空间 AABB → 方块坐标 → 水平单格 + 竖直可超高。"""
     m = _cube_aabb_model(origin, size, rotation, pivot)
     b = _model_aabb_to_block_space(m)
-    return _intersect_block(b[0], b[1], b[2], b[3], b[4], b[5])
+    return _intersect_block_xz_single_cell_unbounded_y(b[0], b[1], b[2], b[3], b[4], b[5])
 
 
 def compute_north_clipped_boxes(geo_path: Path) -> list[tuple[float, float, float, float, float, float]]:
@@ -166,10 +180,10 @@ def compute_north_clipped_boxes(geo_path: Path) -> list[tuple[float, float, floa
 
 def compute_shape_north_union_clipped(geo_path: Path) -> tuple[float, float, float, float, float, float]:
     """
-    返回北向基准：包住「各 cube 与单格求交后的所有小盒」的最小轴对齐外接盒（与 Block.box 参数一致）。
+    返回北向基准外接盒：每个 cube 先与「水平单格 + 竖直无限延伸」棱柱求交（见
+    ``_intersect_block_xz_single_cell_unbounded_y``），再对结果取全局 min/max。
 
-    实现为对每个裁切盒取 min/max 的全局极值，**等价于几何并集的外接 AABB**，不是并集本身的体积表示。
-    模型几乎贴满单格时，外接盒会极度接近整格。
+    y 方向可大于 16，以匹配高出单格的模型；x/z 仍限制在放置格内。
     """
     data = json.loads(geo_path.read_text(encoding="utf-8"))
     cubes = _iter_cubes_from_geo(data)
@@ -221,7 +235,12 @@ def _fmt_java_box(
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="从 geo.json 估算单格方块碰撞箱（北向基准）")
+    parser = argparse.ArgumentParser(
+        description=(
+            "从 geo.json 估算单格碰撞：默认输出最小外接单盒（北向基准）；"
+            " 多盒明细见 block_collision_detail.py。"
+        )
+    )
     parser.add_argument("geo", type=Path, help="geo 文件路径，例如 geo/block/foo.geo.json")
     parser.add_argument(
         "--raw",
@@ -263,7 +282,7 @@ def main() -> None:
         print("映射后未裁切单格（调试用）：")
     else:
         box = compute_shape_north_union_clipped(path)
-        print("北向基准（各 cube 与单格求交后的外接 AABB，非几何并集；碰撞请用 --emit-java）：")
+        print("北向基准（各 cube 水平裁在单格、竖直可超高；外接 AABB，非几何并集体积；镂空请用 --emit-java）：")
 
     x0, y0, z0, x1, y1, z1 = box
     print(f"  min ({x0:.{args.precision}f}, {y0:.{args.precision}f}, {z0:.{args.precision}f})")
@@ -273,11 +292,17 @@ def main() -> None:
     full = 16.0**3
     vol = max(0.0, x1 - x0) * max(0.0, y1 - y0) * max(0.0, z1 - z0)
     print()
-    print(
-        f"说明：外接盒体积约占单格的 {100.0 * vol / full:.1f}% "
-        f"（整格为 100%；本模型当前 min z={z0:.2f}，即一侧约有 {z0:.2f}/16 厚度的空带，其余方向仍可能满格）。"
-    )
-    print("若体感「和普通方块一样」，多因外接盒几乎占满一格，而非脚本错误；需要明显镂空碰撞请用 --emit-java。")
+    if y1 > 16.0 + 1e-6:
+        print(
+            f"说明：max y={y1:.{args.precision}f} > 16，碰撞会延伸到放置格**上方**相邻格（与模型超高一致）。"
+        )
+    else:
+        vol_pct = 100.0 * vol / full
+        print(
+            f"说明：外接盒体积约占单格立方 {vol_pct:.1f}%（整格立方为 100%）；"
+            f"min z={z0:.2f} 表示一侧有空带。"
+        )
+    print("需要保留模型内部镂空请用 --emit-java。")
     print()
     print("若方块需四向旋转且 xz 不对称，可：")
     print("  VoxelShapeRotation.rotateYFromNorth(SHAPE_NORTH, state.getValue(FACING));")

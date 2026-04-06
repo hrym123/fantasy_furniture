@@ -191,41 +191,12 @@ public final class ModBlocks {
                 .noOcclusion();
     }
 
-    private static final java.util.concurrent.atomic.AtomicBoolean LOTTERY_PROPS_LOGGED =
-            new java.util.concurrent.atomic.AtomicBoolean();
-
     private static BlockBehaviour.Properties lotteryMachineProperties() {
-        BlockBehaviour.Properties p = BlockBehaviour.Properties.of()
+        return BlockBehaviour.Properties.of()
                 .mapColor(MapColor.METAL)
                 .strength(1.5f, 6.0f)
                 .sound(SoundType.METAL)
                 .noOcclusion();
-        // #region agent log
-        if (LOTTERY_PROPS_LOGGED.compareAndSet(false, true)) {
-            try {
-                long ts = System.currentTimeMillis();
-                String line = String.format(
-                        "{\"sessionId\":\"34ccf7\",\"runId\":\"post-fix\",\"hypothesisId\":\"perf\",\"location\":\"ModBlocks.lotteryMachineProperties\",\"message\":\"props\",\"data\":{\"dynamicShape\":false,\"note\":\"shape per FACING only; cache OK\"},\"timestamp\":%d}%n",
-                        ts);
-                String ud = System.getProperty("user.dir");
-                java.nio.file.Path[] logPaths = new java.nio.file.Path[] {
-                    java.nio.file.Paths.get(ud, "debug-34ccf7.log"),
-                    java.nio.file.Paths.get(ud, "run", "debug-34ccf7.log")
-                };
-                synchronized (LOTTERY_PROPS_LOGGED) {
-                    for (java.nio.file.Path logPath : logPaths) {
-                        java.nio.file.Files.writeString(
-                                logPath,
-                                line,
-                                java.nio.file.StandardOpenOption.CREATE,
-                                java.nio.file.StandardOpenOption.APPEND);
-                    }
-                }
-            } catch (Throwable ignored) {
-            }
-        }
-        // #endregion
-        return p;
     }
 
     private static BlockBehaviour.Properties greenSofaProperties() {

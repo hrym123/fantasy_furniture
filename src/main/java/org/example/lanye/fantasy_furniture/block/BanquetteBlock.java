@@ -23,7 +23,8 @@ import org.example.lanye.fantasy_furniture.geolib.GeolibFacingEntityBlockWithFac
  * 前方邻格（{@code pos.relative(FACING)}）为卡座且其朝向为 {@link Direction#getClockWise()} 时为 {@link
  * BanquetteShape#CORNER_LEFT}；为 {@link Direction#getCounterClockWise()} 时为 {@link BanquetteShape#CORNER_RIGHT}；否则直段。
  * 例外：若本格<strong>左侧</strong>邻格已有与本座同向或「朝左」的卡座，则前方即使为朝左也不变拐角；右拼对称（<strong>右侧</strong>已有同向或朝右则不变右拐角）。
- * 客户端对右拼拐角在左拼基础上额外 Y 旋转 180°。
+ * 右拼拐角渲染的附加 Y 旋转见 {@link org.example.lanye.fantasy_furniture.client.renderer.BanquetteGeoBlockRenderer}；碰撞在
+ * {@link #shapeFor} 中另行处理以对齐线框与模型。
  */
 public class BanquetteBlock extends GeolibFacingEntityBlockWithFactory<BanquetteBlockEntity> {
 
@@ -39,14 +40,21 @@ public class BanquetteBlock extends GeolibFacingEntityBlockWithFactory<Banquette
             Block.box(0, 7.3, 9.7, 16, 14.3, 10));
 
     /**
-     * 拐角（左拼基准）：与 {@code banquette_corner.geo.json} 主要立方体对齐；右拼在旋转后再 {@link Rotation#CLOCKWISE_180}。
+     * 拐角（左拼基准）：与 {@code banquette_corner.geo.json} 主要立方体对齐；坐垫条带与直段同高（{@code y∈[4.9,6.3]}）：
+     * 沿 +Z 臂为 {@code [6,4.9,0.4]–[16,6.3,10]}，沿另一臂为 {@code [0,4.9,0.4]–[6,6.3,10]}，靠内角 {@code z∈[0,0.4]} 一条
+     * （对应 geo {@code [-2,4.9,-8]} 并补全至 {@code x=0}）。靠背软垫同直段对应拐角 geo。
+     * 右拼碰撞：在 {@link Rotation#CLOCKWISE_180} 后再 {@link Rotation#CLOCKWISE_90}，与当前客户端渲染下拐角模型对齐（仅改碰撞旋转，渲染保持原样）。
      */
     private static final VoxelShape CORNER_NORTH = orParts(
             Block.box(6, 4.9, 0.4, 16, 6.3, 10),
+            Block.box(0, 4.9, 0.4, 6, 6.3, 10),
+            Block.box(0, 4.9, 0, 15.6, 6.3, 0.4),
             Block.box(6, 0, 10, 16, 16, 16),
             Block.box(0, 0, 0, 6, 16, 16),
             Block.box(6, 0, 1, 16, 4.9, 10),
-            Block.box(6, 0, 0, 15, 4.9, 1));
+            Block.box(6, 0, 0, 15, 4.9, 1),
+            Block.box(6, 7.3, 9.7, 16, 14.3, 10),
+            Block.box(6, 7.3, 0, 6.3, 14.3, 9.7));
 
     public BanquetteBlock(net.minecraft.world.level.block.state.BlockBehaviour.Properties properties) {
         super(properties, BanquetteBlockEntity::new);
@@ -168,7 +176,10 @@ public class BanquetteBlock extends GeolibFacingEntityBlockWithFactory<Banquette
             case CORNER_LEFT -> VoxelShapeRotation.rotateYFromNorth(CORNER_NORTH, facing);
             case CORNER_RIGHT ->
                     VoxelShapeRotation.rotate(
-                            VoxelShapeRotation.rotateYFromNorth(CORNER_NORTH, facing), Rotation.CLOCKWISE_180);
+                            VoxelShapeRotation.rotate(
+                                    VoxelShapeRotation.rotateYFromNorth(CORNER_NORTH, facing),
+                                    Rotation.CLOCKWISE_180),
+                            Rotation.CLOCKWISE_90);
         };
     }
 
