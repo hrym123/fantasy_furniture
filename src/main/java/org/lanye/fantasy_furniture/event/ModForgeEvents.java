@@ -8,7 +8,7 @@ import net.minecraftforge.event.level.BlockEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import org.lanye.fantasy_furniture.FantasyFurniture;
-import org.lanye.fantasy_furniture.block.ModBlocks;
+import org.lanye.fantasy_furniture.block.registry.ModBlocks;
 
 /**
  * 通用逻辑侧事件（主逻辑在服务端执行）。

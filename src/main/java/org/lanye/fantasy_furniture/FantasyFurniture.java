@@ -4,7 +4,7 @@ import com.mojang.logging.LogUtils;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
-import org.lanye.fantasy_furniture.block.ModBlocks;
+import org.lanye.fantasy_furniture.block.registry.ModBlocks;
 import org.lanye.fantasy_furniture.item.ModCreativeTabs;
 import org.lanye.fantasy_furniture.item.ModItems;
 import org.lanye.fantasy_furniture.registry.ModBlockEntities;

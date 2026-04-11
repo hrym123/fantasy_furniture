@@ -1,4 +1,4 @@
-package org.lanye.fantasy_furniture.block;
+package org.lanye.fantasy_furniture.block.decor;
 
 import javax.annotation.Nullable;
 import net.minecraft.core.BlockPos;

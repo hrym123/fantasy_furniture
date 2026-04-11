@@ -1,4 +1,4 @@
-package org.lanye.fantasy_furniture.block;
+package org.lanye.fantasy_furniture.block.decor;
 
 import javax.annotation.Nullable;
 import net.minecraft.core.BlockPos;
@@ -16,6 +16,7 @@ import net.minecraft.world.level.LevelReader;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.HorizontalDirectionalBlock;
+import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
@@ -42,7 +43,7 @@ public class DecorativeScreenBlock extends HorizontalDirectionalBlock {
     private static final VoxelShape SHAPE_WEST = Block.box(0, 0, 0, 3, 16, 16);
     private static final VoxelShape SHAPE_EAST = Block.box(13, 0, 0, 16, 16, 16);
 
-    public DecorativeScreenBlock(Properties properties) {
+    public DecorativeScreenBlock(BlockBehaviour.Properties properties) {
         super(properties);
         registerDefaultState(
                 stateDefinition.any().setValue(FACING, Direction.NORTH).setValue(HALF, DoubleBlockHalf.LOWER));

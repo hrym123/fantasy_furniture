@@ -20,7 +20,7 @@ import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import org.lanye.fantasy_furniture.common.seat.SeatInteraction;
-import org.lanye.fantasy_furniture.block.VoxelShapeRotation;
+import org.lanye.fantasy_furniture.block.util.VoxelShapeRotation;
 import org.lanye.fantasy_furniture.block.entity.BanquetteBlockEntity;
 import org.lanye.fantasy_furniture.block.state.BanquetteShape;
 import org.lanye.fantasy_furniture.geolib.GeolibFacingEntityBlockWithFactory;

@@ -10,7 +10,8 @@ import org.lanye.fantasy_furniture.FantasyFurniture;
  * 本模组 {@link BlockEntityType} 注册。
  * <p>
  * 带方块实体的家具由 {@link org.lanye.fantasy_furniture.geolib.AnimatedBlockRegistration} 写入同一
- * {@link #BLOCK_ENTITY_TYPES}，具体条目见 {@link org.lanye.fantasy_furniture.block.ModBlocks} 中的
+ * {@link #BLOCK_ENTITY_TYPES}，具体条目见 {@link org.lanye.fantasy_furniture.block.registry.FurnitureAnimatedBlocks} /
+ * {@link org.lanye.fantasy_furniture.block.registry.ModBlocks} 中的
  * {@link org.lanye.fantasy_furniture.geolib.AnimatedBlockEntry} 字段。
  */
 public final class ModBlockEntities {

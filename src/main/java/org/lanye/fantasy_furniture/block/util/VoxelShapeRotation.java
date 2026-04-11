@@ -1,4 +1,4 @@
-package org.lanye.fantasy_furniture.block;
+package org.lanye.fantasy_furniture.block.util;
 
 import java.util.List;
 import net.minecraft.core.Direction;

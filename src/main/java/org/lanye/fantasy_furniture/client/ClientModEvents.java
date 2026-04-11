@@ -5,7 +5,7 @@ import net.minecraftforge.client.event.EntityRenderersEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import org.lanye.fantasy_furniture.FantasyFurniture;
-import org.lanye.fantasy_furniture.block.ModBlocks;
+import org.lanye.fantasy_furniture.block.registry.ModBlocks;
 import org.lanye.fantasy_furniture.client.model.BanquetteBlockGeoModel;
 import org.lanye.fantasy_furniture.client.renderer.BanquetteGeoBlockRenderer;
 import org.lanye.fantasy_furniture.client.renderer.FurnitureSeatRenderer;

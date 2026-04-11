@@ -3,7 +3,7 @@ package org.lanye.fantasy_furniture.registry;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
-import org.lanye.fantasy_furniture.block.ModBlocks;
+import org.lanye.fantasy_furniture.block.registry.ModBlocks;
 import org.lanye.fantasy_furniture.block.facing.BanquetteBlock;
 import org.lanye.fantasy_furniture.common.seat.SeatConfig;
 import org.lanye.fantasy_furniture.common.seat.SeatRegistry;

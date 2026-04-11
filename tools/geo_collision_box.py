@@ -23,7 +23,7 @@
 ----
 - 与游戏内骨骼层级动画无关，仅静态几何；旋转顺序若与引擎/GeckoLib 不一致，结果会有误差。
 - **外接盒**若几何几乎占满单格，结果会接近 ``Block.box(0,0,0,16,16,16)``，游戏中体感与整格碰撞相似，**不一定是脚本算错**。
-- 不对称时需配合 ``VoxelShapeRotation.rotateYFromNorth(shape, state.getValue(FACING))`` 使用。
+- 不对称时需配合 ``org.lanye.fantasy_furniture.block.util.VoxelShapeRotation.rotateYFromNorth(shape, state.getValue(FACING))`` 使用。
 
 用法（在 fantasy_furniture 仓库根目录）::
 
@@ -305,7 +305,7 @@ def main() -> None:
     print("需要保留模型内部镂空请用 --emit-java。")
     print()
     print("若方块需四向旋转且 xz 不对称，可：")
-    print("  VoxelShapeRotation.rotateYFromNorth(SHAPE_NORTH, state.getValue(FACING));")
+    print("  block.util.VoxelShapeRotation.rotateYFromNorth(SHAPE_NORTH, state.getValue(FACING));")
 
 
 if __name__ == "__main__":

@@ -12,7 +12,7 @@ import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
-import org.lanye.fantasy_furniture.block.VoxelShapeRotation;
+import org.lanye.fantasy_furniture.block.util.VoxelShapeRotation;
 import org.lanye.fantasy_furniture.block.entity.JamPotBlockEntity;
 import org.lanye.fantasy_furniture.geolib.GeolibFacingEntityBlockWithFactory;
 
