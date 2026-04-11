@@ -8,6 +8,8 @@ import org.example.lanye.fantasy_furniture.Fantasy_furniture;
 import org.example.lanye.fantasy_furniture.block.ModBlocks;
 import org.example.lanye.fantasy_furniture.client.model.BanquetteBlockGeoModel;
 import org.example.lanye.fantasy_furniture.client.renderer.BanquetteGeoBlockRenderer;
+import org.example.lanye.fantasy_furniture.client.renderer.FurnitureSeatRenderer;
+import org.example.lanye.fantasy_furniture.registry.ModEntities;
 import org.example.lanye.fantasy_furniture.geolib.client.AnimatedBlockClientRegistration;
 import org.example.lanye.fantasy_furniture.geolib.client.GeolibAnimatedBlockRenderers;
 
@@ -52,5 +54,6 @@ public final class ClientModEvents {
     @SubscribeEvent
     public static void registerRenderers(EntityRenderersEvent.RegisterRenderers event) {
         AnimatedBlockClientRegistration.registerAllRenderers(event);
+        event.registerEntityRenderer(ModEntities.FURNITURE_SEAT.get(), FurnitureSeatRenderer::new);
     }
 }

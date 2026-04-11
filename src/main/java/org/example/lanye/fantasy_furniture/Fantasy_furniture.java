@@ -8,6 +8,8 @@ import org.example.lanye.fantasy_furniture.block.ModBlocks;
 import org.example.lanye.fantasy_furniture.item.ModCreativeTabs;
 import org.example.lanye.fantasy_furniture.item.ModItems;
 import org.example.lanye.fantasy_furniture.registry.ModBlockEntities;
+import org.example.lanye.fantasy_furniture.registry.ModEntities;
+import org.example.lanye.fantasy_furniture.registry.ModSeatConfigs;
 import org.slf4j.Logger;
 
 /**
@@ -26,12 +28,14 @@ public class Fantasy_furniture {
         var modEventBus = context.getModEventBus();
         ModBlocks.register(modEventBus);
         ModBlockEntities.register(modEventBus);
+        ModEntities.register(modEventBus);
         ModItems.register(modEventBus);
         ModCreativeTabs.register(modEventBus);
         modEventBus.addListener(this::onCommonSetup);
     }
 
     private void onCommonSetup(final FMLCommonSetupEvent event) {
+        event.enqueueWork(ModSeatConfigs::register);
         LOGGER.info("{} 通用初始化完成", MODID);
     }
 }

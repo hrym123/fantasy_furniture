@@ -2,6 +2,11 @@ package org.example.lanye.fantasy_furniture.block.facing;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
@@ -10,9 +15,11 @@ import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.EnumProperty;
+import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
+import org.example.lanye.fantasy_furniture.common.seat.SeatInteraction;
 import org.example.lanye.fantasy_furniture.block.VoxelShapeRotation;
 import org.example.lanye.fantasy_furniture.block.entity.BanquetteBlockEntity;
 import org.example.lanye.fantasy_furniture.block.state.BanquetteShape;
@@ -61,6 +68,20 @@ public class BanquetteBlock extends GeolibFacingEntityBlockWithFactory<Banquette
         super(properties, BanquetteBlockEntity::new);
         registerDefaultState(
                 stateDefinition.any().setValue(FACING, Direction.NORTH).setValue(SHAPE, BanquetteShape.STRAIGHT));
+    }
+
+    @Override
+    public InteractionResult use(
+            BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+        if (level.isClientSide) {
+            return InteractionResult.SUCCESS;
+        }
+        if (player instanceof ServerPlayer sp && level instanceof ServerLevel sl) {
+            if (SeatInteraction.trySitFromBlockUse(sp, sl, pos, state)) {
+                return InteractionResult.CONSUME;
+            }
+        }
+        return InteractionResult.PASS;
     }
 
     @Override
