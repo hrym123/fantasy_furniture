@@ -147,7 +147,7 @@
 		},
 		"animation.arcane_wand.idle": {
 			"loop": true,
-			"animation_length": 2.7917,
+			"animation_length": 2.63,
 			"bones": {
 				"group4": {
 					"rotation": {

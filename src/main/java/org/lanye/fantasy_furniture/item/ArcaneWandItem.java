@@ -58,6 +58,17 @@ public class ArcaneWandItem extends GeolibHandheldItem {
     private static final RawAnimation CAST3 =
             RawAnimation.begin().then("animation.arcane_wand.cast3", Animation.LoopType.PLAY_ONCE);
 
+    /** 施法段之间切换时的过渡（tick）；略短以免拖泥带水 */
+    private static final int TRANSITION_CAST_TICKS = 6;
+
+    /**
+     * cast3 结束接 idle：末帧与 idle 首帧姿态差大，需更长混合；见 {@link AnimationController#transitionLength(int)}。
+     */
+    private static final int TRANSITION_CAST3_TO_IDLE_TICKS = 12;
+
+    /** 其它情况回到 idle（如空栈） */
+    private static final int TRANSITION_TO_IDLE_TICKS = 6;
+
     public ArcaneWandItem(Properties properties, GeolibItemAssets assets, String idleAnimation) {
         super(properties, assets, idleAnimation);
     }
@@ -175,11 +186,13 @@ public class ArcaneWandItem extends GeolibHandheldItem {
                 new AnimationController<>(
                         this,
                         FantasyFurniture.MODID + ":wand_cast",
-                        0,
+                        TRANSITION_CAST_TICKS,
                         (AnimationState<GeolibHandheldItem> state) -> {
                             ItemStack stack = state.getData(DataTickets.ITEMSTACK);
                             if (stack == null || stack.isEmpty()) {
-                                state.getController().setAnimation(idleAnimation());
+                                state.getController()
+                                        .transitionLength(TRANSITION_TO_IDLE_TICKS)
+                                        .setAnimation(idleAnimation());
                                 return PlayState.CONTINUE;
                             }
                             CompoundTag tag = stack.getTag();
@@ -196,10 +209,21 @@ public class ArcaneWandItem extends GeolibHandheldItem {
                                 return PlayState.CONTINUE;
                             }
                             switch (anim) {
-                                case 1 -> controller.setAnimation(CAST1);
-                                case 2 -> controller.setAnimation(CAST2);
-                                case 3 -> controller.setAnimation(CAST3);
-                                default -> controller.setAnimation(idleAnimation());
+                                case 1 -> controller
+                                        .transitionLength(TRANSITION_CAST_TICKS)
+                                        .setAnimation(CAST1);
+                                case 2 -> controller
+                                        .transitionLength(TRANSITION_CAST_TICKS)
+                                        .setAnimation(CAST2);
+                                case 3 -> controller
+                                        .transitionLength(TRANSITION_CAST_TICKS)
+                                        .setAnimation(CAST3);
+                                default -> controller
+                                        .transitionLength(
+                                                lastAnim == 3
+                                                        ? TRANSITION_CAST3_TO_IDLE_TICKS
+                                                        : TRANSITION_TO_IDLE_TICKS)
+                                        .setAnimation(idleAnimation());
                             }
                             LAST_ANIM_BY_CONTROLLER.put(controller, anim);
                             return PlayState.CONTINUE;
