@@ -5,7 +5,7 @@ import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.material.MapColor;
 
 /**
- * 彩色瓷砖：仅 {@link MapColor} / 贴图路径不同，属性一致。
+ * 彩色瓷砖：仅 {@link MapColor} / 贴图路径不同，属性一致。具体变种见 {@link TileVariant}（表驱动注册）。
  */
 public final class CeramicTileBlocks {
 
@@ -18,45 +18,30 @@ public final class CeramicTileBlocks {
                 .sound(SoundType.DEEPSLATE_TILES);
     }
 
-    public static final SimpleBlockRegistration.SimpleBlockEntry PINK_CERAMIC_TILE =
-            SimpleBlockRegistration.registerSimpleBlock(
-                    ModBlocks.BLOCKS,
-                    ModBlocks.BLOCK_ITEMS,
-                    "pink_ceramic_tile",
-                    ceramicTileProperties(MapColor.TERRACOTTA_PINK));
+    private static SimpleBlockRegistration.SimpleBlockEntry tile(String id, MapColor mapColor) {
+        return SimpleBlockRegistration.registerSimpleBlock(
+                ModBlocks.BLOCKS, ModBlocks.BLOCK_ITEMS, id, ceramicTileProperties(mapColor));
+    }
 
-    public static final SimpleBlockRegistration.SimpleBlockEntry YELLOW_CERAMIC_TILE =
-            SimpleBlockRegistration.registerSimpleBlock(
-                    ModBlocks.BLOCKS,
-                    ModBlocks.BLOCK_ITEMS,
-                    "yellow_ceramic_tile",
-                    ceramicTileProperties(MapColor.TERRACOTTA_YELLOW));
+    /**
+     * 瓷砖颜色变种：枚举声明即「id + 地图色」表，构造时完成成对注册。
+     */
+    public enum TileVariant {
+        PINK_CERAMIC_TILE("pink_ceramic_tile", MapColor.TERRACOTTA_PINK),
+        YELLOW_CERAMIC_TILE("yellow_ceramic_tile", MapColor.TERRACOTTA_YELLOW),
+        BLUE_CERAMIC_TILE("blue_ceramic_tile", MapColor.TERRACOTTA_BLUE),
+        GREEN_CERAMIC_TILE("green_ceramic_tile", MapColor.TERRACOTTA_GREEN),
+        CYAN_CERAMIC_TILE("cyan_ceramic_tile", MapColor.TERRACOTTA_CYAN),
+        PURPLE_CERAMIC_TILE("purple_ceramic_tile", MapColor.TERRACOTTA_PURPLE);
 
-    public static final SimpleBlockRegistration.SimpleBlockEntry BLUE_CERAMIC_TILE =
-            SimpleBlockRegistration.registerSimpleBlock(
-                    ModBlocks.BLOCKS,
-                    ModBlocks.BLOCK_ITEMS,
-                    "blue_ceramic_tile",
-                    ceramicTileProperties(MapColor.TERRACOTTA_BLUE));
+        private final SimpleBlockRegistration.SimpleBlockEntry entry;
 
-    public static final SimpleBlockRegistration.SimpleBlockEntry GREEN_CERAMIC_TILE =
-            SimpleBlockRegistration.registerSimpleBlock(
-                    ModBlocks.BLOCKS,
-                    ModBlocks.BLOCK_ITEMS,
-                    "green_ceramic_tile",
-                    ceramicTileProperties(MapColor.TERRACOTTA_GREEN));
+        TileVariant(String id, MapColor mapColor) {
+            this.entry = tile(id, mapColor);
+        }
 
-    public static final SimpleBlockRegistration.SimpleBlockEntry CYAN_CERAMIC_TILE =
-            SimpleBlockRegistration.registerSimpleBlock(
-                    ModBlocks.BLOCKS,
-                    ModBlocks.BLOCK_ITEMS,
-                    "cyan_ceramic_tile",
-                    ceramicTileProperties(MapColor.TERRACOTTA_CYAN));
-
-    public static final SimpleBlockRegistration.SimpleBlockEntry PURPLE_CERAMIC_TILE =
-            SimpleBlockRegistration.registerSimpleBlock(
-                    ModBlocks.BLOCKS,
-                    ModBlocks.BLOCK_ITEMS,
-                    "purple_ceramic_tile",
-                    ceramicTileProperties(MapColor.TERRACOTTA_PURPLE));
+        public SimpleBlockRegistration.SimpleBlockEntry entry() {
+            return entry;
+        }
+    }
 }

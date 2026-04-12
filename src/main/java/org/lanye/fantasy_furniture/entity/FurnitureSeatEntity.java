@@ -23,11 +23,23 @@ import org.lanye.fantasy_furniture.registry.ModEntities;
  * 通用不可见坐骑：由 {@link SeatConfig} 决定位置与朝向；潜行下马（原版骑乘逻辑）；下马落点优先为锚点
  * 「朝向正前方一格」上的安全站立位置（{@link DismountHelper#findSafeDismountLocation}，与床/载具一致），再尝试
  * 锚点平面其余三侧；锚点处方块不再满足 {@link SeatConfig#blockValid()} 时逐出乘客并移除实体。
+ * <p>
+ * <strong>存档 / 同步 NBT（键名以此类常量为唯一来源）</strong>：
+ * <ul>
+ *   <li>{@link #NBT_ANCHOR_POS}：锚点方块坐标，{@link BlockPos#asLong()}；</li>
+ *   <li>{@link #NBT_SEAT_CONFIG_ID}：与 {@link org.lanye.fantasy_furniture.registry.ModSeatConfigs} 中注册的 id
+ *       字符串一致（如 {@link org.lanye.fantasy_furniture.registry.ModSeatConfigs#BANQUETTE_ID}）。</li>
+ * </ul>
+ *
+ * @see org.lanye.fantasy_furniture.registry.ModSeatConfigs 各可坐方块的配置 id 与 {@link SeatConfig} 登记
  */
 public class FurnitureSeatEntity extends Entity {
 
-    private static final String TAG_ANCHOR = "Anchor";
-    private static final String TAG_CONFIG = "SeatConfigId";
+    /** 锚点方块位置（NBT long，与 {@link BlockPos#of(long)} 互转）。 */
+    public static final String NBT_ANCHOR_POS = "Anchor";
+
+    /** 与 {@link org.lanye.fantasy_furniture.common.seat.SeatRegistry} / {@link org.lanye.fantasy_furniture.registry.ModSeatConfigs} 中 id 一致。 */
+    public static final String NBT_SEAT_CONFIG_ID = "SeatConfigId";
 
     private BlockPos anchorPos = BlockPos.ZERO;
     private String configId = "";
@@ -68,18 +80,18 @@ public class FurnitureSeatEntity extends Entity {
 
     @Override
     protected void readAdditionalSaveData(CompoundTag tag) {
-        if (tag.contains(TAG_ANCHOR)) {
-            anchorPos = BlockPos.of(tag.getLong(TAG_ANCHOR));
+        if (tag.contains(NBT_ANCHOR_POS)) {
+            anchorPos = BlockPos.of(tag.getLong(NBT_ANCHOR_POS));
         }
-        if (tag.contains(TAG_CONFIG)) {
-            configId = tag.getString(TAG_CONFIG);
+        if (tag.contains(NBT_SEAT_CONFIG_ID)) {
+            configId = tag.getString(NBT_SEAT_CONFIG_ID);
         }
     }
 
     @Override
     protected void addAdditionalSaveData(CompoundTag tag) {
-        tag.putLong(TAG_ANCHOR, anchorPos.asLong());
-        tag.putString(TAG_CONFIG, configId);
+        tag.putLong(NBT_ANCHOR_POS, anchorPos.asLong());
+        tag.putString(NBT_SEAT_CONFIG_ID, configId);
     }
 
     @Override

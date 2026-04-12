@@ -21,8 +21,8 @@ import org.lanye.fantasy_furniture.geolib.AnimatedBlockEntry;
 
 /**
  * 模组方块与对应 {@link net.minecraft.world.item.BlockItem} 的 {@link DeferredRegister} 入口，以及对外
- * {@link RegistryObject} 聚合（具体登记见 {@link CeramicTileBlocks}、{@link WallpaperBlocks}、{@link DecorSimpleBlocks}、
- * {@link FurnitureAnimatedBlocks}）。
+ * {@link RegistryObject} 聚合（简单色表见 {@link CeramicTileBlocks.TileVariant}、{@link WallpaperBlocks.WallpaperVariant}；
+ * 其余见 {@link DecorSimpleBlocks}、{@link FurnitureAnimatedBlocks}）。
  */
 public final class ModBlocks {
 
@@ -33,48 +33,74 @@ public final class ModBlocks {
     public static final DeferredRegister<Item> BLOCK_ITEMS =
             DeferredRegister.create(ForgeRegistries.ITEMS, FantasyFurniture.MODID);
 
-    // --- 瓷砖（{@link CeramicTileBlocks}）---
+    // --- 瓷砖（{@link CeramicTileBlocks.TileVariant}）---
 
-    public static final RegistryObject<Block> PINK_CERAMIC_TILE_BLOCK = CeramicTileBlocks.PINK_CERAMIC_TILE.block();
-    public static final RegistryObject<Item> PINK_CERAMIC_TILE_ITEM = CeramicTileBlocks.PINK_CERAMIC_TILE.item();
+    public static final RegistryObject<Block> PINK_CERAMIC_TILE_BLOCK =
+            CeramicTileBlocks.TileVariant.PINK_CERAMIC_TILE.entry().block();
+    public static final RegistryObject<Item> PINK_CERAMIC_TILE_ITEM =
+            CeramicTileBlocks.TileVariant.PINK_CERAMIC_TILE.entry().item();
 
-    public static final RegistryObject<Block> YELLOW_CERAMIC_TILE_BLOCK = CeramicTileBlocks.YELLOW_CERAMIC_TILE.block();
-    public static final RegistryObject<Item> YELLOW_CERAMIC_TILE_ITEM = CeramicTileBlocks.YELLOW_CERAMIC_TILE.item();
+    public static final RegistryObject<Block> YELLOW_CERAMIC_TILE_BLOCK =
+            CeramicTileBlocks.TileVariant.YELLOW_CERAMIC_TILE.entry().block();
+    public static final RegistryObject<Item> YELLOW_CERAMIC_TILE_ITEM =
+            CeramicTileBlocks.TileVariant.YELLOW_CERAMIC_TILE.entry().item();
 
-    public static final RegistryObject<Block> BLUE_CERAMIC_TILE_BLOCK = CeramicTileBlocks.BLUE_CERAMIC_TILE.block();
-    public static final RegistryObject<Item> BLUE_CERAMIC_TILE_ITEM = CeramicTileBlocks.BLUE_CERAMIC_TILE.item();
+    public static final RegistryObject<Block> BLUE_CERAMIC_TILE_BLOCK =
+            CeramicTileBlocks.TileVariant.BLUE_CERAMIC_TILE.entry().block();
+    public static final RegistryObject<Item> BLUE_CERAMIC_TILE_ITEM =
+            CeramicTileBlocks.TileVariant.BLUE_CERAMIC_TILE.entry().item();
 
-    public static final RegistryObject<Block> GREEN_CERAMIC_TILE_BLOCK = CeramicTileBlocks.GREEN_CERAMIC_TILE.block();
-    public static final RegistryObject<Item> GREEN_CERAMIC_TILE_ITEM = CeramicTileBlocks.GREEN_CERAMIC_TILE.item();
+    public static final RegistryObject<Block> GREEN_CERAMIC_TILE_BLOCK =
+            CeramicTileBlocks.TileVariant.GREEN_CERAMIC_TILE.entry().block();
+    public static final RegistryObject<Item> GREEN_CERAMIC_TILE_ITEM =
+            CeramicTileBlocks.TileVariant.GREEN_CERAMIC_TILE.entry().item();
 
-    public static final RegistryObject<Block> CYAN_CERAMIC_TILE_BLOCK = CeramicTileBlocks.CYAN_CERAMIC_TILE.block();
-    public static final RegistryObject<Item> CYAN_CERAMIC_TILE_ITEM = CeramicTileBlocks.CYAN_CERAMIC_TILE.item();
+    public static final RegistryObject<Block> CYAN_CERAMIC_TILE_BLOCK =
+            CeramicTileBlocks.TileVariant.CYAN_CERAMIC_TILE.entry().block();
+    public static final RegistryObject<Item> CYAN_CERAMIC_TILE_ITEM =
+            CeramicTileBlocks.TileVariant.CYAN_CERAMIC_TILE.entry().item();
 
-    public static final RegistryObject<Block> PURPLE_CERAMIC_TILE_BLOCK = CeramicTileBlocks.PURPLE_CERAMIC_TILE.block();
-    public static final RegistryObject<Item> PURPLE_CERAMIC_TILE_ITEM = CeramicTileBlocks.PURPLE_CERAMIC_TILE.item();
+    public static final RegistryObject<Block> PURPLE_CERAMIC_TILE_BLOCK =
+            CeramicTileBlocks.TileVariant.PURPLE_CERAMIC_TILE.entry().block();
+    public static final RegistryObject<Item> PURPLE_CERAMIC_TILE_ITEM =
+            CeramicTileBlocks.TileVariant.PURPLE_CERAMIC_TILE.entry().item();
 
-    // --- 壁纸 / 墙裙（{@link WallpaperBlocks}）---
+    // --- 壁纸 / 墙裙（{@link WallpaperBlocks.WallpaperVariant}）---
 
-    public static final RegistryObject<Block> PINK_WALLPAPER_BLOCK = WallpaperBlocks.PINK_WALLPAPER.block();
-    public static final RegistryObject<Item> PINK_WALLPAPER_ITEM = WallpaperBlocks.PINK_WALLPAPER.item();
+    public static final RegistryObject<Block> PINK_WALLPAPER_BLOCK =
+            WallpaperBlocks.WallpaperVariant.PINK_WALLPAPER.entry().block();
+    public static final RegistryObject<Item> PINK_WALLPAPER_ITEM =
+            WallpaperBlocks.WallpaperVariant.PINK_WALLPAPER.entry().item();
 
-    public static final RegistryObject<Block> RED_WALLPAPER_BLOCK = WallpaperBlocks.RED_WALLPAPER.block();
-    public static final RegistryObject<Item> RED_WALLPAPER_ITEM = WallpaperBlocks.RED_WALLPAPER.item();
+    public static final RegistryObject<Block> RED_WALLPAPER_BLOCK =
+            WallpaperBlocks.WallpaperVariant.RED_WALLPAPER.entry().block();
+    public static final RegistryObject<Item> RED_WALLPAPER_ITEM =
+            WallpaperBlocks.WallpaperVariant.RED_WALLPAPER.entry().item();
 
-    public static final RegistryObject<Block> YELLOW_WALLPAPER_BLOCK = WallpaperBlocks.YELLOW_WALLPAPER.block();
-    public static final RegistryObject<Item> YELLOW_WALLPAPER_ITEM = WallpaperBlocks.YELLOW_WALLPAPER.item();
+    public static final RegistryObject<Block> YELLOW_WALLPAPER_BLOCK =
+            WallpaperBlocks.WallpaperVariant.YELLOW_WALLPAPER.entry().block();
+    public static final RegistryObject<Item> YELLOW_WALLPAPER_ITEM =
+            WallpaperBlocks.WallpaperVariant.YELLOW_WALLPAPER.entry().item();
 
-    public static final RegistryObject<Block> YELLOW_WAINSCOT_BLOCK = WallpaperBlocks.YELLOW_WAINSCOT.block();
-    public static final RegistryObject<Item> YELLOW_WAINSCOT_ITEM = WallpaperBlocks.YELLOW_WAINSCOT.item();
+    public static final RegistryObject<Block> YELLOW_WAINSCOT_BLOCK =
+            WallpaperBlocks.WallpaperVariant.YELLOW_WAINSCOT.entry().block();
+    public static final RegistryObject<Item> YELLOW_WAINSCOT_ITEM =
+            WallpaperBlocks.WallpaperVariant.YELLOW_WAINSCOT.entry().item();
 
-    public static final RegistryObject<Block> BLUE_WALLPAPER_BLOCK = WallpaperBlocks.BLUE_WALLPAPER.block();
-    public static final RegistryObject<Item> BLUE_WALLPAPER_ITEM = WallpaperBlocks.BLUE_WALLPAPER.item();
+    public static final RegistryObject<Block> BLUE_WALLPAPER_BLOCK =
+            WallpaperBlocks.WallpaperVariant.BLUE_WALLPAPER.entry().block();
+    public static final RegistryObject<Item> BLUE_WALLPAPER_ITEM =
+            WallpaperBlocks.WallpaperVariant.BLUE_WALLPAPER.entry().item();
 
-    public static final RegistryObject<Block> GREEN_WALLPAPER_BLOCK = WallpaperBlocks.GREEN_WALLPAPER.block();
-    public static final RegistryObject<Item> GREEN_WALLPAPER_ITEM = WallpaperBlocks.GREEN_WALLPAPER.item();
+    public static final RegistryObject<Block> GREEN_WALLPAPER_BLOCK =
+            WallpaperBlocks.WallpaperVariant.GREEN_WALLPAPER.entry().block();
+    public static final RegistryObject<Item> GREEN_WALLPAPER_ITEM =
+            WallpaperBlocks.WallpaperVariant.GREEN_WALLPAPER.entry().item();
 
-    public static final RegistryObject<Block> PURPLE_WALLPAPER_BLOCK = WallpaperBlocks.PURPLE_WALLPAPER.block();
-    public static final RegistryObject<Item> PURPLE_WALLPAPER_ITEM = WallpaperBlocks.PURPLE_WALLPAPER.item();
+    public static final RegistryObject<Block> PURPLE_WALLPAPER_BLOCK =
+            WallpaperBlocks.WallpaperVariant.PURPLE_WALLPAPER.entry().block();
+    public static final RegistryObject<Item> PURPLE_WALLPAPER_ITEM =
+            WallpaperBlocks.WallpaperVariant.PURPLE_WALLPAPER.entry().item();
 
     // --- 屏风、玻璃窗（{@link DecorSimpleBlocks}）---
 

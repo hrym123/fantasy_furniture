@@ -1,10 +1,13 @@
 package org.lanye.fantasy_furniture.item;
 
-import net.minecraft.core.registries.Registries;
+import java.util.List;
+import java.util.function.Supplier;
+ import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.CreativeModeTabs;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.ItemLike;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.RegistryObject;
@@ -18,6 +21,39 @@ public final class ModCreativeTabs {
 
     private ModCreativeTabs() {}
 
+    /**
+     * 「幻想家具」主创造栏中物品的**唯一展示顺序**。新增方块物品或独立 {@link net.minecraft.world.item.Item}
+     * 时须在此追加条目，勿在 {@link #MAIN} 的 {@code displayItems} 中重复手写。
+     */
+    public static final List<Supplier<? extends ItemLike>> MAIN_TAB_DISPLAY_ORDER = List.of(
+            ModBlocks.PINK_CERAMIC_TILE_ITEM::get,
+            ModBlocks.YELLOW_CERAMIC_TILE_ITEM::get,
+            ModBlocks.BLUE_CERAMIC_TILE_ITEM::get,
+            ModBlocks.GREEN_CERAMIC_TILE_ITEM::get,
+            ModBlocks.CYAN_CERAMIC_TILE_ITEM::get,
+            ModBlocks.PURPLE_CERAMIC_TILE_ITEM::get,
+            ModBlocks.PINK_WALLPAPER_ITEM::get,
+            ModBlocks.RED_WALLPAPER_ITEM::get,
+            ModBlocks.YELLOW_WALLPAPER_ITEM::get,
+            ModBlocks.YELLOW_WAINSCOT_ITEM::get,
+            ModBlocks.BLUE_WALLPAPER_ITEM::get,
+            ModBlocks.GREEN_WALLPAPER_ITEM::get,
+            ModBlocks.PURPLE_WALLPAPER_ITEM::get,
+            ModBlocks.DECORATIVE_SCREEN_ITEM::get,
+            ModBlocks.GLASS_WINDOW_ITEM::get,
+            ModItems.PAINT_BRUSH::get,
+            ModItems.TANGHULU::get,
+            ModBlocks.BANQUETTE.item()::get,
+            ModBlocks.MIXING_BOWL.item()::get,
+            ModBlocks.JAM_POT.item()::get,
+            ModBlocks.OVEN.item()::get,
+            ModBlocks.PESTLE_BOWL.item()::get,
+            ModBlocks.HALF_HALF_POT.item()::get,
+            ModBlocks.LOTTERY_MACHINE.item()::get,
+            ModBlocks.GREEN_SOFA.item()::get,
+            ModBlocks.KITCHEN_COUNTER.item()::get,
+            ModBlocks.KITCHEN_COUNTER_CABINET.item()::get);
+
     public static final DeferredRegister<CreativeModeTab> CREATIVE_MODE_TABS =
             DeferredRegister.create(Registries.CREATIVE_MODE_TAB, FantasyFurniture.MODID);
 
@@ -28,33 +64,9 @@ public final class ModCreativeTabs {
                     .icon(() -> new ItemStack(ModBlocks.PINK_CERAMIC_TILE_ITEM.get()))
                     .withTabsBefore(CreativeModeTabs.SPAWN_EGGS)
                     .displayItems((params, output) -> {
-                        output.accept(ModBlocks.PINK_CERAMIC_TILE_ITEM.get());
-                        output.accept(ModBlocks.YELLOW_CERAMIC_TILE_ITEM.get());
-                        output.accept(ModBlocks.BLUE_CERAMIC_TILE_ITEM.get());
-                        output.accept(ModBlocks.GREEN_CERAMIC_TILE_ITEM.get());
-                        output.accept(ModBlocks.CYAN_CERAMIC_TILE_ITEM.get());
-                        output.accept(ModBlocks.PURPLE_CERAMIC_TILE_ITEM.get());
-                        output.accept(ModBlocks.PINK_WALLPAPER_ITEM.get());
-                        output.accept(ModBlocks.RED_WALLPAPER_ITEM.get());
-                        output.accept(ModBlocks.YELLOW_WALLPAPER_ITEM.get());
-                        output.accept(ModBlocks.YELLOW_WAINSCOT_ITEM.get());
-                        output.accept(ModBlocks.BLUE_WALLPAPER_ITEM.get());
-                        output.accept(ModBlocks.GREEN_WALLPAPER_ITEM.get());
-                        output.accept(ModBlocks.PURPLE_WALLPAPER_ITEM.get());
-                        output.accept(ModBlocks.DECORATIVE_SCREEN_ITEM.get());
-                        output.accept(ModBlocks.GLASS_WINDOW_ITEM.get());
-                        output.accept(ModItems.PAINT_BRUSH.get());
-                        output.accept(ModItems.TANGHULU.get());
-                        output.accept(ModBlocks.BANQUETTE.item().get());
-                        output.accept(ModBlocks.MIXING_BOWL.item().get());
-                        output.accept(ModBlocks.JAM_POT.item().get());
-                        output.accept(ModBlocks.OVEN.item().get());
-                        output.accept(ModBlocks.PESTLE_BOWL.item().get());
-                        output.accept(ModBlocks.HALF_HALF_POT.item().get());
-                        output.accept(ModBlocks.LOTTERY_MACHINE.item().get());
-                        output.accept(ModBlocks.GREEN_SOFA.item().get());
-                        output.accept(ModBlocks.KITCHEN_COUNTER.item().get());
-                        output.accept(ModBlocks.KITCHEN_COUNTER_CABINET.item().get());
+                        for (Supplier<? extends ItemLike> entry : MAIN_TAB_DISPLAY_ORDER) {
+                            output.accept(entry.get());
+                        }
                     })
                     .build());
 

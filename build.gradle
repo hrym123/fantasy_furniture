@@ -72,6 +72,14 @@ repositories {
 dependencies {
     minecraft "net.minecraftforge:forge:${minecraft_version}-${forge_version}"
     implementation fg.deobf("software.bernie.geckolib:geckolib-forge-${minecraft_version}:${geckolib_version}")
+
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.10.2'
+    testImplementation 'org.mockito:mockito-junit-jupiter:5.11.0'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+tasks.named('test', Test).configure {
+    useJUnitPlatform()
 }
 
 tasks.named('processResources', ProcessResources).configure {
@@ -99,6 +107,7 @@ tasks.named('jar', Jar).configure {
                     "Implementation-Vendor"   : mod_authors,
                     "Implementation-Timestamp": new Date().format("yyyy-MM-dd'T'HH:mm:ssZ")])
     }
+    exclude 'org/lanye/fantasy_furniture/gametest/**'
     finalizedBy 'reobfJar'
 }
 

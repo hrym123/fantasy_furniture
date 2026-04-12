@@ -1,0 +1,13 @@
+name: Lang keys
+
+on: [push, pull_request]
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Compare zh_cn.json and en_us.json key sets
+        run: python3 scripts/check_lang_keys.py
