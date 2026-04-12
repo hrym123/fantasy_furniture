@@ -21,4 +21,15 @@ public record GeolibItemAssets(ResourceLocation model, ResourceLocation texture,
                 ResourceLocation.fromNamespaceAndPath(modid, "textures/block/" + basename + ".png"),
                 ResourceLocation.fromNamespaceAndPath(modid, "animations/block/" + basename + ".animation.json"));
     }
+
+    /**
+     * 与 {@code geo/item/&lt;basename&gt;.geo.json}、{@code textures/item/&lt;basename&gt;.png}、
+     * {@code animations/item/&lt;basename&gt;.animation.json} 对齐（手持 Gecko 物品）。
+     */
+    public static GeolibItemAssets itemAsset(String modid, String basename) {
+        return new GeolibItemAssets(
+                ResourceLocation.fromNamespaceAndPath(modid, "geo/item/" + basename + ".geo.json"),
+                ResourceLocation.fromNamespaceAndPath(modid, "textures/item/" + basename + ".png"),
+                ResourceLocation.fromNamespaceAndPath(modid, "animations/item/" + basename + ".animation.json"));
+    }
 }

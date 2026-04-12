@@ -2,7 +2,6 @@ package org.lanye.fantasy_furniture.block.util;
 
 import java.util.List;
 import net.minecraft.core.Direction;
-import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.shapes.Shapes;
@@ -51,13 +50,7 @@ public final class VoxelShapeRotation {
     }
 
     private static VoxelShape aabbToShape(AABB box) {
-        return Block.box(
-                box.minX * 16.0,
-                box.minY * 16.0,
-                box.minZ * 16.0,
-                box.maxX * 16.0,
-                box.maxY * 16.0,
-                box.maxZ * 16.0);
+        return Shapes.box(box.minX, box.minY, box.minZ, box.maxX, box.maxY, box.maxZ);
     }
 
     private static AABB rotateAabbY90(AABB box) {

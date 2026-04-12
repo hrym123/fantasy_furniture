@@ -10,7 +10,7 @@ import org.lanye.fantasy_furniture.FantasyFurniture;
  * <p>
  * 通过 IDE / {@code gameTestServer} 运行；正式 jar 中已排除本包（见 {@code build.gradle}）。
  */
-@GameTestHolder(value = FantasyFurniture.MODID + ".gametest", namespace = "minecraft")
+@GameTestHolder(FantasyFurniture.MODID + ".gametest")
 public final class FurnitureGameTests {
 
     private FurnitureGameTests() {}

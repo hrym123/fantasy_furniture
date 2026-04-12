@@ -8,6 +8,7 @@ import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
 import org.lanye.fantasy_furniture.FantasyFurniture;
+import org.lanye.fantasy_furniture.geolib.GeolibItemAssets;
 
 /**
  * 无对应方块的独立物品注册。
@@ -27,6 +28,14 @@ public final class ModItems {
      */
     public static final RegistryObject<Item> TANGHULU =
             ITEMS.register("tanghulu", () -> new SwordItem(Tiers.WOOD, 1, -2.4F, new Item.Properties()));
+
+    /** GeckoLib 手持魔杖；长按施法动画见 {@link ArcaneWandItem}。 */
+    public static final RegistryObject<Item> ARCANE_WAND = ITEMS.register(
+            "arcane_wand",
+            () -> new ArcaneWandItem(
+                    new Item.Properties().stacksTo(1),
+                    GeolibItemAssets.itemAsset(FantasyFurniture.MODID, "arcane_wand"),
+                    "animation.arcane_wand.idle"));
 
     public static void register(IEventBus modEventBus) {
         ITEMS.register(modEventBus);

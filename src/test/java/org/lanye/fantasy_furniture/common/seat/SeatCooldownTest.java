@@ -11,7 +11,11 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-/** {@link SeatCooldown} 依赖存档 NBT 与 {@link ServerLevel#getGameTime()}，用 Mockito 做最小化桩。 */
+/**
+ * 验证 {@link SeatCooldown}：根据玩家持久化数据与当前游戏时间，能否入座、冷却是否按预期生效。
+ * <p>
+ * {@link ServerPlayer} / {@link ServerLevel} 为 Mockito 桩，仅打桩 {@link ServerLevel#getGameTime()} 等与冷却相关的调用。
+ */
 @ExtendWith(MockitoExtension.class)
 class SeatCooldownTest {
 

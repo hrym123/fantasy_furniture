@@ -129,58 +129,11 @@ public class BanquetteBlock extends GeolibFacingEntityBlockWithFactory<Banquette
 
     /**
      * 前方邻格为卡座：其朝向为 {@code facing.getClockWise()} → 左拼拐角；为 {@code getCounterClockWise()} → 右拼拐角，
-     * 除非 {@link #shouldSuppressCornerLeft} / {@link #shouldSuppressCornerRight} 要求保持直段。
+     * 除非拐角抑制规则要求保持直段。实现见 {@link BanquetteShapeRules}。
      */
     static BanquetteShape computeShape(BlockState state, BlockGetter level, BlockPos pos) {
-        Direction facing = state.getValue(FACING);
-        BlockState ahead = level.getBlockState(pos.relative(facing));
-        if (!isBanquette(ahead)) {
-            return BanquetteShape.STRAIGHT;
-        }
-        Direction other = ahead.getValue(FACING);
-        if (other == facing.getClockWise()) {
-            if (shouldSuppressCornerLeft(level, pos, facing)) {
-                return BanquetteShape.STRAIGHT;
-            }
-            return BanquetteShape.CORNER_LEFT;
-        }
-        if (other == facing.getCounterClockWise()) {
-            if (shouldSuppressCornerRight(level, pos, facing)) {
-                return BanquetteShape.STRAIGHT;
-            }
-            return BanquetteShape.CORNER_RIGHT;
-        }
-        return BanquetteShape.STRAIGHT;
-    }
-
-    /**
-     * 本座左侧（{@code pos.relative(facing.getCounterClockWise())}）已有卡座，且其朝向为与本座相同或「朝左」
-     * （{@code facing.getClockWise()}）时，不因前方朝左卡座而变为左拼拐角。
-     */
-    private static boolean shouldSuppressCornerLeft(BlockGetter level, BlockPos pos, Direction facing) {
-        BlockState left = level.getBlockState(pos.relative(facing.getCounterClockWise()));
-        if (!isBanquette(left)) {
-            return false;
-        }
-        Direction lf = left.getValue(FACING);
-        return lf == facing || lf == facing.getClockWise();
-    }
-
-    /**
-     * 本座右侧（{@code pos.relative(facing.getClockWise())}）已有卡座，且其朝向为与本座相同或「朝右」
-     * （{@code facing.getCounterClockWise()}）时，不因前方朝右卡座而变为右拼拐角。
-     */
-    private static boolean shouldSuppressCornerRight(BlockGetter level, BlockPos pos, Direction facing) {
-        BlockState right = level.getBlockState(pos.relative(facing.getClockWise()));
-        if (!isBanquette(right)) {
-            return false;
-        }
-        Direction rf = right.getValue(FACING);
-        return rf == facing || rf == facing.getCounterClockWise();
-    }
-
-    private static boolean isBanquette(BlockState state) {
-        return state.getBlock() instanceof BanquetteBlock;
+        return BanquetteShapeRules.computeShape(
+                state, level, pos, s -> s.getBlock() instanceof BanquetteBlock);
     }
 
     private static VoxelShape orParts(VoxelShape first, VoxelShape... rest) {

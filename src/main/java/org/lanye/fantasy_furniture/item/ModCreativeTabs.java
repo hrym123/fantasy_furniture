@@ -43,6 +43,7 @@ public final class ModCreativeTabs {
             ModBlocks.GLASS_WINDOW_ITEM::get,
             ModItems.PAINT_BRUSH::get,
             ModItems.TANGHULU::get,
+            ModItems.ARCANE_WAND::get,
             ModBlocks.BANQUETTE.item()::get,
             ModBlocks.MIXING_BOWL.item()::get,
             ModBlocks.JAM_POT.item()::get,

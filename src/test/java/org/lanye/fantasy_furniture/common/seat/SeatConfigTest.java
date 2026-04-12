@@ -9,7 +9,11 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import org.junit.jupiter.api.Test;
 
-/** {@link SeatConfig} 世界坐标入座范围与坐骑锚点（纯几何，不依赖 {@link net.minecraft.world.level.Level}）。 */
+/**
+ * 验证 {@link SeatConfig} 的几何换算：相对方块的入座 AABB、坐骑世界坐标与朝向函数在锚点下的行为是否正确。
+ * <p>
+ * 纯数学与断言，不访问 {@link net.minecraft.world.level.Level}。
+ */
 class SeatConfigTest {
 
     @Test

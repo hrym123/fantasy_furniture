@@ -1,0 +1,36 @@
+{
+  "credit": "Made with Blockbench",
+  "parent": "builtin/entity",
+  "texture_size": [32, 32],
+  "textures": {
+    "particle": "fantasy_furniture:item/arcane_wand"
+  },
+  "display": {
+    "thirdperson_righthand": {
+      "translation": [0, -14.75, 2]
+    },
+    "thirdperson_lefthand": {
+      "translation": [0, -14.75, 2]
+    },
+    "firstperson_righthand": {
+      "translation": [0, -15, 0]
+    },
+    "firstperson_lefthand": {
+      "translation": [0, -15, 0]
+    },
+    "gui": {
+      "translation": [0, -9.75, 0],
+      "scale": [0.63, 0.63, 0.68]
+    },
+    "head": {
+      "rotation": [0, 0, 72],
+      "translation": [11.75, -3.5, 6]
+    },
+    "fixed": {
+      "translation": [0, -16, 0]
+    },
+    "on_shelf": {
+      "translation": [-0.5, -8, 0]
+    }
+  }
+}
