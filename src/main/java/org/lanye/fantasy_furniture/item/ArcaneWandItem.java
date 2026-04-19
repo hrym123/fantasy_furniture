@@ -3,6 +3,8 @@ package org.lanye.fantasy_furniture.item;
 import java.util.Collections;
 import java.util.Map;
 import java.util.WeakHashMap;
+import java.util.function.Consumer;
+import net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResultHolder;
@@ -10,8 +12,10 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
+import net.minecraftforge.client.extensions.common.IClientItemExtensions;
 import org.jetbrains.annotations.NotNull;
 import org.lanye.fantasy_furniture.FantasyFurniture;
+import org.lanye.fantasy_furniture.client.renderer.ArcaneWandGeoItemRenderer;
 import org.lanye.fantasy_furniture.geolib.GeolibHandheldItem;
 import org.lanye.fantasy_furniture.geolib.GeolibItemAssets;
 import software.bernie.geckolib.constant.DataTickets;
@@ -71,6 +75,17 @@ public class ArcaneWandItem extends GeolibHandheldItem {
 
     public ArcaneWandItem(Properties properties, GeolibItemAssets assets, String idleAnimation) {
         super(properties, assets, idleAnimation);
+    }
+
+    @Override
+    public void initializeClient(@NotNull Consumer<IClientItemExtensions> consumer) {
+        consumer.accept(
+                new IClientItemExtensions() {
+                    @Override
+                    public BlockEntityWithoutLevelRenderer getCustomRenderer() {
+                        return ArcaneWandGeoItemRenderer.INSTANCE;
+                    }
+                });
     }
 
     @Override

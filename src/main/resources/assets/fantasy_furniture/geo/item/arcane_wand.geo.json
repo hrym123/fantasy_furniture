@@ -18,6 +18,11 @@
 				{
 					"name": "group4",
 					"parent": "group",
+					"pivot": [-0.4, 21, -0.5]
+				},
+				{
+					"name": "wand_head_opaque",
+					"parent": "group4",
 					"pivot": [-0.4, 21, -0.5],
 					"cubes": [
 						{
@@ -63,7 +68,7 @@
 					]
 				},
 				{
-					"name": "group7",
+					"name": "shell",
 					"parent": "group4",
 					"pivot": [0, 8, 0],
 					"cubes": [
