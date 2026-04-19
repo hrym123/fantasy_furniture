@@ -13,7 +13,10 @@ public final class SeatInteraction {
     private SeatInteraction() {}
 
     /**
-     * 在服务端对锚点方块执行交互入座（玩家需在入座范围内且未骑乘其他实体）。
+     * 在服务端对锚点方块执行交互入座。
+     * <p>
+     * 不靠 {@link SeatConfig#toWorldSitRange} 与玩家碰撞箱相交判定：玩家正常交互距离下往往站在座席<strong>前方邻格</strong>，
+     * 身体不与锚点方块的整块体积相交；能否对该格发起 use 已由原版交互距离与视线判定。
      *
      * @return 是否已成功开始骑乘
      */
@@ -26,15 +29,10 @@ public final class SeatInteraction {
             return false;
         }
 
-        AABB playerBox = player.getBoundingBox();
-
         for (var e : SeatRegistry.entries()) {
             String configId = e.getKey();
             SeatConfig cfg = e.getValue();
             if (!cfg.blockValid().test(state)) {
-                continue;
-            }
-            if (!playerBox.intersects(cfg.toWorldSitRange(pos))) {
                 continue;
             }
 

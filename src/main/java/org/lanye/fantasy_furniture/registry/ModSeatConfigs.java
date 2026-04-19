@@ -24,13 +24,15 @@ import org.lanye.fantasy_furniture.entity.FurnitureSeatEntity;
  *   <li><strong>{@link SeatConfig}</strong>
  *       <ul>
  *         <li>{@code blockValid}：通常 {@code state -> state.is(你的方块)}，与入座匹配一致；</li>
- *         <li>{@code sitRangeBlockRelative}：相对方块最小角的入座检测 AABB（0–1 比例，与 {@link net.minecraft.world.level.block.Block#box}
- *             同坐标系），应覆盖玩家应能触发入座的站立区域，与方块<strong>碰撞箱</strong>对齐或略保守；</li>
+ *         <li>{@code sitRangeBlockRelative}：相对方块最小角的 AABB（0–1 比例，与 {@link net.minecraft.world.level.block.Block#box}
+ *             同坐标系），保留于 {@link SeatConfig#toWorldSitRange} 供几何/测试；方块右键入座路径不再要求与玩家碰撞箱相交。</li>
  *         <li>{@code seatEntityOffsetFromBlockMin}：坐骑实体中心在锚点方块内的位置（格），宜与模型坐垫对齐，避免魔法数散落——在
  *             本类为每种家具设 {@code private static final double …} 并注释与 geo/碰撞的对应关系；</li>
  *         <li>{@code yawDegrees}：从 {@link net.minecraft.world.level.block.state.BlockState} 读朝向等，返回坐骑
  *             {@link net.minecraft.world.entity.Entity#getYRot()} 所用角度（度）。有 {@code FACING} 时常见为
- *             {@code state.getValue(XXX.FACING).getOpposite().toYRot()}，须与方块状态定义一致。</li>
+ *             {@code state.getValue(XXX.FACING).getOpposite().toYRot()}，须与方块状态定义一致；</li>
+ *         <li>{@code dismountStepDirectionFromAnchor}：下马默认站在锚点哪一侧邻格（一般为坐垫朝向，即座椅正前方一格），
+ *             供 {@link org.lanye.fantasy_furniture.entity.FurnitureSeatEntity#getDismountLocationForPassenger} 优先落点。</li>
  *       </ul>
  *   </li>
  *   <li><strong>方块侧</strong>：右键调用 {@link org.lanye.fantasy_furniture.common.seat.SeatInteraction#trySitFromBlockUse}；
@@ -59,6 +61,7 @@ public final class ModSeatConfigs {
                         state -> state.is(banquette),
                         new AABB(0, 0, 0, 1, 1, 1),
                         new Vec3(0.5, BANQUETTE_SEAT_Y, 0.5),
-                        state -> state.getValue(BanquetteBlock.FACING).getOpposite().toYRot()));
+                        state -> state.getValue(BanquetteBlock.FACING).getOpposite().toYRot(),
+                        state -> state.getValue(BanquetteBlock.FACING).getOpposite()));
     }
 }

@@ -2,54 +2,32 @@ package org.lanye.fantasy_furniture.common.seat;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Mockito.when;
 
-import net.minecraft.server.level.ServerLevel;
-import net.minecraft.server.level.ServerPlayer;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
 
 /**
- * 验证 {@link SeatCooldown}：根据玩家持久化数据与当前游戏时间，能否入座、冷却是否按预期生效。
- * <p>
- * {@link ServerPlayer} / {@link ServerLevel} 为 Mockito 桩，仅打桩 {@link ServerLevel#getGameTime()} 等与冷却相关的调用。
+ * 冷却判定只测 {@link SeatCooldown#isPastCooldown(long, long)}：{@link SeatCooldown#canSit} 依赖
+ * {@link net.minecraft.server.level.ServerPlayer} / NBT，在 JUnit 用 Mockito 打桩会触发实体子系统静态初始化失败。
  */
-@ExtendWith(MockitoExtension.class)
 class SeatCooldownTest {
 
-    @Mock
-    private ServerPlayer player;
-
-    @Mock
-    private ServerLevel level;
-
     @Test
-    void canSit_whenNoCooldown() {
-        when(level.getGameTime()).thenReturn(100L);
-        when(player.getPersistentData()).thenReturn(new net.minecraft.nbt.CompoundTag());
-
-        assertTrue(SeatCooldown.canSit(player, level));
+    void pastCooldown_whenGameTimeAfterEnd() {
+        assertTrue(SeatCooldown.isPastCooldown(101L, 100L));
     }
 
     @Test
-    void cannotSit_beforeCooldownExpires() {
-        when(level.getGameTime()).thenReturn(99L);
-        net.minecraft.nbt.CompoundTag tag = new net.minecraft.nbt.CompoundTag();
-        tag.putLong("FantasyFurnitureSeatCooldownUntil", 100L);
-        when(player.getPersistentData()).thenReturn(tag);
-
-        assertFalse(SeatCooldown.canSit(player, level));
+    void pastCooldown_whenGameTimeEqualsEnd() {
+        assertTrue(SeatCooldown.isPastCooldown(100L, 100L));
     }
 
     @Test
-    void canSit_afterCooldownExpires() {
-        when(level.getGameTime()).thenReturn(100L);
-        net.minecraft.nbt.CompoundTag tag = new net.minecraft.nbt.CompoundTag();
-        tag.putLong("FantasyFurnitureSeatCooldownUntil", 100L);
-        when(player.getPersistentData()).thenReturn(tag);
+    void notPastCooldown_whenBeforeEnd() {
+        assertFalse(SeatCooldown.isPastCooldown(99L, 100L));
+    }
 
-        assertTrue(SeatCooldown.canSit(player, level));
+    @Test
+    void pastCooldown_whenNeverHadTagEffectivelyZero() {
+        assertTrue(SeatCooldown.isPastCooldown(0L, 0L));
     }
 }

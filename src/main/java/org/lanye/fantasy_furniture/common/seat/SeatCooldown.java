@@ -17,8 +17,15 @@ public final class SeatCooldown {
         player.getPersistentData().putLong(TAG_COOLDOWN_UNTIL, gameTimeTick);
     }
 
+    /**
+     * 纯逻辑：当前游戏刻是否已到达或超过冷却结束刻（与 {@link #canSit(ServerPlayer, ServerLevel)} 判定一致，便于 JUnit）。
+     */
+    public static boolean isPastCooldown(long gameTime, long cooldownUntilTick) {
+        return gameTime >= cooldownUntilTick;
+    }
+
     public static boolean canSit(ServerPlayer player, ServerLevel level) {
         long until = player.getPersistentData().getLong(TAG_COOLDOWN_UNTIL);
-        return level.getGameTime() >= until;
+        return isPastCooldown(level.getGameTime(), until);
     }
 }

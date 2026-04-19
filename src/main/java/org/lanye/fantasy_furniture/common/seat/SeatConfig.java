@@ -3,6 +3,7 @@ package org.lanye.fantasy_furniture.common.seat;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
@@ -12,12 +13,16 @@ import net.minecraft.world.phys.Vec3;
  * <p>
  * <strong>方块相对坐标</strong>：原点为方块最小角 {@code (blockX, blockY, blockZ)}，轴向与世界一致，
  * {@code sitRangeBlockRelative} 的各分量在 {@code [0,1]} 表示该轴在方块内的比例（与 {@code Block.box} 一致）。
+ * <p>
+ * {@code dismountStepDirectionFromAnchor}：从锚点方块中心指向「默认下马站立格」的水平方向，即
+ * {@code anchor.relative(dismountStepDirectionFromAnchor(state))} 为座椅正前方一格。
  */
 public record SeatConfig(
         Predicate<BlockState> blockValid,
         AABB sitRangeBlockRelative,
         Vec3 seatEntityOffsetFromBlockMin,
-        Function<BlockState, Float> yawDegrees) {
+        Function<BlockState, Float> yawDegrees,
+        Function<BlockState, Direction> dismountStepDirectionFromAnchor) {
 
     /** 将「方块内」入座范围转为世界坐标 AABB，用于与玩家 {@link net.minecraft.world.entity.Entity#getBoundingBox()} 相交检测。 */
     public AABB toWorldSitRange(BlockPos pos) {
