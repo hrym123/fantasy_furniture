@@ -62,7 +62,7 @@ public final class ModSeatConfigs {
                         state -> state.is(banquette),
                         new AABB(0, 0, 0, 1, 1, 1),
                         new Vec3(0.5, BANQUETTE_SEAT_Y, 0.5),
-                        state -> state.getValue(BanquetteBlock.FACING).getOpposite().toYRot(),
+                        state -> state.getValue(BanquetteBlock.FACING).toYRot(),
                         state -> state.getValue(BanquetteBlock.FACING),
                         Config.seatCooldownTicks()));
     }
