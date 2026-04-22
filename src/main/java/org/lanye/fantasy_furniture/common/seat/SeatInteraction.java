@@ -41,10 +41,24 @@ public final class SeatInteraction {
             if (!level.addFreshEntity(seat)) {
                 return false;
             }
-            player.startRiding(seat, true);
+            if (!player.startRiding(seat, true)) {
+                seat.discard();
+                return false;
+            }
+            alignPlayerFacingToSeat(player, seat);
             return true;
         }
         return false;
+    }
+
+    private static void alignPlayerFacingToSeat(ServerPlayer player, FurnitureSeatEntity seat) {
+        float yaw = seat.getYRot();
+        float pitch = player.getXRot();
+        player.setYRot(yaw);
+        player.setYHeadRot(yaw);
+        player.setYBodyRot(yaw);
+        // 通过连接侧传送同步旋转，避免客户端仍保持原朝向。
+        player.connection.teleport(player.getX(), player.getY(), player.getZ(), yaw, pitch);
     }
 
     private static void clearOrphanSeats(ServerLevel level, BlockPos anchor) {

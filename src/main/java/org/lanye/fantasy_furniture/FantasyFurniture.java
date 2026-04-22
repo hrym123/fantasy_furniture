@@ -2,6 +2,7 @@ package org.lanye.fantasy_furniture;
 
 import com.mojang.logging.LogUtils;
 import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.fml.config.ModConfig;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import org.lanye.fantasy_furniture.block.registry.ModBlocks;
@@ -25,6 +26,7 @@ public class FantasyFurniture {
     private static final Logger LOGGER = LogUtils.getLogger();
 
     public FantasyFurniture(FMLJavaModLoadingContext context) {
+        context.registerConfig(ModConfig.Type.COMMON, Config.SPEC);
         var modEventBus = context.getModEventBus();
         ModBlocks.register(modEventBus);
         ModBlockEntities.register(modEventBus);

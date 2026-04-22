@@ -23,42 +23,45 @@ public final class BanquetteShapeRules {
             BlockState state, BlockGetter level, BlockPos pos, Predicate<BlockState> isSeat) {
         Direction facing = state.getValue(BlockStateProperties.HORIZONTAL_FACING);
         BlockState ahead = level.getBlockState(pos.relative(facing));
-        if (!isSeat.test(ahead)) {
+        boolean aheadIsSeat = isSeat.test(ahead);
+        Direction aheadFacing = aheadIsSeat ? ahead.getValue(BlockStateProperties.HORIZONTAL_FACING) : null;
+
+        BlockState left = level.getBlockState(pos.relative(facing.getCounterClockWise()));
+        boolean leftIsSeat = isSeat.test(left);
+        Direction leftFacing = leftIsSeat ? left.getValue(BlockStateProperties.HORIZONTAL_FACING) : null;
+
+        BlockState right = level.getBlockState(pos.relative(facing.getClockWise()));
+        boolean rightIsSeat = isSeat.test(right);
+        Direction rightFacing = rightIsSeat ? right.getValue(BlockStateProperties.HORIZONTAL_FACING) : null;
+
+        return computeShapeFromNeighborhood(
+                facing, aheadIsSeat, aheadFacing, leftIsSeat, leftFacing, rightIsSeat, rightFacing);
+    }
+
+    /**
+     * 纯逻辑：由当前朝向与相邻三格（前/左/右）的「是否为座席 + 座席朝向」推导形态。
+     * <p>
+     * 包级可见，供无需 Minecraft 运行时初始化的 JUnit 直接覆盖规则分支。
+     */
+    static BanquetteShape computeShapeFromNeighborhood(
+            Direction facing,
+            boolean aheadIsSeat,
+            Direction aheadFacing,
+            boolean leftIsSeat,
+            Direction leftFacing,
+            boolean rightIsSeat,
+            Direction rightFacing) {
+        if (!aheadIsSeat) {
             return BanquetteShape.STRAIGHT;
         }
-        Direction other = ahead.getValue(BlockStateProperties.HORIZONTAL_FACING);
-        if (other == facing.getClockWise()) {
-            if (shouldSuppressCornerLeft(level, pos, facing, isSeat)) {
-                return BanquetteShape.STRAIGHT;
-            }
-            return BanquetteShape.CORNER_LEFT;
+        if (aheadFacing == facing.getClockWise()) {
+            boolean suppress = leftIsSeat && (leftFacing == facing || leftFacing == facing.getClockWise());
+            return suppress ? BanquetteShape.STRAIGHT : BanquetteShape.CORNER_LEFT;
         }
-        if (other == facing.getCounterClockWise()) {
-            if (shouldSuppressCornerRight(level, pos, facing, isSeat)) {
-                return BanquetteShape.STRAIGHT;
-            }
-            return BanquetteShape.CORNER_RIGHT;
+        if (aheadFacing == facing.getCounterClockWise()) {
+            boolean suppress = rightIsSeat && (rightFacing == facing || rightFacing == facing.getCounterClockWise());
+            return suppress ? BanquetteShape.STRAIGHT : BanquetteShape.CORNER_RIGHT;
         }
         return BanquetteShape.STRAIGHT;
-    }
-
-    private static boolean shouldSuppressCornerLeft(
-            BlockGetter level, BlockPos pos, Direction facing, Predicate<BlockState> isSeat) {
-        BlockState left = level.getBlockState(pos.relative(facing.getCounterClockWise()));
-        if (!isSeat.test(left)) {
-            return false;
-        }
-        Direction lf = left.getValue(BlockStateProperties.HORIZONTAL_FACING);
-        return lf == facing || lf == facing.getClockWise();
-    }
-
-    private static boolean shouldSuppressCornerRight(
-            BlockGetter level, BlockPos pos, Direction facing, Predicate<BlockState> isSeat) {
-        BlockState right = level.getBlockState(pos.relative(facing.getClockWise()));
-        if (!isSeat.test(right)) {
-            return false;
-        }
-        Direction rf = right.getValue(BlockStateProperties.HORIZONTAL_FACING);
-        return rf == facing || rf == facing.getCounterClockWise();
     }
 }

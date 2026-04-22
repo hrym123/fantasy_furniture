@@ -1,19 +1,6 @@
 package org.lanye.fantasy_furniture.entity;
 
-import com.google.gson.Gson;
-import java.io.OutputStream;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.StandardOpenOption;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
 import javax.annotation.Nullable;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -28,7 +15,6 @@ import net.minecraft.world.level.CollisionGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
-import org.lanye.fantasy_furniture.block.facing.BanquetteBlock;
 import org.lanye.fantasy_furniture.common.seat.SeatConfig;
 import org.lanye.fantasy_furniture.common.seat.SeatCooldown;
 import org.lanye.fantasy_furniture.common.seat.SeatRegistry;
@@ -50,78 +36,6 @@ import org.lanye.fantasy_furniture.registry.ModEntities;
  * @see org.lanye.fantasy_furniture.registry.ModSeatConfigs 各可坐方块的配置 id 与 {@link SeatConfig} 登记
  */
 public class FurnitureSeatEntity extends Entity {
-
-    // #region agent log
-    private static final Gson AGENT_GSON = new Gson();
-    private static final String AGENT_INGEST =
-            "http://127.0.0.1:7482/ingest/e4fd49ed-fe10-4617-802c-ce4c6b004423";
-
-    private static Path resolveAgentDebugLog() {
-        Path cwd = Path.of("").toAbsolutePath();
-        if ("run".equalsIgnoreCase(String.valueOf(cwd.getFileName()))) {
-            return cwd.getParent().resolve("debug-34ccf7.log");
-        }
-        return cwd.resolve("debug-34ccf7.log");
-    }
-
-    private static List<Path> agentDebugLogCandidates() {
-        Set<Path> set = new LinkedHashSet<>();
-        set.add(resolveAgentDebugLog());
-        Path cwd = Path.of("").toAbsolutePath();
-        set.add(cwd.resolve("debug-34ccf7.log"));
-        Path parent = cwd.getParent();
-        if (parent != null) {
-            set.add(parent.resolve("debug-34ccf7.log"));
-        }
-        set.add(Path.of(System.getProperty("user.home"), "fantasy_furniture_debug-34ccf7.log"));
-        return new ArrayList<>(set);
-    }
-
-    private static void agentLog(String hypothesisId, String location, String message, Map<String, Object> data) {
-        Map<String, Object> line = new HashMap<>();
-        line.put("sessionId", "34ccf7");
-        line.put("runId", "post-fix");
-        line.put("hypothesisId", hypothesisId);
-        line.put("location", location);
-        line.put("message", message);
-        line.put("data", data);
-        line.put("timestamp", System.currentTimeMillis());
-        String payload = AGENT_GSON.toJson(line);
-        for (Path p : agentDebugLogCandidates()) {
-            try {
-                Files.writeString(
-                        p,
-                        payload + "\n",
-                        StandardOpenOption.CREATE,
-                        StandardOpenOption.APPEND);
-            } catch (Throwable ignored) {
-            }
-        }
-        Thread t =
-                new Thread(
-                        () -> {
-                            try {
-                                HttpURLConnection c =
-                                        (HttpURLConnection) new URL(AGENT_INGEST).openConnection();
-                                c.setRequestMethod("POST");
-                                c.setRequestProperty("Content-Type", "application/json");
-                                c.setRequestProperty("X-Debug-Session-Id", "34ccf7");
-                                c.setDoOutput(true);
-                                c.setConnectTimeout(400);
-                                c.setReadTimeout(400);
-                                try (OutputStream os = c.getOutputStream()) {
-                                    os.write(payload.getBytes(StandardCharsets.UTF_8));
-                                }
-                                c.getResponseCode();
-                                c.disconnect();
-                            } catch (Throwable ignored) {
-                            }
-                        },
-                        "fantasy-furniture-agent-log");
-        t.setDaemon(true);
-        t.start();
-    }
-    // #endregion
 
     /** 锚点方块位置（NBT long，与 {@link BlockPos#of(long)} 互转）。 */
     public static final String NBT_ANCHOR_POS = "Anchor";
@@ -231,63 +145,15 @@ public class FurnitureSeatEntity extends Entity {
                         : Direction.fromYRot(getYRot());
         BlockPos frontColumn = anchorPos.relative(forward);
 
-        // #region agent log
-        {
-            Map<String, Object> d = new HashMap<>();
-            d.put("configId", configId);
-            d.put("anchorPos", anchorPos.toString());
-            d.put("blockValid", blockValid);
-            d.put("anchorState", anchorState.toString());
-            d.put("entityYaw", getYRot());
-            d.put("forward", forward.getName());
-            d.put("frontColumn", frontColumn.toString());
-            if (anchorState.hasProperty(BanquetteBlock.FACING)) {
-                Direction bf = anchorState.getValue(BanquetteBlock.FACING);
-                d.put("banquetteFacing", bf.getName());
-                d.put("banquetteFacingOpposite", bf.getOpposite().getName());
-            }
-            agentLog("H2", "FurnitureSeatEntity.java:findSafeDismountNear", "forward computed", d);
-        }
-        // #endregion
-
         Vec3 v = findSafeOnColumn(passenger.getType(), collision, frontColumn);
         if (v != null) {
-            // #region agent log
-            {
-                Map<String, Object> d = new HashMap<>();
-                d.put("branch", "frontColumn");
-                d.put("result", v.toString());
-                agentLog("H3", "FurnitureSeatEntity.java:findSafeDismountNear", "findSafeOnColumn front ok", d);
-            }
-            // #endregion
             return v;
         }
-
-        // #region agent log
-        agentLog(
-                "H3",
-                "FurnitureSeatEntity.java:findSafeDismountNear",
-                "front column unsafe, trying neighbors",
-                Map.of(
-                        "frontColumn",
-                        frontColumn.toString(),
-                        "fallbackOrder",
-                        "sidesThenBack"));
-        // #endregion
 
         // Plane.HORIZONTAL 的枚举顺序会在「前方格」不可用时先尝试到「正后方」邻格；改为先两侧再背后，更符合「尽量朝前」。
         for (Direction dir : horizontalFallbackDirections(forward)) {
             v = findSafeOnColumn(passenger.getType(), collision, anchorPos.relative(dir));
             if (v != null) {
-                // #region agent log
-                {
-                    Map<String, Object> d = new HashMap<>();
-                    d.put("branch", "fallbackNeighbor");
-                    d.put("dir", dir.getName());
-                    d.put("result", v.toString());
-                    agentLog("H3", "FurnitureSeatEntity.java:findSafeDismountNear", "fallback column ok", d);
-                }
-                // #endregion
                 return v;
             }
         }
@@ -341,9 +207,24 @@ public class FurnitureSeatEntity extends Entity {
     @Override
     protected void removePassenger(Entity passenger) {
         super.removePassenger(passenger);
+        if (!level().isClientSide() && passenger instanceof LivingEntity living) {
+            Vec3 safe = findSafeDismountNear(living);
+            if (safe != null) {
+                if (passenger instanceof ServerPlayer sp) {
+                    sp.connection.teleport(safe.x, safe.y, safe.z, sp.getYRot(), sp.getXRot());
+                } else {
+                    passenger.teleportTo(safe.x, safe.y, safe.z);
+                }
+            }
+        }
         if (passenger instanceof ServerPlayer sp && !level().isClientSide()) {
+            SeatConfig cfg = SeatRegistry.get(configId);
+            long cooldownTicks =
+                    cfg == null
+                            ? SeatCooldown.DEFAULT_COOLDOWN_TICKS
+                            : cfg.normalizedDismountCooldownTicks();
             SeatCooldown.setCooldownUntil(
-                    sp, level().getGameTime() + SeatCooldown.DEFAULT_COOLDOWN_TICKS);
+                    sp, level().getGameTime() + cooldownTicks);
         }
         if (!level().isClientSide() && getPassengers().isEmpty() && isAlive()) {
             discard();

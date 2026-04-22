@@ -16,13 +16,16 @@ import net.minecraft.world.phys.Vec3;
  * <p>
  * {@code dismountStepDirectionFromAnchor}：从锚点方块中心指向「默认下马站立格」的水平方向，即
  * {@code anchor.relative(dismountStepDirectionFromAnchor(state))} 为座椅正前方一格。
+ * <p>
+ * {@code dismountCooldownTicks}：脱离该座椅后，玩家再次可入座前需要等待的 tick 数（20 tick = 1 秒）。
  */
 public record SeatConfig(
         Predicate<BlockState> blockValid,
         AABB sitRangeBlockRelative,
         Vec3 seatEntityOffsetFromBlockMin,
         Function<BlockState, Float> yawDegrees,
-        Function<BlockState, Direction> dismountStepDirectionFromAnchor) {
+        Function<BlockState, Direction> dismountStepDirectionFromAnchor,
+        int dismountCooldownTicks) {
 
     /** 将「方块内」入座范围转为世界坐标 AABB，用于与玩家 {@link net.minecraft.world.entity.Entity#getBoundingBox()} 相交检测。 */
     public AABB toWorldSitRange(BlockPos pos) {
@@ -44,5 +47,10 @@ public record SeatConfig(
                 anchor.getX() + seatEntityOffsetFromBlockMin.x,
                 anchor.getY() + seatEntityOffsetFromBlockMin.y,
                 anchor.getZ() + seatEntityOffsetFromBlockMin.z);
+    }
+
+    /** 防御式归一化，避免负值导致“回拨时间”。 */
+    public long normalizedDismountCooldownTicks() {
+        return Math.max(0, dismountCooldownTicks);
     }
 }

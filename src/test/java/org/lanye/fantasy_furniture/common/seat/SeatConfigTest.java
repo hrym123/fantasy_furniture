@@ -25,7 +25,8 @@ class SeatConfigTest {
                         new AABB(0.1, 0.2, 0.3, 0.7, 0.8, 0.9),
                         Vec3.ZERO,
                         st -> 0f,
-                        st -> Direction.NORTH);
+                        st -> Direction.NORTH,
+                        40);
         BlockPos pos = new BlockPos(5, 10, -3);
         AABB w = cfg.toWorldSitRange(pos);
         assertEquals(5.1, w.minX, 1e-9);
@@ -44,7 +45,8 @@ class SeatConfigTest {
                         new AABB(0, 0, 0, 1, 1, 1),
                         new Vec3(0.5, 0.35, 0.6),
                         st -> 0f,
-                        st -> Direction.NORTH);
+                        st -> Direction.NORTH,
+                        40);
         Vec3 p = cfg.seatWorldPosition(new BlockPos(100, 64, 200));
         assertEquals(100.5, p.x, 1e-9);
         assertEquals(64.35, p.y, 1e-9);
@@ -60,7 +62,8 @@ class SeatConfigTest {
                         new AABB(0, 0, 0, 1, 1, 1),
                         new Vec3(0.5, 0, 0.5),
                         st -> 0f,
-                        st -> Direction.NORTH);
+                        st -> Direction.NORTH,
+                        40);
         BlockPos anchor = new BlockPos(0, 64, 0);
         AABB sit = cfg.toWorldSitRange(anchor);
         AABB playerFeet = new AABB(0.2, 64.0, 0.2, 0.8, 65.8, 0.8);
@@ -75,7 +78,8 @@ class SeatConfigTest {
                         new AABB(0, 0, 0, 0.3, 1, 1),
                         Vec3.ZERO,
                         st -> 0f,
-                        st -> Direction.NORTH);
+                        st -> Direction.NORTH,
+                        40);
         BlockPos anchor = BlockPos.ZERO;
         AABB sit = cfg.toWorldSitRange(anchor);
         AABB player = new AABB(0.5, 0, 0, 1.0, 2, 1);
@@ -85,9 +89,11 @@ class SeatConfigTest {
     @Test
     void blockValid_respectsPredicate() {
         SeatConfig allowed =
-                new SeatConfig(s -> true, new AABB(0, 0, 0, 1, 1, 1), Vec3.ZERO, st -> 0f, st -> Direction.NORTH);
+                new SeatConfig(
+                        s -> true, new AABB(0, 0, 0, 1, 1, 1), Vec3.ZERO, st -> 0f, st -> Direction.NORTH, 40);
         SeatConfig denied =
-                new SeatConfig(s -> false, new AABB(0, 0, 0, 1, 1, 1), Vec3.ZERO, st -> 0f, st -> Direction.NORTH);
+                new SeatConfig(
+                        s -> false, new AABB(0, 0, 0, 1, 1, 1), Vec3.ZERO, st -> 0f, st -> Direction.NORTH, 40);
         assertTrue(allowed.blockValid().test(null));
         assertFalse(denied.blockValid().test(null));
     }

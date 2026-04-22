@@ -3,6 +3,7 @@ package org.lanye.fantasy_furniture.registry;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
+import org.lanye.fantasy_furniture.Config;
 import org.lanye.fantasy_furniture.block.registry.ModBlocks;
 import org.lanye.fantasy_furniture.block.facing.BanquetteBlock;
 import org.lanye.fantasy_furniture.common.seat.SeatConfig;
@@ -62,6 +63,7 @@ public final class ModSeatConfigs {
                         new AABB(0, 0, 0, 1, 1, 1),
                         new Vec3(0.5, BANQUETTE_SEAT_Y, 0.5),
                         state -> state.getValue(BanquetteBlock.FACING).getOpposite().toYRot(),
-                        state -> state.getValue(BanquetteBlock.FACING).getOpposite()));
+                        state -> state.getValue(BanquetteBlock.FACING),
+                        Config.seatCooldownTicks()));
     }
 }
