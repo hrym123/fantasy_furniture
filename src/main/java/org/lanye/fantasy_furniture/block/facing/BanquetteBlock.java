@@ -71,11 +71,8 @@ public class BanquetteBlock extends GeolibFacingEntityBlockWithFactory<Banquette
     }
 
     @Override
-    public InteractionResult use(
+    protected InteractionResult onUseServer(
             BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
-        if (level.isClientSide) {
-            return InteractionResult.SUCCESS;
-        }
         if (player instanceof ServerPlayer sp && level instanceof ServerLevel sl) {
             if (SeatInteraction.trySitFromBlockUse(sp, sl, pos, state)) {
                 return InteractionResult.CONSUME;

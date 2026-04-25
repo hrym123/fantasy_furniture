@@ -34,14 +34,12 @@ public class MixingBowlBlock extends GeolibFacingEntityBlockWithFactory<MixingBo
     }
 
     @Override
-    public InteractionResult use(
+    protected InteractionResult onUseServer(
             BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
-        if (!level.isClientSide) {
-            BlockEntity be = level.getBlockEntity(pos);
-            if (be instanceof MixingBowlBlockEntity bowl) {
-                bowl.onServerShortStir();
-            }
+        BlockEntity be = level.getBlockEntity(pos);
+        if (be instanceof MixingBowlBlockEntity bowl) {
+            bowl.onServerShortStir();
         }
-        return InteractionResult.sidedSuccess(level.isClientSide);
+        return InteractionResult.CONSUME;
     }
 }

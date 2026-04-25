@@ -58,14 +58,12 @@ public class LotteryMachineBlock extends GeolibFacingEntityBlockWithFactory<Lott
     }
 
     @Override
-    public InteractionResult use(
+    protected InteractionResult onUseServer(
             BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
-        if (!level.isClientSide) {
-            BlockEntity be = level.getBlockEntity(pos);
-            if (be instanceof LotteryMachineBlockEntity machine) {
-                machine.onServerDraw();
-            }
+        BlockEntity be = level.getBlockEntity(pos);
+        if (be instanceof LotteryMachineBlockEntity machine) {
+            machine.onServerDraw();
         }
-        return InteractionResult.sidedSuccess(level.isClientSide);
+        return InteractionResult.CONSUME;
     }
 }

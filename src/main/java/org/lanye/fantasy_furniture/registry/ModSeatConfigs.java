@@ -49,8 +49,8 @@ public final class ModSeatConfigs {
      */
     public static final String BANQUETTE_ID = "banquette";
 
-    /** 与 {@link BanquetteBlock} 模型坐垫高度对齐：在基准偏移上再向下 5/16 格。 */
-    private static final double BANQUETTE_SEAT_Y = 0.35 - 5.0 / 16.0;
+    /** 与 {@link BanquetteBlock} 模型坐垫高度对齐：在基准偏移上再向下 3/16 格，较最初配置累计上调 2/16 格。 */
+    private static final double BANQUETTE_SEAT_Y = 0.35 - 3.0 / 16.0;
 
     private ModSeatConfigs() {}
 

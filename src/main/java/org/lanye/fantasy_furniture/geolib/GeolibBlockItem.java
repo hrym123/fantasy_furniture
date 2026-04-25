@@ -5,6 +5,7 @@ import net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.level.block.Block;
 import net.minecraftforge.client.extensions.common.IClientItemExtensions;
+import org.lanye.fantasy_furniture.client.renderer.GeolibBlockItemRenderer;
 import org.lanye.fantasy_furniture.client.model.GeolibBlockItemModel;
 import org.jetbrains.annotations.NotNull;
 import software.bernie.geckolib.animatable.GeoItem;
@@ -23,7 +24,7 @@ import software.bernie.geckolib.util.GeckoLibUtil;
 public class GeolibBlockItem extends BlockItem implements GeoItem {
 
     private static final class ClientRendererHolder {
-        static final BlockEntityWithoutLevelRenderer INSTANCE = new GeoItemRenderer<>(new GeolibBlockItemModel());
+        static final BlockEntityWithoutLevelRenderer INSTANCE = new GeolibBlockItemRenderer();
     }
 
     private final GeolibItemAssets assets;

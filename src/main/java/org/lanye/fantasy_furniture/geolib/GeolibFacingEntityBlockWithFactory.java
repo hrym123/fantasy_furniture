@@ -6,6 +6,7 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
+import org.lanye.fantasy_furniture.block.FurnitureBlock;
 
 /**
  * {@link GeolibFacingEntityBlock} + {@link BlockEntityType.BlockEntitySupplier}，与 {@link GeolibEntityBlockWithFactory}
@@ -13,7 +14,7 @@ import net.minecraft.world.level.block.state.BlockState;
  *
  * @param <BE> 方块实体类型
  */
-public abstract class GeolibFacingEntityBlockWithFactory<BE extends BlockEntity> extends GeolibFacingEntityBlock {
+public abstract class GeolibFacingEntityBlockWithFactory<BE extends BlockEntity> extends FurnitureBlock {
 
     private final BlockEntityType.BlockEntitySupplier<BE> blockEntitySupplier;
 
