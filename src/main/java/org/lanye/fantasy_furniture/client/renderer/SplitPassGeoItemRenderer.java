@@ -7,15 +7,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.StandardOpenOption;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.entity.ItemRenderer;
-import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.item.ItemDisplayContext;
 import org.joml.Matrix4f;
 import org.lanye.fantasy_furniture.geolib.GeolibHandheldItem;
 import software.bernie.geckolib.cache.object.BakedGeoModel;
@@ -33,69 +28,6 @@ import software.bernie.geckolib.renderer.GeoItemRenderer;
  * 第二遍仅保留 shell 几何（不含立方体的枢轴骨会保留，用于维持动画层级变换）。
  */
 public abstract class SplitPassGeoItemRenderer<T extends GeolibHandheldItem> extends GeoItemRenderer<T> {
-    // #region agent log
-    private static final Path AGENT_DEBUG_LOG =
-            Path.of("D:/warehouse/Lanye-mod/development/core/fantasy_furniture/debug-f6e4b1.log");
-    private static final Map<String, Integer> AGENT_SAMPLE_COUNTER = new HashMap<>();
-
-    private static String agentEscape(String s) {
-        return s.replace("\\", "\\\\").replace("\"", "\\\"");
-    }
-
-    private static String agentJsonValue(Object value) {
-        if (value == null) {
-            return "null";
-        }
-        if (value instanceof Number || value instanceof Boolean) {
-            return String.valueOf(value);
-        }
-        return "\"" + agentEscape(String.valueOf(value)) + "\"";
-    }
-
-    private static String agentMapJson(Map<String, Object> map) {
-        StringBuilder sb = new StringBuilder("{");
-        boolean first = true;
-        for (Map.Entry<String, Object> e : map.entrySet()) {
-            if (!first) {
-                sb.append(",");
-            }
-            first = false;
-            sb.append("\"")
-                    .append(agentEscape(e.getKey()))
-                    .append("\":")
-                    .append(agentJsonValue(e.getValue()));
-        }
-        return sb.append("}").toString();
-    }
-
-    private static void agentLog(String runId, String hypothesisId, String location, String message, Map<String, Object> data) {
-        try {
-            String payload =
-                    "{"
-                            + "\"sessionId\":\"f6e4b1\","
-                            + "\"runId\":"
-                            + agentJsonValue(runId)
-                            + ",\"hypothesisId\":"
-                            + agentJsonValue(hypothesisId)
-                            + ",\"location\":"
-                            + agentJsonValue(location)
-                            + ",\"message\":"
-                            + agentJsonValue(message)
-                            + ",\"data\":"
-                            + agentMapJson(data)
-                            + ",\"timestamp\":"
-                            + System.currentTimeMillis()
-                            + "}";
-            Files.writeString(
-                    AGENT_DEBUG_LOG,
-                    payload + "\n",
-                    StandardOpenOption.CREATE,
-                    StandardOpenOption.APPEND);
-        } catch (Throwable ignored) {
-        }
-    }
-    // #endregion
-
     protected SplitPassGeoItemRenderer(GeoModel<T> model) {
         super(model);
     }
@@ -111,20 +43,6 @@ public abstract class SplitPassGeoItemRenderer<T extends GeolibHandheldItem> ext
     /** shell Pass 的 RenderType。 */
     protected RenderType shellRenderType(ResourceLocation texture) {
         return RenderType.entityTranslucentCull(texture);
-    }
-
-    private static boolean shouldLogForContext(String itemId, ItemDisplayContext context) {
-        boolean targetContext =
-                context == ItemDisplayContext.FIRST_PERSON_LEFT_HAND
-                        || context == ItemDisplayContext.FIRST_PERSON_RIGHT_HAND
-                        || context == ItemDisplayContext.THIRD_PERSON_LEFT_HAND
-                        || context == ItemDisplayContext.THIRD_PERSON_RIGHT_HAND;
-        if (!targetContext) {
-            return false;
-        }
-        String key = itemId + ":" + context.name();
-        int seq = AGENT_SAMPLE_COUNTER.merge(key, 1, Integer::sum);
-        return seq <= 6;
     }
 
     @Override
@@ -166,63 +84,9 @@ public abstract class SplitPassGeoItemRenderer<T extends GeolibHandheldItem> ext
         RenderType opaqueType = opaqueRenderType(texture);
         RenderType shellType = shellRenderType(texture);
         List<GeoBone> allBones = flattenBones(model);
-        String itemId =
-                this.currentItemStack == null
-                        ? "null"
-                        : BuiltInRegistries.ITEM.getKey(this.currentItemStack.getItem()).toString();
-        ItemDisplayContext context = this.renderPerspective;
-        boolean firstPerson =
-                context == ItemDisplayContext.FIRST_PERSON_LEFT_HAND
-                        || context == ItemDisplayContext.FIRST_PERSON_RIGHT_HAND;
-        boolean shouldLog = shouldLogForContext(itemId, context);
-        if (shouldLog) {
-                // #region agent log
-                Map<String, Object> d = new HashMap<>();
-                d.put("itemId", itemId);
-                d.put("displayContext", context.name());
-                d.put("isReRender", isReRender);
-                d.put("isFirstPerson", firstPerson);
-                d.put("defaultOpaqueType", opaqueRenderType(texture).toString());
-                d.put("defaultShellType", shellRenderType(texture).toString());
-                d.put("packedLight", packedLight);
-                d.put("packedOverlay", packedOverlay);
-                d.put("red", red);
-                d.put("green", green);
-                d.put("blue", blue);
-                d.put("alpha", alpha);
-                d.put("opaqueType", opaqueType.toString());
-                d.put("shellType", shellType.toString());
-                d.put("foil", foil);
-                d.put("shellBoneCount", shellBoneNames().size());
-                agentLog(
-                        "baseline-2",
-                        "H4_H6_H7",
-                        "SplitPassGeoItemRenderer#actuallyRender",
-                        "context split-pass sample",
-                        d);
-                // #endregion
-        }
 
         try {
             Map<GeoBone, Boolean> oldHidden = applyPassVisibility(allBones, shellBoneNames(), false);
-            if (shouldLog) {
-                    // #region agent log
-                    Map<String, Object> d = new HashMap<>();
-                    d.put("itemId", itemId);
-                    d.put("displayContext", context.name());
-                    d.put("pass", "opaque");
-                    d.put("renderType", opaqueType.toString());
-                    d.put("visibleCubeBones", countVisibleCubeBones(allBones));
-                    d.put("shellCubeBonesTotal", countShellCubeBones(allBones, shellBoneNames()));
-                    d.put("isReRender", isReRender);
-                    agentLog(
-                            "baseline-2",
-                            "H3",
-                            "SplitPassGeoItemRenderer#opaque-pass",
-                            "context pass visibility snapshot",
-                            d);
-                    // #endregion
-            }
             VertexConsumer opaqueBuffer = ItemRenderer.getFoilBufferDirect(bufferSource, opaqueType, gui, foil);
             renderPass(
                     poseStack,
@@ -242,24 +106,6 @@ public abstract class SplitPassGeoItemRenderer<T extends GeolibHandheldItem> ext
             restoreHidden(oldHidden);
 
             oldHidden = applyPassVisibility(allBones, shellBoneNames(), true);
-            if (shouldLog) {
-                    // #region agent log
-                    Map<String, Object> d = new HashMap<>();
-                    d.put("itemId", itemId);
-                    d.put("displayContext", context.name());
-                    d.put("pass", "shell");
-                    d.put("renderType", shellType.toString());
-                    d.put("visibleCubeBones", countVisibleCubeBones(allBones));
-                    d.put("shellCubeBonesTotal", countShellCubeBones(allBones, shellBoneNames()));
-                    d.put("isReRender", isReRender);
-                    agentLog(
-                            "baseline-2",
-                            "H3",
-                            "SplitPassGeoItemRenderer#shell-pass",
-                            "context pass visibility snapshot",
-                            d);
-                    // #endregion
-            }
             VertexConsumer shellBuffer = ItemRenderer.getFoilBufferDirect(bufferSource, shellType, gui, foil);
             renderPass(
                     poseStack,
@@ -281,22 +127,6 @@ public abstract class SplitPassGeoItemRenderer<T extends GeolibHandheldItem> ext
             // 兜底复位，避免单例渲染器状态泄漏到下一帧/下一物品。
             for (GeoBone bone : allBones) {
                 bone.setHidden(false);
-            }
-            if (shouldLog) {
-                    // #region agent log
-                    Map<String, Object> d = new HashMap<>();
-                    d.put("itemId", itemId);
-                    d.put("displayContext", context.name());
-                    d.put("visibleCubeBonesAfterCleanup", countVisibleCubeBones(allBones));
-                    d.put("totalBones", allBones.size());
-                    d.put("isReRender", isReRender);
-                    agentLog(
-                            "baseline-2",
-                            "H5",
-                            "SplitPassGeoItemRenderer#cleanup",
-                            "context cleanup visibility snapshot",
-                            d);
-                    // #endregion
             }
         }
     }
