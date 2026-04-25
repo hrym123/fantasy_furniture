@@ -53,7 +53,8 @@ public final class ModCreativeTabs {
             ModBlocks.LOTTERY_MACHINE.item()::get,
             ModBlocks.GREEN_SOFA.item()::get,
             ModBlocks.KITCHEN_COUNTER.item()::get,
-            ModBlocks.KITCHEN_COUNTER_CABINET.item()::get);
+            ModBlocks.KITCHEN_COUNTER_CABINET.item()::get,
+            ModBlocks.COMBINED_ORNAMENT.item()::get);
 
     public static final DeferredRegister<CreativeModeTab> CREATIVE_MODE_TABS =
             DeferredRegister.create(Registries.CREATIVE_MODE_TAB, FantasyFurniture.MODID);

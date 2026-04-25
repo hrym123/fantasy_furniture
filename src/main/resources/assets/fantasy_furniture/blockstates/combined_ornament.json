@@ -1,0 +1,8 @@
+{
+  "variants": {
+    "facing=east": { "model": "fantasy_furniture:block/combined_ornament" },
+    "facing=north": { "model": "fantasy_furniture:block/combined_ornament" },
+    "facing=south": { "model": "fantasy_furniture:block/combined_ornament" },
+    "facing=west": { "model": "fantasy_furniture:block/combined_ornament" }
+  }
+}

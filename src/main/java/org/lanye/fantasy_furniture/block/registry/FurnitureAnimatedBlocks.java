@@ -11,6 +11,7 @@ import org.lanye.fantasy_furniture.block.entity.BanquetteBlockEntity;
 import org.lanye.fantasy_furniture.block.entity.GreenSofaBlockEntity;
 import org.lanye.fantasy_furniture.block.entity.HalfHalfPotBlockEntity;
 import org.lanye.fantasy_furniture.block.entity.JamPotBlockEntity;
+import org.lanye.fantasy_furniture.block.entity.CombinedOrnamentBlockEntity;
 import org.lanye.fantasy_furniture.block.entity.KitchenCounterBlockEntity;
 import org.lanye.fantasy_furniture.block.entity.KitchenCounterCabinetBlockEntity;
 import org.lanye.fantasy_furniture.block.entity.LotteryMachineBlockEntity;
@@ -18,6 +19,7 @@ import org.lanye.fantasy_furniture.block.entity.MixingBowlBlockEntity;
 import org.lanye.fantasy_furniture.block.entity.OvenBlockEntity;
 import org.lanye.fantasy_furniture.block.entity.PestleBowlBlockEntity;
 import org.lanye.fantasy_furniture.block.facing.BanquetteBlock;
+import org.lanye.fantasy_furniture.block.facing.CombinedOrnamentBlock;
 import org.lanye.fantasy_furniture.block.facing.HalfHalfPotBlock;
 import org.lanye.fantasy_furniture.block.facing.JamPotBlock;
 import org.lanye.fantasy_furniture.block.facing.KitchenCounterBlock;
@@ -141,6 +143,23 @@ public final class FurnitureAnimatedBlocks {
 
     private static BlockBehaviour.Properties kitchenCounterProperties() {
         return kitchenCounterCabinetProperties();
+    }
+
+    private static BlockBehaviour.Properties combinedOrnamentProperties() {
+        return kitchenCounterCabinetProperties();
+    }
+
+    /**
+     * 组合摆件物品：手持预览使用玩偶 A 子模型（世界中为底座+玩偶双 Geo 差分渲染）。
+     */
+    private static GeolibItemAssets combinedOrnamentItemAssets() {
+        return new GeolibItemAssets(
+                ResourceLocation.fromNamespaceAndPath(
+                        FantasyFurniture.MODID, "geo/block/combined_ornament_figurine_a.geo.json"),
+                ResourceLocation.fromNamespaceAndPath(
+                        FantasyFurniture.MODID, "textures/block/combined_ornament_figurine_a.png"),
+                ResourceLocation.fromNamespaceAndPath(
+                        FantasyFurniture.MODID, "animations/block/combined_ornament_figurine_a.animation.json"));
     }
 
     public static final AnimatedBlockEntry<MixingBowlBlockEntity> MIXING_BOWL =
@@ -287,4 +306,16 @@ public final class FurnitureAnimatedBlocks {
                                             block,
                                             p,
                                             GeolibItemAssets.blockAsset(FantasyFurniture.MODID, "kitchen_counter"))));
+
+    public static final AnimatedBlockEntry<CombinedOrnamentBlockEntity> COMBINED_ORNAMENT =
+            AnimatedBlockRegistration.registerSpec(
+                    ModBlocks.BLOCKS,
+                    ModBlocks.BLOCK_ITEMS,
+                    ModBlockEntities.BLOCK_ENTITY_TYPES,
+                    AnimatedBlockRegistration.spec(
+                            "combined_ornament",
+                            FurnitureAnimatedBlocks::combinedOrnamentProperties,
+                            CombinedOrnamentBlock::new,
+                            CombinedOrnamentBlockEntity::new,
+                            (block, p) -> new GeolibBlockItem(block, p, combinedOrnamentItemAssets())));
 }

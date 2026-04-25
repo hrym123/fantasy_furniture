@@ -8,6 +8,7 @@ import org.lanye.fantasy_furniture.FantasyFurniture;
 import org.lanye.fantasy_furniture.block.registry.ModBlocks;
 import org.lanye.fantasy_furniture.client.model.BanquetteBlockGeoModel;
 import org.lanye.fantasy_furniture.client.renderer.BanquetteGeoBlockRenderer;
+import org.lanye.fantasy_furniture.client.renderer.CombinedOrnamentGeoBlockRenderer;
 import org.lanye.fantasy_furniture.client.renderer.FurnitureSeatRenderer;
 import org.lanye.fantasy_furniture.registry.ModEntities;
 import org.lanye.fantasy_furniture.geolib.client.AnimatedBlockClientRegistration;
@@ -47,6 +48,8 @@ public final class ClientModEvents {
         AnimatedBlockClientRegistration.registerBlockEntityRenderer(
                 ModBlocks.KITCHEN_COUNTER,
                 GeolibAnimatedBlockRenderers.defaultGeoRendererProvider(FantasyFurniture.MODID, "kitchen_counter"));
+        AnimatedBlockClientRegistration.registerBlockEntityRenderer(
+                ModBlocks.COMBINED_ORNAMENT, ctx -> new CombinedOrnamentGeoBlockRenderer());
         AnimatedBlockClientRegistration.registerBlockEntityRenderer(
                 ModBlocks.BANQUETTE, ctx -> new BanquetteGeoBlockRenderer(new BanquetteBlockGeoModel()));
     }

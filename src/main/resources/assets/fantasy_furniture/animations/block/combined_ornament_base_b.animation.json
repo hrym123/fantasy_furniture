@@ -1,0 +1,10 @@
+{
+	"format_version": "1.8.0",
+	"animations": {
+		"animation.combined_ornament_base_b.idle": {
+			"loop": true,
+			"animation_length": 1,
+			"bones": {}
+		}
+	}
+}

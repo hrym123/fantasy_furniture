@@ -8,6 +8,7 @@ import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
 import org.lanye.fantasy_furniture.FantasyFurniture;
 import org.lanye.fantasy_furniture.block.entity.BanquetteBlockEntity;
+import org.lanye.fantasy_furniture.block.entity.CombinedOrnamentBlockEntity;
 import org.lanye.fantasy_furniture.block.entity.GreenSofaBlockEntity;
 import org.lanye.fantasy_furniture.block.entity.HalfHalfPotBlockEntity;
 import org.lanye.fantasy_furniture.block.entity.JamPotBlockEntity;
@@ -123,6 +124,8 @@ public final class ModBlocks {
     public static final AnimatedBlockEntry<KitchenCounterCabinetBlockEntity> KITCHEN_COUNTER_CABINET =
             FurnitureAnimatedBlocks.KITCHEN_COUNTER_CABINET;
     public static final AnimatedBlockEntry<KitchenCounterBlockEntity> KITCHEN_COUNTER = FurnitureAnimatedBlocks.KITCHEN_COUNTER;
+    public static final AnimatedBlockEntry<CombinedOrnamentBlockEntity> COMBINED_ORNAMENT =
+            FurnitureAnimatedBlocks.COMBINED_ORNAMENT;
 
     public static void register(IEventBus modEventBus) {
         BLOCKS.register(modEventBus);

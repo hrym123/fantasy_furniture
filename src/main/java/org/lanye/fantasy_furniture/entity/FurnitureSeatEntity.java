@@ -245,4 +245,5 @@ public class FurnitureSeatEntity extends Entity {
             }
         }
     }
+
 }
