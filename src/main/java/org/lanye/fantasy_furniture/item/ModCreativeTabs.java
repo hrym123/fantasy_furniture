@@ -44,6 +44,7 @@ public final class ModCreativeTabs {
             ModItems.PAINT_BRUSH::get,
             ModItems.TANGHULU::get,
             ModItems.ARCANE_WAND::get,
+            ModItems.DECORATIVE_HELMET_BLUE_TOP_HAT::get,
             ModBlocks.BANQUETTE.item()::get,
             ModBlocks.MIXING_BOWL.item()::get,
             ModBlocks.JAM_POT.item()::get,

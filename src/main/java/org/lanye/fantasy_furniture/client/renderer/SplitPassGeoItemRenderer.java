@@ -11,6 +11,7 @@ import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.entity.ItemRenderer;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.item.ItemDisplayContext;
 import org.joml.Matrix4f;
 import org.lanye.fantasy_furniture.geolib.GeolibHandheldItem;
 import software.bernie.geckolib.cache.object.BakedGeoModel;

@@ -37,6 +37,17 @@ public final class ModItems {
                     GeolibItemAssets.itemAsset(FantasyFurniture.MODID, "arcane_wand"),
                     "animation.arcane_wand.idle"));
 
+    /** 蓝色礼帽：头盔槽装饰物品（头戴 GeckoLib geo，图标见 {@code models/item/decorative_helmet_blue_top_hat.json}）。 */
+    public static final RegistryObject<Item> DECORATIVE_HELMET_BLUE_TOP_HAT =
+            ITEMS.register(
+                    "decorative_helmet_blue_top_hat",
+                    () -> new DecorativeHelmetItem(
+                            new Item.Properties().stacksTo(1),
+                            GeolibItemAssets.itemGeoAtlas(
+                                    FantasyFurniture.MODID,
+                                    "decorative_helmet_blue_top_hat",
+                                    "decorative_helmet_blue_top_hat_atlas")));
+
     public static void register(IEventBus modEventBus) {
         ITEMS.register(modEventBus);
     }

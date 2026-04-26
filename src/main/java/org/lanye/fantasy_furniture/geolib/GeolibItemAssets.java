@@ -32,4 +32,15 @@ public record GeolibItemAssets(ResourceLocation model, ResourceLocation texture,
                 ResourceLocation.fromNamespaceAndPath(modid, "textures/item/" + basename + ".png"),
                 ResourceLocation.fromNamespaceAndPath(modid, "animations/item/" + basename + ".animation.json"));
     }
+
+    /**
+     * Geo 使用独立 atlas 贴图（与 {@code item/generated} 的图标 PNG 分离），路径：
+     * {@code geo/item/&lt;basename&gt;}、{@code textures/item/&lt;atlasBasename&gt;}、{@code animations/item/&lt;basename&gt;}。
+     */
+    public static GeolibItemAssets itemGeoAtlas(String modid, String basename, String atlasBasename) {
+        return new GeolibItemAssets(
+                ResourceLocation.fromNamespaceAndPath(modid, "geo/item/" + basename + ".geo.json"),
+                ResourceLocation.fromNamespaceAndPath(modid, "textures/item/" + atlasBasename + ".png"),
+                ResourceLocation.fromNamespaceAndPath(modid, "animations/item/" + basename + ".animation.json"));
+    }
 }

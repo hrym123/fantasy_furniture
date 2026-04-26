@@ -30,3 +30,6 @@ mandatory = true
 versionRange = "${geckolib_version_range}"
 ordering = "NONE"
 side = "BOTH"
+
+[[mixins]]
+config = "fantasy_furniture.mixins.json"

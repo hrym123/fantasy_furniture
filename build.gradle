@@ -38,6 +38,7 @@ minecraft {
 
         client {
             property 'forge.enabledGameTestNamespaces', mod_id
+            args '-mixin.config=fantasy_furniture.mixins.json'
         }
 
         server {
@@ -72,6 +73,7 @@ repositories {
 dependencies {
     minecraft "net.minecraftforge:forge:${minecraft_version}-${forge_version}"
     implementation fg.deobf("software.bernie.geckolib:geckolib-forge-${minecraft_version}:${geckolib_version}")
+    annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
 
     testImplementation 'org.junit.jupiter:junit-jupiter:5.10.2'
     testImplementation 'org.mockito:mockito-junit-jupiter:5.11.0'
@@ -113,4 +115,8 @@ tasks.named('jar', Jar).configure {
 
 tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8'
+}
+
+mixin {
+    add sourceSets.main, 'fantasy_furniture.refmap.json'
 }
