@@ -18,6 +18,7 @@ import org.lanye.fantasy_furniture.block.entity.LotteryMachineBlockEntity;
 import org.lanye.fantasy_furniture.block.entity.MixingBowlBlockEntity;
 import org.lanye.fantasy_furniture.block.entity.OvenBlockEntity;
 import org.lanye.fantasy_furniture.block.entity.PestleBowlBlockEntity;
+import org.lanye.fantasy_furniture.block.entity.SweeperDockBlockEntity;
 import org.lanye.fantasy_furniture.block.facing.BanquetteBlock;
 import org.lanye.fantasy_furniture.block.facing.CombinedOrnamentBlock;
 import org.lanye.fantasy_furniture.block.facing.HalfHalfPotBlock;
@@ -28,6 +29,7 @@ import org.lanye.fantasy_furniture.block.facing.LotteryMachineBlock;
 import org.lanye.fantasy_furniture.block.facing.MixingBowlBlock;
 import org.lanye.fantasy_furniture.block.facing.OvenBlock;
 import org.lanye.fantasy_furniture.block.facing.PestleBowlBlock;
+import org.lanye.fantasy_furniture.block.facing.SweeperDockBlock;
 import org.lanye.fantasy_furniture.geolib.AnimatedBlockEntry;
 import org.lanye.fantasy_furniture.geolib.AnimatedBlockRegistration;
 import org.lanye.fantasy_furniture.geolib.GeolibBlockItem;
@@ -147,6 +149,14 @@ public final class FurnitureAnimatedBlocks {
 
     private static BlockBehaviour.Properties combinedOrnamentProperties() {
         return kitchenCounterCabinetProperties();
+    }
+
+    private static BlockBehaviour.Properties sweeperDockProperties() {
+        return BlockBehaviour.Properties.of()
+                .mapColor(MapColor.METAL)
+                .strength(1.5f, 6.0f)
+                .sound(SoundType.METAL)
+                .noOcclusion();
     }
 
     /**
@@ -318,4 +328,20 @@ public final class FurnitureAnimatedBlocks {
                             CombinedOrnamentBlock::new,
                             CombinedOrnamentBlockEntity::new,
                             (block, p) -> new GeolibBlockItem(block, p, combinedOrnamentItemAssets())));
+
+    public static final AnimatedBlockEntry<SweeperDockBlockEntity> SWEEPER_DOCK =
+            AnimatedBlockRegistration.registerSpec(
+                    ModBlocks.BLOCKS,
+                    ModBlocks.BLOCK_ITEMS,
+                    ModBlockEntities.BLOCK_ENTITY_TYPES,
+                    AnimatedBlockRegistration.spec(
+                            "sweeper_dock",
+                            FurnitureAnimatedBlocks::sweeperDockProperties,
+                            SweeperDockBlock::new,
+                            SweeperDockBlockEntity::new,
+                            (block, p) ->
+                                    new GeolibBlockItem(
+                                            block,
+                                            p,
+                                            GeolibItemAssets.blockAsset(FantasyFurniture.MODID, "sweeper_dock"))));
 }

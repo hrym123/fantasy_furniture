@@ -31,5 +31,13 @@ versionRange = "${geckolib_version_range}"
 ordering = "NONE"
 side = "BOTH"
 
+# 玉 Jade：可选，仅客户端；用于扫地机器人生命值等 HUD。
+[[dependencies."${mod_id}"]]
+modId = "jade"
+mandatory = false
+versionRange = "[11.0.0,)"
+ordering = "NONE"
+side = "CLIENT"
+
 [[mixins]]
 config = "fantasy_furniture.mixins.json"

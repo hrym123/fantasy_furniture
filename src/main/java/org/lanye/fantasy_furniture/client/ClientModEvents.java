@@ -1,16 +1,21 @@
 package org.lanye.fantasy_furniture.client;
 
+import net.minecraft.client.gui.screens.MenuScreens;
+import net.minecraft.client.gui.screens.inventory.ContainerScreen;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.EntityRenderersEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 import org.lanye.fantasy_furniture.FantasyFurniture;
 import org.lanye.fantasy_furniture.block.registry.ModBlocks;
 import org.lanye.fantasy_furniture.client.model.BanquetteBlockGeoModel;
 import org.lanye.fantasy_furniture.client.renderer.BanquetteGeoBlockRenderer;
 import org.lanye.fantasy_furniture.client.renderer.CombinedOrnamentGeoBlockRenderer;
 import org.lanye.fantasy_furniture.client.renderer.FurnitureSeatRenderer;
+import org.lanye.fantasy_furniture.client.renderer.SweeperRobotRenderer;
 import org.lanye.fantasy_furniture.registry.ModEntities;
+import org.lanye.fantasy_furniture.registry.ModMenuTypes;
 import org.lanye.fantasy_furniture.geolib.client.AnimatedBlockClientRegistration;
 import org.lanye.fantasy_furniture.geolib.client.GeolibAnimatedBlockRenderers;
 
@@ -52,11 +57,21 @@ public final class ClientModEvents {
                 ModBlocks.COMBINED_ORNAMENT, ctx -> new CombinedOrnamentGeoBlockRenderer());
         AnimatedBlockClientRegistration.registerBlockEntityRenderer(
                 ModBlocks.BANQUETTE, ctx -> new BanquetteGeoBlockRenderer(new BanquetteBlockGeoModel()));
+        AnimatedBlockClientRegistration.registerBlockEntityRenderer(
+                ModBlocks.SWEEPER_DOCK,
+                GeolibAnimatedBlockRenderers.defaultGeoRendererProvider(FantasyFurniture.MODID, "sweeper_dock"));
     }
 
     @SubscribeEvent
     public static void registerRenderers(EntityRenderersEvent.RegisterRenderers event) {
         AnimatedBlockClientRegistration.registerAllRenderers(event);
         event.registerEntityRenderer(ModEntities.FURNITURE_SEAT.get(), FurnitureSeatRenderer::new);
+        event.registerEntityRenderer(ModEntities.SWEEPER_ROBOT.get(), SweeperRobotRenderer::new);
+    }
+
+    @SubscribeEvent
+    public static void onClientSetup(FMLClientSetupEvent event) {
+        event.enqueueWork(
+                () -> MenuScreens.register(ModMenuTypes.SWEEPER_ROBOT.get(), ContainerScreen::new));
     }
 }

@@ -10,6 +10,7 @@ import org.lanye.fantasy_furniture.item.ModCreativeTabs;
 import org.lanye.fantasy_furniture.item.ModItems;
 import org.lanye.fantasy_furniture.registry.ModBlockEntities;
 import org.lanye.fantasy_furniture.registry.ModEntities;
+import org.lanye.fantasy_furniture.registry.ModMenuTypes;
 import org.lanye.fantasy_furniture.registry.ModSeatConfigs;
 import org.slf4j.Logger;
 
@@ -31,6 +32,7 @@ public class FantasyFurniture {
         ModBlocks.register(modEventBus);
         ModBlockEntities.register(modEventBus);
         ModEntities.register(modEventBus);
+        ModMenuTypes.register(modEventBus);
         ModItems.register(modEventBus);
         ModCreativeTabs.register(modEventBus);
         modEventBus.addListener(this::onCommonSetup);

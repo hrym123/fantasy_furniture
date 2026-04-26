@@ -1,0 +1,8 @@
+{
+  "variants": {
+    "facing=east": { "model": "fantasy_furniture:block/sweeper_dock" },
+    "facing=north": { "model": "fantasy_furniture:block/sweeper_dock" },
+    "facing=south": { "model": "fantasy_furniture:block/sweeper_dock" },
+    "facing=west": { "model": "fantasy_furniture:block/sweeper_dock" }
+  }
+}

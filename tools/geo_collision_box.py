@@ -31,6 +31,9 @@
 
     python tools/geo_collision_box.py src/main/resources/assets/fantasy_furniture/geo/block/lottery_machine.geo.json
 
+    # 实体 GeckoLib geo：估算 EntityType.Builder.sized(width, height)（水平取 xz 外包正方形边长）
+    python tools/geo_collision_box.py src/main/resources/assets/fantasy_furniture/geo/entity/sweeper_robot.geo.json --entity-hitbox
+
 可选：``--raw`` 仅打印模型空间并集（映射到方块坐标但未与单格求交），用于排查模型是否超出格子。
 
 逐 cube 明细、骨骼名与 ``orParts`` 片段见 ``tools/block_collision_detail.py``。
@@ -225,6 +228,47 @@ def compute_raw_mapped_box(geo_path: Path) -> tuple[float, float, float, float, 
     return (min_x, min_y, min_z, max_x, max_y, max_z)
 
 
+def compute_model_space_union(geo_path: Path) -> tuple[float, float, float, float, float, float]:
+    """
+    全模型各 cube 在 **Bedrock/geo 模型空间** 下的轴对齐并集（不做 x/z+8、不做单格裁切）。
+    坐标与 Blockbench 导出一致；通常 16 单位 = 1 方块（与方块碰撞脚本中 Block.box 的 0～16 刻度一致）。
+    """
+    data = json.loads(geo_path.read_text(encoding="utf-8"))
+    cubes = _iter_cubes_from_geo(data)
+    min_x = min_y = min_z = float("inf")
+    max_x = max_y = max_z = float("-inf")
+    for o, s, rot, piv in cubes:
+        m = _cube_aabb_model(o, s, rot, piv)
+        minx, maxx, miny, maxy, minz, maxz = m
+        min_x = min(min_x, minx)
+        max_x = max(max_x, maxx)
+        min_y = min(min_y, miny)
+        max_y = max(max_y, maxy)
+        min_z = min(min_z, minz)
+        max_z = max(max_z, maxz)
+    if min_x is float("inf"):
+        raise ValueError("geo 中无 cube")
+    return (min_x, min_y, min_z, max_x, max_y, max_z)
+
+
+def compute_entity_sized_width_height(geo_path: Path) -> tuple[float, float, tuple[float, float, float, float, float, float]]:
+    """
+    估算 Forge ``EntityType.Builder.sized(width, height)``：
+    - ``width``：水平面包住模型 xz 投影所需的**正方形边长**（方块）= max(dx, dz) / 16；
+    - ``height``：竖直跨度（方块）= dy / 16。
+
+    实体碰撞在 xz 上为对称正方形，故取 xz 外包较大的边作为边长。
+    返回 (width_blocks, height_blocks, model_aabb)。
+    """
+    min_x, min_y, min_z, max_x, max_y, max_z = compute_model_space_union(geo_path)
+    dx = max_x - min_x
+    dy = max_y - min_y
+    dz = max_z - min_z
+    w = max(dx, dz) / 16.0
+    h = dy / 16.0
+    return (w, h, (min_x, min_y, min_z, max_x, max_y, max_z))
+
+
 def _fmt_java_box(
     mn: tuple[float, float, float, float, float, float], precision: int = 2
 ) -> str:
@@ -258,10 +302,43 @@ def main() -> None:
         action="store_true",
         help="输出用于 LotteryMachineBlock 的 Java：对每 cube 裁切盒做 Shapes.or（真并集，非外接盒）",
     )
+    parser.add_argument(
+        "--entity-hitbox",
+        action="store_true",
+        help=(
+            "按实体 geo 计算 Forge EntityType.Builder.sized(width, height)："
+            "模型空间 cube 并集，16 单位=1 方块；width=max(xz跨度)/16，height=y跨度/16"
+        ),
+    )
     args = parser.parse_args()
     path = args.geo
     if not path.is_file():
         raise SystemExit(f"文件不存在: {path}")
+
+    if args.entity_hitbox:
+        w, h, aabb = compute_entity_sized_width_height(path)
+        min_x, min_y, min_z, max_x, max_y, max_z = aabb
+        dx = max_x - min_x
+        dy = max_y - min_y
+        dz = max_z - min_z
+        print("实体碰撞（模型空间 AABB，geo 单位；与方块脚本相同 16 单位 = 1 方块）：")
+        print(
+            f"  min ({min_x:.{args.precision}f}, {min_y:.{args.precision}f}, {min_z:.{args.precision}f})"
+        )
+        print(
+            f"  max ({max_x:.{args.precision}f}, {max_y:.{args.precision}f}, {max_z:.{args.precision}f})"
+        )
+        print(f"  跨度 dx={dx:.{args.precision}f}, dy={dy:.{args.precision}f}, dz={dz:.{args.precision}f}")
+        print()
+        print(
+            f"EntityType.Builder...sized({w:.{args.precision}f}f, {h:.{args.precision}f}f)  "
+            f"// width=max(dx,dz)/16, height=dy/16"
+        )
+        print()
+        print(
+            "说明：与 GeckoLib 渲染原点、动画无关，仅静态几何；若游戏内模型整体有额外平移，可微调 Java 中的数值。"
+        )
+        return
 
     if args.emit_java:
         boxes = compute_north_clipped_boxes(path)

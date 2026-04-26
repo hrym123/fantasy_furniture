@@ -67,12 +67,23 @@ repositories {
         name = 'GeckoLib'
         url = 'https://dl.cloudsmith.io/public/geckolib3/geckolib/maven/'
     }
+    // 玉（Jade）可选：用于开发时编译/运行，与 Curse 上 1.20.1 Forge 发行包一致
+    maven {
+        name = 'Curse Maven'
+        url = 'https://cursemaven.com'
+        content { includeGroup 'curse.maven' }
+    }
     mavenCentral()
 }
 
 dependencies {
     minecraft "net.minecraftforge:forge:${minecraft_version}-${forge_version}"
     implementation fg.deobf("software.bernie.geckolib:geckolib-forge-${minecraft_version}:${geckolib_version}")
+    // 与 parchment 同映射反混淆，避免开发环境与 Curse/玩家端 jade 包不一致
+    def jadeDeobf = fg.deobf("curse.maven:jade-324717:${jade_curse_file_id}")
+    compileOnly jadeDeobf
+    // 随 Minecraft Client 运行类路径与 run/mods 解析（Forge 用 runtimeOnly；非发行传递依赖）
+    runtimeOnly jadeDeobf
     annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
 
     testImplementation 'org.junit.jupiter:junit-jupiter:5.10.2'

@@ -1,0 +1,13 @@
+{
+  "format_version": "1.8.0",
+  "animations": {
+    "animation.sweeper_robot.idle": {
+      "loop": true,
+      "bones": {}
+    },
+    "animation.sweeper_robot.move": {
+      "loop": true,
+      "bones": {}
+    }
+  }
+}

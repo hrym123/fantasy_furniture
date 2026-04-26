@@ -20,6 +20,7 @@
   "block.fantasy_furniture.pestle_bowl": "Pestle Bowl",
   "block.fantasy_furniture.half_half_pot": "Half-Half Pot",
   "block.fantasy_furniture.lottery_machine": "Lottery Machine",
+  "block.fantasy_furniture.sweeper_dock": "Sweeper Dock",
   "block.fantasy_furniture.green_sofa": "Green Sofa",
   "block.fantasy_furniture.banquette": "Banquette",
   "block.fantasy_furniture.kitchen_counter": "Kitchen Counter",
@@ -31,5 +32,9 @@
   "item.fantasy_furniture.decorative_helmet_blue_top_hat": "Blue Top Hat",
   "item.fantasy_furniture.decorative_helmet_pink_top_hat": "Pink Top Hat",
   "item.fantasy_furniture.decorative_helmet_lop_eared_rabbit": "Lop-Eared Rabbit Headband",
+  "entity.fantasy_furniture.sweeper_robot": "Sweeper Robot",
+  "container.fantasy_furniture.sweeper_robot": "Sweeper Robot",
+  "jade.fantasy_furniture.sweeper_robot.health": "Health: %s / %s",
+  "config.jade.plugin_fantasy_furniture.sweeper_robot": "Sweeper robot (Fantasy Furniture)",
   "itemGroup.fantasy_furniture.main": "Fantasy Furniture"
 }

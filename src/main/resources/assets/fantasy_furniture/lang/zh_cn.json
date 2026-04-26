@@ -20,6 +20,7 @@
   "block.fantasy_furniture.pestle_bowl": "捣蒜碗",
   "block.fantasy_furniture.half_half_pot": "半半锅",
   "block.fantasy_furniture.lottery_machine": "抽奖机",
+  "block.fantasy_furniture.sweeper_dock": "扫地机器人机仓",
   "block.fantasy_furniture.green_sofa": "绿色沙发",
   "block.fantasy_furniture.banquette": "卡座",
   "block.fantasy_furniture.kitchen_counter": "料理台",
@@ -31,5 +32,9 @@
   "item.fantasy_furniture.decorative_helmet_blue_top_hat": "蓝色礼帽",
   "item.fantasy_furniture.decorative_helmet_pink_top_hat": "粉色礼帽",
   "item.fantasy_furniture.decorative_helmet_lop_eared_rabbit": "垂耳兔头饰",
+  "entity.fantasy_furniture.sweeper_robot": "扫地机器人",
+  "container.fantasy_furniture.sweeper_robot": "扫地机器人",
+  "jade.fantasy_furniture.sweeper_robot.health": "生命值：%s / %s",
+  "config.jade.plugin_fantasy_furniture.sweeper_robot": "扫地机器人（幻想家具）",
   "itemGroup.fantasy_furniture.main": "幻想家具"
 }

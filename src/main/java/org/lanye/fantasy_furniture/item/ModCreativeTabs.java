@@ -54,6 +54,7 @@ public final class ModCreativeTabs {
             ModBlocks.PESTLE_BOWL.item()::get,
             ModBlocks.HALF_HALF_POT.item()::get,
             ModBlocks.LOTTERY_MACHINE.item()::get,
+            ModBlocks.SWEEPER_DOCK.item()::get,
             ModBlocks.GREEN_SOFA.item()::get,
             ModBlocks.KITCHEN_COUNTER.item()::get,
             ModBlocks.KITCHEN_COUNTER_CABINET.item()::get,

@@ -8,6 +8,7 @@ import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
 import org.lanye.fantasy_furniture.FantasyFurniture;
 import org.lanye.fantasy_furniture.entity.FurnitureSeatEntity;
+import org.lanye.fantasy_furniture.entity.SweeperRobotEntity;
 
 public final class ModEntities {
 
@@ -25,6 +26,17 @@ public final class ModEntities {
                                     .clientTrackingRange(10)
                                     .updateInterval(1)
                                     .build(FantasyFurniture.MODID + ":furniture_seat"));
+
+    /** 碰撞：{@code python tools/geo_collision_box.py geo/entity/sweeper_robot.geo.json --entity-hitbox}（静态 cube 并集，16=1 格）。 */
+    public static final RegistryObject<EntityType<SweeperRobotEntity>> SWEEPER_ROBOT =
+            ENTITY_TYPES.register(
+                    "sweeper_robot",
+                    () ->
+                            EntityType.Builder.of(SweeperRobotEntity::new, MobCategory.CREATURE)
+                                    .sized(0.604F, 0.25F)
+                                    .clientTrackingRange(12)
+                                    .updateInterval(1)
+                                    .build(FantasyFurniture.MODID + ":sweeper_robot"));
 
     public static void register(IEventBus modEventBus) {
         ENTITY_TYPES.register(modEventBus);

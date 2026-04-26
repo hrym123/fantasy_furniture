@@ -18,6 +18,7 @@ import org.lanye.fantasy_furniture.block.entity.LotteryMachineBlockEntity;
 import org.lanye.fantasy_furniture.block.entity.MixingBowlBlockEntity;
 import org.lanye.fantasy_furniture.block.entity.OvenBlockEntity;
 import org.lanye.fantasy_furniture.block.entity.PestleBowlBlockEntity;
+import org.lanye.fantasy_furniture.block.entity.SweeperDockBlockEntity;
 import org.lanye.fantasy_furniture.geolib.AnimatedBlockEntry;
 
 /**
@@ -126,6 +127,8 @@ public final class ModBlocks {
     public static final AnimatedBlockEntry<KitchenCounterBlockEntity> KITCHEN_COUNTER = FurnitureAnimatedBlocks.KITCHEN_COUNTER;
     public static final AnimatedBlockEntry<CombinedOrnamentBlockEntity> COMBINED_ORNAMENT =
             FurnitureAnimatedBlocks.COMBINED_ORNAMENT;
+    public static final AnimatedBlockEntry<SweeperDockBlockEntity> SWEEPER_DOCK =
+            FurnitureAnimatedBlocks.SWEEPER_DOCK;
 
     public static void register(IEventBus modEventBus) {
         BLOCKS.register(modEventBus);
