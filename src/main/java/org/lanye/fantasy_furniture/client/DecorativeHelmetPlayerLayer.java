@@ -3,10 +3,13 @@ package org.lanye.fantasy_furniture.client;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.model.PlayerModel;
 import net.minecraft.client.player.AbstractClientPlayer;
+import net.minecraft.client.renderer.LevelRenderer;
+import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.entity.layers.RenderLayer;
 import net.minecraft.client.renderer.entity.player.PlayerRenderer;
 import net.minecraft.client.renderer.texture.OverlayTexture;
+import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
@@ -18,6 +21,9 @@ import org.lanye.fantasy_furniture.item.DecorativeHelmets;
 /**
  * 在玩家头部骨骼上绘制所有 {@link org.lanye.fantasy_furniture.item.DecorativeHelmetItem} 的 geo。原版
  * {@link net.minecraft.client.renderer.entity.layers.CustomHeadLayer} 已由 Mixin 对这些物品取消，避免 JSON 物品模型与 geo 叠加。
+ *
+ * <p>若上游传入 {@link LightTexture#FULL_BRIGHT}，则改为在玩家眼部附近采样方块光照（与 T002 排查中实体/Geo 管线满亮输入的处理思路一致），
+ * 避免头饰过曝。
  */
 @OnlyIn(Dist.CLIENT)
 public final class DecorativeHelmetPlayerLayer
@@ -46,12 +52,18 @@ public final class DecorativeHelmetPlayerLayer
 
         poseStack.pushPose();
         this.getParentModel().head.translateAndRotate(poseStack);
+        int effectiveLight = packedLight;
+        if (effectiveLight == LightTexture.FULL_BRIGHT) {
+            effectiveLight = LevelRenderer.getLightColor(
+                    player.level(),
+                    BlockPos.containing(player.getX(), player.getEyeY(), player.getZ()));
+        }
         DecorativeHelmetGeoItemRenderer.INSTANCE.renderByItem(
                 headStack,
                 ItemDisplayContext.HEAD,
                 poseStack,
                 buffer,
-                packedLight,
+                effectiveLight,
                 OverlayTexture.NO_OVERLAY);
         poseStack.popPose();
     }

@@ -33,10 +33,10 @@ public final class ClientRenderTuning {
         public static final float HEAD_ORBIT_Y_DEG = 180f;
 
         /**
-         * 头戴时在局部 X 上的缩放；{@code -1} 为左右镜像（与 {@code 1} 相对）。若与 {@link #HEAD_ORBIT_Y_DEG} 组合后仍左右反了，可改为
-         * {@code 1} 或配合调整 Y 旋转。
+         * 头戴时在局部 X 上的缩放；{@code 1} 表示不镜像（与 Bedrock 导出左右一致）。仅在头戴下左右反了、且不宜改 geo 时改为
+         * {@code -1}；非均匀负缩放须在 {@link org.lanye.fantasy_furniture.client.renderer.DecorativeHelmetGeoItemRenderer} 中重算法线。
          */
-        public static final float HEAD_MIRROR_X_SCALE = -1f;
+        public static final float HEAD_MIRROR_X_SCALE = 1f;
 
         /** 翻转后沿世界 Y 微调，使帽冠对齐颅顶（方块坐标量级，需与 geo 枢轴一致）。 */
         public static final float HEAD_NUDGE_Y = 0;
