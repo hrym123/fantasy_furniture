@@ -13,7 +13,7 @@ import org.lanye.fantasy_furniture.FantasyFurniture;
 @Mod.EventBusSubscriber(modid = FantasyFurniture.MODID, bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
 public final class DecorativeHelmetRenderEvents {
 
-    private static final Set<PlayerRenderer> BLUE_TOP_HAT_LAYER_REGISTERED =
+    private static final Set<PlayerRenderer> DECORATIVE_HELMET_LAYER_REGISTERED =
             Collections.newSetFromMap(new IdentityHashMap<>());
 
     private DecorativeHelmetRenderEvents() {}
@@ -22,8 +22,8 @@ public final class DecorativeHelmetRenderEvents {
     public static void onAddPlayerLayers(EntityRenderersEvent.AddLayers event) {
         for (String skin : event.getSkins()) {
             PlayerRenderer playerRenderer = event.getSkin(skin);
-            if (playerRenderer != null && BLUE_TOP_HAT_LAYER_REGISTERED.add(playerRenderer)) {
-                playerRenderer.addLayer(new BlueTopHatPlayerLayer(playerRenderer));
+            if (playerRenderer != null && DECORATIVE_HELMET_LAYER_REGISTERED.add(playerRenderer)) {
+                playerRenderer.addLayer(new DecorativeHelmetPlayerLayer(playerRenderer));
             }
         }
     }

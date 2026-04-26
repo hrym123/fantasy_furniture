@@ -2,11 +2,13 @@ package org.lanye.fantasy_furniture.item;
 
 import java.util.function.Consumer;
 import net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer;
+import net.minecraft.sounds.SoundEvent;
+import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.entity.EquipmentSlot;
-import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.Equipable;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
@@ -25,19 +27,23 @@ import software.bernie.geckolib.core.object.PlayState;
 import software.bernie.geckolib.util.GeckoLibUtil;
 
 /**
- * 纯装饰头饰：支持右键快速装备到头盔槽；头戴与第三人称由 GeckoLib geo 渲染，GUI 仍用扁平图标模型。
+ * 纯装饰头饰：右键与头部装备槽按原版 {@link Equipable#swapWithEquipmentSlot} 互换（含绑定诅咒、统计等）；
+ * 头戴由 {@link org.lanye.fantasy_furniture.client.DecorativeHelmetPlayerLayer} + GeckoLib BER 绘制。
  */
-public class DecorativeHelmetItem extends Item implements GeoItem {
-
-    private static final RawAnimation IDLE = RawAnimation.begin()
-            .then("animation.decorative_helmet_blue_top_hat.idle", Animation.LoopType.LOOP);
+public class DecorativeHelmetItem extends Item implements GeoItem, Equipable {
 
     private final GeolibItemAssets assets;
+    private final RawAnimation idleAnimation;
     private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
 
-    public DecorativeHelmetItem(Properties properties, GeolibItemAssets assets) {
+    /**
+     * @param idleAnimationName Bedrock 动画名，须与 {@code animations/item/&lt;basename&gt;.animation.json} 内键一致，例如
+     *     {@code animation.decorative_helmet_pink_top_hat.idle}。
+     */
+    public DecorativeHelmetItem(Properties properties, GeolibItemAssets assets, String idleAnimationName) {
         super(properties);
         this.assets = assets;
+        this.idleAnimation = RawAnimation.begin().then(idleAnimationName, Animation.LoopType.LOOP);
         GeoItem.registerSyncedAnimatable(this);
     }
 
@@ -53,7 +59,7 @@ public class DecorativeHelmetItem extends Item implements GeoItem {
                         "idle",
                         0,
                         (AnimationState<DecorativeHelmetItem> state) -> {
-                            state.getController().setAnimation(IDLE);
+                            state.getController().setAnimation(this.idleAnimation);
                             return PlayState.CONTINUE;
                         }));
     }
@@ -77,22 +83,17 @@ public class DecorativeHelmetItem extends Item implements GeoItem {
     @Override
     public @NotNull InteractionResultHolder<ItemStack> use(
             @NotNull Level level, @NotNull Player player, @NotNull InteractionHand hand) {
-        ItemStack inHand = player.getItemInHand(hand);
-        ItemStack currentHead = player.getItemBySlot(EquipmentSlot.HEAD);
-        if (!currentHead.isEmpty()) {
-            return InteractionResultHolder.fail(inHand);
-        }
-
-        ItemStack equipStack = inHand.copyWithCount(1);
-        player.setItemSlot(EquipmentSlot.HEAD, equipStack);
-        if (!player.getAbilities().instabuild) {
-            inHand.shrink(1);
-        }
-        return InteractionResultHolder.sidedSuccess(inHand, level.isClientSide());
+        return this.swapWithEquipmentSlot(this, level, player, hand);
     }
 
-    public boolean canEquip(ItemStack stack, EquipmentSlot armorType, LivingEntity entity) {
-        return armorType == EquipmentSlot.HEAD;
+    @Override
+    public @NotNull EquipmentSlot getEquipmentSlot() {
+        return EquipmentSlot.HEAD;
+    }
+
+    @Override
+    public @NotNull SoundEvent getEquipSound() {
+        return SoundEvents.ARMOR_EQUIP_LEATHER;
     }
 
     @Override

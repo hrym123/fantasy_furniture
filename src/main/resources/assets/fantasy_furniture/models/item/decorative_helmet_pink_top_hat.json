@@ -1,0 +1,12 @@
+{
+  "parent": "item/generated",
+  "textures": {
+    "layer0": "fantasy_furniture:item/decorative_helmet_pink_top_hat_icon"
+  },
+  "display": {
+    "head": {
+      "translation": [0, -1.5, 0.25],
+      "scale": [1.59, 1.59, 1.59]
+    }
+  }
+}

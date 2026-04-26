@@ -2,7 +2,7 @@ package org.lanye.fantasy_furniture.item;
 
 import java.util.List;
 import java.util.function.Supplier;
- import net.minecraft.core.registries.Registries;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.CreativeModeTabs;
@@ -45,6 +45,8 @@ public final class ModCreativeTabs {
             ModItems.TANGHULU::get,
             ModItems.ARCANE_WAND::get,
             ModItems.DECORATIVE_HELMET_BLUE_TOP_HAT::get,
+            ModItems.DECORATIVE_HELMET_PINK_TOP_HAT::get,
+            ModItems.DECORATIVE_HELMET_LOP_EARED_RABBIT::get,
             ModBlocks.BANQUETTE.item()::get,
             ModBlocks.MIXING_BOWL.item()::get,
             ModBlocks.JAM_POT.item()::get,

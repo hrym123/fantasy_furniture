@@ -16,10 +16,43 @@ public final class ClientRenderTuning {
     public static final class DecorativeHelmet {
         private DecorativeHelmet() {}
 
+        /**
+         * 非 {@link net.minecraft.world.item.ItemDisplayContext#HEAD} 时 Gecko 物品默认的地面枢轴平移（与
+         * {@code translate(0.5, 0.51, 0.5)} 习惯一致，HEAD 分支则跳过由头盔矩阵单独处理）。
+         */
+        public static final float ITEM_GROUND_PIVOT_X = 0.5f;
+        public static final float ITEM_GROUND_PIVOT_Y = 0.51f;
+        public static final float ITEM_GROUND_PIVOT_Z = 0.5f;
+
         /** Bedrock 礼帽相对原版头戴附着：上下颠倒时绕 X 轴翻半圈。 */
         public static final float HEAD_ORBIT_X_DEG = 180f;
 
+        /**
+         * 头戴时绕局部 Y 轴旋转（度），用于前后朝向与 Bedrock 导出轴向不一致时的纠偏；180° 等价于前后对调。
+         */
+        public static final float HEAD_ORBIT_Y_DEG = 180f;
+
+        /**
+         * 头戴时在局部 X 上的缩放；{@code -1} 为左右镜像（与 {@code 1} 相对）。若与 {@link #HEAD_ORBIT_Y_DEG} 组合后仍左右反了，可改为
+         * {@code 1} 或配合调整 Y 旋转。
+         */
+        public static final float HEAD_MIRROR_X_SCALE = -1f;
+
         /** 翻转后沿世界 Y 微调，使帽冠对齐颅顶（方块坐标量级，需与 geo 枢轴一致）。 */
-        public static final float HEAD_NUDGE_Y = -0.3f;
+        public static final float HEAD_NUDGE_Y = 0;
+    }
+
+    /**
+     * 卡座拐角块实体渲染：在 {@link software.bernie.geckolib.renderer.GeoBlockRenderer#rotateBlock} 之后对拐角 geo
+     * 追加绕 Y 的偏航；需与 {@link org.lanye.fantasy_furniture.block.facing.BanquetteBlock} 中碰撞箱旋转约定一致。
+     */
+    public static final class Banquette {
+        private Banquette() {}
+
+        /** 左拼拐角相对基础朝向的附加 Y 旋转（度）。 */
+        public static final float CORNER_YAW_LEFT_DEG = -90f;
+
+        /** 右拼相对左拼的附加 Y 旋转差（度），即右拼 = {@link #CORNER_YAW_LEFT_DEG} + 该值。 */
+        public static final float CORNER_YAW_RIGHT_OFFSET_DEG = 90f;
     }
 }

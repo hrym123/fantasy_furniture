@@ -4,7 +4,7 @@ import net.minecraft.resources.ResourceLocation;
 import org.lanye.fantasy_furniture.item.DecorativeHelmetItem;
 import software.bernie.geckolib.model.GeoModel;
 
-/** 蓝色礼帽 GeckoLib 模型（头戴与 BER 共用 {@link DecorativeHelmetItem#assets()}）。 */
+/** 装饰头饰 GeckoLib 模型（头戴与 BER 共用 {@link DecorativeHelmetItem#assets()}）。 */
 public final class DecorativeHelmetGeoModel extends GeoModel<DecorativeHelmetItem> {
 
     @Override

@@ -37,16 +37,34 @@ public final class ModItems {
                     GeolibItemAssets.itemAsset(FantasyFurniture.MODID, "arcane_wand"),
                     "animation.arcane_wand.idle"));
 
-    /** 蓝色礼帽：头盔槽装饰物品（头戴 GeckoLib geo，图标见 {@code models/item/decorative_helmet_blue_top_hat.json}）。 */
+    /** 蓝色小礼帽（Geo atlas 与物品图标分离）。 */
     public static final RegistryObject<Item> DECORATIVE_HELMET_BLUE_TOP_HAT =
-            ITEMS.register(
-                    "decorative_helmet_blue_top_hat",
-                    () -> new DecorativeHelmetItem(
-                            new Item.Properties().stacksTo(1),
-                            GeolibItemAssets.itemGeoAtlas(
-                                    FantasyFurniture.MODID,
-                                    "decorative_helmet_blue_top_hat",
-                                    "decorative_helmet_blue_top_hat_atlas")));
+            registerDecorativeHelmet(
+                    "decorative_helmet_blue_top_hat", "decorative_helmet_blue_top_hat_atlas");
+
+    /** 粉色小礼帽。 */
+    public static final RegistryObject<Item> DECORATIVE_HELMET_PINK_TOP_HAT =
+            registerDecorativeHelmet("decorative_helmet_pink_top_hat", "decorative_helmet_pink_top_hat");
+
+    /** 垂耳兔头饰。 */
+    public static final RegistryObject<Item> DECORATIVE_HELMET_LOP_EARED_RABBIT =
+            registerDecorativeHelmet(
+                    "decorative_helmet_lop_eared_rabbit", "decorative_helmet_lop_eared_rabbit");
+
+    /**
+     * @param registryId 注册名，与 geo/animation 资源 basename 一致。
+     * @param atlasTextureBasename {@code textures/item/&lt;basename&gt;.png}，供 Geo 采样（与物品栏 {@code *_icon} 分离）。
+     */
+    private static RegistryObject<Item> registerDecorativeHelmet(
+            String registryId, String atlasTextureBasename) {
+        return ITEMS.register(
+                registryId,
+                () -> new DecorativeHelmetItem(
+                        new Item.Properties().stacksTo(1),
+                        GeolibItemAssets.itemGeoAtlas(
+                                FantasyFurniture.MODID, registryId, atlasTextureBasename),
+                        "animation." + registryId + ".idle"));
+    }
 
     public static void register(IEventBus modEventBus) {
         ITEMS.register(modEventBus);

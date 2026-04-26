@@ -13,17 +13,17 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.lanye.fantasy_furniture.client.renderer.DecorativeHelmetGeoItemRenderer;
-import org.lanye.fantasy_furniture.item.ModItems;
+import org.lanye.fantasy_furniture.item.DecorativeHelmets;
 
 /**
- * 在玩家头部骨骼上绘制礼帽 geo（BER）。原版 {@link net.minecraft.client.renderer.entity.layers.CustomHeadLayer} 对本物品已由
- * {@link org.lanye.fantasy_furniture.mixin.CustomHeadLayerMixin} 取消，避免 JSON 物品模型与 geo 叠加。
+ * 在玩家头部骨骼上绘制所有 {@link org.lanye.fantasy_furniture.item.DecorativeHelmetItem} 的 geo。原版
+ * {@link net.minecraft.client.renderer.entity.layers.CustomHeadLayer} 已由 Mixin 对这些物品取消，避免 JSON 物品模型与 geo 叠加。
  */
 @OnlyIn(Dist.CLIENT)
-public final class BlueTopHatPlayerLayer
+public final class DecorativeHelmetPlayerLayer
         extends RenderLayer<AbstractClientPlayer, PlayerModel<AbstractClientPlayer>> {
 
-    public BlueTopHatPlayerLayer(PlayerRenderer parent) {
+    public DecorativeHelmetPlayerLayer(PlayerRenderer parent) {
         super(parent);
     }
 
@@ -40,7 +40,7 @@ public final class BlueTopHatPlayerLayer
             float netHeadYaw,
             float headPitch) {
         ItemStack headStack = player.getItemBySlot(EquipmentSlot.HEAD);
-        if (!headStack.is(ModItems.DECORATIVE_HELMET_BLUE_TOP_HAT.get())) {
+        if (!DecorativeHelmets.isDecorativeHelmet(headStack)) {
             return;
         }
 
