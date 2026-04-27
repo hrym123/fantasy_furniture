@@ -105,8 +105,6 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
     /** 巡逻待转目标偏航；{@link Float#NaN} 表示无。 */
     private float patrolSteerTargetYaw = Float.NaN;
 
-    private long lastTerrainAssistTick = Long.MIN_VALUE;
-
     /**
      * 巡逻贴墙：0 平常；1 已撞墙，正用 {@link #patrolSteerTargetYaw} 转到沿墙方向；2 下一 tick 沿法线微移贴紧墙面。
      */
@@ -128,13 +126,7 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
         super(type, level);
         this.noCulling = true;
         this.patrolBaseYaw = this.getYRot();
-        // 仅常规半格级台阶；越过高障碍只靠 tryTerrainAssist 翻墙，不用大步幅「走上去」。
         setMaxUpStep(0.6F);
-    }
-
-    @Override
-    protected void jumpFromGround() {
-        // 禁用原版跳跃；低障碍仅通过水平顶墙时的翻墙辅助抬升。
     }
 
     public static AttributeSupplier.Builder createAttributes() {
@@ -226,7 +218,6 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
             lastDecayGameTime = gameTime;
         }
         updateStateAndAct();
-        tryTerrainAssist();
     }
 
     private void updateStateAndAct() {
@@ -493,10 +484,7 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
                         Mth.cos(this.getYRot() * Mth.DEG_TO_RAD));
         Vec3 target = position().add(forward.scale(2.0));
         driveToward(target, Config.sweeperMoveSpeed());
-        if (tryTerrainAssist()) {
-            return;
-        }
-        if (horizontalCollision || sweeperForwardColumnHasBlockingMotion()) {
+        if (horizontalCollision) {
             stopHorizontalMovement();
             BlockPos hit = findLowestBlockingInForwardColumn();
             if (hit != null && level().getBlockState(hit).blocksMotion()) {
@@ -671,97 +659,6 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
         double sx = dot1 >= dot2 ? t1x : t2x;
         double sz = dot1 >= dot2 ? t1z : t2z;
         return Mth.wrapDegrees((float) (Mth.atan2(-sx, sz) * (180.0 / Math.PI)));
-    }
-
-    /**
-     * 机头前方采样列（与 {@link #tryTerrainAssist} 同一 ix,iz 偏移）在碰撞箱竖直范围内是否存在 {@link
-     * net.minecraft.world.level.block.state.BlockBehaviour.BlockStateBase#blocksMotion()} 的方块。
-     * <p>
-     * 用于贴墙/顶墙时本 tick {@link #horizontalCollision} 仍为 false 的情况（例如速度已被清空、未再发生水平位移差）。
-     */
-    private boolean sweeperForwardColumnHasBlockingMotion() {
-        float yRad = getYRot() * Mth.DEG_TO_RAD;
-        double fx = -Mth.sin(yRad);
-        double fz = Mth.cos(yRad);
-        Vec3 pos = position();
-        int ix = Mth.floor(pos.x + fx * 0.52);
-        int iz = Mth.floor(pos.z + fz * 0.52);
-        AABB bb = getBoundingBox();
-        int minY = Mth.floor(bb.minY);
-        int maxY = Mth.ceil(bb.maxY);
-        Level lvl = level();
-        for (int y = minY; y <= maxY + 1; y++) {
-            if (lvl.getBlockState(new BlockPos(ix, y, iz)).blocksMotion()) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    /**
-     * 翻墙：贴地且（水平碰撞或机头前方竖列有挡块）时，若前方为 1～{@link Config#sweeperClimbMaxRiseBlocks()} 格实心垒且顶上有足够空间落碰撞箱，
-     * 则施加垂直速度抬升；不依赖大步幅上台阶或跳跃。
-     */
-    private boolean tryTerrainAssist() {
-        if (!Config.sweeperTerrainAssist() || level().isClientSide) {
-            return false;
-        }
-        if (getSweeperState() == SweeperState.DOCKED) {
-            return false;
-        }
-        if (!onGround()) {
-            return false;
-        }
-        boolean forwardBlock = sweeperForwardColumnHasBlockingMotion();
-        if (!horizontalCollision && !forwardBlock) {
-            return false;
-        }
-        long t = level().getGameTime();
-        if (lastTerrainAssistTick != Long.MIN_VALUE
-                && t - lastTerrainAssistTick < Config.sweeperTerrainAssistCooldownTicks()) {
-            return false;
-        }
-        Vec3 dm = getDeltaMovement();
-        double h2 = dm.x * dm.x + dm.z * dm.z;
-        if (h2 < 1.0e-8 && !forwardBlock) {
-            return false;
-        }
-
-        float yRad = getYRot() * Mth.DEG_TO_RAD;
-        double fx = -Mth.sin(yRad);
-        double fz = Mth.cos(yRad);
-        Vec3 pos = position();
-        Level lvl = level();
-        int maxRise = Config.sweeperClimbMaxRiseBlocks();
-
-        int ix = Mth.floor(pos.x + fx * 0.52);
-        int iz = Mth.floor(pos.z + fz * 0.52);
-        int baseY = Mth.floor(getBoundingBox().minY - 0.05);
-
-        for (int rise = 1; rise <= maxRise; rise++) {
-            boolean solidStack = true;
-            for (int j = 1; j <= rise; j++) {
-                if (!lvl.getBlockState(new BlockPos(ix, baseY + j, iz)).blocksMotion()) {
-                    solidStack = false;
-                    break;
-                }
-            }
-            if (!solidStack) {
-                continue;
-            }
-            double targetFeetY = baseY + rise + 1;
-            AABB bb = getBoundingBox();
-            double ox = (ix + 0.5) - pos.x;
-            double oy = targetFeetY - bb.minY;
-            double oz = (iz + 0.5) - pos.z;
-            if (lvl.noCollision(this, bb.move(ox, oy, oz))) {
-                double boost = Config.sweeperClimbBoost() * (0.9D + 0.1D * rise);
-                setDeltaMovement(dm.x, boost, dm.z);
-                lastTerrainAssistTick = t;
-                return true;
-            }
-        }
-        return false;
     }
 
     @Nullable

@@ -21,10 +21,6 @@ public final class Config {
     private static final ForgeConfigSpec.DoubleValue SWEEPER_TURN_THRESHOLD_DEGREES;
     private static final ForgeConfigSpec.IntValue SWEEPER_PATROL_RANDOM_TURN_INTERVAL_TICKS;
     private static final ForgeConfigSpec.IntValue SWEEPER_TURN_PAUSE_TICKS;
-    private static final ForgeConfigSpec.BooleanValue SWEEPER_TERRAIN_ASSIST;
-    private static final ForgeConfigSpec.DoubleValue SWEEPER_CLIMB_BOOST;
-    private static final ForgeConfigSpec.IntValue SWEEPER_CLIMB_MAX_RISE_BLOCKS;
-    private static final ForgeConfigSpec.IntValue SWEEPER_TERRAIN_ASSIST_COOLDOWN_TICKS;
     private static final ForgeConfigSpec.DoubleValue SWEEPER_DOCK_REVERSE_RANGE;
 
     static {
@@ -71,19 +67,6 @@ public final class Config {
                 b.comment(
                                 "Before and after in-place turns, pause this many ticks (~0.5s = 10 at 20 TPS). 0 disables pauses.")
                         .defineInRange("turnPauseTicks", 10, 0, 40);
-        SWEEPER_TERRAIN_ASSIST =
-                b.comment(
-                                "翻墙：水平顶墙且前方为 1～2 格实心垒、顶上有空位可落脚时，给予垂直速度抬升（不启用大步幅上台阶/跳跃）。")
-                        .define("terrainAssist", true);
-        SWEEPER_CLIMB_BOOST =
-                b.comment("翻墙触发时每 tick 额外垂直速度（方块/刻）。")
-                        .defineInRange("climbBoost", 0.22D, 0.0D, 0.5D);
-        SWEEPER_CLIMB_MAX_RISE_BLOCKS =
-                b.comment("翻墙：单次判定前方实心垒最大高度（格）。")
-                        .defineInRange("climbMaxRiseBlocks", 2, 1, 2);
-        SWEEPER_TERRAIN_ASSIST_COOLDOWN_TICKS =
-                b.comment("翻墙辅助最短间隔（tick）。")
-                        .defineInRange("terrainAssistCooldownTicks", 5, 0, 40);
         SWEEPER_DOCK_REVERSE_RANGE =
                 b.comment(
                                 "When RETURNING and within this many blocks of dock center, allow driving backward (model tail toward dock) to align with 入库.")
@@ -147,21 +130,5 @@ public final class Config {
     /** 转向前后停顿 tick（0 = 不停）。 */
     public static int sweeperTurnPauseTicks() {
         return SWEEPER_TURN_PAUSE_TICKS.get();
-    }
-
-    public static boolean sweeperTerrainAssist() {
-        return SWEEPER_TERRAIN_ASSIST.get();
-    }
-
-    public static double sweeperClimbBoost() {
-        return SWEEPER_CLIMB_BOOST.get();
-    }
-
-    public static int sweeperClimbMaxRiseBlocks() {
-        return SWEEPER_CLIMB_MAX_RISE_BLOCKS.get();
-    }
-
-    public static int sweeperTerrainAssistCooldownTicks() {
-        return SWEEPER_TERRAIN_ASSIST_COOLDOWN_TICKS.get();
     }
 }

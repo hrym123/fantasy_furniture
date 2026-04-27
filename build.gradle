@@ -96,6 +96,8 @@ tasks.named('test', Test).configure {
 }
 
 tasks.named('processResources', ProcessResources).configure {
+    // Windows 默认编码下，expand 写出 META-INF 会损坏 UTF-8 中文，导致 Jade/模组列表中 displayName 乱码
+    filteringCharset = 'UTF-8'
     var replaceProperties = [minecraft_version        : minecraft_version, minecraft_version_range: minecraft_version_range,
                              forge_version          : forge_version, forge_version_range: forge_version_range,
                              loader_version_range   : loader_version_range,
