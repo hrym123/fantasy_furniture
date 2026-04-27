@@ -8,6 +8,7 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 import org.lanye.fantasy_furniture.FantasyFurniture;
+import org.lanye.fantasy_furniture.block.entity.SweeperDockBlockEntity;
 import org.lanye.fantasy_furniture.block.registry.ModBlocks;
 import org.lanye.fantasy_furniture.client.model.BanquetteBlockGeoModel;
 import org.lanye.fantasy_furniture.client.renderer.BanquetteGeoBlockRenderer;
@@ -59,7 +60,8 @@ public final class ClientModEvents {
                 ModBlocks.BANQUETTE, ctx -> new BanquetteGeoBlockRenderer(new BanquetteBlockGeoModel()));
         AnimatedBlockClientRegistration.registerBlockEntityRenderer(
                 ModBlocks.SWEEPER_DOCK,
-                GeolibAnimatedBlockRenderers.defaultGeoRendererProvider(FantasyFurniture.MODID, "sweeper_dock"));
+                GeolibAnimatedBlockRenderers.variableTextureGeoRendererProvider(
+                        FantasyFurniture.MODID, "sweeper_dock", SweeperDockBlockEntity::getTextureLocation));
     }
 
     @SubscribeEvent

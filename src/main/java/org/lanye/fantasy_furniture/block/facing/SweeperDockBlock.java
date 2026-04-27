@@ -1,6 +1,7 @@
 package org.lanye.fantasy_furniture.block.facing;
 
 import java.util.List;
+import javax.annotation.Nullable;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
@@ -9,8 +10,12 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.BaseEntityBlock;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.entity.BlockEntityTicker;
+import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
@@ -20,6 +25,7 @@ import net.minecraft.world.phys.shapes.EntityCollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import org.lanye.fantasy_furniture.block.entity.SweeperDockBlockEntity;
+import org.lanye.fantasy_furniture.block.registry.ModBlocks;
 import org.lanye.fantasy_furniture.entity.SweeperRobotEntity;
 import org.lanye.fantasy_furniture.geolib.GeolibFacingEntityBlock;
 import org.lanye.fantasy_furniture.geolib.GeolibFacingEntityBlockWithFactory;
@@ -33,6 +39,16 @@ public class SweeperDockBlock extends GeolibFacingEntityBlockWithFactory<Sweeper
 
     public SweeperDockBlock(BlockBehaviour.Properties properties) {
         super(properties, SweeperDockBlockEntity::new);
+    }
+
+    @Nullable
+    @Override
+    public <T extends BlockEntity> BlockEntityTicker<T> getTicker(
+            Level level, BlockState state, BlockEntityType<T> type) {
+        return level.isClientSide
+                ? null
+                : BaseEntityBlock.createTickerHelper(
+                        type, ModBlocks.SWEEPER_DOCK.blockEntityType().get(), SweeperDockBlockEntity::serverTick);
     }
 
     @Override

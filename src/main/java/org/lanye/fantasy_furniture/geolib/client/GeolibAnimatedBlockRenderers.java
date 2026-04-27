@@ -67,4 +67,33 @@ public final class GeolibAnimatedBlockRenderers {
                             }
                         });
     }
+
+    /**
+     * Geo 与动画 basename 固定，仅 {@code textures/block/} 下贴图路径由方块实体决定时使用。
+     *
+     * @param basename geo/animation 共用 basename（与 {@link #defaultGeoRendererProvider(String, String)} 相同）
+     * @param textureForEntity 返回完整贴图 {@link ResourceLocation}（含路径与扩展名 .png）
+     */
+    public static <BE extends BlockEntity & GeoBlockEntity> BlockEntityRendererProvider<BE> variableTextureGeoRendererProvider(
+            String modid, String basename, Function<BE, ResourceLocation> textureForEntity) {
+        return ctx ->
+                new GeoBlockRenderer<>(
+                        new GeoModel<BE>() {
+                            @Override
+                            public ResourceLocation getModelResource(BE entity) {
+                                return ResourceLocation.fromNamespaceAndPath(modid, "geo/block/" + basename + ".geo.json");
+                            }
+
+                            @Override
+                            public ResourceLocation getTextureResource(BE entity) {
+                                return textureForEntity.apply(entity);
+                            }
+
+                            @Override
+                            public ResourceLocation getAnimationResource(BE entity) {
+                                return ResourceLocation.fromNamespaceAndPath(
+                                        modid, "animations/block/" + basename + ".animation.json");
+                            }
+                        });
+    }
 }

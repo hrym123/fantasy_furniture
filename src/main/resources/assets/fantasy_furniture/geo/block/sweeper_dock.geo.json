@@ -6,7 +6,7 @@
 				"identifier": "geometry.sweeper_dock",
 				"texture_width": 128,
 				"texture_height": 128,
-				"visible_bounds_width": 2,
+				"visible_bounds_width": 3,
 				"visible_bounds_height": 2.5,
 				"visible_bounds_offset": [0, 0.75, 0]
 			},
@@ -44,9 +44,9 @@
 							"size": [12, 8, 2],
 							"uv": {
 								"north": {"uv": [16, 18], "uv_size": [12, 8]},
-								"east": {"uv": [0, 51], "uv_size": [2, 8]},
+								"east": {"uv": [4, 51], "uv_size": [2, 8]},
 								"south": {"uv": [16, 26], "uv_size": [12, 8]},
-								"west": {"uv": [2, 51], "uv_size": [2, 8]},
+								"west": {"uv": [6, 51], "uv_size": [2, 8]},
 								"up": {"uv": [22, 48], "uv_size": [12, 2]},
 								"down": {"uv": [34, 51], "uv_size": [12, -2]}
 							}
@@ -55,9 +55,9 @@
 							"origin": [-8, 0.5, -3],
 							"size": [2, 8, 11],
 							"uv": {
-								"north": {"uv": [4, 51], "uv_size": [2, 8]},
+								"north": {"uv": [0, 51], "uv_size": [2, 8]},
 								"east": {"uv": [28, 16], "uv_size": [11, 8]},
-								"south": {"uv": [6, 51], "uv_size": [2, 8]},
+								"south": {"uv": [2, 51], "uv_size": [2, 8]},
 								"west": {"uv": [28, 24], "uv_size": [11, 8]},
 								"up": {"uv": [48, 49], "uv_size": [2, 11]},
 								"down": {"uv": [50, 11], "uv_size": [2, -11]}

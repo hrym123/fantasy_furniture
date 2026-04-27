@@ -71,6 +71,8 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
     private static final double DOCKED_RADIUS_SQR = 0.2025D; // 0.45 block
     /** 到达「机仓前一格」中心点的水平距离阈值（平方）。 */
     private static final double STAGING_ARRIVE_RADIUS_SQR = 0.07D;
+    /** 未满血在机仓内充电时，相对 {@link #dockCenter()} 竖直向下平移（世界坐标 Y 减小）。 */
+    private static final double CHARGE_DOCK_Y_OFFSET = 0.2D;
 
     private static final RawAnimation MOVE_ANIM =
             RawAnimation.begin().then("animation.sweeper_robot.move", Animation.LoopType.LOOP);
@@ -85,7 +87,10 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
     private long lastDecayGameTime;
     private long lastPatrolRandomTurnGameTime = Long.MIN_VALUE;
     private float patrolBaseYaw;
-    /** 入库：0→驶向机仓前一格中心；1→原地转向机头朝机仓；2→沿机头方向驶入机仓。 */
+    /**
+     * 入库子阶段：0→驶向机仓正前方一格（前一格）中心；1→原地转向，使机头与 {@link #getDockFacing()} 一致（朝外，车尾对机仓）；
+     * 2→保持该朝向仅倒车入仓直至 {@link #isDocked()}。
+     */
     private int dockApproachPhase;
 
     private static final int STEER_IDLE = 0;
@@ -224,7 +229,8 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
         if (getHealth() <= 1f) {
             setSweeperState(isDocked() ? SweeperState.DOCKED : SweeperState.RETURNING);
         } else if (getHealth() < Config.sweeperReturnHealthThreshold()) {
-            setSweeperState(SweeperState.RETURNING);
+            // 已入仓则保持 DOCKED，否则会每 tick 被强制 RETURNING、阶段 0 又驶向「前一格」，与机仓之间来回拉扯。
+            setSweeperState(isDocked() ? SweeperState.DOCKED : SweeperState.RETURNING);
         } else if (hasCollectTargetInRange()
                 && getSweeperState() != SweeperState.DOCKED
                 && getSweeperState() != SweeperState.EXITING_DOCK
@@ -379,7 +385,7 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
     }
 
     /**
-     * 入库：0 驶向机仓前一格中心 → 1 原地转向机头朝机仓（与驶入运动方向一致）→ 2 沿机头驶入机仓。
+     * 入库：前一格中心 → 机头与机仓 FACING 一致（朝外）→ 倒车入仓。
      */
     private void tickReturningDockSequence() {
         if (!isDockValid()) {
@@ -394,18 +400,15 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
                 stopHorizontalMovement();
                 dockApproachPhase = 1;
                 resetYawSteer();
+                resetDriveSteer();
                 return;
             }
             driveToward(staging, Config.sweeperMoveSpeed());
             return;
         }
         if (dockApproachPhase == 1) {
-            Vec3 d = dockCenter();
-            Vec3 pos = position();
-            float yawTowardDock =
-                    Mth.wrapDegrees(
-                            (float) (Mth.atan2(-(d.x - pos.x), d.z - pos.z) * (180.0 / Math.PI)));
-            if (!tickYawSteerWithPauses(yawTowardDock)) {
+            float yawOut = yawDockFacingOutward();
+            if (!tickYawSteerWithPauses(yawOut)) {
                 return;
             }
             dockApproachPhase = 2;
@@ -416,9 +419,29 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
         if (isDocked()) {
             dockApproachPhase = 0;
             setSweeperState(SweeperState.DOCKED);
+            stopHorizontalMovement();
             return;
         }
-        driveToward(dockCenter(), Config.sweeperMoveSpeed());
+        float yawOut = yawDockFacingOutward();
+        if (!tickYawSteerWithPauses(yawOut)) {
+            return;
+        }
+        double speed = Config.sweeperMoveSpeed();
+        float yRad = getYRot() * Mth.DEG_TO_RAD;
+        Vec3 forward = new Vec3(-Mth.sin(yRad), 0, Mth.cos(yRad));
+        setDeltaMovement(-forward.x * speed, getDeltaMovement().y, -forward.z * speed);
+    }
+
+    /**
+     * 与机仓方块 {@link #getDockFacing()} 一致的偏航：从机仓中心指向「前一格」中心（机头朝外，车尾朝向机仓）。
+     * 与 {@link #driveToward} 中 {@code atan2(-dx, dz)} 约定一致。
+     */
+    private float yawDockFacingOutward() {
+        Vec3 dock = dockCenter();
+        Vec3 st = dockStagingCenter();
+        double dx = st.x - dock.x;
+        double dz = st.z - dock.z;
+        return Mth.wrapDegrees((float) (Mth.atan2(-dx, dz) * (180.0 / Math.PI)));
     }
 
     private void tickCollecting() {
@@ -768,6 +791,15 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
         return new Vec3(dockPos.getX() + 0.5, dockPos.getY() + 0.20, dockPos.getZ() + 0.5);
     }
 
+    /** 吸附目标：充电中略降低，满血或非充电仍回 {@link #dockCenter()}。 */
+    private Vec3 dockRestPosition() {
+        Vec3 base = dockCenter();
+        if (!isDockedChargingForDisplay()) {
+            return base;
+        }
+        return new Vec3(base.x, base.y - CHARGE_DOCK_Y_OFFSET, base.z);
+    }
+
     private boolean isDocked() {
         if (dockPos == null) {
             return false;
@@ -779,7 +811,7 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
     }
 
     private void settleIntoDock() {
-        Vec3 dock = dockCenter();
+        Vec3 dock = dockRestPosition();
         Vec3 current = position();
         // 轻微插值吸附，避免回仓末端出现抖动/卡边。
         Vec3 next = current.lerp(dock, 0.35D);
@@ -804,6 +836,19 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
 
     public BlockPos getDockPos() {
         return dockPos;
+    }
+
+    /**
+     * 机仓充电显示：{@link SweeperState#DOCKED}、已在停靠点且未满血（仍会触发回血）时，机仓贴图可在当前条带与下一档之间闪烁。
+     */
+    public boolean isDockedChargingForDisplay() {
+        if (dockPos == null) {
+            return false;
+        }
+        if (entityData.get(DATA_STATE) != SweeperState.DOCKED.ordinal()) {
+            return false;
+        }
+        return isDocked() && getHealth() < getMaxHealth();
     }
 
     /** 客户端渲染用插值偏航；GeckoLib 需与逻辑朝向一致，且渲染器包无法读取受保护的 yRotO。 */
