@@ -10,7 +10,6 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.BaseEntityBlock;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -64,7 +63,8 @@ public class SweeperDockBlock extends GeolibFacingEntityBlockWithFactory<Sweeper
             CollisionContext context) {
         // 允许扫地机器人进入机仓内部，其它实体仍使用正常碰撞。
         if (context instanceof EntityCollisionContext entityContext
-                && entityContext.getEntity() instanceof SweeperRobotEntity) {
+                && entityContext.getEntity() instanceof SweeperRobotEntity robot
+                && robot.ignoresDockBlockCollision()) {
             return Shapes.empty();
         }
         return SHAPE;

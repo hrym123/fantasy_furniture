@@ -3,6 +3,7 @@ package org.lanye.fantasy_furniture.block.entity;
 import java.util.List;
 import javax.annotation.Nullable;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.network.protocol.Packet;
@@ -30,6 +31,11 @@ import software.bernie.geckolib.util.GeckoLibUtil;
 
 /** 机仓方块实体：提供停靠位与附近容器检索；贴图条带随绑定机器人血量变化。 */
 public class SweeperDockBlockEntity extends BlockEntity implements GeoBlockEntity {
+
+    /**
+     * 与 {@link net.minecraft.world.level.block.entity.HopperBlockEntity#addItem} 配合：目标容器及从容器外侧指向方块内的插入面（与漏斗推入箱子的方向语义一致）。
+     */
+    public record AdjacentStorage(Container container, Direction insertFace) {}
 
     private static final String NBT_TEX = "DockTex";
     private static final String NBT_CHG = "DockChg";
@@ -126,17 +132,30 @@ public class SweeperDockBlockEntity extends BlockEntity implements GeoBlockEntit
         return cache;
     }
 
-    /** 查询机仓周围可存储容器。 */
-    public Container findNearbyContainer() {
+    /**
+     * 查询机仓曼哈顿距离 1 内的存储容器（不含机仓自身），并计算漏斗式插入所用的面朝向。
+     *
+     * <p>插入面为：从容器方块指向机仓的方向——即物品从机仓侧进入容器时所对的容器外表面（与原版漏斗语义一致）。
+     */
+    @Nullable
+    public AdjacentStorage findAdjacentStorageForHopper() {
         Level level = getLevel();
         if (level == null) {
             return null;
         }
         BlockPos center = getBlockPos();
         for (BlockPos pos : BlockPos.withinManhattan(center, 1, 1, 1)) {
+            if (pos.equals(center)) {
+                continue;
+            }
             BlockEntity be = level.getBlockEntity(pos);
             if (be instanceof Container container) {
-                return container;
+                int dx = pos.getX() - center.getX();
+                int dy = pos.getY() - center.getY();
+                int dz = pos.getZ() - center.getZ();
+                Direction fromDockToContainer = Direction.getNearest(dx, dy, dz);
+                Direction insertFace = fromDockToContainer.getOpposite();
+                return new AdjacentStorage(container, insertFace);
             }
         }
         return null;

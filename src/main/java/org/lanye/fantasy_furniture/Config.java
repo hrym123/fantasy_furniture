@@ -11,7 +11,8 @@ public final class Config {
     public static final ForgeConfigSpec SPEC;
     private static final ForgeConfigSpec.IntValue SEAT_COOLDOWN_TICKS;
     private static final ForgeConfigSpec.IntValue SWEEPER_PATROL_RADIUS;
-    private static final ForgeConfigSpec.IntValue SWEEPER_COLLECT_RANGE;
+    private static final ForgeConfigSpec.DoubleValue SWEEPER_PICKUP_FORWARD_REACH;
+    private static final ForgeConfigSpec.DoubleValue SWEEPER_PICKUP_ASIDE_REACH;
     private static final ForgeConfigSpec.IntValue SWEEPER_RETURN_HEALTH_THRESHOLD;
     private static final ForgeConfigSpec.IntValue SWEEPER_HEAL_INTERVAL_TICKS;
     private static final ForgeConfigSpec.IntValue SWEEPER_DECAY_INTERVAL_TICKS;
@@ -35,9 +36,13 @@ public final class Config {
         SWEEPER_PATROL_RADIUS =
                 b.comment("Patrol radius around dock in blocks.")
                         .defineInRange("patrolRadius", 24, 8, 64);
-        SWEEPER_COLLECT_RANGE =
-                b.comment("Item collect scan range in blocks.")
-                        .defineInRange("collectRange", 5, 2, 10);
+        SWEEPER_PICKUP_FORWARD_REACH =
+                b.comment(
+                                "Max distance ahead of the robot (along heading, horizontal) within which items can be picked up (blocks). ~0.5 for a short vacuum cone.")
+                        .defineInRange("pickupForwardReach", 0.5D, 0.15D, 1.5D);
+        SWEEPER_PICKUP_ASIDE_REACH =
+                b.comment("Max lateral offset from heading (horizontal) for pickup (blocks).")
+                        .defineInRange("pickupAsideReach", 0.35D, 0.08D, 0.8D);
         SWEEPER_RETURN_HEALTH_THRESHOLD =
                 b.comment("Return-to-dock health threshold.")
                         .defineInRange("returnHealthThreshold", 5, 2, 10);
@@ -85,8 +90,14 @@ public final class Config {
         return SWEEPER_PATROL_RADIUS.get();
     }
 
-    public static int sweeperCollectRange() {
-        return SWEEPER_COLLECT_RANGE.get();
+    /** 机头水平前方：可吸入的最大距离（方块）。 */
+    public static double sweeperPickupForwardReach() {
+        return SWEEPER_PICKUP_FORWARD_REACH.get();
+    }
+
+    /** 机头左右侧向：可吸入的最大偏移（方块）。 */
+    public static double sweeperPickupAsideReach() {
+        return SWEEPER_PICKUP_ASIDE_REACH.get();
     }
 
     public static int sweeperReturnHealthThreshold() {
@@ -131,4 +142,5 @@ public final class Config {
     public static int sweeperTurnPauseTicks() {
         return SWEEPER_TURN_PAUSE_TICKS.get();
     }
+
 }
