@@ -1,7 +1,7 @@
 {
   "required": true,
   "minVersion": "0.8",
-  "package": "org.lanye.fantasy_furniture.mixin",
+  "package": "org.lanye.fantasy_furniture.core.mixin",
   "compatibilityLevel": "JAVA_17",
   "refmap": "fantasy_furniture.refmap.json",
   "mixins": [],

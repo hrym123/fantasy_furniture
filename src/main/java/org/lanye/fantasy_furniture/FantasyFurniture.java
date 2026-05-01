@@ -5,13 +5,7 @@ import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.config.ModConfig;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
-import org.lanye.fantasy_furniture.block.registry.ModBlocks;
-import org.lanye.fantasy_furniture.item.ModCreativeTabs;
-import org.lanye.fantasy_furniture.item.ModItems;
-import org.lanye.fantasy_furniture.registry.ModBlockEntities;
-import org.lanye.fantasy_furniture.registry.ModEntities;
-import org.lanye.fantasy_furniture.registry.ModMenuTypes;
-import org.lanye.fantasy_furniture.registry.ModSeatConfigs;
+import org.lanye.fantasy_furniture.bootstrap.ModBootstrap;
 import org.slf4j.Logger;
 
 /**
@@ -29,17 +23,12 @@ public class FantasyFurniture {
     public FantasyFurniture(FMLJavaModLoadingContext context) {
         context.registerConfig(ModConfig.Type.COMMON, Config.SPEC);
         var modEventBus = context.getModEventBus();
-        ModBlocks.register(modEventBus);
-        ModBlockEntities.register(modEventBus);
-        ModEntities.register(modEventBus);
-        ModMenuTypes.register(modEventBus);
-        ModItems.register(modEventBus);
-        ModCreativeTabs.register(modEventBus);
+        ModBootstrap.register(modEventBus);
         modEventBus.addListener(this::onCommonSetup);
     }
 
     private void onCommonSetup(final FMLCommonSetupEvent event) {
-        event.enqueueWork(ModSeatConfigs::register);
+        event.enqueueWork(ModBootstrap::registerCommonWork);
         LOGGER.info("{} 通用初始化完成", MODID);
     }
 }

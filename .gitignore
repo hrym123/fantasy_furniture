@@ -15,6 +15,7 @@ atlassian-ide-plugin.xml
 
 # 编译产物
 *.class
+bin/
 
 # 日志
 *.log
