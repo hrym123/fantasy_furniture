@@ -38,10 +38,11 @@ public final class Config {
                         .defineInRange("patrolRadius", 24, 8, 64);
         SWEEPER_PICKUP_FORWARD_REACH =
                 b.comment(
-                                "Max distance ahead of the robot (along heading, horizontal) within which items can be picked up (blocks). ~0.5 for a short vacuum cone.")
+                                "Legacy TOML key: pickup is STRICTLY same-block-coordinate as the robot blockPosition(); this value is not read.")
                         .defineInRange("pickupForwardReach", 0.5D, 0.15D, 1.5D);
         SWEEPER_PICKUP_ASIDE_REACH =
-                b.comment("Max lateral offset from heading (horizontal) for pickup (blocks).")
+                b.comment(
+                                "Legacy TOML key: pickup is STRICTLY same-block-coordinate as the robot blockPosition(); this value is not read.")
                         .defineInRange("pickupAsideReach", 0.35D, 0.08D, 0.8D);
         SWEEPER_RETURN_HEALTH_THRESHOLD =
                 b.comment("Return-to-dock health threshold.")
@@ -90,12 +91,12 @@ public final class Config {
         return SWEEPER_PATROL_RADIUS.get();
     }
 
-    /** 机头水平前方：可吸入的最大距离（方块）。 */
+    /** 遗留 TOML 读取接口；吸尘器实体当前按同格方块拾取，不应用此返回值。 */
     public static double sweeperPickupForwardReach() {
         return SWEEPER_PICKUP_FORWARD_REACH.get();
     }
 
-    /** 机头左右侧向：可吸入的最大偏移（方块）。 */
+    /** 遗留 TOML 读取接口；吸尘器实体当前按同格方块拾取，不应用此返回值。 */
     public static double sweeperPickupAsideReach() {
         return SWEEPER_PICKUP_ASIDE_REACH.get();
     }

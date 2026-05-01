@@ -1,5 +1,7 @@
 package org.lanye.fantasy_furniture.entity;
 
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Collections;
@@ -32,6 +34,8 @@ import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.MobType;
 import net.minecraft.world.entity.PathfinderMob;
 import net.minecraft.world.entity.Pose;
+import net.minecraft.world.entity.ai.navigation.GroundPathNavigation;
+import net.minecraft.world.entity.ai.navigation.PathNavigation;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.item.ItemEntity;
@@ -64,11 +68,6 @@ import software.bernie.geckolib.util.GeckoLibUtil;
 /** 扫地机器人：低血回仓、巡逻、拾取掉落物并回仓卸货。潜行右键打开 9×3 背包（与小箱子相同 GUI）。 */
 public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, MenuProvider, Container {
 
-    // #region agent log
-    private static void agentDbg(String hypothesisId, String location, String message, String dataJson) {
-        // 调试埋点已关闭。
-    }
-    // #endregion
 
     /** 小箱子：27 格（与 {@link net.minecraft.world.inventory.MenuType#GENERIC_9x3} 一致）。 */
     public static final int BACKPACK_SLOTS = 27;
@@ -105,9 +104,6 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
 
     /** 脚下方连续非碰撞格达到此深度，才认为「可能摔落」，需要延迟脱墙逻辑。 */
     private static final int WALL_DESCEND_MIN_AIR_BELOW = 2;
-
-    /** 调试采样周期（20 TPS 下 80≈4s）。 */
-    private static final long DEBUG_POS_SAMPLE_INTERVAL_TICKS = 80L;
 
     /** 未满血在机仓内充电时，相对 {@link #dockCenter()} 竖直向下平移（世界坐标 Y 减小）。 */
     private static final double CHARGE_DOCK_Y_OFFSET = 0.2D;
@@ -176,11 +172,13 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
     /** 即将从高处脱墙：已用顺墙/绕行缓冲的 tick（见 {@link #maybeDeferWallExitBeforeFall()}）。 */
     private int wallDescendDeferTicks;
 
-    /** 上一采样点（与 {@link #DEBUG_POS_SAMPLE_INTERVAL_TICKS} 配合算 4s 位移 hop）。 */
-    private double dbgPosSampleLastX = Double.NaN;
+    /**
+     * 巡逻态：连续「机头大致正对阻挡 + 水平碰撞」的 tick，达到 {@link #PATROL_HEAD_ON_WALL_CLIMB_TICKS} 后才允许入攀，
+     * 避免擦边经过墙面就进入攀爬。
+     */
+    private int patrolHeadOnWallTicks;
 
-    private double dbgPosSampleLastY = Double.NaN;
-    private double dbgPosSampleLastZ = Double.NaN;
+    private static final int PATROL_HEAD_ON_WALL_CLIMB_TICKS = 12;
 
     /**
      * 地面收集：{@link net.minecraft.world.entity.Mob#getNavigation()} 计算的到达掉落物所在格的缓存路径（攀墙时不使用）。
@@ -188,7 +186,12 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
     @Nullable private net.minecraft.world.level.pathfinder.Path collectGroundPath;
 
     private int collectPathCursor;
+    /** 上次成功进入收集路径重算流程的游戏刻（tick），用于与 {@link #COLLECT_PATH_RECOMPUTE_INTERVAL} 比较。 */
     private long collectPathRecomputeGameTime = Long.MIN_VALUE;
+    /**
+     * 当前 {@link #collectGroundPath} 所指向的方块格（通常与掉落物 {@link ItemEntity#blockPosition()} 一致）；
+     * 与下一次求路时的目标格比较，决定能否复用缓存路径。
+     */
     @Nullable private BlockPos collectPathGoalBlock;
     private final Map<UUID, Long> collectIgnoredTargetsUntil = new HashMap<>();
     private int collectStuckTicks;
@@ -231,6 +234,50 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
     @Override
     protected void registerGoals() {
         // 行为由 tick 状态机驱动，不使用传统 goalSelector。
+    }
+
+    @Override
+    protected PathNavigation createNavigation(Level level) {
+        return new SweeperGroundNavigation(this, level);
+    }
+
+    /**
+     * 扫地机器人专用地面导航器：先与原版行为保持一致，后续在此按需扩展 createPath 策略。
+     */
+    private static class SweeperGroundNavigation extends GroundPathNavigation {
+        SweeperGroundNavigation(Mob mob, Level level) {
+            super(mob, level);
+        }
+
+        @Override
+        public net.minecraft.world.level.pathfinder.Path createPath(BlockPos pPos, int pAccuracy) {
+                  if (this.level.getBlockState(pPos).isAir()) {
+         BlockPos blockpos;
+         for(blockpos = pPos.below(); blockpos.getY() > this.level.getMinBuildHeight() && this.level.getBlockState(blockpos).isAir(); blockpos = blockpos.below()) {
+         }
+
+         if (blockpos.getY() > this.level.getMinBuildHeight()) {
+            return super.createPath(blockpos.above(), pAccuracy);
+         }
+
+         while(blockpos.getY() < this.level.getMaxBuildHeight() && this.level.getBlockState(blockpos).isAir()) {
+            blockpos = blockpos.above();
+         }
+
+         pPos = blockpos;
+      }
+
+      if (!this.level.getBlockState(pPos).isSolid()) {
+         return super.createPath(pPos, pAccuracy);
+      } else {
+         BlockPos blockpos1;
+         for(blockpos1 = pPos.above(); blockpos1.getY() < this.level.getMaxBuildHeight() && this.level.getBlockState(blockpos1).isSolid(); blockpos1 = blockpos1.above()) {
+         }
+
+         return super.createPath(blockpos1, pAccuracy);
+      }
+
+        }
     }
 
     @Override
@@ -363,53 +410,6 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
             lastDecayGameTime = gameTime;
         }
         updateStateAndAct();
-        // #region agent log
-        long gSample = level().getGameTime();
-        if (gSample % DEBUG_POS_SAMPLE_INTERVAL_TICKS == 0L) {
-            Vec3 p = position();
-            Vec3 dm = getDeltaMovement();
-            double hop = Double.NaN;
-            if (!Double.isNaN(dbgPosSampleLastX)) {
-                double qx = p.x - dbgPosSampleLastX;
-                double qy = p.y - dbgPosSampleLastY;
-                double qz = p.z - dbgPosSampleLastZ;
-                hop = Math.sqrt(qx * qx + qy * qy + qz * qz);
-            }
-            dbgPosSampleLastX = p.x;
-            dbgPosSampleLastY = p.y;
-            dbgPosSampleLastZ = p.z;
-            Direction wf = getWallClimbFacing();
-            agentDbg(
-                    "POS",
-                    "tick",
-                    "pos_sample_4s",
-                    "{\"gameTime\":"
-                            + gSample
-                            + ",\"x\":"
-                            + p.x
-                            + ",\"y\":"
-                            + p.y
-                            + ",\"z\":"
-                            + p.z
-                            + ",\"dmx\":"
-                            + dm.x
-                            + ",\"dmy\":"
-                            + dm.y
-                            + ",\"dmz\":"
-                            + dm.z
-                            + ",\"yRot\":"
-                            + getYRot()
-                            + ",\"wall\":"
-                            + isWallClimbing()
-                            + ",\"state\":\""
-                            + getSweeperState().name()
-                            + "\",\"face\":\""
-                            + (wf == null ? "-" : wf.name())
-                            + "\",\"hopBlocks\":"
-                            + (Double.isNaN(hop) ? -1.0 : hop)
-                            + "}");
-        }
-        // #endregion
     }
 
     private void updateStateAndAct() {
@@ -448,6 +448,7 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
             case PATROLLING -> tickPatrolling();
             case IDLE -> stopHorizontalMovement();
         }
+        tryVacuumItemEntitiesSharingOccupiedCell();
     }
 
     private void resetDriveSteer() {
@@ -596,45 +597,9 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
             return;
         }
         Vec3 staging = dockStagingCenter();
-        // #region agent log
-        if (level().getGameTime() % 20L == 0L) {
-            agentDbg(
-                    "H16",
-                    "SweeperRobotEntity:tickReturningDockSequence",
-                    "return_tick",
-                    "{\"phase\":"
-                            + dockApproachPhase
-                            + ",\"distStagingSqr\":"
-                            + position().distanceToSqr(staging)
-                            + ",\"hc\":"
-                            + horizontalCollision
-                            + ",\"x\":"
-                            + getX()
-                            + ",\"z\":"
-                            + getZ()
-                            + ",\"yRot\":"
-                            + getYRot()
-                            + ",\"patrolWallHugPhase\":"
-                            + patrolWallHugPhase
-                            + "}");
-        }
-        // #endregion
 
         if (dockApproachPhase == 0) {
             if (tickReturningStuckWatch()) {
-                // #region agent log
-                agentDbg(
-                        "H16",
-                        "SweeperRobotEntity:tickReturningDockSequence",
-                        "return_stuck_watch",
-                        "{\"stuckTicks\":"
-                                + returningStuckTicks
-                                + ",\"distStagingSqr\":"
-                                + position().distanceToSqr(staging)
-                                + ",\"hc\":"
-                                + horizontalCollision
-                                + "}");
-                // #endregion
             }
             if (tickWallHugDetourActive()) {
                 return;
@@ -824,43 +789,16 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
             double dx = patrolWallNudgeX * nudgeBlocks;
             double dz = patrolWallNudgeZ * nudgeBlocks;
             AABB shifted = getBoundingBox().move(dx, 0.0D, dz);
-            boolean movedFull = false;
-            boolean movedHalf = false;
             if (level().noCollision(this, shifted)) {
                 setPos(getX() + dx, getY(), getZ() + dz);
-                movedFull = true;
             } else {
                 double dxHalf = patrolWallNudgeX * (nudgeBlocks * 0.5D);
                 double dzHalf = patrolWallNudgeZ * (nudgeBlocks * 0.5D);
                 AABB shiftedHalf = getBoundingBox().move(dxHalf, 0.0D, dzHalf);
                 if (level().noCollision(this, shiftedHalf)) {
                     setPos(getX() + dxHalf, getY(), getZ() + dzHalf);
-                    movedHalf = true;
                 }
             }
-            // #region agent log
-            if (level().getGameTime() % 10L == 0L) {
-                agentDbg(
-                        "H7",
-                        "SweeperRobotEntity:tickWallHugDetourActive",
-                        "wall_hug_nudge",
-                        "{\"nudgeBlocks\":"
-                                + nudgeBlocks
-                                + ",\"radius\":"
-                                + robotCollisionRadius()
-                                + ",\"bbW\":"
-                                + getBbWidth()
-                                + ",\"movedFull\":"
-                                + movedFull
-                                + ",\"movedHalf\":"
-                                + movedHalf
-                                + ",\"x\":"
-                                + getX()
-                                + ",\"z\":"
-                                + getZ()
-                                + "}");
-            }
-            // #endregion
             patrolWallHugPhase = 0;
             stopHorizontalMovement();
             syncBodyHeadYaw();
@@ -915,27 +853,6 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
         patrolWallNudgeX = nx;
         patrolWallNudgeZ = nz;
         float alongYaw = computeWallHugYawAlongWall(nx, nz);
-        // #region agent log
-        if (level().getGameTime() % 10L == 0L) {
-            agentDbg(
-                    "H6",
-                    "SweeperRobotEntity:tryPlanarBypassFromHit",
-                    "planar_bypass_plan",
-                    "{\"hit\":\""
-                            + hit
-                            + "\",\"bbW\":"
-                            + getBbWidth()
-                            + ",\"bbH\":"
-                            + getBbHeight()
-                            + ",\"nudgeX\":"
-                            + patrolWallNudgeX
-                            + ",\"nudgeZ\":"
-                            + patrolWallNudgeZ
-                            + ",\"alongYaw\":"
-                            + alongYaw
-                            + "}");
-        }
-        // #endregion
         patrolWallHugPhase = 1;
         patrolSteerTargetYaw = alongYaw;
         return true;
@@ -947,37 +864,9 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
         patrolSteerTargetYaw = patrolBaseYaw;
     }
 
-    /** 朝目标直线移动撞停时：尝试平面绕行或选向；攀墙由 {@link #tickWallClimbSpiderStyle} 根据撞墙与 {@link #horizontalCollision} 刷新（类原版蜘蛛）。 */
+    /** 撞停时优先 {@link #tryPlanarBypassFromHit} / 备选转向；巡逻不再 defer 绕行。蜘蛛攀附由 {@link #tickWallClimbSpiderStyle} 单独门控。 */
     private void handleGoalSeekCollision() {
         BlockPos hit = findLowestBlockingInForwardColumn();
-        // #region agent log
-        if (level().getGameTime() % 10L == 0L) {
-            agentDbg(
-                    "H6",
-                    "SweeperRobotEntity:handleGoalSeekCollision",
-                    "goal_seek_collision",
-                    "{\"state\":\""
-                            + getSweeperState()
-                            + "\",\"hit\":\""
-                            + hit
-                            + "\",\"x\":"
-                            + getX()
-                            + ",\"y\":"
-                            + getY()
-                            + ",\"z\":"
-                            + getZ()
-                            + ",\"yaw\":"
-                            + getYRot()
-                            + ",\"bbW\":"
-                            + getBbWidth()
-                            + "}");
-        }
-        // #endregion
-        if (shouldDeferWallHugForSpiderClimb(hit)) {
-            resetDriveSteer();
-            resetYawSteer();
-            return;
-        }
         stopHorizontalMovement();
         if (tryPlanarBypassFromHit(hit)) {
             resetDriveSteer();
@@ -990,103 +879,43 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
     }
 
     /**
-     * 仅闲逛巡逻时：前方竖直面不立刻做平面绕行，保留顶墙速度交给 {@link #tickWallClimbSpiderStyle} 入攀。
-     * 回仓、收集、回巡逻区等 **目标导向** 状态不 defer，优先 {@link #tryPlanarBypassFromHit} / 选向绕路。
-     */
-    private boolean shouldDeferWallHugForSpiderClimb(@Nullable BlockPos hit) {
-        if (hit == null || !level().getBlockState(hit).blocksMotion()) {
-            return false;
-        }
-        if (getSweeperState() != SweeperState.PATROLLING || getHealth() <= 1f) {
-            return false;
-        }
-        Direction wf = computeWallFaceFromEntityAndHit(hit);
-        return wf.getAxis().isHorizontal();
-    }
-
-    /**
-     * 掉落物是否在机头水平前向窄区域内（默认约 0.5 格深 × 侧向约 0.35），用于真实「吸尘」而非周身球形拾取。
+     * 仿照原版“接触即拾取”：当机器人与掉落物碰撞箱相交时可吸入。
      */
     private boolean canVacuumItemNow(ItemEntity item) {
         if (!item.isAlive() || item.getItem().isEmpty()) {
             return false;
         }
-        double maxAlong = Config.sweeperPickupForwardReach();
-        double maxAside = Config.sweeperPickupAsideReach();
-        Vec3 pivot = position().add(0.0D, Math.min(getBbHeight() * 0.35D, 0.42D), 0.0D);
-        Vec3 i = item.position();
-        float yRad = getYRot() * Mth.DEG_TO_RAD;
-        Vec3 forward = new Vec3(-Mth.sin(yRad), 0.0D, Mth.cos(yRad));
-        double rx = i.x - pivot.x;
-        double rz = i.z - pivot.z;
-        double along = rx * forward.x + rz * forward.z;
-        double sx = rx - forward.x * along;
-        double sz = rz - forward.z * along;
-        double aside = Math.sqrt(sx * sx + sz * sz);
-        // #region agent log
-        double xzDistSqr = rx * rx + rz * rz;
-        if (xzDistSqr <= 1.2D * 1.2D && level().getGameTime() % 10L == 0L) {
-            agentDbg(
-                    "H31",
-                    "SweeperRobotEntity:canVacuumItemNow",
-                    "vacuum_geometry_probe",
-                    "{\"uuid\":\""
-                            + item.getUUID()
-                            + "\",\"xzDistSqr\":"
-                            + xzDistSqr
-                            + ",\"along\":"
-                            + along
-                            + ",\"aside\":"
-                            + aside
-                            + ",\"maxAlong\":"
-                            + maxAlong
-                            + ",\"maxAside\":"
-                            + maxAside
-                            + ",\"yRot\":"
-                            + getYRot()
-                            + "}");
+        return this.getBoundingBox().intersects(item.getBoundingBox());
+    }
+
+    /** 路过同格时发现可吸入掉落物即可收取（不靠机头朝向）；停泊在仓内不处理。 */
+    private void tryVacuumItemEntitiesSharingOccupiedCell() {
+        if (level().isClientSide() || getSweeperState() == SweeperState.DOCKED) {
+            return;
         }
-        // #endregion
-        if (along <= 0.02D || along > maxAlong || aside > maxAside) {
-            // #region agent log
-            if (xzDistSqr <= 1.2D * 1.2D && level().getGameTime() % 10L == 0L) {
-                agentDbg(
-                        "H32",
-                        "SweeperRobotEntity:canVacuumItemNow",
-                        "vacuum_reject_horizontal_gate",
-                        "{\"uuid\":\""
-                                + item.getUUID()
-                                + "\",\"along\":"
-                                + along
-                                + ",\"aside\":"
-                                + aside
-                                + ",\"maxAlong\":"
-                                + maxAlong
-                                + ",\"maxAside\":"
-                                + maxAside
-                                + "}");
+        BlockPos cell = blockPosition();
+        var drops =
+                level()
+                        .getEntitiesOfClass(
+                                ItemEntity.class,
+                                new AABB(cell),
+                                e ->
+                                        e.isAlive()
+                                                && !e.getItem().isEmpty()
+                                                && cell.equals(e.blockPosition())
+                                                && isItemDiscoverableForSweep(e)
+                                                && !isCollectTargetTemporarilyIgnored(e));
+        if (drops.isEmpty()) {
+            return;
+        }
+        var sorted = new ArrayList<ItemEntity>(drops);
+        sorted.sort(Comparator.comparingDouble(this::distanceToSqr));
+        for (ItemEntity e : sorted) {
+            if (!canVacuumItemNow(e)) {
+                continue;
             }
-            // #endregion
-            return false;
+            cacheFrom(e);
         }
-        double verticalSlack = 0.72D + getBbHeight() * 0.22D;
-        boolean okVertical = Math.abs(i.y - pivot.y) <= verticalSlack;
-        // #region agent log
-        if (!okVertical && xzDistSqr <= 1.2D * 1.2D && level().getGameTime() % 10L == 0L) {
-            agentDbg(
-                    "H33",
-                    "SweeperRobotEntity:canVacuumItemNow",
-                    "vacuum_reject_vertical_gate",
-                    "{\"uuid\":\""
-                            + item.getUUID()
-                            + "\",\"dy\":"
-                            + Math.abs(i.y - pivot.y)
-                            + ",\"verticalSlack\":"
-                            + verticalSlack
-                            + "}");
-        }
-        // #endregion
-        return okVertical;
     }
 
     private void resetCollectGroundPath() {
@@ -1115,43 +944,6 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
             return false;
         }
         boolean ignored = level().getGameTime() < retryAt;
-        // #region agent log
-        if (ignored && level().getGameTime() % 20L == 0L) {
-            agentDbg(
-                    "H14",
-                    "SweeperRobotEntity:isCollectTargetTemporarilyIgnored",
-                    "skip_unreachable_target",
-                    "{\"uuid\":\""
-                            + item.getUUID()
-                            + "\",\"retryAt\":"
-                            + retryAt
-                            + ",\"now\":"
-                            + level().getGameTime()
-                            + "}");
-        }
-        if (ignored) {
-            double nearSqr = xzDistSqrTo(item);
-            if (nearSqr <= 2.25D && level().getGameTime() % 10L == 0L) {
-                agentDbg(
-                        "H34",
-                        "SweeperRobotEntity:isCollectTargetTemporarilyIgnored",
-                        "ignored_target_nearby",
-                        "{\"uuid\":\""
-                                + item.getUUID()
-                                + "\",\"nearSqr\":"
-                                + nearSqr
-                                + ",\"state\":\""
-                                + getSweeperState()
-                                + "\",\"canVacuumNow\":"
-                                + canVacuumItemNow(item)
-                                + ",\"retryAt\":"
-                                + retryAt
-                                + ",\"now\":"
-                                + level().getGameTime()
-                                + "}");
-            }
-        }
-        // #endregion
         return ignored;
     }
 
@@ -1163,40 +955,10 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
         long now = level().getGameTime();
         Long existingRetryAt = collectIgnoredTargetsUntil.get(target.getUUID());
         if (existingRetryAt != null && now < existingRetryAt) {
-            // #region agent log
-            agentDbg(
-                    "H15",
-                    "SweeperRobotEntity:markCollectTargetUnreachable",
-                    "already_marked_unreachable",
-                    "{\"uuid\":\""
-                            + target.getUUID()
-                            + "\",\"reason\":\""
-                            + reason
-                            + "\",\"existingRetryAt\":"
-                            + existingRetryAt
-                            + ",\"now\":"
-                            + now
-                            + "}");
-            // #endregion
             return;
         }
         long retryAt = now + COLLECT_UNREACHABLE_RETRY_COOLDOWN_TICKS;
         collectIgnoredTargetsUntil.put(target.getUUID(), retryAt);
-        // #region agent log
-        agentDbg(
-                "H14",
-                "SweeperRobotEntity:markCollectTargetUnreachable",
-                "mark_unreachable_target",
-                "{\"uuid\":\""
-                        + target.getUUID()
-                        + "\",\"reason\":\""
-                        + reason
-                        + "\",\"retryAt\":"
-                        + retryAt
-                        + ",\"dy\":"
-                        + Mth.abs(blockPosition().getY() - target.blockPosition().getY())
-                        + "}");
-        // #endregion
     }
 
     private double xzDistSqrTo(Vec3 v) {
@@ -1223,19 +985,6 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
             collectStuckTicks = 0;
             collectLastX = getX();
             collectLastZ = getZ();
-            // #region agent log
-            if (level().getGameTime() % 20L == 0L) {
-                agentDbg(
-                        "H19",
-                        "SweeperRobotEntity:tickCollectStuckWatch",
-                        "collect_stuck_watch_skip_steering",
-                        "{\"driveSteerPhase\":"
-                                + driveSteerPhase
-                                + ",\"yawSteerPhase\":"
-                                + yawSteerPhase
-                                + "}");
-            }
-            // #endregion
             return false;
         }
         if (Double.isNaN(collectLastX) || Double.isNaN(collectLastZ)) {
@@ -1251,28 +1000,6 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
         collectLastZ = getZ();
         if (movedSqr < 0.0036D) {
             collectStuckTicks++;
-            // #region agent log
-            if (collectStuckTicks % 10 == 0) {
-                Vec3 dm = getDeltaMovement();
-                agentDbg(
-                        "H18",
-                        "SweeperRobotEntity:tickCollectStuckWatch",
-                        "collect_stuck_watch_progress",
-                        "{\"stuckTicks\":"
-                                + collectStuckTicks
-                                + ",\"movedSqr\":"
-                                + movedSqr
-                                + ",\"dmx\":"
-                                + dm.x
-                                + ",\"dmz\":"
-                                + dm.z
-                                + ",\"driveSteerPhase\":"
-                                + driveSteerPhase
-                                + ",\"yawSteerPhase\":"
-                                + yawSteerPhase
-                                + "}");
-            }
-            // #endregion
         } else {
             collectStuckTicks = 0;
         }
@@ -1312,79 +1039,63 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
     }
 
     /**
-     * 为到达 {@code target} 所在格刷新地面路径；不可达或空路径返回 false（调用方应放弃该目标）。
+     * 仿照原版 {@code PathNavigation#createPath(...)} 的入口包装：在基础 accuracy 上叠加机器人碰撞半径影响。
+     * <p>
+     * 目的：机器人体型较宽时，放宽“到达目标”的容差，减少末端节点过窄导致的贴边卡住。
+     *
+     * @param goal 目标方块格
+     * @param baseAccuracy 业务期望的基础到达容差（单位：格）
+     * @return 导航路径；在明显无效场景（如低于世界最低高度）返回 null
+     */
+    @Nullable
+    private net.minecraft.world.level.pathfinder.Path createCollectPathWithCollisionRadius(
+            BlockPos goal, int baseAccuracy) {
+        // 与原版 PathNavigation#createPath(BlockPos, int) 一致：将参数透传给导航器自身实现。
+        return getNavigation().createPath(goal, baseAccuracy);
+    }
+
+    /**
+     * 为拾取目标刷新「地面」导航路径（节点由 {@link #getNavigation()} 计算；攀墙阶段不走此路径）。
+     * <p>
+     * 路径目标为掉落物所在方块坐标；与 {@link #collectPathGoalBlock} 一致且未过重算间隔时复用缓存，
+     * 否则调用 {@link #createCollectPathWithCollisionRadius(BlockPos, int)} 重新求路（到达容差会叠加机器人半径影响）。
+     *
+     * @param target 当前锁定要收集的掉落物实体
+     * @return 存在非零节点路径时为 true；{@code null} 或 {@link net.minecraft.world.level.pathfinder.Path#getNodeCount()} 为 0 时返回
+     *     false，调用方应放弃该目标
      */
     private boolean ensureCollectGroundPath(ItemEntity target) {
         BlockPos goal = target.blockPosition();
         long gameTime = level().getGameTime();
-        // #region agent log
-        if (gameTime % 20L == 0L) {
-            agentDbg(
-                    "H12",
-                    "SweeperRobotEntity:ensureCollectGroundPath",
-                    "path_request",
-                    "{\"robotY\":"
-                            + blockPosition().getY()
-                            + ",\"goalY\":"
-                            + goal.getY()
-                            + ",\"dy\":"
-                            + Mth.abs(blockPosition().getY() - goal.getY())
-                            + "}");
+        // 无缓存、目标格变化、或每隔 COLLECT_PATH_RECOMPUTE_INTERVAL tick 强制重算（应对地形/障碍变化）
+        if (collectGroundPath == null) {
+            // 首次进入收集流程或缓存已被清空：当前没有可跟随的路径，只能重新求路。
+        } else if (collectPathGoalBlock == null) {
+            // 存在路径但缺少其对应的目标格元数据：无法确认路径是否仍指向当前目标，按失效处理并重算。
+        } else if (!collectPathGoalBlock.equals(goal)) {
+            // 掉落物所在格变化（滚动/被推挤/目标切换）：旧路径终点已过期，需要改算到新目标格。
+        } else if (gameTime - collectPathRecomputeGameTime >= COLLECT_PATH_RECOMPUTE_INTERVAL) {
+            // 周期性重算：即使目标未变，也要刷新以适应动态障碍、地形变化或局部卡死后的绕行机会。
+        } else {
+            // 复用缓存路径
+            return collectGroundPath.getNodeCount() > 0;
         }
-        // #endregion
-        boolean needNew =
-                collectGroundPath == null
-                        || collectPathGoalBlock == null
-                        || !collectPathGoalBlock.equals(goal)
-                        || gameTime - collectPathRecomputeGameTime >= COLLECT_PATH_RECOMPUTE_INTERVAL;
-        if (!needNew) {
-            return collectGroundPath != null && collectGroundPath.getNodeCount() > 0;
-        }
+        // 记录本次重算时间戳：后续按间隔判断是否需要再次重算。
         collectPathRecomputeGameTime = gameTime;
+        // 记录本次路径对应的目标格，用于下次快速判断目标是否变化。
         collectPathGoalBlock = goal.immutable();
-        net.minecraft.world.level.pathfinder.Path path = getNavigation().createPath(goal, 1);
+        // 向原版导航请求到目标格的路径；在基础容差上叠加机器人碰撞半径影响。
+        net.minecraft.world.level.pathfinder.Path path = createCollectPathWithCollisionRadius(goal, 0);
+        // 缓存新路径，供后续 tick 逐节点跟随。
         collectGroundPath = path;
+        // 新路径从第一个节点开始消费。
         collectPathCursor = 0;
         if (path == null || path.getNodeCount() == 0) {
-            // #region agent log
-            agentDbg(
-                    "H1",
-                    "SweeperRobotEntity:ensureCollectGroundPath",
-                    "path_fail",
-                    "{\"pathNull\":"
-                            + (path == null)
-                            + ",\"canReach\":"
-                            + (path != null && path.canReach())
-                            + ",\"nodeCount\":"
-                            + (path != null ? path.getNodeCount() : -1)
-                            + "}");
-            // #endregion
+            // 没算出可用节点：视为当前目标不可达，由调用方决定放弃目标。
             return false;
         }
-        // #region agent log
-        if (!path.canReach()) {
-            agentDbg(
-                    "H35",
-                    "SweeperRobotEntity:ensureCollectGroundPath",
-                    "path_partial_accept",
-                    "{\"nodeCount\":"
-                            + path.getNodeCount()
-                            + ",\"goalX\":"
-                            + goal.getX()
-                            + ",\"goalY\":"
-                            + goal.getY()
-                            + ",\"goalZ\":"
-                            + goal.getZ()
-                            + "}");
-        }
-        // #endregion
-        // #region agent log
-        agentDbg(
-                "H1",
-                "SweeperRobotEntity:ensureCollectGroundPath",
-                "path_ok",
-                "{\"nodeCount\":" + path.getNodeCount() + "}");
-        // #endregion
+
+        // 新路径从当前位置起，跳过已贴身经过的中间节点，避免 cursor 卡在段首
         advanceCollectPathCursor();
         return true;
     }
@@ -1395,10 +1106,6 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
         resetCollectGroundPath();
         getNavigation().stop();
         setSweeperState(SweeperState.PATROLLING);
-    }
-
-    private void abandonUnreachableCollectTarget() {
-        abandonUnreachableCollectTarget(null, "unknown");
     }
 
     private void resetReenterGroundPath() {
@@ -1570,21 +1277,6 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
         advanceReenterPathCursor();
         int reenterLast = path.getNodeCount() - 1;
         if (reenterPathCursor < reenterLast) {
-            // #region agent log
-            if (level().getGameTime() % 20L == 0L) {
-                agentDbg(
-                        "H2",
-                        "SweeperRobotEntity:tickReenteringPatrol",
-                        "reenter_follow_intermediate",
-                        "{\"cursor\":"
-                                + reenterPathCursor
-                                + ",\"nodes\":"
-                                + path.getNodeCount()
-                                + ",\"hc\":"
-                                + horizontalCollision
-                                + "}");
-            }
-            // #endregion
             Vec3 w = collectWaypointCenter(path.getNode(reenterPathCursor));
             driveToward(w, Config.sweeperMoveSpeed());
             if (horizontalCollision) {
@@ -1594,19 +1286,6 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
         }
         Vec3 reenterLastCenter = collectWaypointCenter(path.getNode(reenterLast));
         if (xzDistSqrTo(reenterLastCenter) > waypointArriveSqr()) {
-            // #region agent log
-            if (level().getGameTime() % 20L == 0L) {
-                agentDbg(
-                        "H2",
-                        "SweeperRobotEntity:tickReenteringPatrol",
-                        "reenter_follow_last_wp",
-                        "{\"distSqr\":"
-                                + xzDistSqrTo(reenterLastCenter)
-                                + ",\"hc\":"
-                                + horizontalCollision
-                                + "}");
-            }
-            // #endregion
             driveToward(reenterLastCenter, Config.sweeperMoveSpeed());
             if (horizontalCollision) {
                 handleGoalSeekCollision();
@@ -1615,15 +1294,6 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
         }
 
         Vec3 goalCenter = Vec3.atCenterOf(goalBlock);
-        // #region agent log
-        if (level().getGameTime() % 20L == 0L) {
-            agentDbg(
-                    "H2",
-                    "SweeperRobotEntity:tickReenteringPatrol",
-                    "reenter_direct_goal",
-                    "{\"hc\":" + horizontalCollision + "}");
-        }
-        // #endregion
         driveToward(new Vec3(goalCenter.x, getY(), goalCenter.z), Config.sweeperMoveSpeed());
         if (horizontalCollision) {
             handleGoalSeekCollision();
@@ -1634,19 +1304,23 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
      * 与目标格 {@code |ΔY|<=1} 视为同一层高，可直接贴目标；否则先沿路节点移动直至层高对齐，再逼近掉落物实体。
      */
     private void tickCollecting() {
+        // 分支A：贴墙攀爬中，不走地面路径，改用近距离朝向驱动贴墙接近目标。
         if (isWallClimbing()) {
             resetCollectGroundPath();
             ItemEntity target = getOrFindCollectTarget();
+            // A1：目标丢失，退出收集，回到巡逻。
             if (target == null) {
                 setSweeperState(SweeperState.PATROLLING);
                 return;
             }
+            // A2：已到可吸入范围，直接收集并结束本次收集状态。
             if (canVacuumItemNow(target)) {
                 cacheFrom(target);
                 targetItemUuid = null;
                 setSweeperState(SweeperState.PATROLLING);
                 return;
             }
+            // A3：仍在执行贴墙转向节拍，先转向再做小步前推，避免横摆过大。
             if (!Float.isNaN(patrolSteerTargetYaw)) {
                 if (tickYawSteerWithPauses(patrolSteerTargetYaw)) {
                     patrolSteerTargetYaw = Float.NaN;
@@ -1656,67 +1330,45 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
                 driveToward(position().add(f0.scale(0.85)), Config.sweeperMoveSpeed());
                 return;
             }
+            // A4：脱墙延迟窗口内，继续沿当前朝向小步前进，避免立刻跌落/反复切换状态。
             if (wallDescendDeferTicks > 0) {
                 float yRd = getYRot() * Mth.DEG_TO_RAD;
                 Vec3 fD = new Vec3(-Mth.sin(yRd), 0.0, Mth.cos(yRd));
                 driveToward(position().add(fD.scale(0.85)), Config.sweeperMoveSpeed());
                 return;
             }
+            // A5：贴墙稳定阶段，直接朝掉落物实体逼近。
             driveToward(target.position(), Config.sweeperMoveSpeed());
             return;
         }
+        // 分支B：地面收集模式，依赖缓存路径与节点跟随。
         ItemEntity target = getOrFindCollectTarget();
+        // B1：目标丢失，清路径并回巡逻。
         if (target == null) {
             resetCollectGroundPath();
             setSweeperState(SweeperState.PATROLLING);
             return;
         }
+        // B2：目标处于短期忽略名单（例如刚判定不可达），暂不重试，回巡逻等待冷却。
         if (isCollectTargetTemporarilyIgnored(target)) {
-            // #region agent log
-            agentDbg(
-                    "H15",
-                    "SweeperRobotEntity:tickCollecting",
-                    "collect_target_ignored_in_tick",
-                    "{\"uuid\":\""
-                            + target.getUUID()
-                            + "\",\"retryAt\":"
-                            + collectIgnoredTargetsUntil.getOrDefault(target.getUUID(), -1L)
-                            + ",\"now\":"
-                            + level().getGameTime()
-                            + "}");
-            // #endregion
             targetItemUuid = null;
             resetCollectGroundPath();
             setSweeperState(SweeperState.PATROLLING);
             return;
         }
+        // B3：无法获得可用路径，标记当前目标不可达并放弃。
         if (!ensureCollectGroundPath(target)) {
             abandonUnreachableCollectTarget(target, "path_unreachable");
             return;
         }
         net.minecraft.world.level.pathfinder.Path path = collectGroundPath;
+        // B4：理论上不应出现（ensure 成功但缓存为空），按异常兜底处理为不可达。
         if (path == null) {
             abandonUnreachableCollectTarget(target, "path_null_after_ensure");
             return;
         }
+        // B5：持续位移不足，判定卡住，主动放弃该目标避免死循环。
         if (tickCollectStuckWatch(target.blockPosition())) {
-            // #region agent log
-            agentDbg(
-                    "H10",
-                    "SweeperRobotEntity:tickCollecting",
-                    "collect_stuck_recover",
-                    "{\"stuckTicks\":"
-                            + collectStuckTicks
-                            + ",\"cursor\":"
-                            + collectPathCursor
-                            + ",\"nodes\":"
-                            + path.getNodeCount()
-                            + ",\"x\":"
-                            + getX()
-                            + ",\"z\":"
-                            + getZ()
-                            + "}");
-            // #endregion
             abandonUnreachableCollectTarget(target, "stuck_loop");
             return;
         }
@@ -1724,35 +1376,19 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
         int ry = blockPosition().getY();
         int ty = target.blockPosition().getY();
         boolean layerOk = Mth.abs(ry - ty) <= 1;
-        // #region agent log
-        if (!layerOk && level().getGameTime() % 20L == 0L) {
-            agentDbg(
-                    "H13",
-                    "SweeperRobotEntity:tickCollecting",
-                    "layer_mismatch",
-                    "{\"robotY\":"
-                            + ry
-                            + ",\"targetY\":"
-                            + ty
-                            + ",\"dy\":"
-                            + Mth.abs(ry - ty)
-                            + ",\"cursor\":"
-                            + collectPathCursor
-                            + ",\"nodes\":"
-                            + path.getNodeCount()
-                            + "}");
-        }
-        // #endregion
 
+        // B6：正在执行贴墙绕障分离流程，本 tick 交给该流程接管移动。
         if (tickWallHugDetourActive()) {
             return;
         }
 
+        // B7：与目标层高不一致时，先沿路径推进，争取先对齐层高。
         if (!layerOk) {
             advanceCollectPathCursor();
             if (collectPathCursor >= path.getNodeCount()) {
                 int ry2 = blockPosition().getY();
                 int ty2 = target.blockPosition().getY();
+                // 路径走尽仍未对齐层高，视为当前收集几何条件不可满足。
                 if (Mth.abs(ry2 - ty2) > 1) {
                     abandonUnreachableCollectTarget(target, "layer_mismatch_after_path_end");
                     return;
@@ -1761,6 +1397,7 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
             }
         }
 
+        // B8：尚未层高对齐，继续按当前路径节点行进。
         if (!layerOk) {
             Vec3 w = collectWaypointCenter(path.getNode(collectPathCursor));
             driveToward(w, Config.sweeperMoveSpeed());
@@ -1772,22 +1409,8 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
 
         advanceCollectPathCursor();
         int collectLast = path.getNodeCount() - 1;
+        // B9：还在中间节点阶段，继续逐节点跟随。
         if (collectPathCursor < collectLast) {
-            // #region agent log
-            if (level().getGameTime() % 20L == 0L) {
-                agentDbg(
-                        "H2",
-                        "SweeperRobotEntity:tickCollecting",
-                        "collect_follow_intermediate",
-                        "{\"cursor\":"
-                                + collectPathCursor
-                                + ",\"nodes\":"
-                                + path.getNodeCount()
-                                + ",\"hc\":"
-                                + horizontalCollision
-                                + "}");
-            }
-            // #endregion
             Vec3 w = collectWaypointCenter(path.getNode(collectPathCursor));
             driveToward(w, Config.sweeperMoveSpeed());
             if (horizontalCollision) {
@@ -1796,20 +1419,8 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
             return;
         }
         Vec3 collectLastCenter = collectWaypointCenter(path.getNode(collectLast));
+        // B10：已到最后节点阶段但未贴近末节点中心，先收敛到末节点。
         if (xzDistSqrTo(collectLastCenter) > waypointArriveSqr()) {
-            // #region agent log
-            if (level().getGameTime() % 20L == 0L) {
-                agentDbg(
-                        "H2",
-                        "SweeperRobotEntity:tickCollecting",
-                        "collect_follow_last_wp",
-                        "{\"distSqr\":"
-                                + xzDistSqrTo(collectLastCenter)
-                                + ",\"hc\":"
-                                + horizontalCollision
-                                + "}");
-            }
-            // #endregion
             driveToward(collectLastCenter, Config.sweeperMoveSpeed());
             if (horizontalCollision) {
                 handleGoalSeekCollision();
@@ -1817,40 +1428,17 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
             return;
         }
 
-        // #region agent log
-        if (level().getGameTime() % 20L == 0L) {
-            agentDbg(
-                    "H2",
-                    "SweeperRobotEntity:tickCollecting",
-                    "collect_direct_entity",
-                    "{\"hc\":"
-                            + horizontalCollision
-                            + ",\"targetId\":"
-                            + target.getId()
-                            + ",\"targetUuid\":\""
-                            + target.getUUID()
-                            + "\",\"targetAlive\":"
-                            + target.isAlive()
-                            + ",\"distSqr\":"
-                            + distanceToSqr(target)
-                            + ",\"dmx\":"
-                            + getDeltaMovement().x
-                            + ",\"dmz\":"
-                            + getDeltaMovement().z
-                            + "}");
-        }
-        // #endregion
-        driveToward(target.position(), Config.sweeperMoveSpeed());
-        if (horizontalCollision) {
-            handleGoalSeekCollision();
-            return;
-        }
+        // B11：末节点中心已达成；能吸则收。
         if (canVacuumItemNow(target)) {
             cacheFrom(target);
             targetItemUuid = null;
             resetCollectGroundPath();
             setSweeperState(SweeperState.PATROLLING);
+            return;
         }
+        // B12：已到路径终点仍吸不到（几何/障碍/掉落物漂移）：停住并清空路径，下 tick 走 ensureCollectGroundPath 重算，避免持续 driveToward(target) 顶死。
+        stopHorizontalMovement();
+        resetCollectGroundPath();
     }
 
     private void tickPatrolling() {
@@ -1936,23 +1524,7 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
         Vec3 pos = position();
         double dx = goal.x - pos.x;
         double dz = goal.z - pos.z;
-        boolean logCollectDrive = getSweeperState() == SweeperState.COLLECTING && level().getGameTime() % 10L == 0L;
         if (dx * dx + dz * dz < 1.0e-6) {
-            // #region agent log
-            if (logCollectDrive) {
-                agentDbg(
-                        "H18",
-                        "SweeperRobotEntity:driveToward",
-                        "collect_drive_goal_too_close",
-                        "{\"dx\":"
-                                + dx
-                                + ",\"dz\":"
-                                + dz
-                                + ",\"driveSteerPhase\":"
-                                + driveSteerPhase
-                                + "}");
-            }
-            // #endregion
             stopHorizontalMovement();
             return;
         }
@@ -1964,19 +1536,6 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
         int n = Config.sweeperTurnPauseTicks();
 
         if (driveSteerPhase == STEER_PRE) {
-            // #region agent log
-            if (logCollectDrive) {
-                agentDbg(
-                        "H18",
-                        "SweeperRobotEntity:driveToward",
-                        "collect_drive_pre_pause",
-                        "{\"alignDiff\":"
-                                + alignDiff
-                                + ",\"ticks\":"
-                                + driveSteerTicks
-                                + "}");
-            }
-            // #endregion
             stopHorizontalMovement();
             if (--driveSteerTicks <= 0) {
                 driveSteerPhase = STEER_TURN;
@@ -1984,19 +1543,6 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
             return;
         }
         if (driveSteerPhase == STEER_POST) {
-            // #region agent log
-            if (logCollectDrive) {
-                agentDbg(
-                        "H18",
-                        "SweeperRobotEntity:driveToward",
-                        "collect_drive_post_pause",
-                        "{\"alignDiff\":"
-                                + alignDiff
-                                + ",\"ticks\":"
-                                + driveSteerTicks
-                                + "}");
-            }
-            // #endregion
             stopHorizontalMovement();
             if (--driveSteerTicks <= 0) {
                 driveSteerPhase = STEER_IDLE;
@@ -2018,23 +1564,6 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
             if (driveSteerPhase == STEER_TURN) {
                 float turnStep =
                         Mth.clamp(alignDiff, -Config.sweeperTurnSpeedDegrees(), Config.sweeperTurnSpeedDegrees());
-                // #region agent log
-                if (logCollectDrive) {
-                    agentDbg(
-                            "H18",
-                            "SweeperRobotEntity:driveToward",
-                            "collect_drive_turning",
-                            "{\"alignDiff\":"
-                                    + alignDiff
-                                    + ",\"turnStep\":"
-                                    + turnStep
-                                    + ",\"currentYaw\":"
-                                    + current
-                                    + ",\"targetYaw\":"
-                                    + targetYaw
-                                    + "}");
-                }
-                // #endregion
                 setYRot(current + turnStep);
                 syncBodyHeadYaw();
                 stopHorizontalMovement();
@@ -2063,65 +1592,14 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
             Vec3 toN = new Vec3(dx, 0, dz).normalize();
             double along = forward.dot(toN);
             if (Math.abs(along) < 0.03) {
-                // #region agent log
-                if (logCollectDrive) {
-                    agentDbg(
-                            "H18",
-                            "SweeperRobotEntity:driveToward",
-                            "collect_drive_blocked_small_along",
-                            "{\"along\":"
-                                    + along
-                                    + ",\"forwardX\":"
-                                    + forward.x
-                                    + ",\"forwardZ\":"
-                                    + forward.z
-                                    + ",\"toNX\":"
-                                    + toN.x
-                                    + ",\"toNZ\":"
-                                    + toN.z
-                                    + "}");
-                }
-                // #endregion
                 stopHorizontalMovement();
                 return;
             }
             if (along <= 0) {
-                // #region agent log
-                if (logCollectDrive) {
-                    agentDbg(
-                            "H18",
-                            "SweeperRobotEntity:driveToward",
-                            "collect_drive_blocked_behind",
-                            "{\"along\":"
-                                    + along
-                                    + ",\"targetYaw\":"
-                                    + targetYaw
-                                    + ",\"currentYaw\":"
-                                    + getYRot()
-                                    + "}");
-                }
-                // #endregion
                 stopHorizontalMovement();
                 return;
             }
             setDeltaMovement(forward.x * speed, getDeltaMovement().y, forward.z * speed);
-            // #region agent log
-            if (logCollectDrive) {
-                agentDbg(
-                        "H18",
-                        "SweeperRobotEntity:driveToward",
-                        "collect_drive_apply_move",
-                        "{\"along\":"
-                                + along
-                                + ",\"speed\":"
-                                + speed
-                                + ",\"dmx\":"
-                                + (forward.x * speed)
-                                + ",\"dmz\":"
-                                + (forward.z * speed)
-                                + "}");
-            }
-            // #endregion
         }
     }
 
@@ -2182,50 +1660,8 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
             }
         }
         if (nearest != null) {
-            // #region agent log
-            if (level().getGameTime() % 10L == 0L) {
-                agentDbg(
-                        "H10",
-                        "SweeperRobotEntity:findLowestBlockingInForwardColumn",
-                        "fallback_ring_hit",
-                        "{\"hit\":\""
-                                + nearest
-                                + "\",\"ring\":"
-                                + ring
-                                + ",\"radius\":"
-                                + radius
-                                + ",\"pathRadiusBonus\":"
-                                + InternalPathTuning.Sweeper.PATH_RADIUS_BONUS
-                                + "}");
-            }
-            // #endregion
             return nearest;
         }
-        // #region agent log
-        if (horizontalCollision && level().getGameTime() % 10L == 0L) {
-            agentDbg(
-                    "H7",
-                    "SweeperRobotEntity:findLowestBlockingInForwardColumn",
-                    "blocking_not_found",
-                    "{\"front\":"
-                            + front
-                            + ",\"side\":"
-                            + side
-                            + ",\"radius\":"
-                            + radius
-                            + ",\"pathRadiusBonus\":"
-                            + InternalPathTuning.Sweeper.PATH_RADIUS_BONUS
-                            + ",\"bbW\":"
-                            + getBbWidth()
-                            + ",\"x\":"
-                            + getX()
-                            + ",\"z\":"
-                            + getZ()
-                            + ",\"yaw\":"
-                            + getYRot()
-                            + "}");
-        }
-        // #endregion
         return null;
     }
 
@@ -2276,6 +1712,23 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
         return dz > 0 ? Direction.SOUTH : Direction.NORTH;
     }
 
+    /** 阻挡格中心相对实体是否落在机头朝向前方扇形内（用于区分正对撞墙与侧向擦墙）。 */
+    private boolean isHeadOnWallRoughlyAhead(BlockPos hit) {
+        Vec3 hc = Vec3.atCenterOf(hit);
+        double vx = hc.x - getX();
+        double vz = hc.z - getZ();
+        double len = Math.sqrt(vx * vx + vz * vz);
+        if (len < 1.0e-4D) {
+            return true;
+        }
+        vx /= len;
+        vz /= len;
+        float yRad = getYRot() * Mth.DEG_TO_RAD;
+        double fx = -Mth.sin(yRad);
+        double fz = Mth.cos(yRad);
+        return fx * vx + fz * vz >= 0.45D;
+    }
+
     /**
      * 类原版蜘蛛：在 {@code super.tick()} 之后根据 {@link #horizontalCollision} 刷新攀墙同步位；
      * 移动交给 {@link #onClimbable()} 与 {@link LivingEntity#travel}。仍保留巡逻半径 / 锚点 / 墙柱等业务脱墙。
@@ -2288,33 +1741,9 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
         // 允许在巡逻与收集态使用蜘蛛式攀墙；回仓/出库仍保持地面行为，避免入库流程被攀墙打断。
         boolean allowSpiderClimb =
                 (st == SweeperState.PATROLLING || st == SweeperState.COLLECTING) && getHealth() > 1f;
-        // #region agent log
-        if (level().getGameTime() % 20L == 0L) {
-            agentDbg(
-                    "H21",
-                    "SweeperRobotEntity:tickWallClimbSpiderStyle",
-                    "wall_climb_gate",
-                    "{\"state\":\""
-                            + st.name()
-                            + "\",\"allowSpiderClimb\":"
-                            + allowSpiderClimb
-                            + ",\"isWallClimbing\":"
-                            + isWallClimbing()
-                            + ",\"hc\":"
-                            + horizontalCollision
-                            + ",\"x\":"
-                            + getX()
-                            + ",\"y\":"
-                            + getY()
-                            + ",\"z\":"
-                            + getZ()
-                            + "}");
-        }
-        // #endregion
 
         if (isWallClimbing()) {
             if (isOutsidePatrolRadiusAroundDock()) {
-                agentDbg("C", "SweeperRobotEntity.tickWallClimbSpiderStyle", "exit_patrol", "{}");
                 exitWallClimb();
                 if (getHealth() < Config.sweeperReturnHealthThreshold() && !isDocked()) {
                     setSweeperState(SweeperState.RETURNING);
@@ -2325,12 +1754,10 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
             }
             Direction wallFace = getWallClimbFacing();
             if (wallFace == null || !wallFace.getAxis().isHorizontal()) {
-                agentDbg("C", "SweeperRobotEntity.tickWallClimbSpiderStyle", "exit_bad_face", "{}");
                 exitWallClimb();
                 return;
             }
             if (wallClimbAnchor == null || !level().getBlockState(wallClimbAnchor).blocksMotion()) {
-                agentDbg("C", "SweeperRobotEntity.tickWallClimbSpiderStyle", "exit_anchor", "{}");
                 exitWallClimb();
                 return;
             }
@@ -2341,53 +1768,14 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
                                             .scale(0.5));
             Vec3 n = new Vec3(wallFace.getStepX(), wallFace.getStepY(), wallFace.getStepZ());
             double distAlong = position().subtract(faceCenter).dot(n);
-            // #region agent log
-            if (level().getGameTime() % 20L == 0L) {
-                agentDbg(
-                        "H24",
-                        "SweeperRobotEntity:tickWallClimbSpiderStyle",
-                        "wall_climb_hold_probe",
-                        "{\"wallFace\":\""
-                                + wallFace
-                                + "\",\"anchor\":\""
-                                + wallClimbAnchor
-                                + "\",\"distAlong\":"
-                                + distAlong
-                                + ",\"min\":"
-                                + WALL_CLIMB_DIST_ALONG_MIN
-                                + ",\"max\":"
-                                + WALL_CLIMB_DIST_ALONG_MAX
-                                + "}");
-            }
-            // #endregion
             if (distAlong < WALL_CLIMB_DIST_ALONG_MIN || distAlong > WALL_CLIMB_DIST_ALONG_MAX) {
                 if (maybeDeferWallExitBeforeFall()) {
                     return;
                 }
-                agentDbg(
-                        "C",
-                        "SweeperRobotEntity.tickWallClimbSpiderStyle",
-                        "exit_distAlong",
-                        "{\"distAlong\":" + distAlong + "}");
                 exitWallClimb();
                 return;
             }
             boolean hasColumn = hasBlockingColumnIntoWall(n);
-            // #region agent log
-            if (level().getGameTime() % 20L == 0L) {
-                agentDbg(
-                        "H26",
-                        "SweeperRobotEntity:tickWallClimbSpiderStyle",
-                        "wall_climb_column_probe",
-                        "{\"hasColumn\":"
-                                + hasColumn
-                                + ",\"noColumnTicks\":"
-                                + wallNoColumnTicks
-                                + ",\"anchor\":\""
-                                + wallClimbAnchor
-                                + "\"}");
-            }
-            // #endregion
             if (!hasColumn) {
                 if (maybeDeferWallExitBeforeFall()) {
                     return;
@@ -2396,11 +1784,6 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
                 if (wallNoColumnTicks < 8) {
                     return;
                 }
-                agentDbg(
-                        "C",
-                        "SweeperRobotEntity.tickWallClimbSpiderStyle",
-                        "exit_no_column",
-                        "{\"ticks\":" + wallNoColumnTicks + "}");
                 exitWallClimb();
                 return;
             }
@@ -2417,68 +1800,51 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
 
         BlockPos hit = findLowestBlockingInForwardColumn();
         boolean hitBlocks = hit != null && level().getBlockState(hit).blocksMotion();
-        ItemEntity lockedCollectTarget = null;
         int collectDy = 0;
         double collectNearSqr = Double.NaN;
         boolean collectClimbAssist = false;
         if (st == SweeperState.COLLECTING && targetItemUuid != null && level() instanceof ServerLevel serverLevel) {
             Entity e = serverLevel.getEntity(targetItemUuid);
             if (e instanceof ItemEntity item && item.isAlive() && !item.getItem().isEmpty()) {
-                lockedCollectTarget = item;
                 collectDy = Mth.abs(blockPosition().getY() - item.blockPosition().getY());
                 collectNearSqr = xzDistSqrTo(item);
                 collectClimbAssist = collectDy > 1 && collectNearSqr <= 4.0D;
             }
         }
-        boolean shouldHug = hitBlocks && (horizontalCollision || collectClimbAssist);
-        // #region agent log
-        if (level().getGameTime() % 20L == 0L) {
-            agentDbg(
-                    "H22",
-                    "SweeperRobotEntity:tickWallClimbSpiderStyle",
-                    "wall_climb_hit_probe",
-                    "{\"hc\":"
-                            + horizontalCollision
-                            + ",\"hit\":\""
-                            + hit
-                            + "\",\"hitBlocks\":"
-                            + hitBlocks
-                            + ",\"shouldHug\":"
-                            + shouldHug
-                            + ",\"collectAssist\":"
-                            + collectClimbAssist
-                            + ",\"collectDy\":"
-                            + collectDy
-                            + ",\"collectNearSqr\":"
-                            + collectNearSqr
-                            + ",\"collectTarget\":\""
-                            + (lockedCollectTarget != null ? lockedCollectTarget.getUUID() : "null")
-                            + "\""
-                            + ",\"yRot\":"
-                            + getYRot()
-                            + "}");
+
+        boolean shouldHug;
+        if (st == SweeperState.PATROLLING) {
+            if (hitBlocks
+                    && horizontalCollision
+                    && hit != null
+                    && isHeadOnWallRoughlyAhead(hit)) {
+                patrolHeadOnWallTicks = Math.min(patrolHeadOnWallTicks + 1, PATROL_HEAD_ON_WALL_CLIMB_TICKS + 30);
+            } else {
+                patrolHeadOnWallTicks = 0;
+            }
+            shouldHug =
+                    hitBlocks
+                            && horizontalCollision
+                            && patrolHeadOnWallTicks >= PATROL_HEAD_ON_WALL_CLIMB_TICKS;
+        } else if (st == SweeperState.COLLECTING) {
+            patrolHeadOnWallTicks = 0;
+            boolean fullReachableGroundPath =
+                    collectGroundPath != null
+                            && collectGroundPath.getNodeCount() > 0
+                            && collectGroundPath.canReach();
+            if (fullReachableGroundPath && !collectClimbAssist) {
+                // 已有完整地面路径且目标不需要“高差辅助攀爬”：禁止靠擦墙入攀，交给路径与平面绕行。
+                shouldHug = false;
+            } else if (fullReachableGroundPath) {
+                shouldHug = hitBlocks && collectClimbAssist;
+            } else {
+                shouldHug = hitBlocks && (horizontalCollision || collectClimbAssist);
+            }
+        } else {
+            patrolHeadOnWallTicks = 0;
+            shouldHug = false;
         }
-        // #endregion
-        // #region agent log
-        if (!horizontalCollision
-                && collectClimbAssist
-                && hitBlocks
-                && level().getGameTime() % 20L == 0L) {
-            agentDbg(
-                    "H36",
-                    "SweeperRobotEntity:tickWallClimbSpiderStyle",
-                    "collect_climb_assist_trigger",
-                    "{\"target\":\""
-                            + (lockedCollectTarget != null ? lockedCollectTarget.getUUID() : "null")
-                            + "\",\"collectDy\":"
-                            + collectDy
-                            + ",\"collectNearSqr\":"
-                            + collectNearSqr
-                            + ",\"hit\":\""
-                            + hit
-                            + "\"}");
-        }
-        // #endregion
+
         if (!isWallClimbing() && shouldHug) {
             Direction wf = computeWallFaceFromEntityAndHit(hit);
             if (!wf.getAxis().isHorizontal()) {
@@ -2492,31 +1858,7 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
             entityData.set(DATA_WALL_FACE, (byte) wf.get3DDataValue());
             entityData.set(DATA_WALL_CLIMBING, true);
             refreshDimensions();
-            // #region agent log
-            agentDbg(
-                    "H23",
-                    "SweeperRobotEntity:tickWallClimbSpiderStyle",
-                    "wall_climb_enter",
-                    "{\"anchor\":\""
-                            + wallClimbAnchor
-                            + "\",\"face\":\""
-                            + wf
-                            + "\",\"hc\":"
-                            + horizontalCollision
-                            + "}");
-            // #endregion
         } else if (!isWallClimbing() && !shouldHug && level().getGameTime() % 20L == 0L) {
-            // #region agent log
-            agentDbg(
-                    "H25",
-                    "SweeperRobotEntity:tickWallClimbSpiderStyle",
-                    "wall_climb_no_enter",
-                    "{\"hc\":"
-                            + horizontalCollision
-                            + ",\"hit\":\""
-                            + hit
-                            + "\"}");
-            // #endregion
         }
     }
 
@@ -2527,26 +1869,8 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
             var entity = serverLevel.getEntity(targetItemUuid);
             if (entity instanceof ItemEntity target && target.isAlive() && !target.getItem().isEmpty()) {
                 if (isCollectTargetTemporarilyIgnored(target)) {
-                    // #region agent log
-                    if (level().getGameTime() % 20L == 0L) {
-                        agentDbg(
-                                "H20",
-                                "SweeperRobotEntity:getOrFindCollectTarget",
-                                "cached_target_ignored",
-                                "{\"uuid\":\"" + target.getUUID() + "\"}");
-                    }
-                    // #endregion
                     targetItemUuid = null;
                 } else {
-                // #region agent log
-                if (level().getGameTime() % 20L == 0L) {
-                    agentDbg(
-                            "H20",
-                            "SweeperRobotEntity:getOrFindCollectTarget",
-                            "use_cached_target",
-                            "{\"uuid\":\"" + target.getUUID() + "\",\"state\":\"" + getSweeperState().name() + "\"}");
-                }
-                // #endregion
                 return target;
                 }
             }
@@ -2557,25 +1881,6 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
 
     private boolean hasCollectTargetInRange() {
         Optional<ItemEntity> candidate = findNearestCollectTarget();
-        // #region agent log
-        if (level().getGameTime() % 20L == 0L) {
-            agentDbg(
-                    "H20",
-                    "SweeperRobotEntity:hasCollectTargetInRange",
-                    "collect_target_probe",
-                    "{\"found\":"
-                            + candidate.isPresent()
-                            + ",\"state\":\""
-                            + getSweeperState().name()
-                            + "\",\"x\":"
-                            + getX()
-                            + ",\"y\":"
-                            + getY()
-                            + ",\"z\":"
-                            + getZ()
-                            + "}");
-        }
-        // #endregion
         return candidate.isPresent();
     }
 
@@ -2584,43 +1889,11 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
         var candidates = level()
                 .getEntitiesOfClass(
                         ItemEntity.class, box, e -> isItemDiscoverableForSweep(e) && !isCollectTargetTemporarilyIgnored(e));
-        // #region agent log
-        if (level().getGameTime() % 20L == 0L) {
-            agentDbg(
-                    "H20",
-                    "SweeperRobotEntity:findNearestCollectTarget",
-                    "collect_candidates_scanned",
-                    "{\"count\":"
-                            + candidates.size()
-                            + ",\"state\":\""
-                            + getSweeperState().name()
-                            + "\"}");
-        }
-        // #endregion
         return candidates.stream()
                 .min((a, b) -> Double.compare(distanceToSqr(a), distanceToSqr(b)))
                 .map(
                         e -> {
                             targetItemUuid = e.getUUID();
-                            // #region agent log
-                            if (level().getGameTime() % 20L == 0L) {
-                                agentDbg(
-                                        "H20",
-                                        "SweeperRobotEntity:findNearestCollectTarget",
-                                        "collect_target_selected",
-                                        "{\"uuid\":\""
-                                                + e.getUUID()
-                                                + "\",\"item\":\""
-                                                + e.getItem().getItem()
-                                                + "\",\"tx\":"
-                                                + e.getX()
-                                                + ",\"ty\":"
-                                                + e.getY()
-                                                + ",\"tz\":"
-                                                + e.getZ()
-                                                + "}");
-                            }
-                            // #endregion
                             return e;
                         });
     }
