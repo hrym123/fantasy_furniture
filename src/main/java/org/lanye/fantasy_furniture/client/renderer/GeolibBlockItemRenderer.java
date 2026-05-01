@@ -2,10 +2,6 @@ package org.lanye.fantasy_furniture.client.renderer;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.StandardOpenOption;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.resources.ResourceLocation;
@@ -18,26 +14,10 @@ import software.bernie.geckolib.renderer.GeoItemRenderer;
 /** GeckoLib 方块物品统一渲染器（调试埋点已移除）。 */
 public final class GeolibBlockItemRenderer extends GeoItemRenderer<GeolibBlockItem> {
     // #region agent log
-    private static final Path AGENT_DEBUG_LOG =
-            Path.of("d:/warehouse/Lanye-mod/development/core/fantasy_furniture/debug-5a5497.log");
     private static long agentLastLogMs = 0L;
 
     private static void agentDbg(String hypothesisId, String location, String message, String dataJson) {
-        try {
-            String line = "{\"sessionId\":\"5a5497\",\"runId\":\"run_render_1\",\"hypothesisId\":\""
-                    + hypothesisId
-                    + "\",\"location\":\""
-                    + location
-                    + "\",\"message\":\""
-                    + message
-                    + "\",\"data\":"
-                    + dataJson
-                    + ",\"timestamp\":"
-                    + System.currentTimeMillis()
-                    + "}\n";
-            Files.writeString(AGENT_DEBUG_LOG, line, StandardCharsets.UTF_8, StandardOpenOption.CREATE, StandardOpenOption.APPEND);
-        } catch (Exception ignored) {
-        }
+        // 调试埋点已关闭。
     }
     // #endregion
 

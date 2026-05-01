@@ -1,9 +1,5 @@
 package org.lanye.fantasy_furniture.entity;
 
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.StandardOpenOption;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Collections;
@@ -69,25 +65,8 @@ import software.bernie.geckolib.util.GeckoLibUtil;
 public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, MenuProvider, Container {
 
     // #region agent log
-    private static final Path AGENT_DEBUG_LOG =
-            Path.of("d:/warehouse/Lanye-mod/development/core/fantasy_furniture/debug-5a5497.log");
-
     private static void agentDbg(String hypothesisId, String location, String message, String dataJson) {
-        try {
-            String line = "{\"sessionId\":\"5a5497\",\"hypothesisId\":\""
-                    + hypothesisId
-                    + "\",\"location\":\""
-                    + location
-                    + "\",\"message\":\""
-                    + message
-                    + "\",\"data\":"
-                    + dataJson
-                    + ",\"timestamp\":"
-                    + System.currentTimeMillis()
-                    + "}\n";
-            Files.writeString(AGENT_DEBUG_LOG, line, StandardCharsets.UTF_8, StandardOpenOption.CREATE, StandardOpenOption.APPEND);
-        } catch (Exception ignored) {
-        }
+        // 调试埋点已关闭。
     }
     // #endregion
 
@@ -127,7 +106,7 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
     /** 脚下方连续非碰撞格达到此深度，才认为「可能摔落」，需要延迟脱墙逻辑。 */
     private static final int WALL_DESCEND_MIN_AIR_BELOW = 2;
 
-    /** 调试：服务端每多少 game tick 写一次坐标到 {@link #AGENT_DEBUG_LOG}（20 TPS 下 80≈4s）。 */
+    /** 调试采样周期（20 TPS 下 80≈4s）。 */
     private static final long DEBUG_POS_SAMPLE_INTERVAL_TICKS = 80L;
 
     /** 未满血在机仓内充电时，相对 {@link #dockCenter()} 竖直向下平移（世界坐标 Y 减小）。 */
@@ -191,6 +170,8 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
 
     /** 服务端：当前攀附的阻挡格（用于校验墙面仍存在）。 */
     @Nullable private BlockPos wallClimbAnchor;
+    /** 连续多少 tick 未检测到“贴墙阻挡列”（用于过滤单帧误判）。 */
+    private int wallNoColumnTicks;
 
     /** 即将从高处脱墙：已用顺墙/绕行缓冲的 tick（见 {@link #maybeDeferWallExitBeforeFall()}）。 */
     private int wallDescendDeferTicks;
@@ -1042,11 +1023,70 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
         double sx = rx - forward.x * along;
         double sz = rz - forward.z * along;
         double aside = Math.sqrt(sx * sx + sz * sz);
+        // #region agent log
+        double xzDistSqr = rx * rx + rz * rz;
+        if (xzDistSqr <= 1.2D * 1.2D && level().getGameTime() % 10L == 0L) {
+            agentDbg(
+                    "H31",
+                    "SweeperRobotEntity:canVacuumItemNow",
+                    "vacuum_geometry_probe",
+                    "{\"uuid\":\""
+                            + item.getUUID()
+                            + "\",\"xzDistSqr\":"
+                            + xzDistSqr
+                            + ",\"along\":"
+                            + along
+                            + ",\"aside\":"
+                            + aside
+                            + ",\"maxAlong\":"
+                            + maxAlong
+                            + ",\"maxAside\":"
+                            + maxAside
+                            + ",\"yRot\":"
+                            + getYRot()
+                            + "}");
+        }
+        // #endregion
         if (along <= 0.02D || along > maxAlong || aside > maxAside) {
+            // #region agent log
+            if (xzDistSqr <= 1.2D * 1.2D && level().getGameTime() % 10L == 0L) {
+                agentDbg(
+                        "H32",
+                        "SweeperRobotEntity:canVacuumItemNow",
+                        "vacuum_reject_horizontal_gate",
+                        "{\"uuid\":\""
+                                + item.getUUID()
+                                + "\",\"along\":"
+                                + along
+                                + ",\"aside\":"
+                                + aside
+                                + ",\"maxAlong\":"
+                                + maxAlong
+                                + ",\"maxAside\":"
+                                + maxAside
+                                + "}");
+            }
+            // #endregion
             return false;
         }
         double verticalSlack = 0.72D + getBbHeight() * 0.22D;
-        return Math.abs(i.y - pivot.y) <= verticalSlack;
+        boolean okVertical = Math.abs(i.y - pivot.y) <= verticalSlack;
+        // #region agent log
+        if (!okVertical && xzDistSqr <= 1.2D * 1.2D && level().getGameTime() % 10L == 0L) {
+            agentDbg(
+                    "H33",
+                    "SweeperRobotEntity:canVacuumItemNow",
+                    "vacuum_reject_vertical_gate",
+                    "{\"uuid\":\""
+                            + item.getUUID()
+                            + "\",\"dy\":"
+                            + Math.abs(i.y - pivot.y)
+                            + ",\"verticalSlack\":"
+                            + verticalSlack
+                            + "}");
+        }
+        // #endregion
+        return okVertical;
     }
 
     private void resetCollectGroundPath() {
@@ -1088,6 +1128,28 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
                             + ",\"now\":"
                             + level().getGameTime()
                             + "}");
+        }
+        if (ignored) {
+            double nearSqr = xzDistSqrTo(item);
+            if (nearSqr <= 2.25D && level().getGameTime() % 10L == 0L) {
+                agentDbg(
+                        "H34",
+                        "SweeperRobotEntity:isCollectTargetTemporarilyIgnored",
+                        "ignored_target_nearby",
+                        "{\"uuid\":\""
+                                + item.getUUID()
+                                + "\",\"nearSqr\":"
+                                + nearSqr
+                                + ",\"state\":\""
+                                + getSweeperState()
+                                + "\",\"canVacuumNow\":"
+                                + canVacuumItemNow(item)
+                                + ",\"retryAt\":"
+                                + retryAt
+                                + ",\"now\":"
+                                + level().getGameTime()
+                                + "}");
+            }
         }
         // #endregion
         return ignored;
@@ -1276,16 +1338,14 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
                         || !collectPathGoalBlock.equals(goal)
                         || gameTime - collectPathRecomputeGameTime >= COLLECT_PATH_RECOMPUTE_INTERVAL;
         if (!needNew) {
-            return collectGroundPath != null
-                    && collectGroundPath.canReach()
-                    && collectGroundPath.getNodeCount() > 0;
+            return collectGroundPath != null && collectGroundPath.getNodeCount() > 0;
         }
         collectPathRecomputeGameTime = gameTime;
         collectPathGoalBlock = goal.immutable();
         net.minecraft.world.level.pathfinder.Path path = getNavigation().createPath(goal, 1);
         collectGroundPath = path;
         collectPathCursor = 0;
-        if (path == null || !path.canReach() || path.getNodeCount() == 0) {
+        if (path == null || path.getNodeCount() == 0) {
             // #region agent log
             agentDbg(
                     "H1",
@@ -1301,6 +1361,23 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
             // #endregion
             return false;
         }
+        // #region agent log
+        if (!path.canReach()) {
+            agentDbg(
+                    "H35",
+                    "SweeperRobotEntity:ensureCollectGroundPath",
+                    "path_partial_accept",
+                    "{\"nodeCount\":"
+                            + path.getNodeCount()
+                            + ",\"goalX\":"
+                            + goal.getX()
+                            + ",\"goalY\":"
+                            + goal.getY()
+                            + ",\"goalZ\":"
+                            + goal.getZ()
+                            + "}");
+        }
+        // #endregion
         // #region agent log
         agentDbg(
                 "H1",
@@ -1746,7 +1823,21 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
                     "H2",
                     "SweeperRobotEntity:tickCollecting",
                     "collect_direct_entity",
-                    "{\"hc\":" + horizontalCollision + "}");
+                    "{\"hc\":"
+                            + horizontalCollision
+                            + ",\"targetId\":"
+                            + target.getId()
+                            + ",\"targetUuid\":\""
+                            + target.getUUID()
+                            + "\",\"targetAlive\":"
+                            + target.isAlive()
+                            + ",\"distSqr\":"
+                            + distanceToSqr(target)
+                            + ",\"dmx\":"
+                            + getDeltaMovement().x
+                            + ",\"dmz\":"
+                            + getDeltaMovement().z
+                            + "}");
         }
         // #endregion
         driveToward(target.position(), Config.sweeperMoveSpeed());
@@ -2159,10 +2250,12 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
     private void exitWallClimb() {
         if (!entityData.get(DATA_WALL_CLIMBING)) {
             wallClimbAnchor = null;
+            wallNoColumnTicks = 0;
             return;
         }
         entityData.set(DATA_WALL_CLIMBING, false);
         wallClimbAnchor = null;
+        wallNoColumnTicks = 0;
         wallDescendDeferTicks = 0;
         setNoGravity(false);
         stopHorizontalMovement();
@@ -2192,8 +2285,32 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
             return;
         }
         SweeperState st = getSweeperState();
-        // 蜘蛛攀墙仅用于闲逛 PATROLLING；回仓/收集/回区走地面寻路与绕行。
-        boolean allowSpiderClimb = st == SweeperState.PATROLLING && getHealth() > 1f;
+        // 允许在巡逻与收集态使用蜘蛛式攀墙；回仓/出库仍保持地面行为，避免入库流程被攀墙打断。
+        boolean allowSpiderClimb =
+                (st == SweeperState.PATROLLING || st == SweeperState.COLLECTING) && getHealth() > 1f;
+        // #region agent log
+        if (level().getGameTime() % 20L == 0L) {
+            agentDbg(
+                    "H21",
+                    "SweeperRobotEntity:tickWallClimbSpiderStyle",
+                    "wall_climb_gate",
+                    "{\"state\":\""
+                            + st.name()
+                            + "\",\"allowSpiderClimb\":"
+                            + allowSpiderClimb
+                            + ",\"isWallClimbing\":"
+                            + isWallClimbing()
+                            + ",\"hc\":"
+                            + horizontalCollision
+                            + ",\"x\":"
+                            + getX()
+                            + ",\"y\":"
+                            + getY()
+                            + ",\"z\":"
+                            + getZ()
+                            + "}");
+        }
+        // #endregion
 
         if (isWallClimbing()) {
             if (isOutsidePatrolRadiusAroundDock()) {
@@ -2224,6 +2341,25 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
                                             .scale(0.5));
             Vec3 n = new Vec3(wallFace.getStepX(), wallFace.getStepY(), wallFace.getStepZ());
             double distAlong = position().subtract(faceCenter).dot(n);
+            // #region agent log
+            if (level().getGameTime() % 20L == 0L) {
+                agentDbg(
+                        "H24",
+                        "SweeperRobotEntity:tickWallClimbSpiderStyle",
+                        "wall_climb_hold_probe",
+                        "{\"wallFace\":\""
+                                + wallFace
+                                + "\",\"anchor\":\""
+                                + wallClimbAnchor
+                                + "\",\"distAlong\":"
+                                + distAlong
+                                + ",\"min\":"
+                                + WALL_CLIMB_DIST_ALONG_MIN
+                                + ",\"max\":"
+                                + WALL_CLIMB_DIST_ALONG_MAX
+                                + "}");
+            }
+            // #endregion
             if (distAlong < WALL_CLIMB_DIST_ALONG_MIN || distAlong > WALL_CLIMB_DIST_ALONG_MAX) {
                 if (maybeDeferWallExitBeforeFall()) {
                     return;
@@ -2236,14 +2372,39 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
                 exitWallClimb();
                 return;
             }
-            if (!hasBlockingColumnIntoWall(n)) {
+            boolean hasColumn = hasBlockingColumnIntoWall(n);
+            // #region agent log
+            if (level().getGameTime() % 20L == 0L) {
+                agentDbg(
+                        "H26",
+                        "SweeperRobotEntity:tickWallClimbSpiderStyle",
+                        "wall_climb_column_probe",
+                        "{\"hasColumn\":"
+                                + hasColumn
+                                + ",\"noColumnTicks\":"
+                                + wallNoColumnTicks
+                                + ",\"anchor\":\""
+                                + wallClimbAnchor
+                                + "\"}");
+            }
+            // #endregion
+            if (!hasColumn) {
                 if (maybeDeferWallExitBeforeFall()) {
                     return;
                 }
-                agentDbg("C", "SweeperRobotEntity.tickWallClimbSpiderStyle", "exit_no_column", "{}");
+                wallNoColumnTicks++;
+                if (wallNoColumnTicks < 8) {
+                    return;
+                }
+                agentDbg(
+                        "C",
+                        "SweeperRobotEntity.tickWallClimbSpiderStyle",
+                        "exit_no_column",
+                        "{\"ticks\":" + wallNoColumnTicks + "}");
                 exitWallClimb();
                 return;
             }
+            wallNoColumnTicks = 0;
             wallDescendDeferTicks = 0;
         }
 
@@ -2255,9 +2416,70 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
         }
 
         BlockPos hit = findLowestBlockingInForwardColumn();
-        boolean shouldHug =
-                horizontalCollision && hit != null && level().getBlockState(hit).blocksMotion();
-        if (shouldHug) {
+        boolean hitBlocks = hit != null && level().getBlockState(hit).blocksMotion();
+        ItemEntity lockedCollectTarget = null;
+        int collectDy = 0;
+        double collectNearSqr = Double.NaN;
+        boolean collectClimbAssist = false;
+        if (st == SweeperState.COLLECTING && targetItemUuid != null && level() instanceof ServerLevel serverLevel) {
+            Entity e = serverLevel.getEntity(targetItemUuid);
+            if (e instanceof ItemEntity item && item.isAlive() && !item.getItem().isEmpty()) {
+                lockedCollectTarget = item;
+                collectDy = Mth.abs(blockPosition().getY() - item.blockPosition().getY());
+                collectNearSqr = xzDistSqrTo(item);
+                collectClimbAssist = collectDy > 1 && collectNearSqr <= 4.0D;
+            }
+        }
+        boolean shouldHug = hitBlocks && (horizontalCollision || collectClimbAssist);
+        // #region agent log
+        if (level().getGameTime() % 20L == 0L) {
+            agentDbg(
+                    "H22",
+                    "SweeperRobotEntity:tickWallClimbSpiderStyle",
+                    "wall_climb_hit_probe",
+                    "{\"hc\":"
+                            + horizontalCollision
+                            + ",\"hit\":\""
+                            + hit
+                            + "\",\"hitBlocks\":"
+                            + hitBlocks
+                            + ",\"shouldHug\":"
+                            + shouldHug
+                            + ",\"collectAssist\":"
+                            + collectClimbAssist
+                            + ",\"collectDy\":"
+                            + collectDy
+                            + ",\"collectNearSqr\":"
+                            + collectNearSqr
+                            + ",\"collectTarget\":\""
+                            + (lockedCollectTarget != null ? lockedCollectTarget.getUUID() : "null")
+                            + "\""
+                            + ",\"yRot\":"
+                            + getYRot()
+                            + "}");
+        }
+        // #endregion
+        // #region agent log
+        if (!horizontalCollision
+                && collectClimbAssist
+                && hitBlocks
+                && level().getGameTime() % 20L == 0L) {
+            agentDbg(
+                    "H36",
+                    "SweeperRobotEntity:tickWallClimbSpiderStyle",
+                    "collect_climb_assist_trigger",
+                    "{\"target\":\""
+                            + (lockedCollectTarget != null ? lockedCollectTarget.getUUID() : "null")
+                            + "\",\"collectDy\":"
+                            + collectDy
+                            + ",\"collectNearSqr\":"
+                            + collectNearSqr
+                            + ",\"hit\":\""
+                            + hit
+                            + "\"}");
+        }
+        // #endregion
+        if (!isWallClimbing() && shouldHug) {
             Direction wf = computeWallFaceFromEntityAndHit(hit);
             if (!wf.getAxis().isHorizontal()) {
                 if (isWallClimbing()) {
@@ -2266,16 +2488,35 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
                 return;
             }
             wallClimbAnchor = hit.immutable();
+            wallNoColumnTicks = 0;
             entityData.set(DATA_WALL_FACE, (byte) wf.get3DDataValue());
             entityData.set(DATA_WALL_CLIMBING, true);
             refreshDimensions();
-        } else {
-            if (isWallClimbing()) {
-                if (maybeDeferWallExitBeforeFall()) {
-                    return;
-                }
-                exitWallClimb();
-            }
+            // #region agent log
+            agentDbg(
+                    "H23",
+                    "SweeperRobotEntity:tickWallClimbSpiderStyle",
+                    "wall_climb_enter",
+                    "{\"anchor\":\""
+                            + wallClimbAnchor
+                            + "\",\"face\":\""
+                            + wf
+                            + "\",\"hc\":"
+                            + horizontalCollision
+                            + "}");
+            // #endregion
+        } else if (!isWallClimbing() && !shouldHug && level().getGameTime() % 20L == 0L) {
+            // #region agent log
+            agentDbg(
+                    "H25",
+                    "SweeperRobotEntity:tickWallClimbSpiderStyle",
+                    "wall_climb_no_enter",
+                    "{\"hc\":"
+                            + horizontalCollision
+                            + ",\"hit\":\""
+                            + hit
+                            + "\"}");
+            // #endregion
         }
     }
 
@@ -2286,8 +2527,26 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
             var entity = serverLevel.getEntity(targetItemUuid);
             if (entity instanceof ItemEntity target && target.isAlive() && !target.getItem().isEmpty()) {
                 if (isCollectTargetTemporarilyIgnored(target)) {
+                    // #region agent log
+                    if (level().getGameTime() % 20L == 0L) {
+                        agentDbg(
+                                "H20",
+                                "SweeperRobotEntity:getOrFindCollectTarget",
+                                "cached_target_ignored",
+                                "{\"uuid\":\"" + target.getUUID() + "\"}");
+                    }
+                    // #endregion
                     targetItemUuid = null;
                 } else {
+                // #region agent log
+                if (level().getGameTime() % 20L == 0L) {
+                    agentDbg(
+                            "H20",
+                            "SweeperRobotEntity:getOrFindCollectTarget",
+                            "use_cached_target",
+                            "{\"uuid\":\"" + target.getUUID() + "\",\"state\":\"" + getSweeperState().name() + "\"}");
+                }
+                // #endregion
                 return target;
                 }
             }
@@ -2297,19 +2556,71 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
     }
 
     private boolean hasCollectTargetInRange() {
-        return findNearestCollectTarget().isPresent();
+        Optional<ItemEntity> candidate = findNearestCollectTarget();
+        // #region agent log
+        if (level().getGameTime() % 20L == 0L) {
+            agentDbg(
+                    "H20",
+                    "SweeperRobotEntity:hasCollectTargetInRange",
+                    "collect_target_probe",
+                    "{\"found\":"
+                            + candidate.isPresent()
+                            + ",\"state\":\""
+                            + getSweeperState().name()
+                            + "\",\"x\":"
+                            + getX()
+                            + ",\"y\":"
+                            + getY()
+                            + ",\"z\":"
+                            + getZ()
+                            + "}");
+        }
+        // #endregion
+        return candidate.isPresent();
     }
 
     private Optional<ItemEntity> findNearestCollectTarget() {
         AABB box = collectDiscoveryQueryAabb();
-        return level()
+        var candidates = level()
                 .getEntitiesOfClass(
-                        ItemEntity.class, box, e -> isItemDiscoverableForSweep(e) && !isCollectTargetTemporarilyIgnored(e))
-                .stream()
+                        ItemEntity.class, box, e -> isItemDiscoverableForSweep(e) && !isCollectTargetTemporarilyIgnored(e));
+        // #region agent log
+        if (level().getGameTime() % 20L == 0L) {
+            agentDbg(
+                    "H20",
+                    "SweeperRobotEntity:findNearestCollectTarget",
+                    "collect_candidates_scanned",
+                    "{\"count\":"
+                            + candidates.size()
+                            + ",\"state\":\""
+                            + getSweeperState().name()
+                            + "\"}");
+        }
+        // #endregion
+        return candidates.stream()
                 .min((a, b) -> Double.compare(distanceToSqr(a), distanceToSqr(b)))
                 .map(
                         e -> {
                             targetItemUuid = e.getUUID();
+                            // #region agent log
+                            if (level().getGameTime() % 20L == 0L) {
+                                agentDbg(
+                                        "H20",
+                                        "SweeperRobotEntity:findNearestCollectTarget",
+                                        "collect_target_selected",
+                                        "{\"uuid\":\""
+                                                + e.getUUID()
+                                                + "\",\"item\":\""
+                                                + e.getItem().getItem()
+                                                + "\",\"tx\":"
+                                                + e.getX()
+                                                + ",\"ty\":"
+                                                + e.getY()
+                                                + ",\"tz\":"
+                                                + e.getZ()
+                                                + "}");
+                            }
+                            // #endregion
                             return e;
                         });
     }
