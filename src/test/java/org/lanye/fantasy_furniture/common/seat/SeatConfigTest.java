@@ -9,6 +9,7 @@ import net.minecraft.core.Direction;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import org.junit.jupiter.api.Test;
+import org.lanye.fantasy_furniture.core.seat.SeatConfig;
 
 /**
  * 验证 {@link SeatConfig} 的几何换算：相对方块的入座 AABB、坐骑世界坐标与朝向函数在锚点下的行为是否正确。

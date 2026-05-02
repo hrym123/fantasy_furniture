@@ -38,7 +38,7 @@ minecraft {
 
         client {
             property 'forge.enabledGameTestNamespaces', mod_id
-            args '-mixin.config=fantasy_furniture.mixins.json'
+            args '--mixin.config=fantasy_furniture.mixins.json'
         }
 
         server {

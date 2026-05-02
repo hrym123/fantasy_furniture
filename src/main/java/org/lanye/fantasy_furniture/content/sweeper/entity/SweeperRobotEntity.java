@@ -971,6 +971,17 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
         return new Vec3((double) n.x + 0.5D, (double) n.y, (double) n.z + 0.5D);
     }
 
+    /**
+     * 收集路径航点：{@link SweeperItemGroundPath} 的最后一档使用求路时保存的掉落物 {@link Vec3}，其余节点仍用格点中心。
+     */
+    private static Vec3 collectGroundPathWaypoint(Path path, int nodeIndex) {
+        if (path instanceof SweeperItemGroundPath sip && nodeIndex == path.getNodeCount() - 1) {
+            Vec3 p = sip.exactItemPosition();
+            return new Vec3(p.x, p.y, p.z);
+        }
+        return collectWaypointCenter(path.getNode(nodeIndex));
+    }
+
     private double robotCollisionRadius() {
         double configured = InternalPathTuning.Sweeper.COLLISION_RADIUS;
         double auto = getBbWidth() * 0.5D;
@@ -1010,16 +1021,21 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
      */
     @Nullable
     private Path createCollectPathWithCollisionRadius(
-            BlockPos goal, int baseAccuracy) {
-        // 与原版 PathNavigation#createPath(BlockPos, int) 一致：将参数透传给导航器自身实现。
-        return getNavigation().createPath(goal, baseAccuracy);
+            ItemEntity target, BlockPos goal, int baseAccuracy) {
+        PathNavigation navigation = getNavigation();
+        if (navigation instanceof SweeperGroundNavigation sweeperNavigation) {
+            // 收集路径优先使用掉落物精确坐标入口，减少“到格不贴物”的末段偏差。
+            return sweeperNavigation.createPathToExactPos(target.position());
+        }
+        // 兜底：非扫地机导航器时仍走原版 BlockPos 入口。
+        return navigation.createPath(goal, baseAccuracy);
     }
 
     /**
      * 为拾取目标刷新「地面」导航路径（节点由 {@link #getNavigation()} 计算；攀墙阶段不走此路径）。
      * <p>
      * 路径目标为掉落物所在方块坐标；与 {@link #collectPathGoalBlock} 一致且未过重算间隔时复用缓存，
-     * 否则调用 {@link #createCollectPathWithCollisionRadius(BlockPos, int)} 重新求路（到达容差会叠加机器人半径影响）。
+     * 否则调用 {@link #createCollectPathWithCollisionRadius(ItemEntity, BlockPos, int)} 重新求路（到达容差会叠加机器人半径影响）。
      *
      * @param target 当前锁定要收集的掉落物实体
      * @return 存在非零节点路径时为 true；{@code null} 或 {@link net.minecraft.world.level.pathfinder.Path#getNodeCount()} 为 0 时返回
@@ -1028,7 +1044,7 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
     private boolean ensureCollectGroundPath(ItemEntity target) {
         BlockPos goal = target.blockPosition();
         long gameTime = level().getGameTime();
-        // 无缓存、目标格变化、或每隔 COLLECT_PATH_RECOMPUTE_INTERVAL tick 强制重算（应对地形/障碍变化）
+        // 无缓存、目标格变化、或每隔 COLLECT_PATH_RECOMPUTE_INTERVAL tick 触发重算意图（应对地形/障碍变化）
         if (collectGroundPath == null) {
             // 首次进入收集流程或缓存已被清空：当前没有可跟随的路径，只能重新求路。
         } else if (collectPathGoalBlock == null) {
@@ -1036,27 +1052,25 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
         } else if (!collectPathGoalBlock.equals(goal)) {
             // 掉落物所在格变化（滚动/被推挤/目标切换）：旧路径终点已过期，需要改算到新目标格。
         } else if (gameTime - collectPathRecomputeGameTime >= COLLECT_PATH_RECOMPUTE_INTERVAL) {
-            // 周期性重算：即使目标未变，也要刷新以适应动态障碍、地形变化或局部卡死后的绕行机会。
+            // 周期到期：若目标格未变且仍有有效缓存，则不再整段重算，避免两节点直线路径「起点节点」随位移刷新导致约每秒一次的中途拐向。
+            if (collectGroundPath.getNodeCount() > 0) {
+                collectPathRecomputeGameTime = gameTime;
+                return true;
+            }
+            // 否则继续向下完整重算
         } else {
-            // 复用缓存路径
             return collectGroundPath.getNodeCount() > 0;
         }
-        // 记录本次重算时间戳：后续按间隔判断是否需要再次重算。
+
         collectPathRecomputeGameTime = gameTime;
-        // 记录本次路径对应的目标格，用于下次快速判断目标是否变化。
         collectPathGoalBlock = goal.immutable();
-        // 向原版导航请求到目标格的路径；在基础容差上叠加机器人碰撞半径影响。
-        Path path = createCollectPathWithCollisionRadius(goal, 0);
-        // 缓存新路径，供后续 tick 逐节点跟随。
+        Path path = createCollectPathWithCollisionRadius(target, goal, 0);
         collectGroundPath = path;
-        // 新路径从第一个节点开始消费。
         collectPathCursor = 0;
         if (path == null || path.getNodeCount() == 0) {
-            // 没算出可用节点：视为当前目标不可达，由调用方决定放弃目标。
             return false;
         }
 
-        // 新路径从当前位置起，跳过已贴身经过的中间节点，避免 cursor 卡在段首
         advanceCollectPathCursor();
         return true;
     }
@@ -1360,7 +1374,7 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
 
         // B8：尚未层高对齐，继续按当前路径节点行进。
         if (!layerOk) {
-            Vec3 w = collectWaypointCenter(path.getNode(collectPathCursor));
+            Vec3 w = collectGroundPathWaypoint(path, collectPathCursor);
             driveToward(w, Config.sweeperMoveSpeed());
             if (horizontalCollision) {
                 handleGoalSeekCollision();
@@ -1372,15 +1386,15 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
         int collectLast = path.getNodeCount() - 1;
         // B9：还在中间节点阶段，继续逐节点跟随。
         if (collectPathCursor < collectLast) {
-            Vec3 w = collectWaypointCenter(path.getNode(collectPathCursor));
+            Vec3 w = collectGroundPathWaypoint(path, collectPathCursor);
             driveToward(w, Config.sweeperMoveSpeed());
             if (horizontalCollision) {
                 handleGoalSeekCollision();
             }
             return;
         }
-        Vec3 collectLastCenter = collectWaypointCenter(path.getNode(collectLast));
-        // B10：已到最后节点阶段但未贴近末节点中心，先收敛到末节点。
+        Vec3 collectLastCenter = collectGroundPathWaypoint(path, collectLast);
+        // B10：已到最后节点阶段但未贴近末档航点（扫地路径末档为掉落物精确坐标），先收敛。
         if (xzDistSqrTo(collectLastCenter) > waypointArriveSqr()) {
             driveToward(collectLastCenter, Config.sweeperMoveSpeed());
             if (horizontalCollision) {
@@ -1389,7 +1403,7 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
             return;
         }
 
-        // B11：末节点中心已达成；能吸则收。
+        // B11：末档航点（精确坐标意义下）已达成；能吸则收。
         if (canVacuumItemNow(target)) {
             cacheFrom(target);
             targetItemUuid = null;
@@ -1397,7 +1411,16 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
             setSweeperState(SweeperState.PATROLLING);
             return;
         }
-        // B12：已到路径终点仍吸不到（几何/障碍/掉落物漂移）：停住并清空路径，下 tick 走 ensureCollectGroundPath 重算，避免持续 driveToward(target) 顶死。
+        // B12：已到路径终点仍吸不到：先对掉落物实体做短距直驱，避免“前一点点停住”；
+        // 若末段仍失败，再清路径重算，兼顾贴近能力与避免长时间顶死。
+        Vec3 targetPos = target.position();
+        if (xzDistSqrTo(targetPos) > 0.01D) {
+            driveToward(new Vec3(targetPos.x, getY(), targetPos.z), Config.sweeperMoveSpeed());
+            if (horizontalCollision) {
+                handleGoalSeekCollision();
+            }
+            return;
+        }
         stopHorizontalMovement();
         resetCollectGroundPath();
     }
@@ -1701,7 +1724,9 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
         SweeperState st = getSweeperState();
         // 允许在巡逻与收集态使用蜘蛛式攀墙；回仓/出库仍保持地面行为，避免入库流程被攀墙打断。
         boolean allowSpiderClimb =
-                (st == SweeperState.PATROLLING || st == SweeperState.COLLECTING) && getHealth() > 1f;
+                Config.sweeperEnableWallClimb()
+                        && (st == SweeperState.PATROLLING || st == SweeperState.COLLECTING)
+                        && getHealth() > 1f;
 
         if (isWallClimbing()) {
             if (isOutsidePatrolRadiusAroundDock()) {

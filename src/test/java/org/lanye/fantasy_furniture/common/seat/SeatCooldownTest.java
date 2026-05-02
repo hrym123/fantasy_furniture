@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Test;
+import org.lanye.fantasy_furniture.core.seat.SeatCooldown;
 
 /**
  * 冷却判定只测 {@link SeatCooldown#isPastCooldown(long, long)}：{@link SeatCooldown#canSit} 依赖
