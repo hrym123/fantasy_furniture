@@ -1,10 +1,10 @@
 package org.lanye.fantasy_furniture.content.sweeper.entity;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Collections;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
@@ -208,6 +208,11 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
     private double returningLastZ = Double.NaN;
 
     private static final long COLLECT_PATH_RECOMPUTE_INTERVAL = 20L;
+    /**
+     * 掉落物仅竖直变格（XZ 不变）时，最短间隔多少 tick 才整段重算，避免下落过程中每 tick 变格连续整段重算路径。
+     */
+    private static final long COLLECT_PATH_SAME_COLUMN_Y_DEBOUNCE_TICKS = 8L;
+
     private static final long COLLECT_UNREACHABLE_RETRY_COOLDOWN_TICKS = 20L * 8L;
     private static final double COLLECT_WAYPOINT_ARRIVE_SQR = 0.55D * 0.55D;
 
@@ -835,6 +840,12 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
             return;
         }
         applyStuckFallbackTurn();
+        if (getSweeperState() == SweeperState.COLLECTING
+                && collectGroundPath != null
+                && collectGroundPath.getNodeCount() == 2) {
+            // 两节点直线多为寻路失败兜底，撞墙后保留缓存会反复顶同一几何；清路径以便下 tick 重算 A*。
+            resetCollectGroundPath();
+        }
         resetDriveSteer();
         resetYawSteer();
     }
@@ -968,11 +979,21 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
     }
 
     private static Vec3 collectWaypointCenter(Node n) {
-        return new Vec3((double) n.x + 0.5D, (double) n.y, (double) n.z + 0.5D);
+        return Vec3.atCenterOf(new BlockPos(n.x, n.y, n.z));
     }
 
     /**
-     * 收集路径航点：{@link SweeperItemGroundPath} 的最后一档使用求路时保存的掉落物 {@link Vec3}，其余节点仍用格点中心。
+     * 将驱动目标映射到其所在方块列的 **几何中心 XZ**，保留 {@code goal.y}（出库/机仓等仍可用与方块中心不同的高度）。
+     */
+    private static Vec3 xzSnapGoalToBlockCenter(Vec3 goal) {
+        BlockPos bp = BlockPos.containing(goal.x, goal.y, goal.z);
+        Vec3 c = Vec3.atCenterOf(bp);
+        return new Vec3(c.x, goal.y, c.z);
+    }
+
+    /**
+     * 收集路径航点：一律为对应节点方块 {@link Vec3#atCenterOf(BlockPos)}；末档与 {@link SweeperItemGroundPath#exactItemPosition()}
+     * 一致（由 {@link SweeperGroundNavigation} 写入路径终点方块中心）。
      */
     private static Vec3 collectGroundPathWaypoint(Path path, int nodeIndex) {
         if (path instanceof SweeperItemGroundPath sip && nodeIndex == path.getNodeCount() - 1) {
@@ -1024,8 +1045,8 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
             ItemEntity target, BlockPos goal, int baseAccuracy) {
         PathNavigation navigation = getNavigation();
         if (navigation instanceof SweeperGroundNavigation sweeperNavigation) {
-            // 收集路径优先使用掉落物精确坐标入口，减少“到格不贴物”的末段偏差。
-            return sweeperNavigation.createPathToExactPos(target.position());
+            // 与格点寻路、末档方块中心一致：用目标格几何中心作为求路输入（避免 entity position 亚格点抖动）。
+            return sweeperNavigation.createPathToExactPos(Vec3.atCenterOf(goal));
         }
         // 兜底：非扫地机导航器时仍走原版 BlockPos 入口。
         return navigation.createPath(goal, baseAccuracy);
@@ -1051,6 +1072,14 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
             // 存在路径但缺少其对应的目标格元数据：无法确认路径是否仍指向当前目标，按失效处理并重算。
         } else if (!collectPathGoalBlock.equals(goal)) {
             // 掉落物所在格变化（滚动/被推挤/目标切换）：旧路径终点已过期，需要改算到新目标格。
+            // 仅竖直变格且 XZ 未变时防抖：下落过程中每 tick 变格会连续整段重算路径。
+            if (collectPathGoalBlock.getX() == goal.getX()
+                    && collectPathGoalBlock.getZ() == goal.getZ()
+                    && collectGroundPath.getNodeCount() > 0
+                    && gameTime - collectPathRecomputeGameTime < COLLECT_PATH_SAME_COLUMN_Y_DEBOUNCE_TICKS) {
+                collectPathGoalBlock = goal.immutable();
+                return true;
+            }
         } else if (gameTime - collectPathRecomputeGameTime >= COLLECT_PATH_RECOMPUTE_INTERVAL) {
             // 周期到期：若目标格未变且仍有有效缓存，则不再整段重算，避免两节点直线路径「起点节点」随位移刷新导致约每秒一次的中途拐向。
             if (collectGroundPath.getNodeCount() > 0) {
@@ -1312,8 +1341,9 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
                 driveToward(position().add(fD.scale(0.85)), Config.sweeperMoveSpeed());
                 return;
             }
-            // A5：贴墙稳定阶段，直接朝掉落物实体逼近。
-            driveToward(target.position(), Config.sweeperMoveSpeed());
+            // A5：贴墙稳定阶段，朝掉落物所在方块中心 XZ 逼近（与格点寻路一致，避免亚格点顶角）。
+            Vec3 itemCell = Vec3.atCenterOf(target.blockPosition());
+            driveToward(new Vec3(itemCell.x, getY(), itemCell.z), Config.sweeperMoveSpeed());
             return;
         }
         // 分支B：地面收集模式，依赖缓存路径与节点跟随。
@@ -1394,7 +1424,7 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
             return;
         }
         Vec3 collectLastCenter = collectGroundPathWaypoint(path, collectLast);
-        // B10：已到最后节点阶段但未贴近末档航点（扫地路径末档为掉落物精确坐标），先收敛。
+        // B10：已到最后节点阶段但未贴近末档航点（末档为路径终点方块中心），先收敛。
         if (xzDistSqrTo(collectLastCenter) > waypointArriveSqr()) {
             driveToward(collectLastCenter, Config.sweeperMoveSpeed());
             if (horizontalCollision) {
@@ -1411,11 +1441,11 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
             setSweeperState(SweeperState.PATROLLING);
             return;
         }
-        // B12：已到路径终点仍吸不到：先对掉落物实体做短距直驱，避免“前一点点停住”；
+        // B12：已到路径终点仍吸不到：先朝掉落物所在方块中心 XZ 短驱（与寻路末档一致，避免亚格点顶墙）。
         // 若末段仍失败，再清路径重算，兼顾贴近能力与避免长时间顶死。
-        Vec3 targetPos = target.position();
-        if (xzDistSqrTo(targetPos) > 0.01D) {
-            driveToward(new Vec3(targetPos.x, getY(), targetPos.z), Config.sweeperMoveSpeed());
+        Vec3 targetCellCenter = Vec3.atCenterOf(target.blockPosition());
+        if (xzDistSqrTo(new Vec3(targetCellCenter.x, getY(), targetCellCenter.z)) > 0.01D) {
+            driveToward(new Vec3(targetCellCenter.x, getY(), targetCellCenter.z), Config.sweeperMoveSpeed());
             if (horizontalCollision) {
                 handleGoalSeekCollision();
             }
@@ -1502,8 +1532,12 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
     /**
      * 仅沿机头方向移动：水平速度与 {@link #getYRot()} 共线；机头始终朝向目标再前进（与运动方向一致）。
      * 转向前/后各停顿 {@link Config#sweeperTurnPauseTicks()} tick（可配置为 0 关闭）。
+     * <p>
+     * 入口会将 {@code goal} 的 XZ 吸附到 {@link #xzSnapGoalToBlockCenter}，保证巡逻、回场、收集等所有本机驱动目标
+     * 均对准方块水平中心。
      */
     private void driveToward(Vec3 goal, double speed) {
+        goal = xzSnapGoalToBlockCenter(goal);
         syncDriveGoal(goal);
         Vec3 pos = position();
         double dx = goal.x - pos.x;
