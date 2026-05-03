@@ -1443,11 +1443,16 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
         }
     }
 
-    private void resetCollectGroundPath() {
+    /** 仅清空地面路径缓存与游标，不重置收集卡住检测（供「地面暂无路、先贴墙短驱」分支连续累计位移）。 */
+    private void clearCollectGroundPathOnly() {
         collectGroundPath = null;
         collectPathCursor = 0;
         collectPathRecomputeGameTime = Long.MIN_VALUE;
         collectPathGoalBlock = null;
+    }
+
+    private void resetCollectGroundPath() {
+        clearCollectGroundPathOnly();
         collectStuckTicks = 0;
         collectLastStuckGoalBlock = null;
         collectLastX = Double.NaN;
@@ -1628,7 +1633,7 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
      *
      * @param target 当前锁定要收集的掉落物实体
      * @return 存在非零节点路径时为 true；{@code null} 或 {@link net.minecraft.world.level.pathfinder.Path#getNodeCount()} 为 0 时返回
-     *     false，调用方应放弃该目标
+     *     false；{@link #tickCollecting()} 可先攀墙/短驱再下 tick 重算，而非立刻放弃。
      */
     private boolean ensureCollectGroundPath(ItemEntity target) {
         BlockPos goal = target.blockPosition();
@@ -1947,9 +1952,20 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
             setSweeperState(SweeperState.PATROLLING);
             return;
         }
-        // B3：无法获得可用路径，标记当前目标不可达并放弃。
+        // B3：地面路径当前求不到：不立刻放弃；清路径保留目标，朝物品格 XZ 短驱以撞墙入攀（见 tickWallClimbSpiderStyle 门控），
+        // 下 tick 再 ensure；长期无位移仍走 stuck_loop 放弃。
         if (!ensureCollectGroundPath(target)) {
-            abandonUnreachableCollectTarget(target, "path_unreachable");
+            clearCollectGroundPathOnly();
+            getNavigation().stop();
+            if (tickCollectStuckWatch(target.blockPosition())) {
+                abandonUnreachableCollectTarget(target, "stuck_loop");
+                return;
+            }
+            Vec3 itemCell = Vec3.atCenterOf(target.blockPosition());
+            driveToward(new Vec3(itemCell.x, getY(), itemCell.z), Config.sweeperMoveSpeed());
+            if (horizontalCollision) {
+                handleGoalSeekCollision();
+            }
             return;
         }
         net.minecraft.world.level.pathfinder.Path path = collectGroundPath;
