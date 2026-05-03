@@ -12,15 +12,15 @@ import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
-import org.lanye.fantasy_furniture.core.util.VoxelShapeRotation;
+import org.lanye.reverie_core.util.VoxelShapeRotation;
 import org.lanye.fantasy_furniture.content.furniture.kitchen.blockentity.JamPotBlockEntity;
-import org.lanye.fantasy_furniture.core.geolib.GeolibFacingEntityBlockWithFactory;
+import org.lanye.reverie_core.geolib.GeolibFacingEntityBlockWithFactory;
 
 /**
  * 果酱锅：仅在玩家（或实体）放置方块时播放一次入场动画（{@link #setPlacedBy}），右键对方块不触发动画。
  * <p>
- * 碰撞为北向基准（{@link #SHAPE_NORTH}）随 {@link org.lanye.fantasy_furniture.core.geolib.GeolibFacingEntityBlock#FACING} 旋转；
- * 放置朝向见 {@link org.lanye.fantasy_furniture.core.geolib.GeolibFacingEntityBlock}。
+ * 碰撞为北向基准（{@link #SHAPE_NORTH}）随 {@link org.lanye.reverie_core.geolib.GeolibFacingEntityBlock#FACING} 旋转；
+ * 放置朝向见 {@link org.lanye.reverie_core.geolib.GeolibFacingEntityBlock}。
  */
 public class JamPotBlock extends GeolibFacingEntityBlockWithFactory<JamPotBlockEntity> {
 

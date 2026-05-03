@@ -14,11 +14,11 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import org.lanye.fantasy_furniture.content.furniture.kitchen.blockentity.MixingBowlBlockEntity;
-import org.lanye.fantasy_furniture.core.geolib.GeolibFacingEntityBlockWithFactory;
+import org.lanye.reverie_core.geolib.GeolibFacingEntityBlockWithFactory;
 
 /**
  * 搅拌碗：对方块交互一次（原版 {@link net.minecraft.world.level.block.Block#use}）即由服务端触发一次搅拌动画。
- * 水平朝向见 {@link org.lanye.fantasy_furniture.core.geolib.GeolibFacingEntityBlock}。
+ * 水平朝向见 {@link org.lanye.reverie_core.geolib.GeolibFacingEntityBlock}。
  */
 public class MixingBowlBlock extends GeolibFacingEntityBlockWithFactory<MixingBowlBlockEntity> {
 

@@ -20,4 +20,7 @@ plugins {
     id 'org.gradle.toolchains.foojay-resolver-convention' version '0.7.0'
 }
 
+include 'reverie_core'
+project(':reverie_core').projectDir = file('../reverie_core')
+
 rootProject.name = 'fantasy_furniture'

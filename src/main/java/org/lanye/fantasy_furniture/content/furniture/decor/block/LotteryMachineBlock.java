@@ -14,9 +14,9 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
-import org.lanye.fantasy_furniture.core.util.VoxelShapeRotation;
+import org.lanye.reverie_core.util.VoxelShapeRotation;
 import org.lanye.fantasy_furniture.content.furniture.decor.blockentity.LotteryMachineBlockEntity;
-import org.lanye.fantasy_furniture.core.geolib.GeolibFacingEntityBlockWithFactory;
+import org.lanye.reverie_core.geolib.GeolibFacingEntityBlockWithFactory;
 
 /**
  * 抽奖机（MoonStarfish Geo）：右键播放抽奖动画。

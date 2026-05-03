@@ -57,7 +57,7 @@ import org.lanye.fantasy_furniture.Config;
 import org.lanye.fantasy_furniture.content.sweeper.blockentity.SweeperDockBlockEntity;
 import org.lanye.fantasy_furniture.bootstrap.block.ModBlocks;
 import org.lanye.fantasy_furniture.content.sweeper.ai.InternalPathTuning;
-import org.lanye.fantasy_furniture.core.geolib.GeolibFacingEntityBlock;
+import org.lanye.reverie_core.geolib.GeolibFacingEntityBlock;
 import org.lanye.fantasy_furniture.content.sweeper.menu.SweeperRobotMenu;
 import software.bernie.geckolib.animatable.GeoEntity;
 import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;

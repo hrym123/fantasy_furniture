@@ -10,7 +10,7 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import org.junit.jupiter.api.Test;
-import org.lanye.fantasy_furniture.core.util.VoxelShapeRotation;
+import org.lanye.reverie_core.util.VoxelShapeRotation;
 
 /**
  * 验证 {@link VoxelShapeRotation} 的几何正确性：

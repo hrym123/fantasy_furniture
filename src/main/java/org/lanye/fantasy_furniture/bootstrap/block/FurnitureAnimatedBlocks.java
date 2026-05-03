@@ -29,10 +29,10 @@ import org.lanye.fantasy_furniture.content.furniture.kitchen.block.MixingBowlBlo
 import org.lanye.fantasy_furniture.content.furniture.kitchen.block.OvenBlock;
 import org.lanye.fantasy_furniture.content.furniture.kitchen.block.PestleBowlBlock;
 import org.lanye.fantasy_furniture.content.sweeper.block.SweeperDockBlock;
-import org.lanye.fantasy_furniture.core.geolib.AnimatedBlockEntry;
-import org.lanye.fantasy_furniture.core.geolib.AnimatedBlockRegistration;
-import org.lanye.fantasy_furniture.core.geolib.GeolibBlockItem;
-import org.lanye.fantasy_furniture.core.geolib.GeolibItemAssets;
+import org.lanye.reverie_core.geolib.AnimatedBlockEntry;
+import org.lanye.reverie_core.geolib.AnimatedBlockRegistration;
+import org.lanye.reverie_core.geolib.GeolibBlockItem;
+import org.lanye.reverie_core.geolib.GeolibItemAssets;
 import org.lanye.fantasy_furniture.bootstrap.blockentity.ModBlockEntities;
 
 /**
@@ -64,7 +64,7 @@ public final class FurnitureAnimatedBlocks {
 
     /**
      * 卡座：直段 / 拐角两套 Geo；方块实体渲染见
-     * {@link org.lanye.fantasy_furniture.core.geolib.client.GeolibAnimatedBlockRenderers#variableBasenameGeoRendererProvider}。
+     * {@link org.lanye.reverie_core.geolib.client.GeolibAnimatedBlockRenderers#variableBasenameGeoRendererProvider}。
      */
     public static final AnimatedBlockEntry<BanquetteBlockEntity> BANQUETTE =
             AnimatedBlockRegistration.registerSpec(

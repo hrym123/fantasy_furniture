@@ -10,7 +10,7 @@ import net.minecraftforge.registries.RegistryObject;
 import org.lanye.fantasy_furniture.FantasyFurniture;
 import org.lanye.fantasy_furniture.content.furniture.common.item.ArcaneWandItem;
 import org.lanye.fantasy_furniture.content.furniture.common.item.DecorativeHelmetItem;
-import org.lanye.fantasy_furniture.core.geolib.GeolibItemAssets;
+import org.lanye.reverie_core.geolib.GeolibItemAssets;
 
 /**
  * 无对应方块的独立物品注册。

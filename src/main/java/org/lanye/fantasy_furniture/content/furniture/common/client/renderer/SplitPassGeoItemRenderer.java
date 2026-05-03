@@ -13,7 +13,7 @@ import net.minecraft.client.renderer.entity.ItemRenderer;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemDisplayContext;
 import org.joml.Matrix4f;
-import org.lanye.fantasy_furniture.core.geolib.GeolibHandheldItem;
+import org.lanye.reverie_core.geolib.GeolibHandheldItem;
 import software.bernie.geckolib.cache.object.BakedGeoModel;
 import software.bernie.geckolib.cache.object.GeoBone;
 import software.bernie.geckolib.constant.DataTickets;

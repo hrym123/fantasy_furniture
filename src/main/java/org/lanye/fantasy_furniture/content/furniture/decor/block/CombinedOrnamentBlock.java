@@ -14,7 +14,7 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import org.lanye.fantasy_furniture.content.furniture.decor.blockentity.CombinedOrnamentBlockEntity;
-import org.lanye.fantasy_furniture.core.geolib.GeolibFacingEntityBlockWithFactory;
+import org.lanye.reverie_core.geolib.GeolibFacingEntityBlockWithFactory;
 
 /**
  * 组合摆件：子模型差分（底座 Geo + 玩偶 Geo）；潜行右键切换底座，普通右键切换玩偶。

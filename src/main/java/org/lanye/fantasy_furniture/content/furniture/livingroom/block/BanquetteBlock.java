@@ -19,11 +19,11 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
-import org.lanye.fantasy_furniture.core.seat.SeatInteraction;
-import org.lanye.fantasy_furniture.core.util.VoxelShapeRotation;
+import org.lanye.reverie_core.seat.SeatInteraction;
+import org.lanye.reverie_core.util.VoxelShapeRotation;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.blockentity.BanquetteBlockEntity;
 import org.lanye.fantasy_furniture.content.furniture.common.state.BanquetteShape;
-import org.lanye.fantasy_furniture.core.geolib.GeolibFacingEntityBlockWithFactory;
+import org.lanye.reverie_core.geolib.GeolibFacingEntityBlockWithFactory;
 
 /**
  * 卡座：GeckoLib 渲染；{@link BanquetteShape} 直段 / 拐角左拼 / 拐角右拼。

@@ -9,10 +9,10 @@ import org.lanye.fantasy_furniture.FantasyFurniture;
 /**
  * 本模组 {@link BlockEntityType} 注册。
  * <p>
- * 带方块实体的家具由 {@link org.lanye.fantasy_furniture.core.geolib.AnimatedBlockRegistration} 写入同一
+ * 带方块实体的家具由 {@link org.lanye.reverie_core.geolib.AnimatedBlockRegistration} 写入同一
  * {@link #BLOCK_ENTITY_TYPES}，具体条目见 {@link org.lanye.fantasy_furniture.bootstrap.block.FurnitureAnimatedBlocks} /
  * {@link org.lanye.fantasy_furniture.bootstrap.block.ModBlocks} 中的
- * {@link org.lanye.fantasy_furniture.core.geolib.AnimatedBlockEntry} 字段。
+ * {@link org.lanye.reverie_core.geolib.AnimatedBlockEntry} 字段。
  */
 public final class ModBlockEntities {
 

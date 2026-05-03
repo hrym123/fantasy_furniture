@@ -15,7 +15,7 @@ import net.minecraft.world.level.Level;
 import net.minecraftforge.client.extensions.common.IClientItemExtensions;
 import org.jetbrains.annotations.NotNull;
 import org.lanye.fantasy_furniture.content.furniture.common.client.renderer.DecorativeHelmetGeoItemRenderer;
-import org.lanye.fantasy_furniture.core.geolib.GeolibItemAssets;
+import org.lanye.reverie_core.geolib.GeolibItemAssets;
 import software.bernie.geckolib.animatable.GeoItem;
 import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
 import software.bernie.geckolib.core.animation.AnimatableManager;

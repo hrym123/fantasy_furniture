@@ -17,8 +17,8 @@ import org.lanye.fantasy_furniture.content.furniture.common.client.renderer.Furn
 import org.lanye.fantasy_furniture.content.sweeper.client.renderer.SweeperRobotRenderer;
 import org.lanye.fantasy_furniture.bootstrap.entity.ModEntities;
 import org.lanye.fantasy_furniture.content.sweeper.menu.ModMenuTypes;
-import org.lanye.fantasy_furniture.core.geolib.client.AnimatedBlockClientRegistration;
-import org.lanye.fantasy_furniture.core.geolib.client.GeolibAnimatedBlockRenderers;
+import org.lanye.reverie_core.geolib.client.AnimatedBlockClientRegistration;
+import org.lanye.reverie_core.geolib.client.GeolibAnimatedBlockRenderers;
 
 @Mod.EventBusSubscriber(modid = FantasyFurniture.MODID, bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
 public final class ClientModEvents {

@@ -8,10 +8,10 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import org.lanye.fantasy_furniture.content.furniture.kitchen.blockentity.HalfHalfPotBlockEntity;
-import org.lanye.fantasy_furniture.core.geolib.GeolibFacingEntityBlockWithFactory;
+import org.lanye.reverie_core.geolib.GeolibFacingEntityBlockWithFactory;
 
 /**
- * 半半锅：MoonStarfish Geo；水平朝向见 {@link org.lanye.fantasy_furniture.core.geolib.GeolibFacingEntityBlock}；
+ * 半半锅：MoonStarfish Geo；水平朝向见 {@link org.lanye.reverie_core.geolib.GeolibFacingEntityBlock}；
  * 碰撞与模型大致对齐。
  */
 public class HalfHalfPotBlock extends GeolibFacingEntityBlockWithFactory<HalfHalfPotBlockEntity> {

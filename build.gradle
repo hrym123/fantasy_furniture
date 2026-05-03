@@ -29,6 +29,8 @@ minecraft {
             workingDirectory project.file('run')
             property 'forge.logging.markers', 'REGISTRIES'
             property 'forge.logging.console.level', 'debug'
+            // 仅映射本模组源码；reverie_core 由 implementation project(':reverie_core') 的 JAR 提供（须为未 reobf 的 MCP 字节码；子工程 jar 若被 reobfJar 覆盖为 SRG 会导致 runClient NoSuchFieldError）。
+            // 在子工程上再声明 reverie_core 的 source 时，部分 ForgeGradle 版本会把路径错绑到根工程 build/，导致 MOD_CLASSES 异常与 Mixin 配置读失败。
             mods {
                 "${mod_id}" {
                     source sourceSets.main
@@ -78,6 +80,7 @@ repositories {
 
 dependencies {
     minecraft "net.minecraftforge:forge:${minecraft_version}-${forge_version}"
+    implementation project(':reverie_core')
     implementation fg.deobf("software.bernie.geckolib:geckolib-forge-${minecraft_version}:${geckolib_version}")
     // 与 parchment 同映射反混淆，避免开发环境与 Curse/玩家端 jade 包不一致
     def jadeDeobf = fg.deobf("curse.maven:jade-324717:${jade_curse_file_id}")

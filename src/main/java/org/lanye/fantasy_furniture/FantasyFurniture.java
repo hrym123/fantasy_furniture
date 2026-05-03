@@ -6,6 +6,8 @@ import net.minecraftforge.fml.config.ModConfig;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import org.lanye.fantasy_furniture.bootstrap.ModBootstrap;
+import org.lanye.fantasy_furniture.bootstrap.entity.ModEntities;
+import org.lanye.reverie_core.seat.SeatEntityTypes;
 import org.slf4j.Logger;
 
 /**
@@ -28,7 +30,11 @@ public class FantasyFurniture {
     }
 
     private void onCommonSetup(final FMLCommonSetupEvent event) {
-        event.enqueueWork(ModBootstrap::registerCommonWork);
+        event.enqueueWork(
+                () -> {
+                    SeatEntityTypes.bind(() -> ModEntities.FURNITURE_SEAT.get());
+                    ModBootstrap.registerCommonWork();
+                });
         LOGGER.info("{} 通用初始化完成", MODID);
     }
 }

@@ -14,13 +14,13 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import org.lanye.fantasy_furniture.content.furniture.kitchen.blockentity.PestleBowlBlockEntity;
-import org.lanye.fantasy_furniture.core.geolib.GeolibFacingEntityBlockWithFactory;
+import org.lanye.reverie_core.geolib.GeolibFacingEntityBlockWithFactory;
 
 /**
  * 捣蒜碗：对方块交互一次即触发一次捣碎动画（{@link PestleBowlBlockEntity#onServerMash}）。
  * <p>
  * 碰撞仅对应 Geo 中 {@code group2} 五个立方体并集：模型坐标下 x/z 加 8 得到方块内 0～16，y 与方块竖直一致；
- * 并集为 {@code [3,13)×[0,7)×[3,13)}。水平朝向见 {@link org.lanye.fantasy_furniture.core.geolib.GeolibFacingEntityBlock}。
+ * 并集为 {@code [3,13)×[0,7)×[3,13)}。水平朝向见 {@link org.lanye.reverie_core.geolib.GeolibFacingEntityBlock}。
  */
 public class PestleBowlBlock extends GeolibFacingEntityBlockWithFactory<PestleBowlBlockEntity> {
 

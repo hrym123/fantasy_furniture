@@ -25,6 +25,14 @@ ordering = "NONE"
 side = "BOTH"
 
 [[dependencies."${mod_id}"]]
+modId = "reverie_core"
+mandatory = true
+# 须包含 1.0-SNAPSHOT：Maven 下 [1.0,) 不包含 SNAPSHOT，会导致开发环境依赖校验失败
+versionRange = "[0.1,)"
+ordering = "NONE"
+side = "BOTH"
+
+[[dependencies."${mod_id}"]]
 modId = "geckolib"
 mandatory = true
 versionRange = "${geckolib_version_range}"

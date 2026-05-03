@@ -25,8 +25,8 @@ import net.minecraft.world.phys.shapes.VoxelShape;
 import org.lanye.fantasy_furniture.content.sweeper.blockentity.SweeperDockBlockEntity;
 import org.lanye.fantasy_furniture.bootstrap.block.ModBlocks;
 import org.lanye.fantasy_furniture.content.sweeper.entity.SweeperRobotEntity;
-import org.lanye.fantasy_furniture.core.geolib.GeolibFacingEntityBlock;
-import org.lanye.fantasy_furniture.core.geolib.GeolibFacingEntityBlockWithFactory;
+import org.lanye.reverie_core.geolib.GeolibFacingEntityBlock;
+import org.lanye.reverie_core.geolib.GeolibFacingEntityBlockWithFactory;
 import org.lanye.fantasy_furniture.bootstrap.entity.ModEntities;
 
 /** 扫地机器人机仓：右键确保存在一个绑定到当前机仓的机器人。 */

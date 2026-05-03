@@ -19,7 +19,7 @@ import org.lanye.fantasy_furniture.content.furniture.kitchen.blockentity.MixingB
 import org.lanye.fantasy_furniture.content.furniture.kitchen.blockentity.OvenBlockEntity;
 import org.lanye.fantasy_furniture.content.furniture.kitchen.blockentity.PestleBowlBlockEntity;
 import org.lanye.fantasy_furniture.content.sweeper.blockentity.SweeperDockBlockEntity;
-import org.lanye.fantasy_furniture.core.geolib.AnimatedBlockEntry;
+import org.lanye.reverie_core.geolib.AnimatedBlockEntry;
 
 /**
  * 模组方块与对应 {@link net.minecraft.world.item.BlockItem} 的 {@link DeferredRegister} 入口，以及对外

@@ -7,7 +7,7 @@ import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
 import org.lanye.fantasy_furniture.FantasyFurniture;
-import org.lanye.fantasy_furniture.content.seat.entity.FurnitureSeatEntity;
+import org.lanye.reverie_core.seat.entity.ReverieSeatEntity;
 import org.lanye.fantasy_furniture.content.sweeper.entity.SweeperRobotEntity;
 
 public final class ModEntities {
@@ -17,11 +17,11 @@ public final class ModEntities {
     public static final DeferredRegister<EntityType<?>> ENTITY_TYPES =
             DeferredRegister.create(ForgeRegistries.ENTITY_TYPES, FantasyFurniture.MODID);
 
-    public static final RegistryObject<EntityType<FurnitureSeatEntity>> FURNITURE_SEAT =
+    public static final RegistryObject<EntityType<ReverieSeatEntity>> FURNITURE_SEAT =
             ENTITY_TYPES.register(
                     "furniture_seat",
                     () ->
-                            EntityType.Builder.of(FurnitureSeatEntity::new, MobCategory.MISC)
+                            EntityType.Builder.of(ReverieSeatEntity::new, MobCategory.MISC)
                                     .sized(0.01F, 0.01F)
                                     .clientTrackingRange(10)
                                     .updateInterval(1)

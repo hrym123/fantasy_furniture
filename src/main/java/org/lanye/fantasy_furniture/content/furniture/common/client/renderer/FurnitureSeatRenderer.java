@@ -7,11 +7,11 @@ import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-import org.lanye.fantasy_furniture.content.seat.entity.FurnitureSeatEntity;
+import org.lanye.reverie_core.seat.entity.ReverieSeatEntity;
 
 /** 家具坐骑不可见，无需绘制。 */
 @OnlyIn(Dist.CLIENT)
-public final class FurnitureSeatRenderer extends EntityRenderer<FurnitureSeatEntity> {
+public final class FurnitureSeatRenderer extends EntityRenderer<ReverieSeatEntity> {
 
     private static final ResourceLocation DUMMY =
             ResourceLocation.fromNamespaceAndPath("minecraft", "textures/block/stone.png");
@@ -22,7 +22,7 @@ public final class FurnitureSeatRenderer extends EntityRenderer<FurnitureSeatEnt
 
     @Override
     public void render(
-            FurnitureSeatEntity entity,
+            ReverieSeatEntity entity,
             float entityYaw,
             float partialTicks,
             PoseStack poseStack,
@@ -32,7 +32,7 @@ public final class FurnitureSeatRenderer extends EntityRenderer<FurnitureSeatEnt
     }
 
     @Override
-    public ResourceLocation getTextureLocation(FurnitureSeatEntity entity) {
+    public ResourceLocation getTextureLocation(ReverieSeatEntity entity) {
         return DUMMY;
     }
 }

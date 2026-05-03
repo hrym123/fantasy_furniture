@@ -6,9 +6,9 @@ import net.minecraft.world.phys.Vec3;
 import org.lanye.fantasy_furniture.Config;
 import org.lanye.fantasy_furniture.bootstrap.block.ModBlocks;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.block.BanquetteBlock;
-import org.lanye.fantasy_furniture.core.seat.SeatConfig;
-import org.lanye.fantasy_furniture.core.seat.SeatRegistry;
-import org.lanye.fantasy_furniture.content.seat.entity.FurnitureSeatEntity;
+import org.lanye.reverie_core.seat.SeatConfig;
+import org.lanye.reverie_core.seat.SeatRegistry;
+import org.lanye.reverie_core.seat.entity.ReverieSeatEntity;
 
 /**
  * 模组内各可坐家具的 {@link SeatConfig}，在 {@link net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent} 中注册。
@@ -19,8 +19,8 @@ import org.lanye.fantasy_furniture.content.seat.entity.FurnitureSeatEntity;
  *       {@link ModBlocks} 或领域注册类取到 {@link Block} 实例，勿手写字符串 id。</li>
  *   <li><strong>配置 id 常量</strong>：在本类增加 {@code public static final String YOUR_SEAT_ID = "your_seat";}，
  *       字符串即为 {@link SeatRegistry#register(String, SeatConfig)} 的第一个参数；须与
- *       {@link FurnitureSeatEntity#create} 传入的 id、以及坐骑实体 NBT
- *       {@link FurnitureSeatEntity#NBT_SEAT_CONFIG_ID} 中保存的值<strong>完全一致</strong>（单一来源：先定常量，再在
+ *       {@link ReverieSeatEntity#create} 传入的 id、以及坐骑实体 NBT
+ *       {@link ReverieSeatEntity#NBT_SEAT_CONFIG_ID} 中保存的值<strong>完全一致</strong>（单一来源：先定常量，再在
  *       {@link #register()} 里使用）。</li>
  *   <li><strong>{@link SeatConfig}</strong>
  *       <ul>
@@ -33,19 +33,19 @@ import org.lanye.fantasy_furniture.content.seat.entity.FurnitureSeatEntity;
  *             {@link net.minecraft.world.entity.Entity#getYRot()} 所用角度（度）。有 {@code FACING} 时常见为
  *             {@code state.getValue(XXX.FACING).getOpposite().toYRot()}，须与方块状态定义一致；</li>
  *         <li>{@code dismountStepDirectionFromAnchor}：下马默认站在锚点哪一侧邻格（一般为坐垫朝向，即座椅正前方一格），
- *             供 {@link org.lanye.fantasy_furniture.content.seat.entity.FurnitureSeatEntity#getDismountLocationForPassenger} 优先落点。</li>
+ *             供 {@link org.lanye.reverie_core.seat.entity.ReverieSeatEntity#getDismountLocationForPassenger} 优先落点。</li>
  *       </ul>
  *   </li>
- *   <li><strong>方块侧</strong>：右键调用 {@link org.lanye.fantasy_furniture.core.seat.SeatInteraction#trySitFromBlockUse}；
+ *   <li><strong>方块侧</strong>：右键调用 {@link org.lanye.reverie_core.seat.SeatInteraction#trySitFromBlockUse}；
  *       {@link SeatRegistry} 按注册顺序匹配第一条规则，若多家具范围重叠注意顺序或收紧 {@code sitRangeBlockRelative}。</li>
  *   <li><strong>NBT 约定</strong>：勿在业务代码中手写 {@code "Anchor"} / {@code "SeatConfigId"}，一律使用
- *       {@link FurnitureSeatEntity#NBT_ANCHOR_POS}、{@link FurnitureSeatEntity#NBT_SEAT_CONFIG_ID}。</li>
+ *       {@link ReverieSeatEntity#NBT_ANCHOR_POS}、{@link ReverieSeatEntity#NBT_SEAT_CONFIG_ID}。</li>
  * </ol>
  */
 public final class ModSeatConfigs {
 
     /**
-     * 与 {@link SeatRegistry}、{@link FurnitureSeatEntity} 存档字段 {@link FurnitureSeatEntity#NBT_SEAT_CONFIG_ID} 一致。
+     * 与 {@link SeatRegistry}、{@link ReverieSeatEntity} 存档字段 {@link ReverieSeatEntity#NBT_SEAT_CONFIG_ID} 一致。
      */
     public static final String BANQUETTE_ID = "banquette";
 

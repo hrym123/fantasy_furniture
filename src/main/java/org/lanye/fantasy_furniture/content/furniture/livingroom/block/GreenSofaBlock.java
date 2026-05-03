@@ -23,16 +23,16 @@ import net.minecraft.world.level.material.PushReaction;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
-import org.lanye.fantasy_furniture.content.furniture.common.block.FurnitureBlock;
+import org.lanye.reverie_core.geolib.InteractiveGeolibFacingBlock;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.blockentity.GreenSofaBlockEntity;
 import org.lanye.fantasy_furniture.content.furniture.common.state.SofaPart;
 
 /**
  * 绿色沙发：占地横向三格（左 / 中 / 右），仅中间格含 {@link GreenSofaBlockEntity} 与 GeckoLib 模型。
- * 水平 {@link org.lanye.fantasy_furniture.core.geolib.GeolibFacingEntityBlock#FACING} 与放置逻辑见
- * {@link org.lanye.fantasy_furniture.core.geolib.GeolibFacingEntityBlock}（{@link #getStateForPlacement} 覆盖以摆三联）。
+ * 水平 {@link org.lanye.reverie_core.geolib.GeolibFacingEntityBlock#FACING} 与放置逻辑见
+ * {@link org.lanye.reverie_core.geolib.GeolibFacingEntityBlock}（{@link #getStateForPlacement} 覆盖以摆三联）。
  */
-public class GreenSofaBlock extends FurnitureBlock {
+public class GreenSofaBlock extends InteractiveGeolibFacingBlock {
 
     public static final EnumProperty<SofaPart> PART = EnumProperty.create("part", SofaPart.class);
 
