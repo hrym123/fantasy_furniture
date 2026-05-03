@@ -118,6 +118,6 @@ run/
 runs/
 run-data/
 
-# 勿忽略 Gradle Wrapper 的 jar（通常 *.jar 被忽略）
-!gradle-wrapper.jar
+# 勿忽略 Gradle Wrapper 的 jar（*.jar 规则会忽略 wrapper）
+!gradle/wrapper/gradle-wrapper.jar
 tools/__pycache__/
