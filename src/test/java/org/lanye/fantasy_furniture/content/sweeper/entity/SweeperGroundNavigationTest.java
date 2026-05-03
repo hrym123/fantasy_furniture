@@ -17,8 +17,7 @@ import org.junit.jupiter.api.Test;
 /**
  * {@link SweeperGroundNavigation} 的轻量单元测试：仅覆盖包级可见的纯几何/图辅助逻辑。
  * <p>
- * {@link SweeperGroundNavigation#createPathToExactPos} 依赖 {@link net.minecraft.world.level.Level} 与
- * {@link net.minecraft.world.entity.Mob} 的方块碰撞查询，留在集成/游戏内验证。
+ * 收集求路已委托原版 {@link net.minecraft.world.entity.ai.navigation.GroundPathNavigation#createPath}；本类仅测保留的静态辅助。
  */
 class SweeperGroundNavigationTest {
 
@@ -36,12 +35,29 @@ class SweeperGroundNavigationTest {
     }
 
     @Test
-    void collectGridNeighbors_hasFourteenUniqueOffsets() {
+    void pickChordFootNearestToStart_prefersCloserChebyshev_tiePrefersStrict() {
+        BlockPos start = new BlockPos(0, 64, 0);
+        BlockPos strictFar = new BlockPos(10, 64, 0);
+        BlockPos relaxedMid = new BlockPos(2, 64, 0);
+        BlockPos coarseFar = new BlockPos(8, 64, 0);
+        assertEquals(
+                relaxedMid,
+                SweeperGroundNavigation.pickChordFootNearestToStart(
+                        start, strictFar, relaxedMid, coarseFar));
+        BlockPos strictTie = new BlockPos(2, 64, 0);
+        BlockPos relaxedTie = new BlockPos(0, 64, 2);
+        assertEquals(
+                strictTie,
+                SweeperGroundNavigation.pickChordFootNearestToStart(start, strictTie, relaxedTie, null));
+    }
+
+    @Test
+    void collectGridNeighbors_hasTwentyTwoUniqueOffsets() {
         BlockPos origin = new BlockPos(10, 64, 10);
         List<BlockPos> n = SweeperGroundNavigation.collectGridNeighbors(origin);
-        assertEquals(14, n.size());
+        assertEquals(22, n.size());
         Set<BlockPos> uniq = new HashSet<>(n);
-        assertEquals(14, uniq.size(), "14 邻接应对应 14 个不同格点");
+        assertEquals(22, uniq.size(), "22 邻接应对应 22 个不同格点");
         assertTrue(n.contains(origin.north()));
         assertTrue(n.contains(origin.south()));
         assertTrue(n.contains(origin.east()));
@@ -55,6 +71,14 @@ class SweeperGroundNavigationTest {
         assertTrue(n.contains(new BlockPos(x + 1, y, z - 1)));
         assertTrue(n.contains(new BlockPos(x - 1, y, z + 1)));
         assertTrue(n.contains(new BlockPos(x - 1, y, z - 1)));
+        assertTrue(n.contains(new BlockPos(x + 1, y + 1, z)));
+        assertTrue(n.contains(new BlockPos(x - 1, y + 1, z)));
+        assertTrue(n.contains(new BlockPos(x + 1, y - 1, z)));
+        assertTrue(n.contains(new BlockPos(x - 1, y - 1, z)));
+        assertTrue(n.contains(new BlockPos(x, y + 1, z + 1)));
+        assertTrue(n.contains(new BlockPos(x, y + 1, z - 1)));
+        assertTrue(n.contains(new BlockPos(x, y - 1, z + 1)));
+        assertTrue(n.contains(new BlockPos(x, y - 1, z - 1)));
     }
 
     @Test

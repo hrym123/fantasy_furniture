@@ -51,6 +51,8 @@ import net.minecraft.world.InteractionResult;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.network.NetworkHooks;
+import org.joml.Quaternionf;
+import org.joml.Vector3f;
 import org.lanye.fantasy_furniture.Config;
 import org.lanye.fantasy_furniture.content.sweeper.blockentity.SweeperDockBlockEntity;
 import org.lanye.fantasy_furniture.bootstrap.block.ModBlocks;
@@ -140,6 +142,12 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
     private double driveSteerGx = Double.NaN;
     private double driveSteerGz = Double.NaN;
 
+    /**
+     * {@link #driveToward} 上一 tick 采用的目标偏航；收集态下距目标很近时用于抑制 {@code atan2(dx,dz)} 因亚格点来回穿越
+     * 导致的单 tick 大角度抖动。
+     */
+    private float driveTowardLastStableTargetYaw = Float.NaN;
+
     private int yawSteerPhase;
     private int yawSteerTicks;
     private float yawSteerLastTarget = Float.NaN;
@@ -148,7 +156,10 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
     private float patrolSteerTargetYaw = Float.NaN;
 
     /**
-     * 巡逻贴墙：0 平常；1 已撞墙，正用 {@link #patrolSteerTargetYaw} 转到沿墙方向；2 下一 tick 沿法线微移贴紧墙面。
+     * 巡逻贴墙：0 平常；1 已撞墙，正用 {@link #patrolSteerTargetYaw} 转到沿墙方向（转向节拍内仅沿正四向微移）；
+     * 2 顺墙滑动（位移仅东/西/南/北之一，由 {@link #cardinalWallSlideUnit} 选取）；3 在「至少一侧竖带无实心」且朝目标主轴可通时，
+     * 沿该主轴再走出约 {@link #wallHugOneBodyAdvanceThreshold()}（一个身位）后结束贴墙。
+     * 探出仍要求 {@link #wallHugGoalCardinalClearForExit()}，避免朝目标仍挡时盲冲。
      */
     private int patrolWallHugPhase;
 
@@ -157,7 +168,45 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
 
     private double patrolWallNudgeZ;
 
-    private static final double WALL_HUG_NUDGE_BLOCKS = 0.07D;
+    /** 阶段 2 内沿墙滑动的剩余 tick 上限；0 表示未在滑动。 */
+    private int patrolWallHugSlideTicks;
+
+    /** 阶段 2 已进行的 tick，用于满足「至少滑一小段再检测出口」再允许提前结束。 */
+    private int patrolWallHugSlideAge;
+
+    /** 阶段 3：沿 {@link #patrolWallPreHitFwdX}/{@link #patrolWallPreHitFwdZ} 探出剩余 tick 上限。 */
+    private int patrolWallHugCommitTicks;
+
+    /**
+     * 转入贴墙前一刻的机头水平单位方向（世界 XZ），用于阶段 3 沿「原朝目标前进、被挡」的方向补走至少一格。
+     */
+    private double patrolWallPreHitFwdX = Double.NaN;
+
+    private double patrolWallPreHitFwdZ = Double.NaN;
+
+    /** 进入阶段 3 时的脚底水平位置，用于点积判断已沿原前进方向走出约一格。 */
+    private double patrolWallCommitStartX = Double.NaN;
+
+    private double patrolWallCommitStartZ = Double.NaN;
+
+    /** 贴墙期间每 tick 更新的水平目标（世界 XZ），用于四主轴开口判定。 */
+    private double patrolWallHugGoalX = Double.NaN;
+
+    private double patrolWallHugGoalZ = Double.NaN;
+
+    /**
+     * 从实体指向 {@link #patrolWallHugGoalX}/{@link #patrolWallHugGoalZ} 的主导轴：恰一为 ±1 的东/西/北/南步进（另一轴为 0）。
+     */
+    private int patrolWallHugCardStepX;
+
+    private int patrolWallHugCardStepZ;
+
+    private static final int WALL_HUG_SLIDE_MAX_TICKS = 48;
+
+    private static final int WALL_HUG_SLIDE_MIN_TICKS_BEFORE_EXIT = 5;
+
+    /** 阶段 3 最长占用 tick（防止顶角卡死）。 */
+    private static final int WALL_HUG_COMMIT_MAX_TICKS = 28;
 
     /**
      * 出库停泊点到达后、切入巡逻/收集前的「再转一次」目标偏航；{@link Float#NaN} 表示未在进行。
@@ -203,6 +252,8 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
     private int reenterPathCursor;
     private long reenterPathRecomputeGameTime = Long.MIN_VALUE;
     @Nullable private BlockPos reenterPathGoalBlock;
+    /** 收集态弦线两节点反复撞墙时，节流触发 {@link #resetCollectGroundPath()} 的上一游戏刻。 */
+    private long lastCollectChordBypassPathResetGameTime = -99999L;
     private int returningStuckTicks;
     private double returningLastX = Double.NaN;
     private double returningLastZ = Double.NaN;
@@ -212,6 +263,11 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
      * 掉落物仅竖直变格（XZ 不变）时，最短间隔多少 tick 才整段重算，避免下落过程中每 tick 变格连续整段重算路径。
      */
     private static final long COLLECT_PATH_SAME_COLUMN_Y_DEBOUNCE_TICKS = 8L;
+
+    /**
+     * 与掉落物水平距离平方小于此值且已走到路径末档时，不再因脚底可走枚举抖动整段重算路径，避免 cursor 归零后 B9 与末段追实体拉扯。
+     */
+    private static final double COLLECT_NEAR_ITEM_SUPPRESS_PATH_REBUILD_SQR = 2.25D;
 
     private static final long COLLECT_UNREACHABLE_RETRY_COOLDOWN_TICKS = 20L * 8L;
     private static final double COLLECT_WAYPOINT_ARRIVE_SQR = 0.55D * 0.55D;
@@ -275,6 +331,83 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
     }
 
     /**
+     * 与 {@link org.lanye.fantasy_furniture.content.sweeper.client.renderer.SweeperRobotRenderer} 相同的贴墙 ±90° 四元数（绕水平轴）。
+     * 渲染端请传入 {@link #getVisualYaw(float)}，逻辑尺寸请传 {@link #getYRot()}。
+     */
+    public static Quaternionf wallClimbTiltQuaternion(Direction wall, float yawDegrees) {
+        Quaternionf identity = new Quaternionf();
+        if (wall == null || !wall.getAxis().isHorizontal()) {
+            return identity;
+        }
+        float ax = -wall.getStepZ();
+        float az = wall.getStepX();
+        float yR = yawDegrees * Mth.DEG_TO_RAD;
+        float lx = ax * Mth.cos(yR) + az * Mth.sin(yR);
+        float lz = -ax * Mth.sin(yR) + az * Mth.cos(yR);
+        float len = Mth.sqrt(lx * lx + lz * lz);
+        if (len <= 1.0e-4f) {
+            return identity;
+        }
+        lx /= len;
+        lz /= len;
+        Quaternionf qPlus = new Quaternionf().rotateAxis(Mth.HALF_PI, lx, 0.0f, lz);
+        Quaternionf qMinus = new Quaternionf().rotateAxis(-Mth.HALF_PI, lx, 0.0f, lz);
+        float cosY = Mth.cos(yR);
+        float sinY = Mth.sin(yR);
+        Vector3f downLocalPlus = new Vector3f(0.0f, -1.0f, 0.0f).rotate(qPlus);
+        float downPlusWorldX = downLocalPlus.x * cosY - downLocalPlus.z * sinY;
+        float downPlusWorldZ = downLocalPlus.x * sinY + downLocalPlus.z * cosY;
+        float downDotPlus = downPlusWorldX * wall.getStepX() + downPlusWorldZ * wall.getStepZ();
+        Vector3f downLocalMinus = new Vector3f(0.0f, -1.0f, 0.0f).rotate(qMinus);
+        float downMinusWorldX = downLocalMinus.x * cosY - downLocalMinus.z * sinY;
+        float downMinusWorldZ = downLocalMinus.x * sinY + downLocalMinus.z * cosY;
+        float downDotMinus = downMinusWorldX * wall.getStepX() + downMinusWorldZ * wall.getStepZ();
+        return downDotPlus >= downDotMinus ? qPlus : qMinus;
+    }
+
+    /**
+     * 将站立时 {@link EntityDimensions} 对应的轴对齐长方体（正方形 XZ、高 Y）绕竖直中心旋转与 {@link #wallClimbTiltQuaternion} 相同的角度，
+     * 再取世界轴对齐外包络；水平尺寸取 X/Z 两向跨度较大者（与原版实体「单 width」约束一致）。
+     */
+    private static EntityDimensions wallClimbContainmentDimensions(
+            EntityDimensions base, float yawDegrees, Direction wall) {
+        float w2 = base.width * 0.5F;
+        float h = base.height;
+        float cy = h * 0.5F;
+        Quaternionf q = wallClimbTiltQuaternion(wall, yawDegrees);
+        double minX = Double.POSITIVE_INFINITY;
+        double maxX = Double.NEGATIVE_INFINITY;
+        double minY = Double.POSITIVE_INFINITY;
+        double maxY = Double.NEGATIVE_INFINITY;
+        double minZ = Double.POSITIVE_INFINITY;
+        double maxZ = Double.NEGATIVE_INFINITY;
+        for (int i = 0; i < 2; i++) {
+            float x = i == 0 ? -w2 : w2;
+            for (int j = 0; j < 2; j++) {
+                float y = j == 0 ? 0.0F : h;
+                for (int k = 0; k < 2; k++) {
+                    float z = k == 0 ? -w2 : w2;
+                    Vector3f p = new Vector3f(x, y, z);
+                    p.sub(0.0f, cy, 0.0f);
+                    p.rotate(q);
+                    p.add(0.0f, cy, 0.0f);
+                    minX = Math.min(minX, p.x);
+                    maxX = Math.max(maxX, p.x);
+                    minY = Math.min(minY, p.y);
+                    maxY = Math.max(maxY, p.y);
+                    minZ = Math.min(minZ, p.z);
+                    maxZ = Math.max(maxZ, p.z);
+                }
+            }
+        }
+        float spanX = (float) (maxX - minX);
+        float spanY = (float) (maxY - minY);
+        float spanZ = (float) (maxZ - minZ);
+        float xz = Math.max(spanX, spanZ);
+        return EntityDimensions.scalable(xz, spanY);
+    }
+
+    /**
      * 与原版蜘蛛一致：{@link LivingEntity#travel} 等逻辑以 {@link #onClimbable()} 判定攀爬（梯子与本 mod 竖直墙攀附）。
      */
     @Override
@@ -283,7 +416,8 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
     }
 
     /**
-     * 与 {@link org.lanye.fantasy_furniture.content.sweeper.client.renderer.SweeperRobotRenderer} 贴墙绕水平轴 90° 一致：轴对齐包络上交换宽、高（原 {@code .sized(0.604, 0.25)} → 攀墙时约 0.25×0.604）。
+     * 贴墙时碰撞箱为「与 {@link SweeperRobotRenderer} 相同绕水平轴 ±90°」后，对站立轴对齐长方体的世界轴对齐外包络（受原版单
+     * {@code width} 正方形 XZ 约束时取 X/Z 跨度较大者），避免仅靠交换宽高导致与模型投影差异过大。
      */
     @Override
     public EntityDimensions getDimensions(Pose pose) {
@@ -294,13 +428,17 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
         if (!isWallClimbing()) {
             return base;
         }
+        Direction wall = getWallClimbFacing();
+        if (wall != null && wall.getAxis().isHorizontal()) {
+            return wallClimbContainmentDimensions(base, getYRot(), wall);
+        }
         return EntityDimensions.scalable(base.height, base.width);
     }
 
     @Override
     public void onSyncedDataUpdated(EntityDataAccessor<?> data) {
         super.onSyncedDataUpdated(data);
-        if (DATA_WALL_CLIMBING.equals(data)) {
+        if (DATA_WALL_CLIMBING.equals(data) || DATA_WALL_FACE.equals(data)) {
             refreshDimensions();
         }
     }
@@ -422,6 +560,7 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
         driveSteerTicks = 0;
         driveSteerGx = Double.NaN;
         driveSteerGz = Double.NaN;
+        driveTowardLastStableTargetYaw = Float.NaN;
     }
 
     private void resetYawSteer() {
@@ -435,6 +574,7 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
                 || Math.abs(goal.x - driveSteerGx) > 0.2D
                 || Math.abs(goal.z - driveSteerGz) > 0.2D) {
             driveSteerPhase = STEER_IDLE;
+            driveTowardLastStableTargetYaw = Float.NaN;
         }
         driveSteerGx = goal.x;
         driveSteerGz = goal.z;
@@ -736,6 +876,7 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
             patrolSteerTargetYaw = pick;
         }
         patrolWallHugPhase = 0;
+        resetPatrolWallHugMarkers();
         return true;
     }
 
@@ -746,35 +887,351 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
         return Mth.wrapDegrees((float) (Mth.atan2(-dx, dz) * (180.0 / Math.PI)));
     }
 
+    /** 竖直带内是否存在阻挡运动的方块（用于沿墙两侧探测）。 */
+    private boolean wallColumnHasSolidXZ(double x, double z, int y0, int y1) {
+        Level lvl = level();
+        for (int y = y0; y <= y1; y++) {
+            if (lvl.getBlockState(BlockPos.containing(x, y, z)).blocksMotion()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * 沿墙位移仅从正东(+X)、西、南(+Z)、北 四向择一：尽量与墙面法向 (nx,nz) 垂直，并与参考方向 (preferX,preferZ) 同向优先。
+     */
+    private static Vec3 cardinalWallSlideUnit(double nx, double nz, double preferX, double preferZ) {
+        double pl = Math.sqrt(preferX * preferX + preferZ * preferZ);
+        if (pl > 1.0e-9D) {
+            preferX /= pl;
+            preferZ /= pl;
+        } else {
+            preferX = 1.0D;
+            preferZ = 0.0D;
+        }
+        int bestCx = 1;
+        int bestCz = 0;
+        double bestScore = Double.NEGATIVE_INFINITY;
+        int[][] dirs = {{1, 0}, {-1, 0}, {0, 1}, {0, -1}};
+        for (int[] d : dirs) {
+            int cx = d[0];
+            int cz = d[1];
+            double perpPenalty = Math.abs(cx * nx + cz * nz);
+            double align = cx * preferX + cz * preferZ;
+            double score = align - perpPenalty * 2.75D;
+            if (score > bestScore) {
+                bestScore = score;
+                bestCx = cx;
+                bestCz = cz;
+            }
+        }
+        return new Vec3(bestCx, 0.0D, bestCz);
+    }
+
+    private record WallHugSlideProbe(boolean leftSolid, boolean rightSolid, boolean pitAhead) {
+        boolean bothFlanksOpen() {
+            return !leftSolid && !rightSolid;
+        }
+
+        /** 至少一侧竖带无实心（对应「侧边无障碍」的宽松判定，避免贴墙整段超时仍无法探出）。 */
+        boolean anyFlankOpen() {
+            return !leftSolid || !rightSolid;
+        }
+    }
+
+    /**
+     * 评估顺墙滑动：左右竖带是否实心、顺墙前方脚下是否连续空档（坑洞）。
+     */
+    private WallHugSlideProbe evalWallHugSlideExit(double tx, double tz) {
+        AABB box = getBoundingBox();
+        double midX = (box.minX + box.maxX) * 0.5D;
+        double midZ = (box.minZ + box.maxZ) * 0.5D;
+        int y0 = Mth.floor(box.minY + 0.12D);
+        int y1 = Mth.ceil(box.maxY - 0.02D);
+        if (y1 < y0) {
+            y1 = y0;
+        }
+        double lx = -tz;
+        double lz = tx;
+        double rx = tz;
+        double rz = -tx;
+        double sideDist = Math.max(0.48D, robotCollisionRadius() + 0.26D);
+        boolean leftSolid = wallColumnHasSolidXZ(midX + lx * sideDist, midZ + lz * sideDist, y0, y1);
+        boolean rightSolid = wallColumnHasSolidXZ(midX + rx * sideDist, midZ + rz * sideDist, y0, y1);
+
+        double fx = midX + tx * 0.72D;
+        double fz = midZ + tz * 0.72D;
+        BlockPos probe = BlockPos.containing(fx, getY() - 0.12D, fz);
+        int airRun = 0;
+        for (int i = 1; i <= 5; i++) {
+            BlockPos p = probe.below(i);
+            if (p.getY() < level().getMinBuildHeight()) {
+                break;
+            }
+            if (!level().getBlockState(p).blocksMotion()) {
+                airRun++;
+            } else {
+                break;
+            }
+        }
+        boolean pitAhead = airRun >= 2;
+        return new WallHugSlideProbe(leftSolid, rightSolid, pitAhead);
+    }
+
+    private void resetPatrolWallHugMarkers() {
+        patrolWallHugSlideTicks = 0;
+        patrolWallHugSlideAge = 0;
+        patrolWallHugCommitTicks = 0;
+        patrolWallPreHitFwdX = Double.NaN;
+        patrolWallPreHitFwdZ = Double.NaN;
+        patrolWallCommitStartX = Double.NaN;
+        patrolWallCommitStartZ = Double.NaN;
+        patrolWallHugGoalX = Double.NaN;
+        patrolWallHugGoalZ = Double.NaN;
+        patrolWallHugCardStepX = 0;
+        patrolWallHugCardStepZ = 0;
+    }
+
+    /**
+     * 按当前业务态刷新贴墙用的水平目标点与「朝向目标的正四向」步进（东/西为 ±X，北/南为 ±Z，主导轴取 |Δ| 较大者）。
+     */
+    private void captureWallHugGoalSnapshot() {
+        Vec3 g = null;
+        SweeperState st = getSweeperState();
+        if (st == SweeperState.COLLECTING) {
+            if (collectGroundPath != null && collectGroundPath.getNodeCount() > 0) {
+                int idx = Mth.clamp(collectPathCursor, 0, collectGroundPath.getNodeCount() - 1);
+                g = collectGroundPathWaypoint(collectGroundPath, idx);
+            } else {
+                ItemEntity t = getOrFindCollectTarget();
+                if (t != null) {
+                    g = xzSnapGoalToBlockCenter(t.position());
+                }
+            }
+        } else if (st == SweeperState.RETURNING) {
+            Vec3 dc = dockCenter();
+            g = new Vec3(dc.x, getY(), dc.z);
+        } else if (st == SweeperState.REENTERING_PATROL) {
+            if (reenterGroundPath != null && reenterGroundPath.getNodeCount() > 0) {
+                int idx = Mth.clamp(reenterPathCursor, 0, reenterGroundPath.getNodeCount() - 1);
+                g = collectWaypointCenter(reenterGroundPath.getNode(idx));
+            }
+            if (g == null) {
+                Vec3 dc = dockCenter();
+                g = new Vec3(dc.x, getY(), dc.z);
+            }
+        } else if (st == SweeperState.PATROLLING) {
+            float yr = getYRot() * Mth.DEG_TO_RAD;
+            g = position().add(new Vec3(-Mth.sin(yr), 0.0D, Mth.cos(yr)).scale(2.25D));
+        } else if (st == SweeperState.EXITING_DOCK && isDockValid()) {
+            g = dockStagingCenter();
+        }
+        if (g == null) {
+            patrolWallHugGoalX = Double.NaN;
+            patrolWallHugGoalZ = Double.NaN;
+            patrolWallHugCardStepX = 0;
+            patrolWallHugCardStepZ = 0;
+            return;
+        }
+        patrolWallHugGoalX = g.x;
+        patrolWallHugGoalZ = g.z;
+        AABB box = getBoundingBox();
+        double midX = (box.minX + box.maxX) * 0.5D;
+        double midZ = (box.minZ + box.maxZ) * 0.5D;
+        double gdx = g.x - midX;
+        double gdz = g.z - midZ;
+        if (Math.abs(gdx) < 0.07D && Math.abs(gdz) < 0.07D) {
+            patrolWallHugCardStepX = 0;
+            patrolWallHugCardStepZ = 0;
+            return;
+        }
+        if (Math.abs(gdx) >= Math.abs(gdz)) {
+            patrolWallHugCardStepX = gdx >= 0.0D ? 1 : -1;
+            patrolWallHugCardStepZ = 0;
+        } else {
+            patrolWallHugCardStepX = 0;
+            patrolWallHugCardStepZ = gdz >= 0.0D ? 1 : -1;
+        }
+    }
+
+    /**
+     * 与目标一致的正四向上、距碰撞箱中心若干采样点处竖带均无实心阻挡，才允许结束贴墙（含进入阶段 3）。
+     */
+    /** 侧向探出后「再向前走」的累计位移阈值：约一个碰撞箱水平宽度（身位）。 */
+    private double wallHugOneBodyAdvanceThreshold() {
+        return Mth.clamp(getBbWidth() * 0.98D, 0.42D, 1.22D);
+    }
+
+    private boolean wallHugGoalCardinalClearForExit() {
+        int cdx = patrolWallHugCardStepX;
+        int cdz = patrolWallHugCardStepZ;
+        if (cdx == 0 && cdz == 0) {
+            return !Double.isNaN(patrolWallHugGoalX) && !Double.isNaN(patrolWallHugGoalZ);
+        }
+        AABB box = getBoundingBox();
+        double midX = (box.minX + box.maxX) * 0.5D;
+        double midZ = (box.minZ + box.maxZ) * 0.5D;
+        int y0 = Mth.floor(box.minY + 0.12D);
+        int y1 = Mth.ceil(box.maxY - 0.02D);
+        if (y1 < y0) {
+            y1 = y0;
+        }
+        double step = Math.max(0.52D, robotCollisionRadius() + 0.3D);
+        for (int s = 1; s <= 3; s++) {
+            double px = midX + (double) cdx * step * (double) s;
+            double pz = midZ + (double) cdz * step * (double) s;
+            if (wallColumnHasSolidXZ(px, pz, y0, y1)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private void endWallHugSlide(boolean earlyExitForRepath) {
+        patrolWallHugPhase = 0;
+        resetPatrolWallHugMarkers();
+        stopHorizontalMovement();
+        syncBodyHeadYaw();
+        if (earlyExitForRepath && !level().isClientSide() && getSweeperState() == SweeperState.COLLECTING) {
+            resetCollectGroundPath();
+        }
+    }
+
     /**
      * 巡逻/取物/出入库共用的局部绕行：沿障碍切向转向并微移，避免直线追目标被单格障碍永久卡住。
      */
     private boolean tickWallHugDetourActive() {
-        if (patrolWallHugPhase == 2) {
-            double nudgeBlocks = Math.max(WALL_HUG_NUDGE_BLOCKS, robotCollisionRadius() * 1.9D);
-            double dx = patrolWallNudgeX * nudgeBlocks;
-            double dz = patrolWallNudgeZ * nudgeBlocks;
-            AABB shifted = getBoundingBox().move(dx, 0.0D, dz);
-            if (level().noCollision(this, shifted)) {
-                setPos(getX() + dx, getY(), getZ() + dz);
+        if (patrolWallHugPhase >= 1 && patrolWallHugPhase <= 3) {
+            captureWallHugGoalSnapshot();
+        }
+        if (patrolWallHugPhase == 3) {
+            double cxx = patrolWallHugCardStepX;
+            double czz = patrolWallHugCardStepZ;
+            double lenC = Math.sqrt(cxx * cxx + czz * czz);
+            double fx;
+            double fz;
+            if (lenC > 1.0e-6D) {
+                fx = cxx / lenC;
+                fz = czz / lenC;
             } else {
-                double dxHalf = patrolWallNudgeX * (nudgeBlocks * 0.5D);
-                double dzHalf = patrolWallNudgeZ * (nudgeBlocks * 0.5D);
-                AABB shiftedHalf = getBoundingBox().move(dxHalf, 0.0D, dzHalf);
-                if (level().noCollision(this, shiftedHalf)) {
-                    setPos(getX() + dxHalf, getY(), getZ() + dzHalf);
+                double px = patrolWallPreHitFwdX;
+                double pz = patrolWallPreHitFwdZ;
+                if (Double.isNaN(px) || Double.isNaN(pz)) {
+                    endWallHugSlide(false);
+                    return true;
                 }
+                Vec3 snap =
+                        cardinalWallSlideUnit(
+                                patrolWallNudgeX, patrolWallNudgeZ, px, pz);
+                fx = snap.x;
+                fz = snap.z;
             }
-            patrolWallHugPhase = 0;
-            stopHorizontalMovement();
+            if (Double.isNaN(fx)
+                    || Double.isNaN(fz)
+                    || Double.isNaN(patrolWallCommitStartX)
+                    || Double.isNaN(patrolWallCommitStartZ)) {
+                endWallHugSlide(false);
+                return true;
+            }
+            double commitLook = Math.max(1.15D, wallHugOneBodyAdvanceThreshold() * 2.1D);
+            Vec3 commitGoal = position().add(new Vec3(fx, 0.0D, fz).scale(commitLook));
+            driveToward(commitGoal, Config.sweeperMoveSpeed());
+            patrolWallHugCommitTicks--;
+            double progressed =
+                    (getX() - patrolWallCommitStartX) * fx
+                            + (getZ() - patrolWallCommitStartZ) * fz;
+            boolean reachedDist = progressed >= wallHugOneBodyAdvanceThreshold();
+            boolean commitTimeout = patrolWallHugCommitTicks <= 0;
+            if (reachedDist || commitTimeout) {
+                endWallHugSlide(true);
+            }
+            syncBodyHeadYaw();
+            return true;
+        }
+        if (patrolWallHugPhase == 2) {
+            if (patrolWallHugSlideTicks <= 0) {
+                endWallHugSlide(false);
+                return true;
+            }
+            double nx = patrolWallNudgeX;
+            double nz = patrolWallNudgeZ;
+            double tx = -nz;
+            double tz = nx;
+            double fxw = -Mth.sin(getYRot() * Mth.DEG_TO_RAD);
+            double fzw = Mth.cos(getYRot() * Mth.DEG_TO_RAD);
+            if (fxw * tx + fzw * tz < 0.0D) {
+                tx = -tx;
+                tz = -tz;
+            }
+            double lenT = Math.sqrt(tx * tx + tz * tz);
+            if (lenT < 1.0e-9D) {
+                endWallHugSlide(false);
+                return true;
+            }
+            tx /= lenT;
+            tz /= lenT;
+            Vec3 cardSlide = cardinalWallSlideUnit(nx, nz, tx, tz);
+            double sx = cardSlide.x;
+            double sz = cardSlide.z;
+            Vec3 slideGoal = position().add(new Vec3(sx, 0.0D, sz).scale(2.25D));
+            patrolWallHugSlideAge++;
+            int ageForLog = patrolWallHugSlideAge;
+            int slideLog = patrolWallHugSlideTicks;
+            driveToward(slideGoal, Config.sweeperMoveSpeed());
+            WallHugSlideProbe slideProbe = evalWallHugSlideExit(sx, sz);
+            boolean minAge = patrolWallHugSlideAge >= WALL_HUG_SLIDE_MIN_TICKS_BEFORE_EXIT;
+            boolean goalCardinalClear = minAge && wallHugGoalCardinalClearForExit();
+            boolean flankAnyOpen = minAge && slideProbe.anyFlankOpen();
+            boolean atGoalCard = patrolWallHugCardStepX == 0 && patrolWallHugCardStepZ == 0;
+            boolean toCommitPhase3 =
+                    flankAnyOpen
+                            && goalCardinalClear
+                            && (patrolWallHugCardStepX != 0 || patrolWallHugCardStepZ != 0);
+            patrolWallHugSlideTicks--;
+            boolean timeout = patrolWallHugSlideTicks <= 0;
+            if (toCommitPhase3) {
+                patrolWallHugPhase = 3;
+                patrolWallHugCommitTicks = WALL_HUG_COMMIT_MAX_TICKS;
+                patrolWallCommitStartX = getX();
+                patrolWallCommitStartZ = getZ();
+                patrolWallHugSlideTicks = 0;
+            } else if (goalCardinalClear && atGoalCard) {
+                endWallHugSlide(true);
+            } else if (timeout) {
+                endWallHugSlide(false);
+            }
             syncBodyHeadYaw();
             return true;
         }
         if (!Float.isNaN(patrolSteerTargetYaw)) {
-            if (tickYawSteerWithPauses(patrolSteerTargetYaw)) {
+            boolean yawDone = tickYawSteerWithPauses(patrolSteerTargetYaw);
+            if (patrolWallHugPhase == 1 && yawSteerPhase == STEER_TURN) {
+                double nx1 = patrolWallNudgeX;
+                double nz1 = patrolWallNudgeZ;
+                double tx1 = -nz1;
+                double tz1 = nx1;
+                double hx = -Mth.sin(getYRot() * Mth.DEG_TO_RAD);
+                double hz = Mth.cos(getYRot() * Mth.DEG_TO_RAD);
+                if (hx * tx1 + hz * tz1 < 0.0D) {
+                    tx1 = -tx1;
+                    tz1 = -tz1;
+                }
+                double lenS = Math.sqrt(tx1 * tx1 + tz1 * tz1);
+                if (lenS > 1.0e-9D) {
+                    tx1 /= lenS;
+                    tz1 /= lenS;
+                    Vec3 cardNudge = cardinalWallSlideUnit(nx1, nz1, tx1, tz1);
+                    Vec3 nudgeGoal = position().add(cardNudge.scale(1.35D));
+                    driveToward(nudgeGoal, Config.sweeperMoveSpeed() * 0.48f);
+                }
+            }
+            if (yawDone) {
                 patrolSteerTargetYaw = Float.NaN;
                 if (patrolWallHugPhase == 1) {
                     patrolWallHugPhase = 2;
+                    patrolWallHugSlideTicks = WALL_HUG_SLIDE_MAX_TICKS;
+                    patrolWallHugSlideAge = 0;
                 }
             }
             return true;
@@ -816,8 +1273,20 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
         }
         nx /= len;
         nz /= len;
+        resetPatrolWallHugMarkers();
         patrolWallNudgeX = nx;
         patrolWallNudgeZ = nz;
+        float yHit = getYRot() * Mth.DEG_TO_RAD;
+        patrolWallPreHitFwdX = -Mth.sin(yHit);
+        patrolWallPreHitFwdZ = Mth.cos(yHit);
+        double lenH =
+                Math.sqrt(
+                        patrolWallPreHitFwdX * patrolWallPreHitFwdX
+                                + patrolWallPreHitFwdZ * patrolWallPreHitFwdZ);
+        if (lenH > 1.0e-6D) {
+            patrolWallPreHitFwdX /= lenH;
+            patrolWallPreHitFwdZ /= lenH;
+        }
         float alongYaw = computeWallHugYawAlongWall(nx, nz);
         patrolWallHugPhase = 1;
         patrolSteerTargetYaw = alongYaw;
@@ -826,6 +1295,7 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
 
     private void applyStuckFallbackTurn() {
         patrolWallHugPhase = 0;
+        resetPatrolWallHugMarkers();
         patrolBaseYaw = Mth.wrapDegrees(getYRot() + 90f);
         patrolSteerTargetYaw = patrolBaseYaw;
     }
@@ -834,7 +1304,37 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
     private void handleGoalSeekCollision() {
         BlockPos hit = findLowestBlockingInForwardColumn();
         stopHorizontalMovement();
+        // 多段格点路径已在 SweeperGroundNavigation 按几何可走性求出；此处再入贴墙绕行会与 driveToward 跟点抢控制权。
+        if (getSweeperState() == SweeperState.COLLECTING
+                && collectGroundPath != null
+                && collectGroundPath.getNodeCount() > 2) {
+            long gt = level().getGameTime();
+            if (hit != null
+                    && isHeadOnWallRoughlyAhead(hit)
+                    && gt - lastCollectChordBypassPathResetGameTime >= 25L) {
+                lastCollectChordBypassPathResetGameTime = gt;
+                resetCollectGroundPath();
+            }
+            resetDriveSteer();
+            resetYawSteer();
+            return;
+        }
         if (tryPlanarBypassFromHit(hit)) {
+            if (getSweeperState() == SweeperState.COLLECTING
+                    && collectGroundPath != null
+                    && collectGroundPath.getNodeCount() == 2) {
+                long gt = level().getGameTime();
+                if (gt - lastCollectChordBypassPathResetGameTime >= 25L) {
+                    lastCollectChordBypassPathResetGameTime = gt;
+                    resetCollectGroundPath();
+                }
+            }
+            resetDriveSteer();
+            resetYawSteer();
+            return;
+        }
+        // 侧向擦墙时 horizontalCollision 仍常为真；盲 +90° 会把已顺墙的机头再次扭向墙面，形成「右转—顶墙」死循环。
+        if (hit != null && !isHeadOnWallRoughlyAhead(hit)) {
             resetDriveSteer();
             resetYawSteer();
             return;
@@ -852,12 +1352,56 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
 
     /**
      * 仿照原版“接触即拾取”：当机器人与掉落物碰撞箱相交时可吸入。
+     * <p>
+     * 掉落物常在方块内亚格偏移，严格 {@link AABB#intersects(AABB)} 会出现“贴脸不吸”；在相邻一格且层高一致时，
+     * 允许略膨胀的吸入盒与掉落物相交（仍避免远距离隔墙误判）。
      */
     private boolean canVacuumItemNow(ItemEntity item) {
         if (!item.isAlive() || item.getItem().isEmpty()) {
             return false;
         }
-        return this.getBoundingBox().intersects(item.getBoundingBox());
+        AABB robot = getBoundingBox();
+        AABB drop = item.getBoundingBox();
+        if (robot.intersects(drop)) {
+            return true;
+        }
+        BlockPos bp = blockPosition();
+        BlockPos ip = item.blockPosition();
+        if (Mth.abs(bp.getY() - ip.getY()) > 1) {
+            return false;
+        }
+        if (Math.abs(bp.getX() - ip.getX()) > 1 || Math.abs(bp.getZ() - ip.getZ()) > 1) {
+            return false;
+        }
+        double marginXz = 0.46D;
+        double marginY = 0.32D;
+        return robot.inflate(marginXz, marginY, marginXz).intersects(drop);
+    }
+
+    /**
+     * 与 {@link #canVacuumItemNow} 互补：末段踱步时 AABB 仍可能略不相交；在吸入邻域内且水平足够近、竖直差距不大时允许收取，
+     * 避免同格亚格偏移下无限 B10/B12 拉扯。
+     */
+    private boolean canVacuumCollectGameplayTight(ItemEntity item) {
+        if (!item.isAlive() || item.getItem().isEmpty()) {
+            return false;
+        }
+        if (!canAcceptItemInCache(item.getItem())) {
+            return false;
+        }
+        BlockPos bp = blockPosition();
+        BlockPos ip = item.blockPosition();
+        if (Mth.abs(bp.getY() - ip.getY()) > 1) {
+            return false;
+        }
+        if (Math.abs(bp.getX() - ip.getX()) > 1 || Math.abs(bp.getZ() - ip.getZ()) > 1) {
+            return false;
+        }
+        if (xzDistSqrTo(item) > 0.4225D) {
+            return false;
+        }
+        double dy = getY() - item.getY();
+        return dy * dy < 1.0D;
     }
 
     /** 路过同格时发现可吸入掉落物即可收取（不靠机头朝向）；停泊在仓内不处理。 */
@@ -1016,18 +1560,33 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
         return arrive * arrive;
     }
 
+    /**
+     * 中间路径点到达阈值（比末段略严），避免单次 {@link #advanceCollectPathCursor} 内连跳多格，否则机体会「直奔末点」、
+     * 表现为不能沿折线避障。
+     */
+    private double intermediateWaypointArriveSqr() {
+        double r = robotCollisionRadius();
+        double arrive = Math.max(0.22D, r + 0.08D);
+        return arrive * arrive;
+    }
+
+    /** 每 tick 最多向下一节点推进一格；末段前一点起用末档到达容差。 */
     private void advanceCollectPathCursor() {
         if (collectGroundPath == null) {
             return;
         }
-        double arriveSqr = waypointArriveSqr();
-        while (collectPathCursor < collectGroundPath.getNodeCount() - 1) {
-            Vec3 w = collectWaypointCenter(collectGroundPath.getNode(collectPathCursor));
-            if (xzDistSqrTo(w) < arriveSqr) {
-                collectPathCursor++;
-            } else {
-                break;
-            }
+        Path path = collectGroundPath;
+        int last = path.getNodeCount() - 1;
+        if (collectPathCursor >= last) {
+            return;
+        }
+        double arriveSqr =
+                collectPathCursor + 1 >= last
+                        ? waypointArriveSqr()
+                        : intermediateWaypointArriveSqr();
+        Vec3 w = collectGroundPathWaypoint(path, collectPathCursor);
+        if (xzDistSqrTo(w) < arriveSqr) {
+            collectPathCursor++;
         }
     }
 
@@ -1045,7 +1604,7 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
             ItemEntity target, BlockPos goal, int baseAccuracy) {
         PathNavigation navigation = getNavigation();
         if (navigation instanceof SweeperGroundNavigation sweeperNavigation) {
-            // 与格点寻路、末档方块中心一致：用目标格几何中心作为求路输入（避免 entity position 亚格点抖动）。
+            // 原版 GroundPathNavigation 以 BlockPos 求路；用目标格几何中心再 floor 与直接传 goal 等价，保留以稳定调用约定。
             return sweeperNavigation.createPathToExactPos(Vec3.atCenterOf(goal));
         }
         // 兜底：非扫地机导航器时仍走原版 BlockPos 入口。
@@ -1081,14 +1640,29 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
                 return true;
             }
         } else if (gameTime - collectPathRecomputeGameTime >= COLLECT_PATH_RECOMPUTE_INTERVAL) {
-            // 周期到期：若目标格未变且仍有有效缓存，则不再整段重算，避免两节点直线路径「起点节点」随位移刷新导致约每秒一次的中途拐向。
-            if (collectGroundPath.getNodeCount() > 0) {
+            // 周期到期：多拐点路径可只刷新时间避免每格重算抖动；弦线两节点必须整段重算，否则永远笔直顶障。
+            if (collectGroundPath.getNodeCount() > 2) {
                 collectPathRecomputeGameTime = gameTime;
                 return true;
             }
-            // 否则继续向下完整重算
+            // 两节点弦线或空路径：继续向下完整重算
         } else {
             return collectGroundPath.getNodeCount() > 0;
+        }
+
+        // 已贴近且仍锁同一物品格（XZ）：可走脚底枚举会换 footGeom，整段重算会把 cursor 置 0，B9 拉回途径点与末段追实体冲突。
+        if (collectGroundPath != null
+                && collectPathGoalBlock != null
+                && collectPathGoalBlock.getX() == goal.getX()
+                && collectPathGoalBlock.getZ() == goal.getZ()
+                && Mth.abs(collectPathGoalBlock.getY() - goal.getY()) <= 1
+                && xzDistSqrTo(target) < COLLECT_NEAR_ITEM_SUPPRESS_PATH_REBUILD_SQR) {
+            int last = collectGroundPath.getNodeCount() - 1;
+            if (last >= 0 && collectPathCursor >= last) {
+                collectPathGoalBlock = goal.immutable();
+                collectPathRecomputeGameTime = gameTime;
+                return true;
+            }
         }
 
         collectPathRecomputeGameTime = gameTime;
@@ -1123,14 +1697,17 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
         if (reenterGroundPath == null) {
             return;
         }
-        double arriveSqr = waypointArriveSqr();
-        while (reenterPathCursor < reenterGroundPath.getNodeCount() - 1) {
-            Vec3 w = collectWaypointCenter(reenterGroundPath.getNode(reenterPathCursor));
-            if (xzDistSqrTo(w) < arriveSqr) {
-                reenterPathCursor++;
-            } else {
-                break;
-            }
+        int last = reenterGroundPath.getNodeCount() - 1;
+        if (reenterPathCursor >= last) {
+            return;
+        }
+        double arriveSqr =
+                reenterPathCursor + 1 >= last
+                        ? waypointArriveSqr()
+                        : intermediateWaypointArriveSqr();
+        Vec3 w = collectWaypointCenter(reenterGroundPath.getNode(reenterPathCursor));
+        if (xzDistSqrTo(w) < arriveSqr) {
+            reenterPathCursor++;
         }
     }
 
@@ -1423,36 +2000,36 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
             }
             return;
         }
-        Vec3 collectLastCenter = collectGroundPathWaypoint(path, collectLast);
-        // B10：已到最后节点阶段但未贴近末档航点（末档为路径终点方块中心），先收敛。
-        if (xzDistSqrTo(collectLastCenter) > waypointArriveSqr()) {
-            driveToward(collectLastCenter, Config.sweeperMoveSpeed());
+        Vec3 itemXzSameY = new Vec3(target.getX(), getY(), target.getZ());
+        double distItemXzSqr = xzDistSqrTo(itemXzSameY);
+        // 末段一律朝当前掉落物实体 XZ 收敛（勿用路径冻结末档中心，否则与 driveToward 方块吸附叠加后仍会两点拉扯）。
+        Vec3 collectEndXZ = itemXzSameY;
+        // B10：已到最后节点阶段但未贴近末档收敛点（亚格目标：禁止 XZ 吸附到方块中心）。
+        if (xzDistSqrTo(collectEndXZ) > waypointArriveSqr()) {
+            driveToward(collectEndXZ, Config.sweeperMoveSpeed(), false);
             if (horizontalCollision) {
                 handleGoalSeekCollision();
             }
             return;
         }
 
-        // B11：末档航点（精确坐标意义下）已达成；能吸则收。
-        if (canVacuumItemNow(target)) {
+        // B11：末档已达成；能吸则收。
+        if (canVacuumItemNow(target) || canVacuumCollectGameplayTight(target)) {
             cacheFrom(target);
             targetItemUuid = null;
             resetCollectGroundPath();
             setSweeperState(SweeperState.PATROLLING);
             return;
         }
-        // B12：已到路径终点仍吸不到：先朝掉落物所在方块中心 XZ 短驱（与寻路末档一致，避免亚格点顶墙）。
-        // 若末段仍失败，再清路径重算，兼顾贴近能力与避免长时间顶死。
-        Vec3 targetCellCenter = Vec3.atCenterOf(target.blockPosition());
-        if (xzDistSqrTo(new Vec3(targetCellCenter.x, getY(), targetCellCenter.z)) > 0.01D) {
-            driveToward(new Vec3(targetCellCenter.x, getY(), targetCellCenter.z), Config.sweeperMoveSpeed());
+        // B12：仍吸不到则朝掉落物实体 XZ 短驱；已贴齐 XZ 时勿清路径（避免每 tick 重算路径抖动），交给卡住检测或下 tick 再判吸。
+        if (distItemXzSqr > 0.01D) {
+            driveToward(itemXzSameY, Config.sweeperMoveSpeed(), false);
             if (horizontalCollision) {
                 handleGoalSeekCollision();
             }
             return;
         }
         stopHorizontalMovement();
-        resetCollectGroundPath();
     }
 
     private void tickPatrolling() {
@@ -1490,6 +2067,7 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
                 lastPatrolRandomTurnGameTime = gameTime;
                 patrolBaseYaw = this.random.nextFloat() * 360f;
                 patrolWallHugPhase = 0;
+                resetPatrolWallHugMarkers();
                 patrolSteerTargetYaw = patrolBaseYaw;
                 stopHorizontalMovement();
                 return;
@@ -1533,11 +2111,17 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
      * 仅沿机头方向移动：水平速度与 {@link #getYRot()} 共线；机头始终朝向目标再前进（与运动方向一致）。
      * 转向前/后各停顿 {@link Config#sweeperTurnPauseTicks()} tick（可配置为 0 关闭）。
      * <p>
-     * 入口会将 {@code goal} 的 XZ 吸附到 {@link #xzSnapGoalToBlockCenter}，保证巡逻、回场、收集等所有本机驱动目标
-     * 均对准方块水平中心。
+     * 默认将 {@code goal} 的 XZ 吸附到 {@link #xzSnapGoalToBlockCenter}，保证巡逻、回场、格点路径节点等对准方块水平中心。
+     * 收集末段贴近掉落物亚格坐标时应使用 {@code snapXzToBlockCenter == false}，否则目标会被吸到方块中心，与实体位置不一致易踱步。
      */
     private void driveToward(Vec3 goal, double speed) {
-        goal = xzSnapGoalToBlockCenter(goal);
+        driveToward(goal, speed, true);
+    }
+
+    private void driveToward(Vec3 goal, double speed, boolean snapXzToBlockCenter) {
+        if (snapXzToBlockCenter) {
+            goal = xzSnapGoalToBlockCenter(goal);
+        }
         syncDriveGoal(goal);
         Vec3 pos = position();
         double dx = goal.x - pos.x;
@@ -1548,6 +2132,16 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
         }
         float targetYaw =
                 Mth.wrapDegrees((float) (Mth.atan2(-dx, dz) * (180.0 / Math.PI)));
+        double distSq = dx * dx + dz * dz;
+        if (getSweeperState() == SweeperState.COLLECTING
+                && !Float.isNaN(driveTowardLastStableTargetYaw)
+                && distSq < 0.49D) {
+            float sudden = Mth.abs(Mth.wrapDegrees(targetYaw - driveTowardLastStableTargetYaw));
+            if (sudden > 100f) {
+                targetYaw = driveTowardLastStableTargetYaw;
+            }
+        }
+        driveTowardLastStableTargetYaw = targetYaw;
         float current = getYRot();
         float alignDiff = Mth.wrapDegrees(targetYaw - current);
         float thresh = Config.sweeperTurnThresholdDegrees();
@@ -2161,6 +2755,7 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
             resetDriveSteer();
             patrolSteerTargetYaw = Float.NaN;
             patrolWallHugPhase = 0;
+            resetPatrolWallHugMarkers();
             exitDockPostYaw = Float.NaN;
         }
         if (prev == SweeperState.RETURNING && state != SweeperState.RETURNING) {
@@ -2176,6 +2771,7 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
             resetYawSteer();
             resetDriveSteer();
             patrolWallHugPhase = 0;
+            resetPatrolWallHugMarkers();
             exitDockPostYaw = Float.NaN;
             resetCollectGroundPath();
             resetReenterGroundPath();
@@ -2188,12 +2784,14 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
             resetYawSteer();
             resetDriveSteer();
             patrolWallHugPhase = 0;
+            resetPatrolWallHugMarkers();
             exitDockPostYaw = Float.NaN;
         }
         if (state == SweeperState.PATROLLING && prev != SweeperState.PATROLLING) {
             resetDriveSteer();
             patrolSteerTargetYaw = Float.NaN;
             patrolWallHugPhase = 0;
+            resetPatrolWallHugMarkers();
             exitDockPostYaw = Float.NaN;
         }
         if (state == SweeperState.REENTERING_PATROL && prev != SweeperState.REENTERING_PATROL) {
@@ -2204,6 +2802,7 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
             resetYawSteer();
             resetDriveSteer();
             patrolWallHugPhase = 0;
+            resetPatrolWallHugMarkers();
             exitDockPostYaw = Float.NaN;
             patrolSteerTargetYaw = Float.NaN;
         }

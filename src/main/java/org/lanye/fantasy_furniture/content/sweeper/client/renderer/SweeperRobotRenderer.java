@@ -3,11 +3,9 @@ package org.lanye.fantasy_furniture.content.sweeper.client.renderer;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.core.Direction;
-import net.minecraft.util.Mth;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.joml.Quaternionf;
-import org.joml.Vector3f;
 import org.lanye.fantasy_furniture.content.sweeper.client.model.SweeperRobotGeoModel;
 import org.lanye.fantasy_furniture.content.sweeper.entity.SweeperRobotEntity;
 import software.bernie.geckolib.renderer.GeoEntityRenderer;
@@ -33,32 +31,8 @@ public final class SweeperRobotRenderer extends GeoEntityRenderer<SweeperRobotEn
         if (entity.isWallClimbing()) {
             Direction wall = entity.getWallClimbFacing();
             if (wall != null && wall.getAxis().isHorizontal()) {
-                // 以墙面法线为基准先得到世界切向轴，再按当前 yaw 逆变换到本地轴。
-                float ax = -wall.getStepZ();
-                float az = wall.getStepX();
-                float yR = yaw * Mth.DEG_TO_RAD;
-                float lx = ax * Mth.cos(yR) + az * Mth.sin(yR);
-                float lz = -ax * Mth.sin(yR) + az * Mth.cos(yR);
-                float len = Mth.sqrt(lx * lx + lz * lz);
-                if (len > 1.0e-4f) {
-                    lx /= len;
-                    lz /= len;
-                    Quaternionf qPlus = new Quaternionf().rotateAxis(Mth.PI / 2.0f, lx, 0.0f, lz);
-                    Quaternionf qMinus = new Quaternionf().rotateAxis(-Mth.PI / 2.0f, lx, 0.0f, lz);
-                    float cosY = Mth.cos(yR);
-                    float sinY = Mth.sin(yR);
-                    Vector3f downLocalPlus = new Vector3f(0.0f, -1.0f, 0.0f).rotate(qPlus);
-                    float downPlusWorldX = downLocalPlus.x * cosY - downLocalPlus.z * sinY;
-                    float downPlusWorldZ = downLocalPlus.x * sinY + downLocalPlus.z * cosY;
-                    float downDotPlus = downPlusWorldX * wall.getStepX() + downPlusWorldZ * wall.getStepZ();
-                    Vector3f downLocalMinus = new Vector3f(0.0f, -1.0f, 0.0f).rotate(qMinus);
-                    float downMinusWorldX = downLocalMinus.x * cosY - downLocalMinus.z * sinY;
-                    float downMinusWorldZ = downLocalMinus.x * sinY + downLocalMinus.z * cosY;
-                    float downDotMinus = downMinusWorldX * wall.getStepX() + downMinusWorldZ * wall.getStepZ();
-                    boolean usePlus = downDotPlus >= downDotMinus;
-                    Quaternionf qTilt = usePlus ? qPlus : qMinus;
-                    poseStack.mulPose(qTilt);
-                }
+                Quaternionf qTilt = SweeperRobotEntity.wallClimbTiltQuaternion(wall, yaw);
+                poseStack.mulPose(qTilt);
             }
         }
     }

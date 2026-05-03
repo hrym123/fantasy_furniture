@@ -17,8 +17,10 @@ public final class InternalPathTuning {
         public static final double COLLISION_RADIUS = 0.0D;
 
         /**
-         * 在基础半径上叠加的寻路补偿半径，用于减少墙角卡住。
+         * 在基础半径上叠加的水平半径（方块）。**0** 表示不在 {@link net.minecraft.world.entity.Entity#getBbWidth()} 半宽外再扩一圈；
+         * 收集格点寻路与 {@link org.lanye.fantasy_furniture.content.sweeper.entity.SweeperRobotEntity#robotCollisionRadius} 与此一致，避免「强制离障」体感。
+         * 若需略松墙角可改为小正数（如 0.02～0.06）。
          */
-        public static final double PATH_RADIUS_BONUS = 0.12D;
+        public static final double PATH_RADIUS_BONUS = 0.0D;
     }
 }
