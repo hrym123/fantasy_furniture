@@ -333,6 +333,7 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
     /**
      * 与 {@link org.lanye.fantasy_furniture.content.sweeper.client.renderer.SweeperRobotRenderer} 相同的贴墙 ±90° 四元数（绕水平轴）。
      * 渲染端请传入 {@link #getVisualYaw(float)}，逻辑尺寸请传 {@link #getYRot()}。
+     * 贴墙模型在俯仰前需做法向平移 {@link #wallClimbRenderNormalShift(EntityType)}、竖直平移 {@link #wallClimbRenderVerticalShift(EntityType)}，与 {@link #makeBoundingBox()} 一致。
      */
     public static Quaternionf wallClimbTiltQuaternion(Direction wall, float yawDegrees) {
         Quaternionf identity = new Quaternionf();
@@ -366,45 +367,25 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
     }
 
     /**
-     * 将站立时 {@link EntityDimensions} 对应的轴对齐长方体（正方形 XZ、高 Y）绕竖直中心旋转与 {@link #wallClimbTiltQuaternion} 相同的角度，
-     * 再取世界轴对齐外包络；水平尺寸取 X/Z 两向跨度较大者（与原版实体「单 width」约束一致）。
+     * 贴墙渲染用：沿 {@code DATA_WALL_FACE} 反方向（从实体指向墙一侧）平移的距离，使旋转后模型与 {@link #makeBoundingBox()}
+     * 在薄向上的半宽 {@code a/2} 对齐。原版单 {@code width} 下视觉包络曾按长边 {@code b} 占薄向；各向异性盒薄向为 {@code a}，差值为 {@code (b-a)/2}。
      */
-    private static EntityDimensions wallClimbContainmentDimensions(
-            EntityDimensions base, float yawDegrees, Direction wall) {
-        float w2 = base.width * 0.5F;
-        float h = base.height;
-        float cy = h * 0.5F;
-        Quaternionf q = wallClimbTiltQuaternion(wall, yawDegrees);
-        double minX = Double.POSITIVE_INFINITY;
-        double maxX = Double.NEGATIVE_INFINITY;
-        double minY = Double.POSITIVE_INFINITY;
-        double maxY = Double.NEGATIVE_INFINITY;
-        double minZ = Double.POSITIVE_INFINITY;
-        double maxZ = Double.NEGATIVE_INFINITY;
-        for (int i = 0; i < 2; i++) {
-            float x = i == 0 ? -w2 : w2;
-            for (int j = 0; j < 2; j++) {
-                float y = j == 0 ? 0.0F : h;
-                for (int k = 0; k < 2; k++) {
-                    float z = k == 0 ? -w2 : w2;
-                    Vector3f p = new Vector3f(x, y, z);
-                    p.sub(0.0f, cy, 0.0f);
-                    p.rotate(q);
-                    p.add(0.0f, cy, 0.0f);
-                    minX = Math.min(minX, p.x);
-                    maxX = Math.max(maxX, p.x);
-                    minY = Math.min(minY, p.y);
-                    maxY = Math.max(maxY, p.y);
-                    minZ = Math.min(minZ, p.z);
-                    maxZ = Math.max(maxZ, p.z);
-                }
-            }
-        }
-        float spanX = (float) (maxX - minX);
-        float spanY = (float) (maxY - minY);
-        float spanZ = (float) (maxZ - minZ);
-        float xz = Math.max(spanX, spanZ);
-        return EntityDimensions.scalable(xz, spanY);
+    public static double wallClimbRenderNormalShift(EntityType<?> type) {
+        EntityDimensions d = type.getDimensions();
+        float a = Math.min(d.width, d.height);
+        float b = Math.max(d.width, d.height);
+        return 0.5D * (double) (b - a);
+    }
+
+    /**
+     * 贴墙渲染用：俯仰前沿世界 {@code +Y} 平移，使模型与 {@link #makeBoundingBox()} 竖直高度 {@code b} 对齐。
+     * 注册 {@code height} 为站立竖直短边；贴墙竖直为 {@code b=max(width,height)}。取 {@code (b-height)*0.8}（在 0.75 基础上略上移）。
+     */
+    public static double wallClimbRenderVerticalShift(EntityType<?> type) {
+        EntityDimensions d = type.getDimensions();
+        float b = Math.max(d.width, d.height);
+        float hStand = d.height;
+        return 0.8D * (double) (b - hStand);
     }
 
     /**
@@ -416,8 +397,8 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
     }
 
     /**
-     * 贴墙时碰撞箱为「与 {@link SweeperRobotRenderer} 相同绕水平轴 ±90°」后，对站立轴对齐长方体的世界轴对齐外包络（受原版单
-     * {@code width} 正方形 XZ 约束时取 X/Z 跨度较大者），避免仅靠交换宽高导致与模型投影差异过大。
+     * 贴墙时逻辑尺寸：竖直取长边 {@code b}、水平「外包络」用短边 {@code a} 作为 {@link EntityDimensions#width}（供粒子、
+     * 部分原版逻辑等仍按单 width 读取时尽量偏小）。实际碰撞盒 X/Z 各向异性见 {@link #makeBoundingBox()}。
      */
     @Override
     public EntityDimensions getDimensions(Pose pose) {
@@ -428,11 +409,39 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
         if (!isWallClimbing()) {
             return base;
         }
-        Direction wall = getWallClimbFacing();
-        if (wall != null && wall.getAxis().isHorizontal()) {
-            return wallClimbContainmentDimensions(base, getYRot(), wall);
+        float a = Math.min(base.width, base.height);
+        float b = Math.max(base.width, base.height);
+        return EntityDimensions.scalable(a, b);
+    }
+
+    /**
+     * 水平贴墙时：垂直于墙面的一轴用短边 {@code a}、沿墙方向用长边 {@code b}；竖直高度为 {@code b}。
+     * 原版 {@link EntityDimensions#makeBoundingBox} 用同一 {@code width} 作为 X、Z 半宽，故必须在此拆分。
+     */
+    @Override
+    protected AABB makeBoundingBox() {
+        if (isWallClimbing()) {
+            Direction wall = getWallClimbFacing();
+            if (wall.getAxis().isHorizontal()) {
+                EntityDimensions base = super.getDimensions(getPose());
+                float a = Math.min(base.width, base.height);
+                float b = Math.max(base.width, base.height);
+                double halfX;
+                double halfZ;
+                if (wall.getAxis() == Direction.Axis.Z) {
+                    halfX = b * 0.5D;
+                    halfZ = a * 0.5D;
+                } else {
+                    halfX = a * 0.5D;
+                    halfZ = b * 0.5D;
+                }
+                double x = this.getX();
+                double y = this.getY();
+                double z = this.getZ();
+                return new AABB(x - halfX, y, z - halfZ, x + halfX, y + b, z + halfZ);
+            }
         }
-        return EntityDimensions.scalable(base.height, base.width);
+        return super.makeBoundingBox();
     }
 
     @Override
