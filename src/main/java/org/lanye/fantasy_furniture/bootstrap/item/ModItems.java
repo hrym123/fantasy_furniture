@@ -9,8 +9,8 @@ import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
 import org.lanye.fantasy_furniture.FantasyFurniture;
 import org.lanye.fantasy_furniture.content.furniture.common.item.ArcaneWandItem;
-import org.lanye.fantasy_furniture.content.furniture.common.item.DecorativeHelmetItem;
 import org.lanye.reverie_core.geolib.GeolibItemAssets;
+import org.lanye.reverie_core.item.DecorativeHelmetRegistration;
 
 /**
  * 无对应方块的独立物品注册。
@@ -41,32 +41,30 @@ public final class ModItems {
 
     /** 蓝色小礼帽（Geo atlas 与物品图标分离）。 */
     public static final RegistryObject<Item> DECORATIVE_HELMET_BLUE_TOP_HAT =
-            registerDecorativeHelmet(
-                    "decorative_helmet_blue_top_hat", "decorative_helmet_blue_top_hat_atlas");
+            DecorativeHelmetRegistration.register(
+                    ITEMS,
+                    new Item.Properties().stacksTo(1),
+                    FantasyFurniture.MODID,
+                    "decorative_helmet_blue_top_hat",
+                    "decorative_helmet_blue_top_hat_atlas");
 
     /** 粉色小礼帽。 */
     public static final RegistryObject<Item> DECORATIVE_HELMET_PINK_TOP_HAT =
-            registerDecorativeHelmet("decorative_helmet_pink_top_hat", "decorative_helmet_pink_top_hat");
+            DecorativeHelmetRegistration.register(
+                    ITEMS,
+                    new Item.Properties().stacksTo(1),
+                    FantasyFurniture.MODID,
+                    "decorative_helmet_pink_top_hat",
+                    "decorative_helmet_pink_top_hat");
 
     /** 垂耳兔头饰。 */
     public static final RegistryObject<Item> DECORATIVE_HELMET_LOP_EARED_RABBIT =
-            registerDecorativeHelmet(
-                    "decorative_helmet_lop_eared_rabbit", "decorative_helmet_lop_eared_rabbit");
-
-    /**
-     * @param registryId 注册名，与 geo/animation 资源 basename 一致。
-     * @param atlasTextureBasename {@code textures/item/&lt;basename&gt;.png}，供 Geo 采样（与物品栏 {@code *_icon} 分离）。
-     */
-    private static RegistryObject<Item> registerDecorativeHelmet(
-            String registryId, String atlasTextureBasename) {
-        return ITEMS.register(
-                registryId,
-                () -> new DecorativeHelmetItem(
-                        new Item.Properties().stacksTo(1),
-                        GeolibItemAssets.itemGeoAtlas(
-                                FantasyFurniture.MODID, registryId, atlasTextureBasename),
-                        "animation." + registryId + ".idle"));
-    }
+            DecorativeHelmetRegistration.register(
+                    ITEMS,
+                    new Item.Properties().stacksTo(1),
+                    FantasyFurniture.MODID,
+                    "decorative_helmet_lop_eared_rabbit",
+                    "decorative_helmet_lop_eared_rabbit");
 
     public static void register(IEventBus modEventBus) {
         ITEMS.register(modEventBus);

@@ -1,6 +1,5 @@
 package org.lanye.fantasy_furniture.bootstrap.block;
 
-import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.material.MapColor;
 
@@ -12,10 +11,7 @@ public final class CeramicTileBlocks {
     private CeramicTileBlocks() {}
 
     static BlockBehaviour.Properties ceramicTileProperties(MapColor mapColor) {
-        return BlockBehaviour.Properties.of()
-                .mapColor(mapColor)
-                .strength(1.2f, 6.0f)
-                .sound(SoundType.DEEPSLATE_TILES);
+        return FurnitureBlockProperties.ceramicBody(mapColor);
     }
 
     private static SimpleBlockRegistration.SimpleBlockEntry tile(String id, MapColor mapColor) {

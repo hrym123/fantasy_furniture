@@ -5,9 +5,7 @@
   "compatibilityLevel": "JAVA_17",
   "refmap": "fantasy_furniture.refmap.json",
   "mixins": [],
-  "client": [
-    "CustomHeadLayerMixin"
-  ],
+  "client": [],
   "injectors": {
     "defaultRequire": 1
   }
