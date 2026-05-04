@@ -25,6 +25,7 @@ public final class Config {
     private static final ForgeConfigSpec.IntValue SWEEPER_TURN_PAUSE_TICKS;
     private static final ForgeConfigSpec.DoubleValue SWEEPER_DOCK_REVERSE_RANGE;
     private static final ForgeConfigSpec.BooleanValue SWEEPER_ENABLE_WALL_CLIMB;
+    private static final ForgeConfigSpec.IntValue SWEEPER_RETURN_DOCK_INSURANCE_TICKS;
 
     static {
         ForgeConfigSpec.Builder b = new ForgeConfigSpec.Builder();
@@ -83,6 +84,11 @@ public final class Config {
                 b.comment(
                                 "是否允许机器人在巡逻/收集状态启用蜘蛛式攀墙；false 表示仅地面移动。")
                         .define("enableWallClimb", true);
+        SWEEPER_RETURN_DOCK_INSURANCE_TICKS =
+                b.comment(
+                                "低血回仓（RETURNING_LOW_HEALTH）期间若持续无法入仓达到该 tick 数，则先在当前位置丢光背包物品再传送到机仓；"
+                                        + "防止卡死。20 tick = 1 秒。")
+                        .defineInRange("returnDockInsuranceTicks", 20 * 60, 20 * 10, 20 * 60 * 15);
         b.pop();
         SPEC = b.build();
     }
@@ -165,6 +171,13 @@ public final class Config {
     /** 是否允许扫地机器人启用蜘蛛式攀墙。 */
     public static boolean sweeperEnableWallClimb() {
         return SWEEPER_ENABLE_WALL_CLIMB.get();
+    }
+
+    /**
+     * 低血回仓卡死保险：累计该 tick 后丢背包并传送入仓。
+     */
+    public static int sweeperReturnDockInsuranceTicks() {
+        return SWEEPER_RETURN_DOCK_INSURANCE_TICKS.get();
     }
 
 }

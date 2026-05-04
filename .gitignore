@@ -118,6 +118,9 @@ run/
 runs/
 run-data/
 
+# 误生成于仓库根目录的 META-INF（模组资源在 src/main/resources/META-INF）
+/META-INF/
+
 # 勿忽略 Gradle Wrapper 的 jar（*.jar 规则会忽略 wrapper）
 !gradle/wrapper/gradle-wrapper.jar
 tools/__pycache__/
