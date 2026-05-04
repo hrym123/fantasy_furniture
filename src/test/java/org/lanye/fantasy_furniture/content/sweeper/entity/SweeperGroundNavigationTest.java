@@ -52,12 +52,12 @@ class SweeperGroundNavigationTest {
     }
 
     @Test
-    void collectGridNeighbors_hasTwentyTwoUniqueOffsets() {
+    void collectGridNeighbors_hasEighteenUniqueOffsets() {
         BlockPos origin = new BlockPos(10, 64, 10);
         List<BlockPos> n = SweeperGroundNavigation.collectGridNeighbors(origin);
-        assertEquals(22, n.size());
+        assertEquals(18, n.size());
         Set<BlockPos> uniq = new HashSet<>(n);
-        assertEquals(22, uniq.size(), "22 邻接应对应 22 个不同格点");
+        assertEquals(18, uniq.size(), "18 邻接应对应 18 个不同格点");
         assertTrue(n.contains(origin.north()));
         assertTrue(n.contains(origin.south()));
         assertTrue(n.contains(origin.east()));

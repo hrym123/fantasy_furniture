@@ -74,3 +74,11 @@ tasks.named('jar', Jar).configure {
 mixin {
     add sourceSets.main, 'fantasy_furniture.refmap.json'
 }
+
+// runClient 通过 project 依赖使用 reverie_core 的 JAR；若子工程未在本会话内 jar，会沿用旧包并出现缺 client 类（如 GeolibBlockItemModel）的 NoClassDefFoundError。
+// prepareRunClient 由 ForgeGradle 晚于 afterEvaluate 注册，故用 whenTaskAdded。
+tasks.whenTaskAdded { task ->
+    if (task.name == 'prepareRunClient') {
+        task.dependsOn(':reverie_core:jar')
+    }
+}

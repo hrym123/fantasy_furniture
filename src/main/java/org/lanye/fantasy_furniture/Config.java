@@ -20,7 +20,6 @@ public final class Config {
     private static final ForgeConfigSpec.DoubleValue SWEEPER_MOVE_SPEED;
     private static final ForgeConfigSpec.DoubleValue SWEEPER_TURN_SPEED_DEGREES;
     private static final ForgeConfigSpec.DoubleValue SWEEPER_TURN_THRESHOLD_DEGREES;
-    private static final ForgeConfigSpec.IntValue SWEEPER_PATROL_RANDOM_TURN_INTERVAL_TICKS;
     private static final ForgeConfigSpec.IntValue SWEEPER_TURN_PAUSE_TICKS;
     private static final ForgeConfigSpec.DoubleValue SWEEPER_DOCK_REVERSE_RANGE;
     private static final ForgeConfigSpec.BooleanValue SWEEPER_ENABLE_WALL_CLIMB;
@@ -66,10 +65,6 @@ public final class Config {
         SWEEPER_TURN_THRESHOLD_DEGREES =
                 b.comment("当目标朝向差值超过该阈值时，机器人会先原地转向再前进。")
                         .defineInRange("turnThresholdDegrees", 10.0D, 1.0D, 90.0D);
-        SWEEPER_PATROL_RANDOM_TURN_INTERVAL_TICKS =
-                b.comment(
-                                "巡逻时每隔该 tick 数随机换向（停下 -> 转向 -> 再移动）。100 tick = 5 秒；设为 0 关闭。")
-                        .defineInRange("patrolRandomTurnIntervalTicks", 20 * 5, 0, 20 * 120);
         SWEEPER_TURN_PAUSE_TICKS =
                 b.comment(
                                 "原地转向前后各停顿的 tick 数（20 TPS 下 10 tick 约 0.5 秒）；设为 0 不停顿。")
@@ -141,11 +136,6 @@ public final class Config {
     /** 超过该角差时先原地转向（度）。 */
     public static float sweeperTurnThresholdDegrees() {
         return SWEEPER_TURN_THRESHOLD_DEGREES.get().floatValue();
-    }
-
-    /** 巡逻时随机换向间隔（tick）；0 表示关闭。 */
-    public static int sweeperPatrolRandomTurnIntervalTicks() {
-        return SWEEPER_PATROL_RANDOM_TURN_INTERVAL_TICKS.get();
     }
 
     /** 回仓时允许倒车的半径（方块，距机仓中心）。 */

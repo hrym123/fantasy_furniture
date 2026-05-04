@@ -27,8 +27,10 @@ public final class SweeperGroundNavigation extends GroundPathNavigation {
 
     /**
      * 以目标坐标所在格调用原版 {@link #createPath(BlockPos, int)}（accuracy 固定为 0，与
-     * {@link SweeperRobotEntity#createCollectPathWithCollisionRadius} 当前用法一致），成功则返回
+     * {@link SweeperRobotEntity#createGroundPathToBlockCenter} 当前用法一致），成功则返回
      * {@link SweeperItemGroundPath}；原版无路时返回 {@code null}（不再使用自定义格点 A* 与弦线兜底）。
+     * <p>
+     * 实体侧凡「地面跟点到某一格」的新业务，应经 {@link SweeperRobotEntity} 中与之配套的统一跟随栈消费本方法结果，见该实体类级 JavaDoc「地面格点路径约定」。
      */
     public Path createPathToExactPos(Vec3 targetPos) {
         if (this.mob.getY() < (double) this.level.getMinBuildHeight()) {
@@ -99,7 +101,7 @@ public final class SweeperGroundNavigation extends GroundPathNavigation {
         return best;
     }
 
-    /** 历史收集格点邻接枚举；包级可见供单元测试。 */
+    /** 历史收集格点邻接枚举（当前 18 向）；包级可见供单元测试。 */
     static List<BlockPos> collectGridNeighbors(BlockPos p) {
         List<BlockPos> out = new ArrayList<>(22);
         out.add(p.north());
