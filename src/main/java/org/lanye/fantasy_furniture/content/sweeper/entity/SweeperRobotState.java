@@ -3,7 +3,7 @@ package org.lanye.fantasy_furniture.content.sweeper.entity;
 /**
  * 扫地机高层行为态（与同步数据、存档 {@code SweeperState} 整型 ordinal 对应）。
  *
- * <p>声明顺序与 §5.0.1 行为优先级（行为 1～7）对齐；{@link SweeperRobotEntity} 写入 {@code SweeperStateFormat} ≥ 2 时使用当前序数。
+ * <p>声明顺序与扫地机行为优先级（行为 1～7）一致；{@link SweeperRobotEntity} 写入 {@code SweeperStateFormat} ≥ 2 时使用当前序数。
  */
 public enum SweeperRobotState {
     /** 行为 1：在机仓内未满电稳态（充电）。 */
@@ -31,7 +31,7 @@ public enum SweeperRobotState {
     }
 
     /**
-     * 低电回仓或满背包卸货态；用于比收集/回巡逻区更高优先的状态排斥（与 §4.0.1 顺位一致）。
+     * 低电回仓或满背包卸货态；用于比收集/回巡逻区更高优先的状态排斥。
      */
     public boolean isReturningForInventoryPressure() {
         return this == RETURNING_LOW_HEALTH || this == RETURNING_CACHE_FULL;

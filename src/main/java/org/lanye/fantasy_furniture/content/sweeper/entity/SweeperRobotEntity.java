@@ -86,7 +86,7 @@ import software.bernie.geckolib.util.GeckoLibUtil;
  * <p><b>攀墙与业务状态分层</b>：蜘蛛式入攀由 {@link #tickWallClimbSpiderStyle()} 单独门控；回仓（阶段 0 驶向前一格）<strong>不因</strong>前一格地面路径
  * {@code canReach()==true} 禁止入攀，与收集态「有完整地面路径且无需高差辅助则不入攀」区分开。
  *
- * <p><b>寻路编排与子过程（设计文档 §5.0.2）</b>：对外行为只驱动「寻路」这一编排面；地面格点跟点、蜘蛛式攀墙、平面贴墙绕行在本类中拆为独立方法族，
+ * <p><b>寻路编排与子过程</b>：对外行为只驱动「寻路」这一编排面；地面格点跟点、蜘蛛式攀墙、平面贴墙绕行在本类中拆为独立方法族，
  * <strong>当前约束</strong>为仅由上述编排链（如 {@code updateStateAndAct} 与各态 tick）内调，不作为与行为平行的另一套顶层入口。
  */
 public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, MenuProvider, Container {
@@ -294,7 +294,7 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
     private double returningLastZ = Double.NaN;
 
     /**
-     * 满背包就近卸货：寻路至储存容器邻接站立格；与 returnStaging / collect / reenter 路径语义分离（设计书 §7.2.2）。
+     * 满背包就近卸货：寻路至储存容器邻接站立格；与 returnStaging / collect / reenter 路径缓存语义分离。
      */
     @Nullable private Path dumpApproachGroundPath;
 
@@ -311,11 +311,11 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
     private double dumpLastZ = Double.NaN;
 
     /**
-     * 收集中「无路先短驱撞墙再攀墙」替代主链激活时，禁止周期整段重算路径（§7.6）。
+     * 收集中「无路先短驱撞墙再攀墙」替代主链激活时，禁止按固定间隔做周期整段路径重算。
      */
     private boolean collectPathBypassShortDriveActive;
 
-    /** 回区求路失败、短驱朝机仓中心兜底时禁止周期整段重算（§7.6）。 */
+    /** 回区求路失败、短驱朝机仓中心兜底时禁止按固定间隔做周期整段路径重算。 */
     private boolean reenterShortDriveFallbackActive;
 
     private static final long COLLECT_PATH_RECOMPUTE_INTERVAL = 20L;
@@ -608,7 +608,7 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
         } else if (isDocked()
                 && getHealth() >= Config.sweeperReturnHealthThreshold()
                 && getHealth() >= getMaxHealth() - 1.0e-3f) {
-            // 行为「出仓」：在仓且电量已满，优先于满背包回仓链进入出库（与扫地机器人设计书 §5.2 一致）。
+            // 行为「出仓」：在仓且电量已满，优先于满背包回仓链进入出库。
             setSweeperState(SweeperRobotState.EXITING_DOCK);
         } else if (shouldReturnToUnloadBecauseCacheFull()) {
             setSweeperState(SweeperRobotState.RETURNING_CACHE_FULL);
@@ -772,7 +772,7 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
         if (tickWallHugDetourActive()) {
             return;
         }
-        // 设计书 §7.4：出仓不调用顶层格点寻路，短驱至前一格中心 + 碰撞兜底。
+        // 出仓：不调用顶层格点寻路，短驱至前一格中心并走碰撞兜底。
         getNavigation().stop();
         driveToward(staging, Config.sweeperMoveSpeed());
         if (horizontalCollision) {
@@ -1016,7 +1016,7 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
 
     private boolean shouldDeferWallFallForPatrolCollect() {
         SweeperRobotState st = getSweeperState();
-        // 设计：临界 1 血只限制拾取等技能，不因血量关闭「高处贴墙顺移/防坠落」；巡逻与收集在悬空贴墙时一致处理。
+        // 临界 1 血只限制拾取等技能，不因血量关闭「高处贴墙顺移/防坠落」；巡逻与收集在悬空贴墙时一致处理。
         return (st == SweeperRobotState.PATROLLING || st == SweeperRobotState.COLLECTING)
                 && isElevatedWithFallRisk();
     }
@@ -2479,7 +2479,7 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
     }
 
     /**
-     * 回巡逻区目标格：水平距机仓 ≤ {@link Config#sweeperReenterGoalRadiusBlocks()} 且 ≤ 巡逻半径，沿机仓→机器人方向收拢（设计书 §4.0.1 行为 6）。
+     * 回巡逻区目标格：水平距机仓 ≤ {@link Config#sweeperReenterGoalRadiusBlocks()} 且 ≤ 巡逻半径，沿机仓→机器人方向收拢。
      */
     private BlockPos computeReenterPatrolGoalBlock() {
         BlockPos dockRef = Objects.requireNonNull(dockPos);
@@ -3325,7 +3325,7 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
     }
 
     private void cacheFrom(ItemEntity itemEntity) {
-        // 设计书：临界 1 血仅禁用吸入，不影响寻路/贴墙/回仓位移。
+        // 临界 1 血：不写入缓存（吸入），寻路/贴墙/回仓位移仍照常。
         if (getHealth() <= 1.0f + 1.0e-3f) {
             return;
         }
@@ -3673,7 +3673,7 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
     }
 
     /**
-     * 机仓无效或方块被拆除：将缓存物品以掉落物形式释出，播放粒子与音效后移除实体（设计书 §5）；与「不死」语义不冲突。
+     * 机仓无效或方块被拆除：将缓存物品以掉落物形式释出，播放粒子与音效后移除实体（非 HP 归零死亡管线）；与「不死」语义不冲突。
      */
     public void removeBecauseDockInvalid() {
         if (level().isClientSide()) {

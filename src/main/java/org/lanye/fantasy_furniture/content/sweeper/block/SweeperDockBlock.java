@@ -40,8 +40,8 @@ public class SweeperDockBlock extends GeolibFacingEntityBlockWithFactory<Sweeper
     private static final VoxelShape SHAPE = box(0.0, 0.0, 0.0, 16.0, 8.5, 16.0);
 
     /**
-     * 水平发现绑定 {@link SweeperRobotEntity} 用的 AABB 膨胀量：与 {@link Config#sweeperPatrolRadius()} 对齐，且不低于
-     * 旧版固定 24，避免巡逻半径调大后补位/拆仓检测不到机体。
+     * 水平发现绑定 {@link SweeperRobotEntity} 用的 AABB 膨胀量：取 {@link Config#sweeperPatrolRadius()} 与 24 的较大值，
+     * 避免巡逻半径调大后补位/拆仓检测不到机体。
      */
     public static double boundRobotSearchInflateBlocks() {
         return Math.max(24.0, Config.sweeperPatrolRadius());

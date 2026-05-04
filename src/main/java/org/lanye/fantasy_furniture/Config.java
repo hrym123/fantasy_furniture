@@ -40,7 +40,7 @@ public final class Config {
                         .defineInRange("patrolRadius", 24, 8, 64);
         SWEEPER_REENTER_GOAL_RADIUS_BLOCKS =
                 b.comment(
-                                "回巡逻区时目标落点相对机仓的最大水平距离（方块），须不大于 patrolRadius；与《扫地机器人设计书》§4.0.1 行为 6、§6.4 一致。")
+                                "回巡逻区时目标落点相对机仓的最大水平距离（方块），须不大于 patrolRadius；运行时还会钳到不超过 patrolRadius。")
                         .defineInRange("reenterGoalRadiusBlocks", 10, 2, 64);
         SWEEPER_PICKUP_FORWARD_REACH =
                 b.comment(
@@ -51,7 +51,7 @@ public final class Config {
                                 "遗留 TOML 键：当前拾取逻辑严格按机器人 blockPosition() 同格判定，此值仅兼容旧配置，不参与计算。")
                         .defineInRange("pickupAsideReach", 0.35D, 0.08D, 0.8D);
         SWEEPER_RETURN_HEALTH_THRESHOLD =
-                b.comment("生命值严格低于该阈值时，机器人会优先返回机仓（与设计书 §5 `hp < returnHealthThreshold` 一致）。")
+                b.comment("生命值严格低于该阈值时，机器人会优先返回机仓（状态机用 `getHealth() < 阈值` 判定）。")
                         .defineInRange("returnHealthThreshold", 5, 2, 10);
         SWEEPER_HEAL_INTERVAL_TICKS =
                 b.comment("机器人停靠在机仓时的回血间隔（tick）。")
