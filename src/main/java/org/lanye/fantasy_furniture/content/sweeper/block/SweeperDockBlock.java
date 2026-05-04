@@ -22,6 +22,7 @@ import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.EntityCollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
+import org.lanye.fantasy_furniture.Config;
 import org.lanye.fantasy_furniture.content.sweeper.blockentity.SweeperDockBlockEntity;
 import org.lanye.fantasy_furniture.bootstrap.block.ModBlocks;
 import org.lanye.fantasy_furniture.content.sweeper.entity.SweeperRobotEntity;
@@ -29,11 +30,22 @@ import org.lanye.reverie_core.geolib.GeolibFacingEntityBlock;
 import org.lanye.reverie_core.geolib.GeolibFacingEntityBlockWithFactory;
 import org.lanye.fantasy_furniture.bootstrap.entity.ModEntities;
 
-/** 扫地机器人机仓：右键确保存在一个绑定到当前机仓的机器人。 */
+/**
+ * 扫地机器人机仓：放置后立刻尝试生成绑定机器人；服务端每 tick 若机仓仍有效但无绑定体则补生成（如虚空清除等）。
+ * 玩家右键仍可手动触发一次补生成（与放置/补位逻辑相同）。
+ */
 public class SweeperDockBlock extends GeolibFacingEntityBlockWithFactory<SweeperDockBlockEntity> {
 
     /** 由 tools/geo_collision_box.py 计算得出（sweeper_dock.geo.json）。 */
     private static final VoxelShape SHAPE = box(0.0, 0.0, 0.0, 16.0, 8.5, 16.0);
+
+    /**
+     * 水平发现绑定 {@link SweeperRobotEntity} 用的 AABB 膨胀量：与 {@link Config#sweeperPatrolRadius()} 对齐，且不低于
+     * 旧版固定 24，避免巡逻半径调大后补位/拆仓检测不到机体。
+     */
+    public static double boundRobotSearchInflateBlocks() {
+        return Math.max(24.0, Config.sweeperPatrolRadius());
+    }
 
     public SweeperDockBlock(BlockBehaviour.Properties properties) {
         super(properties, SweeperDockBlockEntity::new);
@@ -75,14 +87,27 @@ public class SweeperDockBlock extends GeolibFacingEntityBlockWithFactory<Sweeper
         if (!(level instanceof ServerLevel serverLevel)) {
             return InteractionResult.PASS;
         }
-        if (ensureRobot(serverLevel, pos, state)) {
+        if (trySpawnBoundRobotIfAbsent(serverLevel, pos, state)) {
             return InteractionResult.CONSUME;
         }
         return InteractionResult.PASS;
     }
 
-    private static boolean ensureRobot(ServerLevel level, BlockPos dockPos, BlockState state) {
-        AABB searchBox = new AABB(dockPos).inflate(24.0);
+    @Override
+    public void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean movedByPiston) {
+        super.onPlace(state, level, pos, oldState, movedByPiston);
+        if (!level.isClientSide && level instanceof ServerLevel serverLevel) {
+            trySpawnBoundRobotIfAbsent(serverLevel, pos, state);
+        }
+    }
+
+    /**
+     * 若当前世界尚无绑定到 {@code dockPos} 的 {@link SweeperRobotEntity}，则创建一只并加入世界。
+     *
+     * @return 若本调用前已存在绑定体，或成功加入新实体，则为 true；创建失败则为 false
+     */
+    public static boolean trySpawnBoundRobotIfAbsent(ServerLevel level, BlockPos dockPos, BlockState state) {
+        AABB searchBox = new AABB(dockPos).inflate(boundRobotSearchInflateBlocks());
         List<SweeperRobotEntity> robots =
                 level.getEntitiesOfClass(SweeperRobotEntity.class, searchBox, r -> dockPos.equals(r.getDockPos()));
         if (!robots.isEmpty()) {
@@ -104,12 +129,12 @@ public class SweeperDockBlock extends GeolibFacingEntityBlockWithFactory<Sweeper
     @Override
     public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean movedByPiston) {
         if (!state.is(newState.getBlock()) && !level.isClientSide && level instanceof ServerLevel serverLevel) {
-            AABB searchBox = new AABB(pos).inflate(24.0);
+            AABB searchBox = new AABB(pos).inflate(boundRobotSearchInflateBlocks());
             List<SweeperRobotEntity> robots =
                     serverLevel.getEntitiesOfClass(
                             SweeperRobotEntity.class, searchBox, robot -> pos.equals(robot.getDockPos()));
             for (SweeperRobotEntity robot : robots) {
-                robot.discard();
+                robot.removeBecauseDockInvalid();
             }
         }
         super.onRemove(state, level, pos, newState, movedByPiston);

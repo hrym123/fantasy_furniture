@@ -12,7 +12,7 @@ public enum SweeperRobotState {
     RETURNING_LOW_HEALTH,
     /** 行为 3：满电出仓。 */
     EXITING_DOCK,
-    /** 行为 4：满背包三段回仓（现行仍走机仓前一格入库链，与行为 2 路径相同、枚举区分成因）。 */
+    /** 行为 4：满背包就近卸货（寻路至储存邻格落点，不经三段入仓）。 */
     RETURNING_CACHE_FULL,
     /** 行为 5：收集。 */
     COLLECTING,
@@ -23,9 +23,24 @@ public enum SweeperRobotState {
     /** 行为 7：巡逻。 */
     PATROLLING;
 
-    /** 是否处于「驶回机仓」三段序列（行为 2 或 4）。 */
-    public boolean isDockingReturnSequence() {
+    /**
+     * 是否处于低电三段入仓（行为 2）；唯一使用 {@code dockApproachPhase} 0/1/2 的态。
+     */
+    public boolean isLowHealthDockApproach() {
+        return this == RETURNING_LOW_HEALTH;
+    }
+
+    /**
+     * 低电回仓或满背包卸货态；用于比收集/回巡逻区更高优先的状态排斥（与 §4.0.1 顺位一致）。
+     */
+    public boolean isReturningForInventoryPressure() {
         return this == RETURNING_LOW_HEALTH || this == RETURNING_CACHE_FULL;
+    }
+
+    /** @deprecated 请使用 {@link #isLowHealthDockApproach()} 或 {@link #isReturningForInventoryPressure()}。 */
+    @Deprecated
+    public boolean isDockingReturnSequence() {
+        return isLowHealthDockApproach();
     }
 
     public static SweeperRobotState byOrdinal(int ordinal) {

@@ -43,6 +43,10 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.level.block.entity.HopperBlockEntity;
 import net.minecraft.world.level.pathfinder.Node;
 import net.minecraft.world.level.pathfinder.Path;
@@ -74,10 +78,10 @@ import software.bernie.geckolib.util.GeckoLibUtil;
  * 不得另写一套平行的「每 tick {@code driveToward} + 自管撞墙」循环。入口包括 {@link #createGroundPathToBlockCenter(BlockPos, int)}、
  * {@link #advanceGroundPathCursor(Path, int[])}、{@link #tickFollowGroundPathOneStep}、{@link #tickGroundGoalStuckWatch(BlockPos)}，以及与
  * {@link #handleGoalSeekCollision()}、{@link #allowsPlanarWallBypassGoal()}、{@link #captureWallHugGoalSnapshot()}、路径缓存清空（如
- * {@link #resetCollectGroundPath()}、{@link #resetReturnStagingGroundPath()}）的对齐方式；现行参考实现为 {@link SweeperRobotState#COLLECTING}
- * 与机仓前一格（{@code returnStagingGroundPath}，出库 {@link SweeperRobotState#EXITING_DOCK} / 入库
- * {@link SweeperRobotState#RETURNING_LOW_HEALTH} 或 {@link SweeperRobotState#RETURNING_CACHE_FULL} 且
- * {@code dockApproachPhase == 0}）。目的：层高对齐、路点推进、末段到达、弦线清路径、卡住检测与平面绕行在一处管理，避免多套语义漂移。
+ * {@link #resetCollectGroundPath()}、{@link #resetReturnStagingGroundPath()}、{@link #resetDumpApproachGroundPath()}）的对齐方式；现行参考实现为
+ * {@link SweeperRobotState#COLLECTING}、{@link SweeperRobotState#RETURNING_LOW_HEALTH} 入库阶段 0（{@code returnStagingGroundPath}）、
+ * {@link SweeperRobotState#RETURNING_CACHE_FULL}（{@code dumpApproachGroundPath}）、{@link SweeperRobotState#REENTERING_PATROL}。出仓
+ * {@link SweeperRobotState#EXITING_DOCK} 为短驱主链，不记入前述格点栈。目的：层高对齐、路点推进、末段到达、弦线清路径、卡住检测与平面绕行在一处管理，避免多套语义漂移。
  *
  * <p><b>攀墙与业务状态分层</b>：蜘蛛式入攀由 {@link #tickWallClimbSpiderStyle()} 单独门控；回仓（阶段 0 驶向前一格）<strong>不因</strong>前一格地面路径
  * {@code canReach()==true} 禁止入攀，与收集态「有完整地面路径且无需高差辅助则不入攀」区分开。
@@ -289,6 +293,31 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
     private double returningLastX = Double.NaN;
     private double returningLastZ = Double.NaN;
 
+    /**
+     * 满背包就近卸货：寻路至储存容器邻接站立格；与 returnStaging / collect / reenter 路径语义分离（设计书 §7.2.2）。
+     */
+    @Nullable private Path dumpApproachGroundPath;
+
+    private int dumpPathCursor;
+    @Nullable private BlockPos dumpPathGoalBlock;
+    private long dumpPathRecomputeGameTime = Long.MIN_VALUE;
+    @Nullable private SweeperDockBlockEntity.AdjacentStorage dumpAdjacentStorage;
+    @Nullable private BlockPos dumpContainerPos;
+    @Nullable private BlockPos dumpStandBlock;
+    private int dumpScanCooldownTicks;
+    private long lastDumpChordBypassPathResetGameTime = -99999L;
+    private int dumpStuckTicks;
+    private double dumpLastX = Double.NaN;
+    private double dumpLastZ = Double.NaN;
+
+    /**
+     * 收集中「无路先短驱撞墙再攀墙」替代主链激活时，禁止周期整段重算路径（§7.6）。
+     */
+    private boolean collectPathBypassShortDriveActive;
+
+    /** 回区求路失败、短驱朝机仓中心兜底时禁止周期整段重算（§7.6）。 */
+    private boolean reenterShortDriveFallbackActive;
+
     private static final long COLLECT_PATH_RECOMPUTE_INTERVAL = 20L;
     /**
      * 掉落物仅竖直变格（XZ 不变）时，最短间隔多少 tick 才整段重算，避免下落过程中每 tick 变格连续整段重算路径。
@@ -352,7 +381,8 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
         SweeperRobotState s = getSweeperState();
         return s == SweeperRobotState.DOCKED
                 || s == SweeperRobotState.EXITING_DOCK
-                || s.isDockingReturnSequence();
+                || s == SweeperRobotState.RETURNING_LOW_HEALTH
+                || s == SweeperRobotState.RETURNING_CACHE_FULL;
     }
 
     @Nullable
@@ -400,6 +430,28 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
     @Override
     public boolean onClimbable() {
         return isWallClimbing() || super.onClimbable();
+    }
+
+    @Override
+    public void travel(Vec3 travelVector) {
+        Vec3 effective = travelVector;
+        if (!level().isClientSide && isWallClimbing()) {
+            Direction wall = getWallClimbFacing();
+            if (wall != null && wall.getAxis().isHorizontal()) {
+                double hIn = Math.sqrt(travelVector.x * travelVector.x + travelVector.z * travelVector.z);
+                if (hIn < 1.0e-4D && Math.abs(xxa) < 1.0e-3f && Math.abs(zza) < 1.0e-3f) {
+                    Vec3 into = new Vec3(-wall.getStepX(), 0.0D, -wall.getStepZ());
+                    double ls = into.x * into.x + into.z * into.z;
+                    if (ls > 1.0e-8D) {
+                        double inv = 1.0D / Math.sqrt(ls);
+                        into = new Vec3(into.x * inv, 0.0D, into.z * inv);
+                        double speed = getAttributeValue(Attributes.MOVEMENT_SPEED);
+                        effective = new Vec3(into.x * speed, travelVector.y, into.z * speed);
+                    }
+                }
+            }
+        }
+        super.travel(effective);
     }
 
     /**
@@ -482,6 +534,9 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
             float healthFromTag = tag.contains("Health", 99) ? tag.getFloat("Health") : getMaxHealth();
             setSweeperState(resolveStateFromPersistedNbt(raw, fmt, healthFromTag));
         }
+        if (getSweeperState() == SweeperRobotState.RETURNING_CACHE_FULL && dockApproachPhase != 0) {
+            dockApproachPhase = 0;
+        }
     }
 
     private SweeperRobotState resolveStateFromPersistedNbt(int raw, int format, float healthFromTag) {
@@ -528,8 +583,7 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
             setHealth(1f);
         }
         if (dockPos == null || !isDockValid()) {
-            // 机仓不存在时直接回收机器人，避免无主实体长期滞留。
-            discard();
+            removeBecauseDockInvalid();
             return;
         }
         tickWallClimbSpiderStyle();
@@ -561,12 +615,12 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
         } else if (hasCollectTargetInRange()
                 && getSweeperState() != SweeperRobotState.DOCKED
                 && getSweeperState() != SweeperRobotState.EXITING_DOCK
-                && !getSweeperState().isDockingReturnSequence()) {
+                && !getSweeperState().isReturningForInventoryPressure()) {
             setSweeperState(SweeperRobotState.COLLECTING);
         } else if (isOutsidePatrolRadiusAroundDock()
                 && getSweeperState() != SweeperRobotState.DOCKED
                 && getSweeperState() != SweeperRobotState.EXITING_DOCK
-                && !getSweeperState().isDockingReturnSequence()) {
+                && !getSweeperState().isReturningForInventoryPressure()) {
             setSweeperState(SweeperRobotState.REENTERING_PATROL);
         } else if (getSweeperState() == SweeperRobotState.IDLE) {
             setSweeperState(SweeperRobotState.PATROLLING);
@@ -577,7 +631,8 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
                 settleIntoDock();
             }
             case EXITING_DOCK -> tickExitingDock();
-            case RETURNING_LOW_HEALTH, RETURNING_CACHE_FULL -> tickReturningDockSequence();
+            case RETURNING_LOW_HEALTH -> tickReturningDockSequence();
+            case RETURNING_CACHE_FULL -> tickReturningCacheFull();
             case COLLECTING -> tickCollecting();
             case REENTERING_PATROL -> tickReenteringPatrol();
             case PATROLLING -> tickPatrolling();
@@ -712,74 +767,26 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
             stopHorizontalMovement();
             resetYawSteer();
             exitDockPostYaw = Mth.wrapDegrees(getYRot() + 90f);
-            resetReturnStagingGroundPath();
             return;
         }
         if (tickWallHugDetourActive()) {
             return;
         }
-        BlockPos stagingBlock = Objects.requireNonNull(dockPos).relative(getDockFacing());
-        if (!ensureReturnStagingGroundPath()) {
-            clearReturnStagingGroundPathOnly();
-            getNavigation().stop();
-            driveToward(staging, Config.sweeperMoveSpeed());
-            if (horizontalCollision) {
-                handleGoalSeekCollision();
-            }
-            return;
+        // 设计书 §7.4：出仓不调用顶层格点寻路，短驱至前一格中心 + 碰撞兜底。
+        getNavigation().stop();
+        driveToward(staging, Config.sweeperMoveSpeed());
+        if (horizontalCollision) {
+            handleGoalSeekCollision();
         }
-        Path rpath = returnStagingGroundPath;
-        if (rpath == null || rpath.getNodeCount() == 0) {
-            clearReturnStagingGroundPathOnly();
-            driveToward(staging, Config.sweeperMoveSpeed());
-            if (horizontalCollision) {
-                handleGoalSeekCollision();
-            }
-            return;
-        }
-        if (tickGroundGoalStuckWatch(stagingBlock)) {
-            resetReturnStagingGroundPath();
-            collectStuckTicks = 0;
-            collectLastStuckGoalBlock = null;
-            collectLastX = Double.NaN;
-            collectLastZ = Double.NaN;
-            setPatrolSteerTowardDockStagingCenter();
-            return;
-        }
-        int[] exitCursorBox = {returnStagingPathCursor};
-        Vec3 approachSameY = new Vec3(staging.x, getY(), staging.z);
-        GroundPathFollowTick followTick =
-                tickFollowGroundPathOneStep(
-                        rpath,
-                        exitCursorBox,
-                        stagingBlock,
-                        approachSameY,
-                        staging,
-                        STAGING_ARRIVE_RADIUS_SQR,
-                        false,
-                        true,
-                        this::resetReturnStagingGroundPath);
-        returnStagingPathCursor = exitCursorBox[0];
-        if (followTick == GroundPathFollowTick.ABORTED_LAYER_MISMATCH) {
-            driveToward(staging, Config.sweeperMoveSpeed());
-            if (horizontalCollision) {
-                handleGoalSeekCollision();
-            }
-            return;
-        }
-        if (followTick == GroundPathFollowTick.MOVED) {
-            return;
-        }
-        stopHorizontalMovement();
-        resetYawSteer();
-        exitDockPostYaw = Mth.wrapDegrees(getYRot() + 90f);
-        resetReturnStagingGroundPath();
     }
 
     /**
      * 入库：前一格中心 → 机头与机仓 FACING 一致（朝外）→ 倒车入仓。
      */
     private void tickReturningDockSequence() {
+        if (getSweeperState() != SweeperRobotState.RETURNING_LOW_HEALTH) {
+            return;
+        }
         if (!isDockValid()) {
             stopHorizontalMovement();
             setSweeperState(SweeperRobotState.IDLE);
@@ -798,6 +805,27 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
                 resetYawSteer();
                 resetDriveSteer();
                 resetReturnStagingGroundPath();
+                return;
+            }
+            if (isWallClimbing()) {
+                getNavigation().stop();
+                clearReturnStagingGroundPathOnly();
+                if (!Float.isNaN(patrolSteerTargetYaw)) {
+                    if (tickYawSteerWithPauses(patrolSteerTargetYaw)) {
+                        patrolSteerTargetYaw = Float.NaN;
+                    }
+                    float yRad0 = getYRot() * Mth.DEG_TO_RAD;
+                    Vec3 forward0 = new Vec3(-Mth.sin(yRad0), 0.0, Mth.cos(yRad0));
+                    driveToward(position().add(forward0.scale(0.85)), Config.sweeperMoveSpeed());
+                    return;
+                }
+                if (wallDescendDeferTicks > 0) {
+                    float yRd = getYRot() * Mth.DEG_TO_RAD;
+                    Vec3 fwdD = new Vec3(-Mth.sin(yRd), 0.0, Mth.cos(yRd));
+                    driveToward(position().add(fwdD.scale(0.85)), Config.sweeperMoveSpeed());
+                    return;
+                }
+                driveToward(new Vec3(staging.x, getY(), staging.z), Config.sweeperMoveSpeed());
                 return;
             }
             if (tickReturningStuckWatch()) {
@@ -988,7 +1016,9 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
 
     private boolean shouldDeferWallFallForPatrolCollect() {
         SweeperRobotState st = getSweeperState();
-        return st == SweeperRobotState.PATROLLING && getHealth() > 1f && isElevatedWithFallRisk();
+        // 设计：临界 1 血只限制拾取等技能，不因血量关闭「高处贴墙顺移/防坠落」；巡逻与收集在悬空贴墙时一致处理。
+        return (st == SweeperRobotState.PATROLLING || st == SweeperRobotState.COLLECTING)
+                && isElevatedWithFallRisk();
     }
 
     /**
@@ -1136,7 +1166,7 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
                     g = xzSnapGoalToBlockCenter(t.position());
                 }
             }
-        } else if (st.isDockingReturnSequence()) {
+        } else if (st == SweeperRobotState.RETURNING_LOW_HEALTH) {
             if (dockApproachPhase == 0 && isDockValid()) {
                 if (returnStagingGroundPath != null && returnStagingGroundPath.getNodeCount() > 0) {
                     int idx =
@@ -1152,6 +1182,13 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
                 Vec3 dc = dockCenter();
                 g = new Vec3(dc.x, getY(), dc.z);
             }
+        } else if (st == SweeperRobotState.RETURNING_CACHE_FULL) {
+            if (dumpApproachGroundPath != null && dumpApproachGroundPath.getNodeCount() > 0) {
+                int idx = Mth.clamp(dumpPathCursor, 0, dumpApproachGroundPath.getNodeCount() - 1);
+                g = collectGroundPathWaypoint(dumpApproachGroundPath, idx);
+            } else if (dumpStandBlock != null) {
+                g = xzSnapGoalToBlockCenter(Vec3.atBottomCenterOf(dumpStandBlock));
+            }
         } else if (st == SweeperRobotState.REENTERING_PATROL) {
             if (reenterGroundPath != null && reenterGroundPath.getNodeCount() > 0) {
                 int idx = Mth.clamp(reenterPathCursor, 0, reenterGroundPath.getNodeCount() - 1);
@@ -1165,16 +1202,7 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
             float yr = getYRot() * Mth.DEG_TO_RAD;
             g = position().add(new Vec3(-Mth.sin(yr), 0.0D, Mth.cos(yr)).scale(2.25D));
         } else if (st == SweeperRobotState.EXITING_DOCK && isDockValid()) {
-            if (returnStagingGroundPath != null && returnStagingGroundPath.getNodeCount() > 0) {
-                int idx =
-                        Mth.clamp(
-                                returnStagingPathCursor,
-                                0,
-                                returnStagingGroundPath.getNodeCount() - 1);
-                g = collectGroundPathWaypoint(returnStagingGroundPath, idx);
-            } else {
-                g = dockStagingCenter();
-            }
+            g = dockStagingCenter();
         }
         if (g == null) {
             patrolWallHugGoalX = Double.NaN;
@@ -1245,9 +1273,10 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
         if (earlyExitForRepath && !level().isClientSide()) {
             if (getSweeperState() == SweeperRobotState.COLLECTING) {
                 resetCollectGroundPath();
-            } else if ((getSweeperState().isDockingReturnSequence() && dockApproachPhase == 0)
-                    || getSweeperState() == SweeperRobotState.EXITING_DOCK) {
+            } else if (getSweeperState() == SweeperRobotState.RETURNING_LOW_HEALTH && dockApproachPhase == 0) {
                 resetReturnStagingGroundPath();
+            } else if (getSweeperState() == SweeperRobotState.RETURNING_CACHE_FULL) {
+                resetDumpApproachGroundPath();
             }
         }
     }
@@ -1472,7 +1501,8 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
         return st == SweeperRobotState.COLLECTING
                 || st == SweeperRobotState.EXITING_DOCK
                 || st == SweeperRobotState.REENTERING_PATROL
-                || (st.isDockingReturnSequence() && dockApproachPhase == 0);
+                || st == SweeperRobotState.RETURNING_CACHE_FULL
+                || (st == SweeperRobotState.RETURNING_LOW_HEALTH && dockApproachPhase == 0);
     }
 
     /**
@@ -1496,8 +1526,8 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
             resetYawSteer();
             return;
         }
-        if ((getSweeperState().isDockingReturnSequence() && dockApproachPhase == 0
-                        || getSweeperState() == SweeperRobotState.EXITING_DOCK)
+        if (getSweeperState() == SweeperRobotState.RETURNING_LOW_HEALTH
+                && dockApproachPhase == 0
                 && returnStagingGroundPath != null
                 && returnStagingGroundPath.getNodeCount() > 2) {
             long gt = level().getGameTime();
@@ -1506,6 +1536,20 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
                     && gt - lastReturnStagingChordBypassPathResetGameTime >= 25L) {
                 lastReturnStagingChordBypassPathResetGameTime = gt;
                 resetReturnStagingGroundPath();
+            }
+            resetDriveSteer();
+            resetYawSteer();
+            return;
+        }
+        if (getSweeperState() == SweeperRobotState.RETURNING_CACHE_FULL
+                && dumpApproachGroundPath != null
+                && dumpApproachGroundPath.getNodeCount() > 2) {
+            long gt = level().getGameTime();
+            if (hit != null
+                    && isHeadOnWallRoughlyAhead(hit)
+                    && gt - lastDumpChordBypassPathResetGameTime >= 25L) {
+                lastDumpChordBypassPathResetGameTime = gt;
+                resetDumpApproachGroundPath();
             }
             resetDriveSteer();
             resetYawSteer();
@@ -1521,14 +1565,23 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
                     resetCollectGroundPath();
                 }
             }
-            if ((getSweeperState().isDockingReturnSequence() && dockApproachPhase == 0
-                            || getSweeperState() == SweeperRobotState.EXITING_DOCK)
+            if (getSweeperState() == SweeperRobotState.RETURNING_LOW_HEALTH
+                    && dockApproachPhase == 0
                     && returnStagingGroundPath != null
                     && returnStagingGroundPath.getNodeCount() == 2) {
                 long gt = level().getGameTime();
                 if (gt - lastReturnStagingChordBypassPathResetGameTime >= 25L) {
                     lastReturnStagingChordBypassPathResetGameTime = gt;
                     resetReturnStagingGroundPath();
+                }
+            }
+            if (getSweeperState() == SweeperRobotState.RETURNING_CACHE_FULL
+                    && dumpApproachGroundPath != null
+                    && dumpApproachGroundPath.getNodeCount() == 2) {
+                long gt = level().getGameTime();
+                if (gt - lastDumpChordBypassPathResetGameTime >= 25L) {
+                    lastDumpChordBypassPathResetGameTime = gt;
+                    resetDumpApproachGroundPath();
                 }
             }
             resetDriveSteer();
@@ -1541,7 +1594,7 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
             resetYawSteer();
             return;
         }
-        if (getSweeperState().isDockingReturnSequence() && dockApproachPhase == 0
+        if ((getSweeperState() == SweeperRobotState.RETURNING_LOW_HEALTH && dockApproachPhase == 0)
                 || getSweeperState() == SweeperRobotState.EXITING_DOCK) {
             setPatrolSteerTowardDockStagingCenter();
         } else {
@@ -1553,11 +1606,16 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
             // 两节点直线多为寻路失败兜底，撞墙后保留缓存会反复顶同一几何；清路径以便下 tick 重算 A*。
             resetCollectGroundPath();
         }
-        if ((getSweeperState().isDockingReturnSequence() && dockApproachPhase == 0
-                        || getSweeperState() == SweeperRobotState.EXITING_DOCK)
+        if (getSweeperState() == SweeperRobotState.RETURNING_LOW_HEALTH
+                && dockApproachPhase == 0
                 && returnStagingGroundPath != null
                 && returnStagingGroundPath.getNodeCount() == 2) {
             resetReturnStagingGroundPath();
+        }
+        if (getSweeperState() == SweeperRobotState.RETURNING_CACHE_FULL
+                && dumpApproachGroundPath != null
+                && dumpApproachGroundPath.getNodeCount() == 2) {
+            resetDumpApproachGroundPath();
         }
         resetDriveSteer();
         resetYawSteer();
@@ -1620,15 +1678,17 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
     /**
      * 路过同格时发现可吸入掉落物即可收取（不靠机头朝向）。
      *
-     * <p>与 {@link #cacheFrom(ItemEntity)} 一致：**充电**（{@link SweeperRobotState#DOCKED}）、**低电回仓** / **满背包回仓**
-     * （{@link SweeperRobotState#isDockingReturnSequence()}）下不拾取。
+     * <p>与 {@link #cacheFrom(ItemEntity)} 一致：**充电**（{@link SweeperRobotState#DOCKED}）、**低电回仓**
+     * （{@link SweeperRobotState#RETURNING_LOW_HEALTH}）、**满背包卸货**（{@link SweeperRobotState#RETURNING_CACHE_FULL}）下不拾取。
      */
     private void tryVacuumItemEntitiesSharingOccupiedCell() {
         if (level().isClientSide()) {
             return;
         }
         SweeperRobotState st = getSweeperState();
-        if (st == SweeperRobotState.DOCKED || st.isDockingReturnSequence()) {
+        if (st == SweeperRobotState.DOCKED
+                || st == SweeperRobotState.RETURNING_LOW_HEALTH
+                || st == SweeperRobotState.RETURNING_CACHE_FULL) {
             return;
         }
         BlockPos cell = blockPosition();
@@ -1670,6 +1730,7 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
         collectLastStuckGoalBlock = null;
         collectLastX = Double.NaN;
         collectLastZ = Double.NaN;
+        collectPathBypassShortDriveActive = false;
     }
 
     private void clearCollectUnreachableCooldownIfExpired() {
@@ -1874,16 +1935,20 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
                     && collectGroundPath.getNodeCount() > 0
                     && gameTime - collectPathRecomputeGameTime < COLLECT_PATH_SAME_COLUMN_Y_DEBOUNCE_TICKS) {
                 collectPathGoalBlock = goal.immutable();
+                collectPathBypassShortDriveActive = false;
                 return true;
             }
-        } else if (gameTime - collectPathRecomputeGameTime >= COLLECT_PATH_RECOMPUTE_INTERVAL) {
+        } else if (!collectPathBypassShortDriveActive
+                && gameTime - collectPathRecomputeGameTime >= COLLECT_PATH_RECOMPUTE_INTERVAL) {
             // 周期到期：多拐点路径可只刷新时间避免每格重算抖动；弦线两节点必须整段重算，否则永远笔直顶障。
             if (collectGroundPath.getNodeCount() > 2) {
                 collectPathRecomputeGameTime = gameTime;
+                collectPathBypassShortDriveActive = false;
                 return true;
             }
             // 两节点弦线或空路径：继续向下完整重算
         } else {
+            collectPathBypassShortDriveActive = false;
             return collectGroundPath.getNodeCount() > 0;
         }
 
@@ -1898,6 +1963,7 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
             if (last >= 0 && collectPathCursor >= last) {
                 collectPathGoalBlock = goal.immutable();
                 collectPathRecomputeGameTime = gameTime;
+                collectPathBypassShortDriveActive = false;
                 return true;
             }
         }
@@ -1911,6 +1977,7 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
             return false;
         }
 
+        collectPathBypassShortDriveActive = false;
         advanceCollectPathCursor();
         return true;
     }
@@ -1927,7 +1994,7 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
     }
 
     /**
-     * 刷新驶向机仓前一格（出库或入库阶段 0）的地面路径（与 {@link #ensureCollectGroundPath} 同一套重算间隔与多拐点节流语义）。
+     * 刷新驶向机仓前一格（仅低电入库阶段 0）的地面路径（与 {@link #ensureCollectGroundPath} 同一套重算间隔与多拐点节流语义）。
      */
     private boolean ensureReturnStagingGroundPath() {
         if (!isDockValid() || level().isClientSide()) {
@@ -1962,6 +2029,321 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
         advanceGroundPathCursor(returnStagingGroundPath, box);
         returnStagingPathCursor = box[0];
         return true;
+    }
+
+    private void clearDumpApproachGroundPathOnly() {
+        dumpApproachGroundPath = null;
+        dumpPathCursor = 0;
+        dumpPathRecomputeGameTime = Long.MIN_VALUE;
+        dumpPathGoalBlock = null;
+    }
+
+    private void resetDumpApproachGroundPath() {
+        clearDumpApproachGroundPathOnly();
+        dumpStuckTicks = 0;
+        dumpLastX = Double.NaN;
+        dumpLastZ = Double.NaN;
+    }
+
+    private boolean ensureDumpApproachGroundPath(BlockPos standGoal) {
+        if (!isDockValid() || level().isClientSide()) {
+            return false;
+        }
+        long gameTime = level().getGameTime();
+        if (dumpApproachGroundPath == null) {
+            // recompute
+        } else if (dumpPathGoalBlock == null) {
+            // recompute
+        } else if (!dumpPathGoalBlock.equals(standGoal)) {
+            // recompute
+        } else if (gameTime - dumpPathRecomputeGameTime >= COLLECT_PATH_RECOMPUTE_INTERVAL) {
+            if (dumpApproachGroundPath.getNodeCount() > 2) {
+                dumpPathRecomputeGameTime = gameTime;
+                return dumpApproachGroundPath.getNodeCount() > 0;
+            }
+        } else {
+            return dumpApproachGroundPath.getNodeCount() > 0;
+        }
+
+        dumpPathRecomputeGameTime = gameTime;
+        dumpPathGoalBlock = standGoal.immutable();
+        Path path = createGroundPathToBlockCenter(standGoal, 0);
+        dumpApproachGroundPath = path;
+        dumpPathCursor = 0;
+        if (path == null || path.getNodeCount() == 0) {
+            return false;
+        }
+        int[] box = {dumpPathCursor};
+        advanceGroundPathCursor(dumpApproachGroundPath, box);
+        dumpPathCursor = box[0];
+        return true;
+    }
+
+    private boolean tickDumpGroundGoalStuckWatch(BlockPos standGoal) {
+        double x = getX();
+        double z = getZ();
+        if (Double.isNaN(dumpLastX)) {
+            dumpLastX = x;
+            dumpLastZ = z;
+            dumpStuckTicks = 0;
+            return false;
+        }
+        double moved = (x - dumpLastX) * (x - dumpLastX) + (z - dumpLastZ) * (z - dumpLastZ);
+        if (moved > 1.0e-6D) {
+            dumpLastX = x;
+            dumpLastZ = z;
+            dumpStuckTicks = 0;
+            return false;
+        }
+        dumpStuckTicks++;
+        if (dumpStuckTicks < 30) {
+            return false;
+        }
+        dumpStuckTicks = 0;
+        dumpLastX = Double.NaN;
+        dumpLastZ = Double.NaN;
+        resetDumpApproachGroundPath();
+        setPatrolSteerTowardDockStagingCenter();
+        return true;
+    }
+
+    private boolean dumpUnloadTargetStillValid() {
+        if (dumpContainerPos == null || dumpAdjacentStorage == null || dumpStandBlock == null) {
+            return false;
+        }
+        if (!isDockValid() || dockPos == null) {
+            return false;
+        }
+        if (!level().isLoaded(dumpContainerPos) || !level().isLoaded(dumpStandBlock)) {
+            return false;
+        }
+        double pr = Config.sweeperPatrolRadius();
+        if (Vec3.atCenterOf(dumpContainerPos).distanceToSqr(dockCenter()) > pr * pr) {
+            return false;
+        }
+        return level().getBlockEntity(dumpContainerPos) instanceof Container;
+    }
+
+    private boolean canStandRoughlyForDumpApproach(BlockPos feet) {
+        if (!level().isLoaded(feet)) {
+            return false;
+        }
+        if (!level().getBlockState(feet).getCollisionShape(level(), feet).isEmpty()) {
+            return false;
+        }
+        BlockPos below = feet.below();
+        return level().getBlockState(below).isFaceSturdy(level(), below, Direction.UP);
+    }
+
+    @Nullable
+    private SweeperDockBlockEntity.AdjacentStorage adjacentStorageFromStandToContainer(
+            BlockPos standFeet, BlockPos containerPos, Container container) {
+        int dx = containerPos.getX() - standFeet.getX();
+        int dy = containerPos.getY() - standFeet.getY();
+        int dz = containerPos.getZ() - standFeet.getZ();
+        if (Mth.abs(dx) + Mth.abs(dy) + Mth.abs(dz) != 1) {
+            return null;
+        }
+        Direction fromStandToContainer = Direction.getNearest(dx, dy, dz);
+        Direction insertFace = fromStandToContainer.getOpposite();
+        return new SweeperDockBlockEntity.AdjacentStorage(container, insertFace);
+    }
+
+    private boolean pickDumpUnloadTarget() {
+        if (!isDockValid() || dockPos == null) {
+            return false;
+        }
+        BlockPos dockRef = dockPos;
+        int r = Config.sweeperPatrolRadius();
+        double pr2 = (double) r * (double) r;
+        double bestScore = Double.MAX_VALUE;
+        BlockPos bestStand = null;
+        BlockPos bestContainer = null;
+        SweeperDockBlockEntity.AdjacentStorage bestAdj = null;
+        Vec3 rp = position();
+        for (int dx = -r; dx <= r; dx++) {
+            for (int dz = -r; dz <= r; dz++) {
+                if ((long) dx * dx + (long) dz * dz > pr2) {
+                    continue;
+                }
+                for (int dy = -2; dy <= 3; dy++) {
+                    BlockPos cpos = dockRef.offset(dx, dy, dz);
+                    if (!level().isLoaded(cpos)) {
+                        continue;
+                    }
+                    BlockEntity be = level().getBlockEntity(cpos);
+                    if (!(be instanceof Container container) || be instanceof SweeperDockBlockEntity) {
+                        continue;
+                    }
+                    for (Direction d : Direction.values()) {
+                        BlockPos stand = cpos.relative(d);
+                        if (!canStandRoughlyForDumpApproach(stand)) {
+                            continue;
+                        }
+                        SweeperDockBlockEntity.AdjacentStorage adj =
+                                adjacentStorageFromStandToContainer(stand, cpos, container);
+                        if (adj == null) {
+                            continue;
+                        }
+                        Vec3 sc = Vec3.atBottomCenterOf(stand);
+                        double score = sc.distanceToSqr(rp) + Vec3.atCenterOf(cpos).distanceToSqr(dockCenter()) * 0.15D;
+                        if (score < bestScore) {
+                            bestScore = score;
+                            bestStand = stand.immutable();
+                            bestContainer = cpos.immutable();
+                            bestAdj = adj;
+                        }
+                    }
+                }
+            }
+        }
+        if (bestStand == null || bestAdj == null) {
+            return false;
+        }
+        dumpStandBlock = bestStand;
+        dumpContainerPos = bestContainer;
+        dumpAdjacentStorage = bestAdj;
+        resetDumpApproachGroundPath();
+        return true;
+    }
+
+    private void finishDumpUnloadHandoff() {
+        resetDumpApproachGroundPath();
+        dumpAdjacentStorage = null;
+        dumpContainerPos = null;
+        dumpStandBlock = null;
+        sweeperUnloadCooldownTicks = 0;
+        if (hasCollectTargetInRange()) {
+            setSweeperState(SweeperRobotState.COLLECTING);
+        } else {
+            setSweeperState(SweeperRobotState.PATROLLING);
+        }
+    }
+
+    /**
+     * 行为 4：满背包时在巡逻柱面内寻路至储存邻格并卸货，不经三段入仓。
+     */
+    private void tickReturningCacheFull() {
+        if (!isDockValid()) {
+            stopHorizontalMovement();
+            setSweeperState(SweeperRobotState.IDLE);
+            return;
+        }
+        if (!isInternalCacheFullForConfiguredSlots()) {
+            finishDumpUnloadHandoff();
+            return;
+        }
+        if (!dumpUnloadTargetStillValid()) {
+            dumpAdjacentStorage = null;
+            dumpContainerPos = null;
+            dumpStandBlock = null;
+            resetDumpApproachGroundPath();
+        }
+        if (dumpStandBlock == null || dumpAdjacentStorage == null) {
+            if (dumpScanCooldownTicks > 0) {
+                dumpScanCooldownTicks--;
+            }
+            if (dumpScanCooldownTicks <= 0) {
+                if (!pickDumpUnloadTarget()) {
+                    dumpScanCooldownTicks = 60;
+                    stopHorizontalMovement();
+                    return;
+                }
+                dumpScanCooldownTicks = 15;
+            } else {
+                stopHorizontalMovement();
+            }
+            return;
+        }
+        BlockPos stand = Objects.requireNonNull(dumpStandBlock);
+        Vec3 standCenter = Vec3.atBottomCenterOf(stand);
+        if (isWallClimbing()) {
+            getNavigation().stop();
+            clearDumpApproachGroundPathOnly();
+            if (!Float.isNaN(patrolSteerTargetYaw)) {
+                if (tickYawSteerWithPauses(patrolSteerTargetYaw)) {
+                    patrolSteerTargetYaw = Float.NaN;
+                }
+                float yRad0 = getYRot() * Mth.DEG_TO_RAD;
+                Vec3 forward0 = new Vec3(-Mth.sin(yRad0), 0.0, Mth.cos(yRad0));
+                driveToward(position().add(forward0.scale(0.85)), Config.sweeperMoveSpeed());
+                return;
+            }
+            if (wallDescendDeferTicks > 0) {
+                float yRd = getYRot() * Mth.DEG_TO_RAD;
+                Vec3 fwdD = new Vec3(-Mth.sin(yRd), 0.0, Mth.cos(yRd));
+                driveToward(position().add(fwdD.scale(0.85)), Config.sweeperMoveSpeed());
+                return;
+            }
+            driveToward(new Vec3(standCenter.x, getY(), standCenter.z), Config.sweeperMoveSpeed());
+            return;
+        }
+        double unloadReachSqr = 0.55D * 0.55D;
+        if (xzDistSqrTo(standCenter) <= unloadReachSqr && Math.abs(getY() - standCenter.y) <= 1.2D) {
+            stopHorizontalMovement();
+            if (sweeperUnloadCooldownTicks > 0) {
+                sweeperUnloadCooldownTicks--;
+            } else if (tryEjectOneItemUsingHopperLogic(dumpAdjacentStorage)) {
+                sweeperUnloadCooldownTicks = HopperBlockEntity.MOVE_ITEM_SPEED;
+            }
+            if (!isInternalCacheFullForConfiguredSlots()) {
+                finishDumpUnloadHandoff();
+            }
+            return;
+        }
+        if (tickWallHugDetourActive()) {
+            return;
+        }
+        if (tickDumpGroundGoalStuckWatch(stand)) {
+            dumpAdjacentStorage = null;
+            dumpContainerPos = null;
+            dumpStandBlock = null;
+            resetDumpApproachGroundPath();
+            return;
+        }
+        if (!ensureDumpApproachGroundPath(stand)) {
+            clearDumpApproachGroundPathOnly();
+            getNavigation().stop();
+            driveToward(standCenter, Config.sweeperMoveSpeed());
+            if (horizontalCollision) {
+                handleGoalSeekCollision();
+            }
+            return;
+        }
+        Path dpath = dumpApproachGroundPath;
+        if (dpath == null || dpath.getNodeCount() == 0) {
+            clearDumpApproachGroundPathOnly();
+            driveToward(standCenter, Config.sweeperMoveSpeed());
+            if (horizontalCollision) {
+                handleGoalSeekCollision();
+            }
+            return;
+        }
+        int[] dumpCursorBox = {dumpPathCursor};
+        Vec3 approachSameY = new Vec3(standCenter.x, getY(), standCenter.z);
+        GroundPathFollowTick followTick =
+                tickFollowGroundPathOneStep(
+                        dpath,
+                        dumpCursorBox,
+                        stand,
+                        approachSameY,
+                        standCenter,
+                        waypointArriveSqr(),
+                        true,
+                        true,
+                        this::resetDumpApproachGroundPath);
+        dumpPathCursor = dumpCursorBox[0];
+        if (followTick == GroundPathFollowTick.ABORTED_LAYER_MISMATCH) {
+            driveToward(standCenter, Config.sweeperMoveSpeed());
+            if (horizontalCollision) {
+                handleGoalSeekCollision();
+            }
+            return;
+        }
+        if (followTick == GroundPathFollowTick.MOVED) {
+            return;
+        }
+        stopHorizontalMovement();
     }
 
     /**
@@ -2049,6 +2431,7 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
         reenterPathCursor = 0;
         reenterPathRecomputeGameTime = Long.MIN_VALUE;
         reenterPathGoalBlock = null;
+        reenterShortDriveFallbackActive = false;
     }
 
     private void advanceReenterPathCursor() {
@@ -2075,7 +2458,8 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
                 reenterGroundPath == null
                         || reenterPathGoalBlock == null
                         || !reenterPathGoalBlock.equals(goal)
-                        || gameTime - reenterPathRecomputeGameTime >= REENTER_PATH_RECOMPUTE_INTERVAL;
+                        || (!reenterShortDriveFallbackActive
+                                && gameTime - reenterPathRecomputeGameTime >= REENTER_PATH_RECOMPUTE_INTERVAL);
         if (!needNew) {
             return reenterGroundPath != null
                     && reenterGroundPath.canReach()
@@ -2089,27 +2473,42 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
         if (path == null || !path.canReach() || path.getNodeCount() == 0) {
             return false;
         }
+        reenterShortDriveFallbackActive = false;
         advanceReenterPathCursor();
         return true;
     }
 
     /**
-     * 巡逻柱面内、距机仓水平面中心约 {@link Config#sweeperPatrolRadius()} 处、贴近机器人的目标格（用于寻路回到巡逻区）。
+     * 回巡逻区目标格：水平距机仓 ≤ {@link Config#sweeperReenterGoalRadiusBlocks()} 且 ≤ 巡逻半径，沿机仓→机器人方向收拢（设计书 §4.0.1 行为 6）。
      */
     private BlockPos computeReenterPatrolGoalBlock() {
+        BlockPos dockRef = Objects.requireNonNull(dockPos);
         Vec3 dc = dockCenter();
         Vec3 p = position();
         double dx = p.x - dc.x;
         double dz = p.z - dc.z;
         double lenH = Math.sqrt(dx * dx + dz * dz);
-        double r = Math.max(1.5D, Config.sweeperPatrolRadius() - 0.75D);
-        if (lenH <= r) {
+        int pr = Config.sweeperPatrolRadius();
+        int rg = Config.sweeperReenterGoalRadiusBlocks();
+        if (lenH <= 1.0e-6D) {
             return blockPosition();
         }
         double nx = dx / lenH;
         double nz = dz / lenH;
-        Vec3 goal = new Vec3(dc.x + nx * r, p.y, dc.z + nz * r);
-        return BlockPos.containing(goal);
+        double place = Mth.clamp(rg - 0.35D, 1.2D, rg);
+        place = Math.min(place, pr - 0.4D);
+        Vec3 goal = new Vec3(dc.x + nx * place, p.y, dc.z + nz * place);
+        BlockPos gp = BlockPos.containing(goal);
+        long dh2 =
+                (long) (gp.getX() - dockRef.getX()) * (gp.getX() - dockRef.getX())
+                        + (long) (gp.getZ() - dockRef.getZ()) * (gp.getZ() - dockRef.getZ());
+        long pr2 = (long) pr * pr;
+        if (dh2 > pr2) {
+            double tm = Math.sqrt((double) pr2) - 0.55D;
+            goal = new Vec3(dc.x + nx * tm, p.y, dc.z + nz * tm);
+            gp = BlockPos.containing(goal);
+        }
+        return gp;
     }
 
     private AABB collectDiscoveryQueryAabb() {
@@ -2176,6 +2575,7 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
 
         BlockPos goalBlock = computeReenterPatrolGoalBlock();
         if (!ensureReenterGroundPath(goalBlock)) {
+            reenterShortDriveFallbackActive = true;
             Vec3 dc = dockCenter();
             driveToward(new Vec3(dc.x, getY(), dc.z), Config.sweeperMoveSpeed());
             if (horizontalCollision) {
@@ -2256,7 +2656,12 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
             if (canVacuumItemNow(target)) {
                 cacheFrom(target);
                 targetItemUuid = null;
-                setSweeperState(SweeperRobotState.PATROLLING);
+                resetCollectGroundPath();
+                if (isInternalCacheFullForConfiguredSlots()) {
+                    setSweeperState(SweeperRobotState.RETURNING_CACHE_FULL);
+                } else {
+                    setSweeperState(SweeperRobotState.PATROLLING);
+                }
                 return;
             }
             // A3：仍在执行贴墙转向节拍，先转向再做小步前推，避免横摆过大。
@@ -2299,6 +2704,7 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
         // B3：地面路径当前求不到：不立刻放弃；清路径保留目标，朝物品格 XZ 短驱以撞墙入攀（见 tickWallClimbSpiderStyle 门控），
         // 下 tick 再 ensure；长期无位移仍走 stuck_loop 放弃。
         if (!ensureCollectGroundPath(target)) {
+            collectPathBypassShortDriveActive = true;
             clearCollectGroundPathOnly();
             getNavigation().stop();
             if (tickGroundGoalStuckWatch(target.blockPosition())) {
@@ -2357,7 +2763,11 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
             cacheFrom(target);
             targetItemUuid = null;
             resetCollectGroundPath();
-            setSweeperState(SweeperRobotState.PATROLLING);
+            if (isInternalCacheFullForConfiguredSlots()) {
+                setSweeperState(SweeperRobotState.RETURNING_CACHE_FULL);
+            } else {
+                setSweeperState(SweeperRobotState.PATROLLING);
+            }
             return;
         }
         // B12：仍吸不到则朝掉落物实体 XZ 短驱；已贴齐 XZ 时勿清路径（避免每 tick 重算路径抖动），交给卡住检测或下 tick 再判吸。
@@ -2712,7 +3122,8 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
                 Config.sweeperEnableWallClimb()
                         && (st == SweeperRobotState.PATROLLING
                                 || st == SweeperRobotState.COLLECTING
-                                || (st.isDockingReturnSequence() && dockApproachPhase == 0));
+                                || (st == SweeperRobotState.RETURNING_LOW_HEALTH && dockApproachPhase == 0)
+                                || st == SweeperRobotState.RETURNING_CACHE_FULL);
 
         if (isWallClimbing()) {
             if (isOutsidePatrolRadiusAroundDock()) {
@@ -2815,7 +3226,7 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
             } else {
                 shouldHug = hitBlocks && (horizontalCollision || collectClimbAssist);
             }
-        } else if (st.isDockingReturnSequence() && dockApproachPhase == 0) {
+        } else if (st == SweeperRobotState.RETURNING_LOW_HEALTH && dockApproachPhase == 0) {
             patrolHeadOnWallTicks = 0;
             returningHeadOnWallTicks = 0;
             boolean returnClimbAssist = false;
@@ -2829,6 +3240,28 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
             }
             // 回仓与「蜘蛛攀墙」分层：不因 returnStagingGroundPath.canReach() 禁止入攀；与收集态「有完整路且无需高差则不入攀」区分开。
             shouldHug = hitBlocks && (horizontalCollision || returnClimbAssist);
+        } else if (st == SweeperRobotState.RETURNING_CACHE_FULL) {
+            patrolHeadOnWallTicks = 0;
+            returningHeadOnWallTicks = 0;
+            boolean fullDumpPath =
+                    dumpApproachGroundPath != null
+                            && dumpApproachGroundPath.getNodeCount() > 0
+                            && dumpApproachGroundPath.canReach();
+            int dumpDy = 0;
+            double dumpNearSqr = Double.NaN;
+            boolean dumpClimbAssist = false;
+            if (dumpStandBlock != null) {
+                dumpDy = Mth.abs(blockPosition().getY() - dumpStandBlock.getY());
+                dumpNearSqr = xzDistSqrTo(Vec3.atBottomCenterOf(dumpStandBlock));
+                dumpClimbAssist = dumpDy >= 1 && dumpNearSqr <= 4.0D;
+            }
+            if (fullDumpPath && !dumpClimbAssist) {
+                shouldHug = false;
+            } else if (fullDumpPath) {
+                shouldHug = hitBlocks && dumpClimbAssist;
+            } else {
+                shouldHug = hitBlocks && (horizontalCollision || dumpClimbAssist);
+            }
         } else {
             patrolHeadOnWallTicks = 0;
             returningHeadOnWallTicks = 0;
@@ -2864,7 +3297,7 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
                 if (isCollectTargetTemporarilyIgnored(target)) {
                     targetItemUuid = null;
                 } else {
-                return target;
+                    return target;
                 }
             }
         }
@@ -2892,8 +3325,14 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
     }
 
     private void cacheFrom(ItemEntity itemEntity) {
+        // 设计书：临界 1 血仅禁用吸入，不影响寻路/贴墙/回仓位移。
+        if (getHealth() <= 1.0f + 1.0e-3f) {
+            return;
+        }
         SweeperRobotState st = getSweeperState();
-        if (st == SweeperRobotState.DOCKED || st.isDockingReturnSequence()) {
+        if (st == SweeperRobotState.DOCKED
+                || st == SweeperRobotState.RETURNING_LOW_HEALTH
+                || st == SweeperRobotState.RETURNING_CACHE_FULL) {
             return;
         }
         ItemStack stack = itemEntity.getItem().copy();
@@ -2953,7 +3392,8 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
         SweeperRobotState st = getSweeperState();
         if (st == SweeperRobotState.DOCKED
                 || st == SweeperRobotState.EXITING_DOCK
-                || st.isDockingReturnSequence()) {
+                || st == SweeperRobotState.RETURNING_LOW_HEALTH
+                || st == SweeperRobotState.RETURNING_CACHE_FULL) {
             return false;
         }
         return !isDocked();
@@ -3075,6 +3515,11 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
         this.lastHealGameTime = level().getGameTime();
         this.lastDecayGameTime = this.lastHealGameTime;
         this.dockApproachPhase = 0;
+        dumpAdjacentStorage = null;
+        dumpContainerPos = null;
+        dumpStandBlock = null;
+        dumpScanCooldownTicks = 0;
+        resetDumpApproachGroundPath();
         setSweeperState(SweeperRobotState.DOCKED);
     }
 
@@ -3124,15 +3569,18 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
     private void setSweeperState(SweeperRobotState state) {
         SweeperRobotState prev = getSweeperState();
         entityData.set(DATA_STATE, state.ordinal());
-        if (state == SweeperRobotState.DOCKED
-                || state.isDockingReturnSequence()
-                || state == SweeperRobotState.EXITING_DOCK) {
-            if (isWallClimbing()) {
-                exitWallClimb();
-            }
+        // 仅在实际切入这些态时结束攀墙；避免每 tick 重复 set 同态时误杀攀墙（低血持续 RETURNING_LOW_HEALTH）。
+        boolean exitDockingClimb =
+                prev != state
+                        && (state == SweeperRobotState.DOCKED
+                                || state == SweeperRobotState.RETURNING_LOW_HEALTH
+                                || state == SweeperRobotState.RETURNING_CACHE_FULL
+                                || state == SweeperRobotState.EXITING_DOCK);
+        if (exitDockingClimb && isWallClimbing()) {
+            exitWallClimb();
         }
-        boolean prevReturning = prev.isDockingReturnSequence();
-        boolean nextReturning = state.isDockingReturnSequence();
+        boolean prevReturning = prev == SweeperRobotState.RETURNING_LOW_HEALTH;
+        boolean nextReturning = state == SweeperRobotState.RETURNING_LOW_HEALTH;
         if (nextReturning && !prevReturning) {
             dockApproachPhase = 0;
             returningStuckTicks = 0;
@@ -3145,12 +3593,14 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
             resetPatrolWallHugMarkers();
             exitDockPostYaw = Float.NaN;
             resetReturnStagingGroundPath();
+            resetDumpApproachGroundPath();
         }
         if (prevReturning && !nextReturning) {
             returningStuckTicks = 0;
             returningLastX = Double.NaN;
             returningLastZ = Double.NaN;
             resetReturnStagingGroundPath();
+            resetDumpApproachGroundPath();
         }
         if (state == SweeperRobotState.COLLECTING && prev != SweeperRobotState.COLLECTING) {
             if (isWallClimbing()) {
@@ -3165,6 +3615,9 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
             resetCollectGroundPath();
             resetReenterGroundPath();
             resetReturnStagingGroundPath();
+            resetDumpApproachGroundPath();
+            collectPathBypassShortDriveActive = false;
+            reenterShortDriveFallbackActive = false;
         }
         if (prev == SweeperRobotState.COLLECTING && state != SweeperRobotState.COLLECTING) {
             resetCollectGroundPath();
@@ -3176,10 +3629,20 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
             patrolWallHugPhase = 0;
             resetPatrolWallHugMarkers();
             exitDockPostYaw = Float.NaN;
-            resetReturnStagingGroundPath();
         }
-        if (prev == SweeperRobotState.EXITING_DOCK && state != SweeperRobotState.EXITING_DOCK) {
-            resetReturnStagingGroundPath();
+        if (state == SweeperRobotState.RETURNING_CACHE_FULL && prev != SweeperRobotState.RETURNING_CACHE_FULL) {
+            dumpScanCooldownTicks = 0;
+            dumpAdjacentStorage = null;
+            dumpContainerPos = null;
+            dumpStandBlock = null;
+            resetDumpApproachGroundPath();
+            sweeperUnloadCooldownTicks = 0;
+        }
+        if (prev == SweeperRobotState.RETURNING_CACHE_FULL && state != SweeperRobotState.RETURNING_CACHE_FULL) {
+            resetDumpApproachGroundPath();
+            dumpAdjacentStorage = null;
+            dumpContainerPos = null;
+            dumpStandBlock = null;
         }
         if (state == SweeperRobotState.PATROLLING && prev != SweeperRobotState.PATROLLING) {
             resetDriveSteer();
@@ -3206,6 +3669,52 @@ public class SweeperRobotEntity extends PathfinderMob implements GeoEntity, Menu
         }
         if (state == SweeperRobotState.DOCKED && prev != SweeperRobotState.DOCKED) {
             sweeperUnloadCooldownTicks = 0;
+        }
+    }
+
+    /**
+     * 机仓无效或方块被拆除：将缓存物品以掉落物形式释出，播放粒子与音效后移除实体（设计书 §5）；与「不死」语义不冲突。
+     */
+    public void removeBecauseDockInvalid() {
+        if (level().isClientSide()) {
+            discard();
+            return;
+        }
+        if (!isRemoved()) {
+            dropAllCachedItemsAsSpills();
+            Vec3 p = position();
+            if (level() instanceof ServerLevel sl) {
+                sl.sendParticles(ParticleTypes.CLOUD, p.x, p.y + 0.12, p.z, 10, 0.35, 0.1, 0.35, 0.02);
+                sl.sendParticles(ParticleTypes.POOF, p.x, p.y + 0.25, p.z, 8, 0.2, 0.08, 0.2, 0.01);
+            }
+            level().playSound(null, p.x, p.y, p.z, SoundEvents.ITEM_PICKUP, SoundSource.NEUTRAL, 0.55F, 0.7F);
+        }
+        dockPos = null;
+        discard();
+    }
+
+    private void dropAllCachedItemsAsSpills() {
+        double bx = getX();
+        double by = getY();
+        double bz = getZ();
+        for (int i = 0; i < BACKPACK_SLOTS; i++) {
+            ItemStack stack = cachedItems.get(i);
+            if (stack.isEmpty()) {
+                continue;
+            }
+            ItemStack drop = stack.copy();
+            cachedItems.set(i, ItemStack.EMPTY);
+            ItemEntity entity =
+                    new ItemEntity(
+                            level(),
+                            bx + (level().random.nextDouble() - 0.5) * 0.45,
+                            by + 0.12,
+                            bz + (level().random.nextDouble() - 0.5) * 0.45,
+                            drop);
+            entity.setPickUpDelay(10);
+            entity.setDeltaMovement(
+                    (level().random.nextDouble() - 0.5) * 0.1, 0.12, (level().random.nextDouble() - 0.5) * 0.1);
+            level().addFreshEntity(entity);
         }
     }
 

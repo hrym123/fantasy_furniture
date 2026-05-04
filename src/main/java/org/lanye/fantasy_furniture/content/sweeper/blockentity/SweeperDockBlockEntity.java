@@ -21,6 +21,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import org.lanye.fantasy_furniture.FantasyFurniture;
 import org.lanye.fantasy_furniture.bootstrap.block.ModBlocks;
+import org.lanye.fantasy_furniture.content.sweeper.block.SweeperDockBlock;
 import org.lanye.fantasy_furniture.content.sweeper.entity.SweeperRobotEntity;
 import software.bernie.geckolib.animatable.GeoBlockEntity;
 import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
@@ -94,9 +95,13 @@ public class SweeperDockBlockEntity extends BlockEntity implements GeoBlockEntit
         if (!(level instanceof ServerLevel serverLevel) || be.isRemoved()) {
             return;
         }
-        AABB box = new AABB(pos).inflate(24.0);
+        AABB box = new AABB(pos).inflate(SweeperDockBlock.boundRobotSearchInflateBlocks());
         List<SweeperRobotEntity> robots =
                 serverLevel.getEntitiesOfClass(SweeperRobotEntity.class, box, r -> pos.equals(r.getDockPos()));
+        if (robots.isEmpty()) {
+            SweeperDockBlock.trySpawnBoundRobotIfAbsent(serverLevel, pos, state);
+            robots = serverLevel.getEntitiesOfClass(SweeperRobotEntity.class, box, r -> pos.equals(r.getDockPos()));
+        }
         int health = resolveBoundRobotHealth(robots);
         byte band = (byte) healthToTextureBand(health);
         boolean charging = !robots.isEmpty() && robots.get(0).isDockedChargingForDisplay();

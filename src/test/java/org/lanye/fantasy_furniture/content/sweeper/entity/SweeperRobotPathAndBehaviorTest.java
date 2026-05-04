@@ -1,6 +1,7 @@
 package org.lanye.fantasy_furniture.content.sweeper.entity;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -56,6 +57,17 @@ class SweeperRobotPathAndBehaviorTest {
         assertSame(SweeperRobotState.REENTERING_PATROL, v[5]);
         assertSame(SweeperRobotState.IDLE, v[6]);
         assertSame(SweeperRobotState.PATROLLING, v[7]);
+    }
+
+    @Test
+    void sweeperRobotState_inventoryPressure_and_deprecatedDockSequence() {
+        assertTrue(SweeperRobotState.RETURNING_LOW_HEALTH.isLowHealthDockApproach());
+        assertFalse(SweeperRobotState.RETURNING_CACHE_FULL.isLowHealthDockApproach());
+        assertTrue(SweeperRobotState.RETURNING_LOW_HEALTH.isReturningForInventoryPressure());
+        assertTrue(SweeperRobotState.RETURNING_CACHE_FULL.isReturningForInventoryPressure());
+        assertFalse(SweeperRobotState.PATROLLING.isReturningForInventoryPressure());
+        assertTrue(SweeperRobotState.RETURNING_LOW_HEALTH.isDockingReturnSequence());
+        assertFalse(SweeperRobotState.RETURNING_CACHE_FULL.isDockingReturnSequence());
     }
 
     @Test

@@ -1,5 +1,6 @@
 package org.lanye.fantasy_furniture;
 
+import net.minecraft.util.Mth;
 import net.minecraftforge.common.ForgeConfigSpec;
 
 /** 模组通用配置（对应 {@code fantasy_furniture-common.toml}）。 */
@@ -11,6 +12,7 @@ public final class Config {
     public static final ForgeConfigSpec SPEC;
     private static final ForgeConfigSpec.IntValue SEAT_COOLDOWN_TICKS;
     private static final ForgeConfigSpec.IntValue SWEEPER_PATROL_RADIUS;
+    private static final ForgeConfigSpec.IntValue SWEEPER_REENTER_GOAL_RADIUS_BLOCKS;
     private static final ForgeConfigSpec.DoubleValue SWEEPER_PICKUP_FORWARD_REACH;
     private static final ForgeConfigSpec.DoubleValue SWEEPER_PICKUP_ASIDE_REACH;
     private static final ForgeConfigSpec.IntValue SWEEPER_RETURN_HEALTH_THRESHOLD;
@@ -36,6 +38,10 @@ public final class Config {
         SWEEPER_PATROL_RADIUS =
                 b.comment("扫地机器人以机仓为中心的巡逻半径（方块）。")
                         .defineInRange("patrolRadius", 24, 8, 64);
+        SWEEPER_REENTER_GOAL_RADIUS_BLOCKS =
+                b.comment(
+                                "回巡逻区时目标落点相对机仓的最大水平距离（方块），须不大于 patrolRadius；与《扫地机器人设计书》§4.0.1 行为 6、§6.4 一致。")
+                        .defineInRange("reenterGoalRadiusBlocks", 10, 2, 64);
         SWEEPER_PICKUP_FORWARD_REACH =
                 b.comment(
                                 "遗留 TOML 键：当前拾取逻辑严格按机器人 blockPosition() 同格判定，此值仅兼容旧配置，不参与计算。")
@@ -45,7 +51,7 @@ public final class Config {
                                 "遗留 TOML 键：当前拾取逻辑严格按机器人 blockPosition() 同格判定，此值仅兼容旧配置，不参与计算。")
                         .defineInRange("pickupAsideReach", 0.35D, 0.08D, 0.8D);
         SWEEPER_RETURN_HEALTH_THRESHOLD =
-                b.comment("生命值低于等于该阈值时，机器人会优先返回机仓。")
+                b.comment("生命值严格低于该阈值时，机器人会优先返回机仓（与设计书 §5 `hp < returnHealthThreshold` 一致）。")
                         .defineInRange("returnHealthThreshold", 5, 2, 10);
         SWEEPER_HEAL_INTERVAL_TICKS =
                 b.comment("机器人停靠在机仓时的回血间隔（tick）。")
@@ -71,7 +77,7 @@ public final class Config {
                         .defineInRange("turnPauseTicks", 10, 0, 40);
         SWEEPER_DOCK_REVERSE_RANGE =
                 b.comment(
-                                "回仓状态下，距离机仓中心不超过该范围时允许倒车（模型尾部朝向机仓）以便对齐入库。")
+                                "遗留 TOML 键：低电三段入库链阶段 2 固定倒车直至已入仓，当前逻辑不读取此值；仅兼容旧配置。")
                         .defineInRange("dockReverseRange", 2.5D, 0.5D, 8.0D);
         SWEEPER_ENABLE_WALL_CLIMB =
                 b.comment(
@@ -91,6 +97,14 @@ public final class Config {
     /** 机仓周围巡逻半径（方块）。 */
     public static int sweeperPatrolRadius() {
         return SWEEPER_PATROL_RADIUS.get();
+    }
+
+    /**
+     * 回巡逻区目标相对机仓水平最大距离；运行时钳到不超过 {@link #sweeperPatrolRadius()}。
+     */
+    public static int sweeperReenterGoalRadiusBlocks() {
+        int patrol = sweeperPatrolRadius();
+        return Mth.clamp(SWEEPER_REENTER_GOAL_RADIUS_BLOCKS.get(), 2, patrol);
     }
 
     /** 遗留 TOML 读取接口；吸尘器实体当前按同格方块拾取，不应用此返回值。 */
