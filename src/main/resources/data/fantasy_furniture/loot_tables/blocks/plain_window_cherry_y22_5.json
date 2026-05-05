@@ -6,7 +6,13 @@
       "entries": [
         {
           "type": "minecraft:item",
-          "name": "fantasy_furniture:plain_window_cherry_y22_5"
+          "name": "fantasy_furniture:plain_window_cherry",
+          "functions": [
+            {
+              "function": "minecraft:set_nbt",
+              "tag": "{FFShape:\"y22_5\"}"
+            }
+          ]
         }
       ],
       "conditions": [

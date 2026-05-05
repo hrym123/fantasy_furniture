@@ -6,7 +6,13 @@
       "entries": [
         {
           "type": "minecraft:item",
-          "name": "fantasy_furniture:plain_window_acacia_y45"
+          "name": "fantasy_furniture:plain_window_acacia",
+          "functions": [
+            {
+              "function": "minecraft:set_nbt",
+              "tag": "{FFShape:\"y45\"}"
+            }
+          ]
         }
       ],
       "conditions": [

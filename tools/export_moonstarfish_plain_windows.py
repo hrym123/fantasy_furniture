@@ -12,8 +12,8 @@
 
 唯一输入为工程 JSON；**不读取** ``*_对比用`` 文件。
 
-注册表 9×6 变体的包装模型 / blockstate / 语言等由 ``tools/generate_plain_window_variant_assets.py`` 生成（与
-``PlainWindowBlocks.Material`` 的 id 保持一致）。
+注册表 9×6 变体的包装模型 / blockstate / 语言等由 ``tools/generate_plain_window_variant_assets.py`` 生成。
+贴图策略为「仅 9 张」时，在导出后执行 ``tools/plain_window_consolidate_nine_textures.py``（统一为 ``plain_window_1``…``_9``）。
 """
 from __future__ import annotations
 
@@ -311,7 +311,7 @@ def convert_elements(
             uw, uh = texture_canvas_for_id(tid_s, textures_arr, res)
             raw_uv = face.get("uv") or [0, 0, 0, 0]
             mc_uv = project_uv_to_mc_export_uv(raw_uv, uw, uh)
-            faces_out[face_name] = {"uv": mc_uv, "texture": f"#{tid_s}"}
+            faces_out[face_name] = {"uv": mc_uv, "texture": f"#{tid_s}", "tintindex": 0}
         cube["faces"] = faces_out
         out.append(cube)
     return out

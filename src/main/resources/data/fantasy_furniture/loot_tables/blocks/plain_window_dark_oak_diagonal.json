@@ -6,7 +6,13 @@
       "entries": [
         {
           "type": "minecraft:item",
-          "name": "fantasy_furniture:plain_window_dark_oak_diagonal"
+          "name": "fantasy_furniture:plain_window_dark_oak",
+          "functions": [
+            {
+              "function": "minecraft:set_nbt",
+              "tag": "{FFShape:\"diagonal\"}"
+            }
+          ]
         }
       ],
       "conditions": [

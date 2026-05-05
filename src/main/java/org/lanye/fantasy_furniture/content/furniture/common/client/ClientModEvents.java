@@ -3,7 +3,9 @@ package org.lanye.fantasy_furniture.content.furniture.common.client;
 import net.minecraft.client.gui.screens.MenuScreens;
 import net.minecraft.client.gui.screens.inventory.ContainerScreen;
 import net.minecraftforge.api.distmarker.Dist;
+import net.minecraft.world.item.Item;
 import net.minecraftforge.client.event.EntityRenderersEvent;
+import net.minecraftforge.client.event.RegisterColorHandlersEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
@@ -12,6 +14,8 @@ import org.lanye.fantasy_furniture.content.sweeper.blockentity.SweeperDockBlockE
 import net.minecraft.world.level.block.Block;
 import org.lanye.fantasy_furniture.bootstrap.block.ModBlocks;
 import org.lanye.fantasy_furniture.bootstrap.block.PlainWindowBlocks;
+import org.lanye.fantasy_furniture.content.furniture.decor.block.PlainWindowBlock;
+import org.lanye.fantasy_furniture.content.furniture.decor.item.PlainWindowMaterialItem;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.client.model.BanquetteBlockGeoModel;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.client.renderer.BanquetteGeoBlockRenderer;
 import org.lanye.fantasy_furniture.content.furniture.decor.client.renderer.CombinedOrnamentGeoBlockRenderer;
@@ -81,10 +85,69 @@ public final class ClientModEvents {
                     MenuScreens.register(ModMenuTypes.SWEEPER_ROBOT.get(), ContainerScreen::new);
                     // 普通窗户：纯 JSON + BlockItem；54 种 id 共用 cutout（见 PlainWindowBlocks）。
                     Block[] plainWindows =
-                            PlainWindowBlocks.entries().stream()
+                            PlainWindowBlocks.blockEntries().stream()
                                     .map(e -> e.block().get())
                                     .toArray(Block[]::new);
                     BlockRenderLayers.registerCutout(plainWindows);
+                    // #region agent log
+                    AgentDebugLog.log(
+                            "H1",
+                            "ClientModEvents.onClientSetup",
+                            "cutout plain windows",
+                            "{\"plainWindowBlockCount\":" + plainWindows.length + "}");
+                    // #endregion
                 });
+    }
+
+    @SubscribeEvent
+    public static void registerPlainWindowBlockColors(RegisterColorHandlersEvent.Block event) {
+        Block[] plainWindows =
+                PlainWindowBlocks.blockEntries().stream()
+                        .map(e -> e.block().get())
+                        .toArray(Block[]::new);
+        // #region agent log
+        AgentDebugLog.log(
+                "H2",
+                "ClientModEvents.registerPlainWindowBlockColors",
+                "register block tint handlers",
+                "{\"blockCount\":" + plainWindows.length + "}");
+        // #endregion
+        event.register(
+                (state, level, pos, tintIndex) -> {
+                    if (tintIndex != 0) {
+                        return -1;
+                    }
+                    if (state.getBlock() instanceof PlainWindowBlock block) {
+                        return PlainWindowColors.tintRgb(block.material());
+                    }
+                    return -1;
+                },
+                plainWindows);
+    }
+
+    @SubscribeEvent
+    public static void registerPlainWindowItemColors(RegisterColorHandlersEvent.Item event) {
+        Item[] items =
+                PlainWindowBlocks.materialItemEntries().stream()
+                        .map(e -> e.item().get())
+                        .toArray(Item[]::new);
+        // #region agent log
+        AgentDebugLog.log(
+                "H2",
+                "ClientModEvents.registerPlainWindowItemColors",
+                "register item tint handlers",
+                "{\"itemCount\":" + items.length + "}");
+        // #endregion
+        event.register(
+                (stack, tintIndex) -> {
+                    if (tintIndex != 0) {
+                        return -1;
+                    }
+                    if (stack.getItem() instanceof PlainWindowMaterialItem item) {
+                        return PlainWindowColors.tintRgb(item.material());
+                    }
+                    return -1;
+                },
+                items);
     }
 }

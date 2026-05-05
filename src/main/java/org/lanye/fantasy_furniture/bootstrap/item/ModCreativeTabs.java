@@ -41,8 +41,8 @@ public final class ModCreativeTabs {
                 ModBlocks.CYAN_CERAMIC_TILE_ITEM::get,
                 ModBlocks.PURPLE_CERAMIC_TILE_ITEM::get,
                 ModBlocks.DECORATIVE_SCREEN_ITEM::get);
-        // 普通窗户：与 PlainWindowBlocks.registerAll 相同，先按造型再按材质。
-        for (PlainWindowBlocks.Entry e : PlainWindowBlocks.entries()) {
+        // 普通窗户：创造栏仅 9 种材质物品；造型潜行右键切换。
+        for (PlainWindowBlocks.MaterialItemEntry e : PlainWindowBlocks.materialItemEntries()) {
             list.add(e.item()::get);
         }
         Collections.addAll(

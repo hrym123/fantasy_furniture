@@ -6,7 +6,13 @@
       "entries": [
         {
           "type": "minecraft:item",
-          "name": "fantasy_furniture:plain_window_spruce_default"
+          "name": "fantasy_furniture:plain_window_spruce",
+          "functions": [
+            {
+              "function": "minecraft:set_nbt",
+              "tag": "{FFShape:\"default\"}"
+            }
+          ]
         }
       ],
       "conditions": [

@@ -7,7 +7,6 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.BlockGetter;
-import net.minecraft.world.level.LevelReader;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.HorizontalDirectionalBlock;
@@ -15,10 +14,21 @@ import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.material.PushReaction;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.LevelReader;
 import net.minecraft.world.level.pathfinder.PathComputationType;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
+import org.lanye.fantasy_furniture.bootstrap.block.PlainWindowBlocks;
 import org.lanye.reverie_core.util.VoxelShapeRotation;
 
 /**
@@ -64,12 +74,55 @@ public class PlainWindowBlock extends HorizontalDirectionalBlock {
 
     private final CollisionMode collisionMode;
     private final VoxelShape northRefShape;
+    private final String materialId;
+    private final String shapeId;
 
-    public PlainWindowBlock(BlockBehaviour.Properties properties, CollisionMode collisionMode, VoxelShape northRefShape) {
+    public PlainWindowBlocks.Material material() {
+        return PlainWindowBlocks.Material.fromId(materialId);
+    }
+
+    public PlainWindowBlocks.Shape shape() {
+        return PlainWindowBlocks.Shape.fromId(shapeId);
+    }
+
+    public PlainWindowBlock(
+            BlockBehaviour.Properties properties,
+            CollisionMode collisionMode,
+            VoxelShape northRefShape,
+            String materialId,
+            String shapeId) {
         super(properties);
         this.collisionMode = collisionMode;
         this.northRefShape = northRefShape;
+        this.materialId = materialId;
+        this.shapeId = shapeId;
         registerDefaultState(defaultBlockState().setValue(FACING, Direction.NORTH));
+    }
+
+    @Override
+    public ItemStack getCloneItemStack(BlockState state, HitResult target, BlockGetter level, BlockPos pos, Player player) {
+        return PlainWindowBlocks.createStack(PlainWindowBlocks.Material.fromId(materialId), PlainWindowBlocks.Shape.fromId(shapeId));
+    }
+
+    @Override
+    public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+        if (!player.isShiftKeyDown()) {
+            return InteractionResult.PASS;
+        }
+        if (level.isClientSide) {
+            return InteractionResult.SUCCESS;
+        }
+        PlainWindowBlocks.Material mat = PlainWindowBlocks.Material.fromId(materialId);
+        PlainWindowBlocks.Shape cur = PlainWindowBlocks.Shape.fromId(shapeId);
+        PlainWindowBlocks.Shape[] all = PlainWindowBlocks.Shape.values();
+        PlainWindowBlocks.Shape next = all[(cur.ordinal() + 1) % all.length];
+        Direction facing = state.getValue(FACING);
+        BlockState placed = PlainWindowBlocks.blockFor(mat, next).defaultBlockState().setValue(FACING, facing);
+        if (!level.setBlock(pos, placed, Block.UPDATE_ALL)) {
+            return InteractionResult.PASS;
+        }
+        level.playSound(null, pos, SoundEvents.GLASS_STEP, SoundSource.BLOCKS, 0.35F, 1.1F);
+        return InteractionResult.CONSUME;
     }
 
     @Override

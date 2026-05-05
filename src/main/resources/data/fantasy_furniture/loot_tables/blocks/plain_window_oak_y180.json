@@ -6,7 +6,13 @@
       "entries": [
         {
           "type": "minecraft:item",
-          "name": "fantasy_furniture:plain_window_oak_y180"
+          "name": "fantasy_furniture:plain_window_oak",
+          "functions": [
+            {
+              "function": "minecraft:set_nbt",
+              "tag": "{FFShape:\"y180\"}"
+            }
+          ]
         }
       ],
       "conditions": [

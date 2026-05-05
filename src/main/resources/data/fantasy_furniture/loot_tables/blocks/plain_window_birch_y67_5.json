@@ -6,7 +6,13 @@
       "entries": [
         {
           "type": "minecraft:item",
-          "name": "fantasy_furniture:plain_window_birch_y67_5"
+          "name": "fantasy_furniture:plain_window_birch",
+          "functions": [
+            {
+              "function": "minecraft:set_nbt",
+              "tag": "{FFShape:\"y67_5\"}"
+            }
+          ]
         }
       ],
       "conditions": [
