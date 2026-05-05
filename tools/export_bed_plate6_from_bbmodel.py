@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
-"""一次性：从 Blockbench java_block bbmodel 导出 bed_plate6 的 geo / png / animation.json。
+"""一次性：从 Blockbench java_block bbmodel 导出 **床体主体** bed_plate6 的 geo / png / animation.json。
+
+仅写入单张 ``bed_plate6.png``（``textures[0]``）。七种 **床单** 贴图请使用
+``export_bed_plate6_duvet_textures_from_bbmodel.py`` 从「床板6（被单）」bbmodel 的 ``textures[]`` 导出。
 
 新增其它床板款式时：复制资源 basename（如 bed_plate3）、在 FurnitureAnimatedBlocks 中增加
 BedPlateAnimatedSpecs.spec(modid, id, 属性供应, 实体工厂)（reverie_core）与薄 BlockEntity 子类，

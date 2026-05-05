@@ -9,6 +9,8 @@ import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
 import org.lanye.fantasy_furniture.FantasyFurniture;
 import org.lanye.fantasy_furniture.content.furniture.common.item.ArcaneWandItem;
+import org.lanye.fantasy_furniture.content.furniture.livingroom.item.BedPlate6DuvetCoverItem;
+import org.lanye.fantasy_furniture.content.furniture.livingroom.item.BedPlate6DuvetItem;
 import org.lanye.reverie_core.geolib.GeolibItemAssets;
 import org.lanye.reverie_core.item.DecorativeHelmetRegistration;
 
@@ -24,6 +26,40 @@ public final class ModItems {
 
     public static final RegistryObject<Item> PAINT_BRUSH =
             ITEMS.register("paint_brush", () -> new Item(new Item.Properties()));
+
+    private static final Item.Properties BED_PLATE6_DUVET_PROPS = new Item.Properties().stacksTo(16);
+
+    /** 床板 6 床单七种材质（{@code bed_plate6_duvet_1} … {@code _7}）。 */
+    public static final RegistryObject<Item> BED_PLATE6_DUVET_1 =
+            ITEMS.register("bed_plate6_duvet_1", () -> new BedPlate6DuvetItem(BED_PLATE6_DUVET_PROPS, 1));
+    public static final RegistryObject<Item> BED_PLATE6_DUVET_2 =
+            ITEMS.register("bed_plate6_duvet_2", () -> new BedPlate6DuvetItem(BED_PLATE6_DUVET_PROPS, 2));
+    public static final RegistryObject<Item> BED_PLATE6_DUVET_3 =
+            ITEMS.register("bed_plate6_duvet_3", () -> new BedPlate6DuvetItem(BED_PLATE6_DUVET_PROPS, 3));
+    public static final RegistryObject<Item> BED_PLATE6_DUVET_4 =
+            ITEMS.register("bed_plate6_duvet_4", () -> new BedPlate6DuvetItem(BED_PLATE6_DUVET_PROPS, 4));
+    public static final RegistryObject<Item> BED_PLATE6_DUVET_5 =
+            ITEMS.register("bed_plate6_duvet_5", () -> new BedPlate6DuvetItem(BED_PLATE6_DUVET_PROPS, 5));
+    public static final RegistryObject<Item> BED_PLATE6_DUVET_6 =
+            ITEMS.register("bed_plate6_duvet_6", () -> new BedPlate6DuvetItem(BED_PLATE6_DUVET_PROPS, 6));
+    public static final RegistryObject<Item> BED_PLATE6_DUVET_7 =
+            ITEMS.register("bed_plate6_duvet_7", () -> new BedPlate6DuvetItem(BED_PLATE6_DUVET_PROPS, 7));
+
+    /** 床板 6 被套七种材质（仅能在已铺床单的床板上使用）。 */
+    public static final RegistryObject<Item> BED_PLATE6_DUVET_COVER_1 =
+            ITEMS.register("bed_plate6_duvet_cover_1", () -> new BedPlate6DuvetCoverItem(BED_PLATE6_DUVET_PROPS, 1));
+    public static final RegistryObject<Item> BED_PLATE6_DUVET_COVER_2 =
+            ITEMS.register("bed_plate6_duvet_cover_2", () -> new BedPlate6DuvetCoverItem(BED_PLATE6_DUVET_PROPS, 2));
+    public static final RegistryObject<Item> BED_PLATE6_DUVET_COVER_3 =
+            ITEMS.register("bed_plate6_duvet_cover_3", () -> new BedPlate6DuvetCoverItem(BED_PLATE6_DUVET_PROPS, 3));
+    public static final RegistryObject<Item> BED_PLATE6_DUVET_COVER_4 =
+            ITEMS.register("bed_plate6_duvet_cover_4", () -> new BedPlate6DuvetCoverItem(BED_PLATE6_DUVET_PROPS, 4));
+    public static final RegistryObject<Item> BED_PLATE6_DUVET_COVER_5 =
+            ITEMS.register("bed_plate6_duvet_cover_5", () -> new BedPlate6DuvetCoverItem(BED_PLATE6_DUVET_PROPS, 5));
+    public static final RegistryObject<Item> BED_PLATE6_DUVET_COVER_6 =
+            ITEMS.register("bed_plate6_duvet_cover_6", () -> new BedPlate6DuvetCoverItem(BED_PLATE6_DUVET_PROPS, 6));
+    public static final RegistryObject<Item> BED_PLATE6_DUVET_COVER_7 =
+            ITEMS.register("bed_plate6_duvet_cover_7", () -> new BedPlate6DuvetCoverItem(BED_PLATE6_DUVET_PROPS, 7));
 
     /**
      * 糖葫芦：木级剑属性基底，额外攻击伤害 +1（与木剑的 +3 不同，作低伤玩具武器）。

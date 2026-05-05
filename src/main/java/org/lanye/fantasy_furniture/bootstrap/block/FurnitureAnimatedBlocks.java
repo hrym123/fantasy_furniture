@@ -41,8 +41,9 @@ import org.lanye.fantasy_furniture.bootstrap.blockentity.ModBlockEntities;
 import org.lanye.reverie_core.geolib.AnimatedBlockEntry;
 import org.lanye.reverie_core.geolib.AnimatedBlockRegistration;
 import org.lanye.reverie_core.geolib.AnimatedBlockSpec;
-import org.lanye.reverie_core.geolib.bed.BedPlateAnimatedSpecs;
+import org.lanye.fantasy_furniture.content.furniture.livingroom.block.BedPlate6Block;
 import org.lanye.reverie_core.geolib.bed.BedPlateBaseBlockEntity;
+import org.lanye.reverie_core.geolib.bed.BedPlateBlockItem;
 import org.lanye.reverie_core.geolib.GeolibBlockItem;
 import org.lanye.reverie_core.geolib.GeolibItemAssets;
 
@@ -164,11 +165,17 @@ public final class FurnitureAnimatedBlocks {
                                     FurnitureBlockProperties::metalNoOcclusion,
                                     SweeperDockBlock::new,
                                     SweeperDockBlockEntity::new),
-                            BedPlateAnimatedSpecs.spec(
-                                    FantasyFurniture.MODID,
+                            AnimatedBlockRegistration.spec(
                                     "bed_plate6",
                                     FurnitureBlockProperties::cherryWoodFurnitureNoOcclusion,
-                                    BedPlate6BlockEntity::new)));
+                                    p -> new BedPlate6Block(p, BedPlate6BlockEntity::new),
+                                    BedPlate6BlockEntity::new,
+                                    (block, itemProps) ->
+                                            new BedPlateBlockItem(
+                                                    block,
+                                                    itemProps,
+                                                    GeolibItemAssets.blockAsset(
+                                                            FantasyFurniture.MODID, "bed_plate6")))));
 
     private static final int I_BANQUETTE = 0;
     private static final int I_MIXING_BOWL = 1;

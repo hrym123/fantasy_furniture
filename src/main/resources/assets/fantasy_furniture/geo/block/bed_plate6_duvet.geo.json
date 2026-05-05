@@ -1,0 +1,35 @@
+{
+	"format_version": "1.21.110",
+	"minecraft:geometry": [
+		{
+			"description": {
+				"identifier": "geometry.bed_plate6_duvet",
+				"texture_width": 64,
+				"texture_height": 64,
+				"visible_bounds_width": 4,
+				"visible_bounds_height": 1.5,
+				"visible_bounds_offset": [0, 0.75, 0]
+			},
+			"bones": [
+				{
+					"name": "bed_plate6_duvet",
+					"pivot": [0, 8, 0],
+					"cubes": [
+						{
+							"origin": [-8, 5, -7],
+							"size": [16, 2, 30],
+							"uv": {
+								"north": {"uv": [16, 2], "uv_size": [16, 2]},
+								"east": {"uv": [16, 0], "uv_size": [30, 2]},
+								"south": {"uv": [16, 4], "uv_size": [16, 2]},
+								"west": {"uv": [16, 0], "uv_size": [30, 2]},
+								"up": {"uv": [0, 0], "uv_size": [16, 30]},
+								"down": {"uv": [16, 30], "uv_size": [-16, -30]}
+							}
+						}
+					]
+				}
+			]
+		}
+	]
+}

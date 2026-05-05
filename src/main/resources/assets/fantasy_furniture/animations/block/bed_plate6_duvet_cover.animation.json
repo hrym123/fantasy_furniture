@@ -1,0 +1,10 @@
+{
+	"format_version": "1.8.0",
+	"animations": {
+		"animation.bed_plate6_duvet_cover.idle": {
+			"loop": true,
+			"animation_length": 1,
+			"bones": {}
+		}
+	}
+}
