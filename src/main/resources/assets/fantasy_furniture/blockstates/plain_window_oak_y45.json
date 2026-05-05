@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "facing=north": {
+      "model": "fantasy_furniture:block/plain_window_oak_y45"
+    },
+    "facing=south": {
+      "model": "fantasy_furniture:block/plain_window_oak_y45",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "fantasy_furniture:block/plain_window_oak_y45",
+      "y": 270
+    },
+    "facing=east": {
+      "model": "fantasy_furniture:block/plain_window_oak_y45",
+      "y": 90
+    }
+  }
+}

@@ -9,7 +9,9 @@ import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 import org.lanye.fantasy_furniture.FantasyFurniture;
 import org.lanye.fantasy_furniture.content.sweeper.blockentity.SweeperDockBlockEntity;
+import net.minecraft.world.level.block.Block;
 import org.lanye.fantasy_furniture.bootstrap.block.ModBlocks;
+import org.lanye.fantasy_furniture.bootstrap.block.PlainWindowBlocks;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.client.model.BanquetteBlockGeoModel;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.client.renderer.BanquetteGeoBlockRenderer;
 import org.lanye.fantasy_furniture.content.furniture.decor.client.renderer.CombinedOrnamentGeoBlockRenderer;
@@ -77,15 +79,12 @@ public final class ClientModEvents {
         event.enqueueWork(
                 () -> {
                     MenuScreens.register(ModMenuTypes.SWEEPER_ROBOT.get(), ContainerScreen::new);
-                    // 普通窗户：纯 JSON + BlockItem。translucent 在手中/第三人称下易因半透明排序把内侧面画到玻璃前；
-                    // cutout 用 Alpha 测试并写深度（玻璃边缘为硬裁剪，非磨砂混合）。
-                    BlockRenderLayers.registerCutout(
-                            ModBlocks.PLAIN_WINDOW_BLOCK.get(),
-                            ModBlocks.PLAIN_WINDOW_Y180_BLOCK.get(),
-                            ModBlocks.PLAIN_WINDOW_Y22_5_BLOCK.get(),
-                            ModBlocks.PLAIN_WINDOW_Y45_BLOCK.get(),
-                            ModBlocks.PLAIN_WINDOW_Y67_5_BLOCK.get(),
-                            ModBlocks.PLAIN_WINDOW_DIAGONAL_BLOCK.get());
+                    // 普通窗户：纯 JSON + BlockItem；54 种 id 共用 cutout（见 PlainWindowBlocks）。
+                    Block[] plainWindows =
+                            PlainWindowBlocks.entries().stream()
+                                    .map(e -> e.block().get())
+                                    .toArray(Block[]::new);
+                    BlockRenderLayers.registerCutout(plainWindows);
                 });
     }
 }

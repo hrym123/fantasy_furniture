@@ -11,6 +11,9 @@
   - ``credit`` / ``format_version`` 与 BB 导出风格一致。
 
 唯一输入为工程 JSON；**不读取** ``*_对比用`` 文件。
+
+注册表 9×6 变体的包装模型 / blockstate / 语言等由 ``tools/generate_plain_window_variant_assets.py`` 生成（与
+``PlainWindowBlocks.Material`` 的 id 保持一致）。
 """
 from __future__ import annotations
 

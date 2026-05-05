@@ -2,12 +2,7 @@
   "replace": false,
   "values": [
     "fantasy_furniture:decorative_screen",
-    "fantasy_furniture:plain_window",
-    "fantasy_furniture:plain_window_y180",
-    "fantasy_furniture:plain_window_y22_5",
-    "fantasy_furniture:plain_window_y45",
-    "fantasy_furniture:plain_window_y67_5",
-    "fantasy_furniture:plain_window_diagonal",
+    "#fantasy_furniture:plain_windows",
     "fantasy_furniture:mixing_bowl",
     "fantasy_furniture:jam_pot",
     "fantasy_furniture:oven",

@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "facing=north": {
+      "model": "fantasy_furniture:block/plain_window_jungle_default"
+    },
+    "facing=south": {
+      "model": "fantasy_furniture:block/plain_window_jungle_default",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "fantasy_furniture:block/plain_window_jungle_default",
+      "y": 270
+    },
+    "facing=east": {
+      "model": "fantasy_furniture:block/plain_window_jungle_default",
+      "y": 90
+    }
+  }
+}
