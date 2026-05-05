@@ -8,6 +8,11 @@
     "fantasy_furniture:pestle_bowl",
     "fantasy_furniture:half_half_pot",
     "fantasy_furniture:lottery_machine",
-    "fantasy_furniture:glass_window"
+    "fantasy_furniture:plain_window",
+    "fantasy_furniture:plain_window_y180",
+    "fantasy_furniture:plain_window_y22_5",
+    "fantasy_furniture:plain_window_y45",
+    "fantasy_furniture:plain_window_y67_5",
+    "fantasy_furniture:plain_window_diagonal"
   ]
 }

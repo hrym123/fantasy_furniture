@@ -12,12 +12,20 @@
 
 算法概要
 --------
+**geo（Bedrock / GeckoLib）**
+
 1. 遍历 geometry 下所有 bone 的 cubes（与 Blockbench 导出一致：cube 坐标已在模型空间）。
 2. 每个 cube：无 rotation 时用 origin/size 直接得 AABB；有 rotation 时对 8 个角点绕 pivot 做 XYZ 欧拉旋转（度），
    再取轴对齐包围盒（与开发时用于抽奖机的脚本一致）。
 3. 将模型坐标映射到方块内 0～16：x' = x + 8，z' = z + 8，y' = y（与模组内 Pestle/果酱锅等约定一致）。
 4. **默认输出**：各 cube 与 **水平单格 [0,16]×[0,16]、竖直不裁顶** 求交（y 可 >16，以包含超高模型），再对所有交盒取 **全局 min/max**，得到外接轴对齐盒（非布尔并集体积）。
 5. **``--emit-java``**：对每个裁切盒输出 ``Shapes.or`` 链（真并集），与 ``block_collision_detail.py`` 的 Java 片段类似，但无逐条说明。
+
+**``--mc-block-model``（Java 方块模型 JSON）**
+
+1. 遍历顶层 ``elements`` 的 ``from``/``to``（已为方块 0～16 刻度），无 ``+8`` 映射。
+2. 有 ``rotation`` 时对 8 角点绕 ``origin`` 做单轴旋转（与脚本内 ``_rot_x``/``_rot_y``/``_rot_z`` 一致）。
+3. 与 geo 相同：各 element 与水平单格裁切、竖直可超高，再外接或 ``--emit-java`` 多盒并集。
 
 注意
 ----
@@ -30,6 +38,9 @@
     python tools/geo_collision_box.py path/to/model.geo.json
 
     python tools/geo_collision_box.py src/main/resources/assets/fantasy_furniture/geo/block/lottery_machine.geo.json
+
+    # Java 方块模型（Blockbench 导出的 models/block/*.json，from/to 为 0～16 刻度）
+    python tools/geo_collision_box.py src/main/resources/assets/fantasy_furniture/models/block/plain_window.json --mc-block-model
 
     # 实体 GeckoLib geo：估算 EntityType.Builder.sized(width, height)（水平取 xz 外包正方形边长）
     python tools/geo_collision_box.py src/main/resources/assets/fantasy_furniture/geo/entity/sweeper_robot.geo.json --entity-hitbox
@@ -136,6 +147,144 @@ def _model_aabb_to_block_space(
         minz + 8.0,
         maxz + 8.0,
     )
+
+
+def _apply_mc_element_rotation(
+    p: tuple[float, float, float],
+    origin: tuple[float, float, float],
+    axis: str,
+    angle_deg: float,
+) -> tuple[float, float, float]:
+    """
+    Java 版方块模型 element.rotation：绕 origin 的单轴旋转（度），
+    与 geo 脚本中 _rot_x/_rot_y/_rot_z 的右手系约定一致。
+    """
+    ox, oy, oz = origin
+    rel = (p[0] - ox, p[1] - oy, p[2] - oz)
+    rad = math.radians(angle_deg)
+    ax = axis.lower()
+    if ax == "x":
+        rr = _rot_x(rel, rad)
+    elif ax == "y":
+        rr = _rot_y(rel, rad)
+    elif ax == "z":
+        rr = _rot_z(rel, rad)
+    else:
+        raise ValueError(f"不支持的 rotation.axis: {axis!r}")
+    return (rr[0] + ox, rr[1] + oy, rr[2] + oz)
+
+
+def _mc_element_aabb_block_pixels(
+    from_: list[float],
+    to: list[float],
+    rotation: dict | None,
+) -> tuple[float, float, float, float, float, float]:
+    """单个 element：from/to（方块 0～16 刻度）→ 轴对齐包围盒（同坐标系）。"""
+    fx, fy, fz = from_
+    tx, ty, tz = to
+    x0, x1 = min(fx, tx), max(fx, tx)
+    y0, y1 = min(fy, ty), max(fy, ty)
+    z0, z1 = min(fz, tz), max(fz, tz)
+    corners: list[tuple[float, float, float]] = []
+    for cx in (x0, x1):
+        for cy in (y0, y1):
+            for cz in (z0, z1):
+                corners.append((cx, cy, cz))
+    if rotation is None:
+        pts = corners
+    else:
+        origin = tuple(float(x) for x in rotation["origin"])
+        axis = str(rotation["axis"])
+        angle = float(rotation["angle"])
+        pts = [_apply_mc_element_rotation(c, origin, axis, angle) for c in corners]
+    xs = [p[0] for p in pts]
+    ys = [p[1] for p in pts]
+    zs = [p[2] for p in pts]
+    return (min(xs), max(xs), min(ys), max(ys), min(zs), max(zs))
+
+
+def _iter_elements_mc_block_model(data: dict) -> list[tuple[list[float], list[float], dict | None]]:
+    """解析 Blockbench/Java block model 顶层 elements。"""
+    elements = data.get("elements")
+    if not isinstance(elements, list):
+        raise ValueError("不是有效的 Java 方块模型 JSON：缺少 elements 数组")
+    out: list[tuple[list[float], list[float], dict | None]] = []
+    for el in elements:
+        if not isinstance(el, dict):
+            continue
+        if "from" not in el or "to" not in el:
+            continue
+        from_ = el["from"]
+        to = el["to"]
+        rot = el.get("rotation")
+        if rot is not None and not isinstance(rot, dict):
+            rot = None
+        out.append((from_, to, rot))
+    if not out:
+        raise ValueError("elements 中无可用几何")
+    return out
+
+
+def _mc_element_clipped_box(
+    from_: list[float],
+    to: list[float],
+    rotation: dict | None,
+) -> tuple[float, float, float, float, float, float] | None:
+    m = _mc_element_aabb_block_pixels(from_, to, rotation)
+    bx0, bx1, by0, by1, bz0, bz1 = m[0], m[1], m[2], m[3], m[4], m[5]
+    return _intersect_block_xz_single_cell_unbounded_y(bx0, bx1, by0, by1, bz0, bz1)
+
+
+def compute_north_clipped_boxes_mc_block_model(model_path: Path) -> list[tuple[float, float, float, float, float, float]]:
+    data = json.loads(model_path.read_text(encoding="utf-8"))
+    boxes: list[tuple[float, float, float, float, float, float]] = []
+    for from_, to, rot in _iter_elements_mc_block_model(data):
+        clipped = _mc_element_clipped_box(from_, to, rot)
+        if clipped is not None:
+            boxes.append(clipped)
+    if not boxes:
+        raise ValueError("没有与单格相交的几何，请检查模型或坐标")
+    return boxes
+
+
+def compute_shape_north_union_mc_block_model(model_path: Path) -> tuple[float, float, float, float, float, float]:
+    """Java block model：各 element 裁切后取全局 min/max（外接盒）。"""
+    data = json.loads(model_path.read_text(encoding="utf-8"))
+    min_x = min_y = min_z = float("inf")
+    max_x = max_y = max_z = float("-inf")
+    for from_, to, rot in _iter_elements_mc_block_model(data):
+        clipped = _mc_element_clipped_box(from_, to, rot)
+        if clipped is None:
+            continue
+        x0, x1, y0, y1, z0, z1 = clipped
+        min_x = min(min_x, x0)
+        max_x = max(max_x, x1)
+        min_y = min(min_y, y0)
+        max_y = max(max_y, y1)
+        min_z = min(min_z, z0)
+        max_z = max(max_z, z1)
+    if min_x is float("inf"):
+        raise ValueError("没有与单格相交的几何，请检查模型或坐标")
+    return (min_x, min_y, min_z, max_x, max_y, max_z)
+
+
+def compute_raw_mapped_box_mc_block_model(model_path: Path) -> tuple[float, float, float, float, float, float]:
+    """全模型各 element 的 AABB 并集，不与单格求交（调试用）。"""
+    data = json.loads(model_path.read_text(encoding="utf-8"))
+    min_x = min_y = min_z = float("inf")
+    max_x = max_y = max_z = float("-inf")
+    for from_, to, rot in _iter_elements_mc_block_model(data):
+        m = _mc_element_aabb_block_pixels(from_, to, rot)
+        bx0, bx1, by0, by1, bz0, bz1 = m[0], m[1], m[2], m[3], m[4], m[5]
+        min_x = min(min_x, bx0)
+        max_x = max(max_x, bx1)
+        min_y = min(min_y, by0)
+        max_y = max(max_y, by1)
+        min_z = min(min_z, bz0)
+        max_z = max(max_z, bz1)
+    if min_x is float("inf"):
+        raise ValueError("模型中无几何")
+    return (min_x, min_y, min_z, max_x, max_y, max_z)
 
 
 def _intersect_block_xz_single_cell_unbounded_y(
@@ -281,11 +430,11 @@ def _fmt_java_box(
 def main() -> None:
     parser = argparse.ArgumentParser(
         description=(
-            "从 geo.json 估算单格碰撞：默认输出最小外接单盒（北向基准）；"
+            "从 geo.json 或 Java 方块模型 JSON 估算单格碰撞：默认输出最小外接单盒（北向基准）；"
             " 多盒明细见 block_collision_detail.py。"
         )
     )
-    parser.add_argument("geo", type=Path, help="geo 文件路径，例如 geo/block/foo.geo.json")
+    parser.add_argument("geo", type=Path, help="geo 路径，或配合 --mc-block-model 时传入 models/block/*.json")
     parser.add_argument(
         "--raw",
         action="store_true",
@@ -310,10 +459,18 @@ def main() -> None:
             "模型空间 cube 并集，16 单位=1 方块；width=max(xz跨度)/16，height=y跨度/16"
         ),
     )
+    parser.add_argument(
+        "--mc-block-model",
+        action="store_true",
+        help="输入为 Java/Blockbench 方块模型（顶层 elements、from/to 为 0～16），不做 geo 的 x/z+8",
+    )
     args = parser.parse_args()
     path = args.geo
     if not path.is_file():
         raise SystemExit(f"文件不存在: {path}")
+
+    if args.entity_hitbox and args.mc_block_model:
+        raise SystemExit("--entity-hitbox 仅适用于 geo，不能与 --mc-block-model 同时使用")
 
     if args.entity_hitbox:
         w, h, aabb = compute_entity_sized_width_height(path)
@@ -341,8 +498,13 @@ def main() -> None:
         return
 
     if args.emit_java:
-        boxes = compute_north_clipped_boxes(path)
-        print("    // 由 tools/geo_collision_box.py --emit-java 自 geo 生成（每 cube 裁切后 Shapes.or）")
+        if args.mc_block_model:
+            boxes = compute_north_clipped_boxes_mc_block_model(path)
+            src = "Java block model"
+        else:
+            boxes = compute_north_clipped_boxes(path)
+            src = "geo"
+        print(f"    // 由 tools/geo_collision_box.py --emit-java 自 {src} 生成（每 element/cube 裁切后 Shapes.or）")
         print("    private static VoxelShape buildShapeNorthUnion() {")
         print("        VoxelShape s = Shapes.empty();")
         for b in boxes:
@@ -355,11 +517,19 @@ def main() -> None:
         return
 
     if args.raw:
-        box = compute_raw_mapped_box(path)
+        if args.mc_block_model:
+            box = compute_raw_mapped_box_mc_block_model(path)
+        else:
+            box = compute_raw_mapped_box(path)
         print("映射后未裁切单格（调试用）：")
     else:
-        box = compute_shape_north_union_clipped(path)
-        print("北向基准（各 cube 水平裁在单格、竖直可超高；外接 AABB，非几何并集体积；镂空请用 --emit-java）：")
+        if args.mc_block_model:
+            box = compute_shape_north_union_mc_block_model(path)
+        else:
+            box = compute_shape_north_union_clipped(path)
+        print(
+            "北向基准（各 element/cube 水平裁在单格、竖直可超高；外接 AABB，非几何并集体积；镂空请用 --emit-java）："
+        )
 
     x0, y0, z0, x1, y1, z1 = box
     print(f"  min ({x0:.{args.precision}f}, {y0:.{args.precision}f}, {z0:.{args.precision}f})")

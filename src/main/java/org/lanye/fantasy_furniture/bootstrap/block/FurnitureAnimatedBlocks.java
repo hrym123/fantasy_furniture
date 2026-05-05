@@ -69,11 +69,7 @@ public final class FurnitureAnimatedBlocks {
      * {@link GeolibItemAssets#blockAsset} 单 basename，否则会错误指向 {@code banquette_straight.png}）。
      */
     private static GeolibItemAssets geolibBanquetteItemAssets() {
-        return new GeolibItemAssets(
-                ResourceLocation.fromNamespaceAndPath(FantasyFurniture.MODID, "geo/block/banquette_straight.geo.json"),
-                ResourceLocation.fromNamespaceAndPath(FantasyFurniture.MODID, "textures/block/banquette.png"),
-                ResourceLocation.fromNamespaceAndPath(
-                        FantasyFurniture.MODID, "animations/block/banquette_straight.animation.json"));
+        return GeolibItemAssets.blockAssetWithTexture(FantasyFurniture.MODID, "banquette_straight", "banquette");
     }
 
     /**

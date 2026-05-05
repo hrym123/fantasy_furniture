@@ -104,13 +104,24 @@ public final class ModBlocks {
     public static final RegistryObject<Item> PURPLE_WALLPAPER_ITEM =
             WallpaperBlocks.WallpaperVariant.PURPLE_WALLPAPER.entry().item();
 
-    // --- 屏风、玻璃窗（{@link DecorSimpleBlocks}）---
+    // --- 屏风、普通窗户（{@link DecorSimpleBlocks}）---
 
     public static final RegistryObject<Block> DECORATIVE_SCREEN_BLOCK = DecorSimpleBlocks.DECORATIVE_SCREEN_BLOCK;
     public static final RegistryObject<Item> DECORATIVE_SCREEN_ITEM = DecorSimpleBlocks.DECORATIVE_SCREEN_ITEM;
 
-    public static final RegistryObject<Block> GLASS_WINDOW_BLOCK = DecorSimpleBlocks.GLASS_WINDOW_BLOCK;
-    public static final RegistryObject<Item> GLASS_WINDOW_ITEM = DecorSimpleBlocks.GLASS_WINDOW_ITEM;
+    public static final RegistryObject<Block> PLAIN_WINDOW_BLOCK = DecorSimpleBlocks.PLAIN_WINDOW_BLOCK;
+    public static final RegistryObject<Item> PLAIN_WINDOW_ITEM = DecorSimpleBlocks.PLAIN_WINDOW_ITEM;
+
+    public static final RegistryObject<Block> PLAIN_WINDOW_Y180_BLOCK = DecorSimpleBlocks.PLAIN_WINDOW_Y180_BLOCK;
+    public static final RegistryObject<Item> PLAIN_WINDOW_Y180_ITEM = DecorSimpleBlocks.PLAIN_WINDOW_Y180_ITEM;
+    public static final RegistryObject<Block> PLAIN_WINDOW_Y22_5_BLOCK = DecorSimpleBlocks.PLAIN_WINDOW_Y22_5_BLOCK;
+    public static final RegistryObject<Item> PLAIN_WINDOW_Y22_5_ITEM = DecorSimpleBlocks.PLAIN_WINDOW_Y22_5_ITEM;
+    public static final RegistryObject<Block> PLAIN_WINDOW_Y45_BLOCK = DecorSimpleBlocks.PLAIN_WINDOW_Y45_BLOCK;
+    public static final RegistryObject<Item> PLAIN_WINDOW_Y45_ITEM = DecorSimpleBlocks.PLAIN_WINDOW_Y45_ITEM;
+    public static final RegistryObject<Block> PLAIN_WINDOW_Y67_5_BLOCK = DecorSimpleBlocks.PLAIN_WINDOW_Y67_5_BLOCK;
+    public static final RegistryObject<Item> PLAIN_WINDOW_Y67_5_ITEM = DecorSimpleBlocks.PLAIN_WINDOW_Y67_5_ITEM;
+    public static final RegistryObject<Block> PLAIN_WINDOW_DIAGONAL_BLOCK = DecorSimpleBlocks.PLAIN_WINDOW_DIAGONAL_BLOCK;
+    public static final RegistryObject<Item> PLAIN_WINDOW_DIAGONAL_ITEM = DecorSimpleBlocks.PLAIN_WINDOW_DIAGONAL_ITEM;
 
     // --- GeckoLib 家具（{@link FurnitureAnimatedBlocks}）---
 

@@ -17,6 +17,7 @@ import org.lanye.fantasy_furniture.content.furniture.common.client.renderer.Furn
 import org.lanye.fantasy_furniture.content.sweeper.client.renderer.SweeperRobotRenderer;
 import org.lanye.fantasy_furniture.bootstrap.entity.ModEntities;
 import org.lanye.fantasy_furniture.content.sweeper.menu.ModMenuTypes;
+import org.lanye.reverie_core.client.BlockRenderLayers;
 import org.lanye.reverie_core.geolib.client.AnimatedBlockClientRegistration;
 import org.lanye.reverie_core.geolib.client.GeolibAnimatedBlockRenderers;
 
@@ -74,6 +75,17 @@ public final class ClientModEvents {
     @SubscribeEvent
     public static void onClientSetup(FMLClientSetupEvent event) {
         event.enqueueWork(
-                () -> MenuScreens.register(ModMenuTypes.SWEEPER_ROBOT.get(), ContainerScreen::new));
+                () -> {
+                    MenuScreens.register(ModMenuTypes.SWEEPER_ROBOT.get(), ContainerScreen::new);
+                    // 普通窗户：纯 JSON + BlockItem。translucent 在手中/第三人称下易因半透明排序把内侧面画到玻璃前；
+                    // cutout 用 Alpha 测试并写深度（玻璃边缘为硬裁剪，非磨砂混合）。
+                    BlockRenderLayers.registerCutout(
+                            ModBlocks.PLAIN_WINDOW_BLOCK.get(),
+                            ModBlocks.PLAIN_WINDOW_Y180_BLOCK.get(),
+                            ModBlocks.PLAIN_WINDOW_Y22_5_BLOCK.get(),
+                            ModBlocks.PLAIN_WINDOW_Y45_BLOCK.get(),
+                            ModBlocks.PLAIN_WINDOW_Y67_5_BLOCK.get(),
+                            ModBlocks.PLAIN_WINDOW_DIAGONAL_BLOCK.get());
+                });
     }
 }

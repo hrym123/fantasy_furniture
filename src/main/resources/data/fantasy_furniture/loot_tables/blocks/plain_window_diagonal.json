@@ -6,7 +6,7 @@
       "entries": [
         {
           "type": "minecraft:item",
-          "name": "fantasy_furniture:glass_window"
+          "name": "fantasy_furniture:plain_window_diagonal"
         }
       ],
       "conditions": [
