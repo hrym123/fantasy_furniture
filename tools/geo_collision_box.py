@@ -40,7 +40,7 @@
     python tools/geo_collision_box.py src/main/resources/assets/fantasy_furniture/geo/block/lottery_machine.geo.json
 
     # Java 方块模型（Blockbench 导出的 models/block/*.json，from/to 为 0～16 刻度）
-    python tools/geo_collision_box.py src/main/resources/assets/fantasy_furniture/models/block/plain_window.json --mc-block-model
+    python tools/geo_collision_box.py src/main/resources/assets/fantasy_furniture/models/block/decorative_screen.json --mc-block-model
 
     # 实体 GeckoLib geo：估算 EntityType.Builder.sized(width, height)（水平取 xz 外包正方形边长）
     python tools/geo_collision_box.py src/main/resources/assets/fantasy_furniture/geo/entity/sweeper_robot.geo.json --entity-hitbox

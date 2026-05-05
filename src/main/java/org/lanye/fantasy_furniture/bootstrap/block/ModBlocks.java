@@ -24,7 +24,7 @@ import org.lanye.reverie_core.geolib.AnimatedBlockEntry;
 /**
  * 模组方块与对应 {@link net.minecraft.world.item.BlockItem} 的 {@link DeferredRegister} 入口，以及对外
  * {@link RegistryObject} 聚合（简单色表见 {@link CeramicTileBlocks.TileVariant}、{@link WallpaperBlocks.WallpaperVariant}；
- * 其余见 {@link DecorSimpleBlocks}、{@link PlainWindowBlocks}、{@link FurnitureAnimatedBlocks}）。
+ * 其余见 {@link DecorSimpleBlocks}、{@link FurnitureAnimatedBlocks}）。
  */
 public final class ModBlocks {
 
@@ -34,10 +34,6 @@ public final class ModBlocks {
             DeferredRegister.create(ForgeRegistries.BLOCKS, FantasyFurniture.MODID);
     public static final DeferredRegister<Item> BLOCK_ITEMS =
             DeferredRegister.create(ForgeRegistries.ITEMS, FantasyFurniture.MODID);
-
-    static {
-        PlainWindowBlocks.registerAll();
-    }
 
     // --- 瓷砖（{@link CeramicTileBlocks.TileVariant}）---
 
@@ -108,7 +104,7 @@ public final class ModBlocks {
     public static final RegistryObject<Item> PURPLE_WALLPAPER_ITEM =
             WallpaperBlocks.WallpaperVariant.PURPLE_WALLPAPER.entry().item();
 
-    // --- 屏风（{@link DecorSimpleBlocks}）；普通窗户 54 种（{@link PlainWindowBlocks}）---
+    // --- 屏风（{@link DecorSimpleBlocks}）---
 
     public static final RegistryObject<Block> DECORATIVE_SCREEN_BLOCK = DecorSimpleBlocks.DECORATIVE_SCREEN_BLOCK;
     public static final RegistryObject<Item> DECORATIVE_SCREEN_ITEM = DecorSimpleBlocks.DECORATIVE_SCREEN_ITEM;

@@ -15,7 +15,6 @@ import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.RegistryObject;
 import org.lanye.fantasy_furniture.FantasyFurniture;
 import org.lanye.fantasy_furniture.bootstrap.block.ModBlocks;
-import org.lanye.fantasy_furniture.bootstrap.block.PlainWindowBlocks;
 
 /**
  * 本模组创造模式物品栏（CreativeModeTab）注册。
@@ -41,10 +40,6 @@ public final class ModCreativeTabs {
                 ModBlocks.CYAN_CERAMIC_TILE_ITEM::get,
                 ModBlocks.PURPLE_CERAMIC_TILE_ITEM::get,
                 ModBlocks.DECORATIVE_SCREEN_ITEM::get);
-        // 普通窗户：创造栏仅 9 种材质物品；造型潜行右键切换。
-        for (PlainWindowBlocks.MaterialItemEntry e : PlainWindowBlocks.materialItemEntries()) {
-            list.add(e.item()::get);
-        }
         Collections.addAll(
                 list,
                 ModBlocks.PINK_WALLPAPER_ITEM::get,

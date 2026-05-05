@@ -15,7 +15,7 @@ import org.lanye.fantasy_furniture.content.furniture.decor.block.DecorativeScree
  * <p><b>与 Gecko 家具链路的差异（排查问题时对照）：</b>{@link FurnitureAnimatedBlocks} 使用
  * {@link org.lanye.reverie_core.geolib.AnimatedBlockRegistration} + {@link org.lanye.reverie_core.geolib.GeolibBlockItem}
  * + 方块实体 + {@code geo/block/*.geo.json}；本类屏风为 <b>无方块实体</b> + {@link BlockItem} +
- * {@code models/block/*.json}。普通窗户见 {@link PlainWindowBlocks}（54 种 id，渲染层见 {@code ClientModEvents}）。
+ * {@code models/block/*.json}。
  */
 public final class DecorSimpleBlocks {
 
