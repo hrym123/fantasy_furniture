@@ -14,6 +14,7 @@ import net.minecraft.world.level.material.MapColor;
 import org.lanye.fantasy_furniture.FantasyFurniture;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.block.GreenSofaBlock;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.blockentity.BanquetteBlockEntity;
+import org.lanye.fantasy_furniture.content.furniture.livingroom.blockentity.BedPlate6BlockEntity;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.blockentity.GreenSofaBlockEntity;
 import org.lanye.fantasy_furniture.content.furniture.kitchen.blockentity.HalfHalfPotBlockEntity;
 import org.lanye.fantasy_furniture.content.furniture.kitchen.blockentity.JamPotBlockEntity;
@@ -40,6 +41,8 @@ import org.lanye.fantasy_furniture.bootstrap.blockentity.ModBlockEntities;
 import org.lanye.reverie_core.geolib.AnimatedBlockEntry;
 import org.lanye.reverie_core.geolib.AnimatedBlockRegistration;
 import org.lanye.reverie_core.geolib.AnimatedBlockSpec;
+import org.lanye.reverie_core.geolib.bed.BedPlateAnimatedSpecs;
+import org.lanye.reverie_core.geolib.bed.BedPlateBaseBlockEntity;
 import org.lanye.reverie_core.geolib.GeolibBlockItem;
 import org.lanye.reverie_core.geolib.GeolibItemAssets;
 
@@ -160,7 +163,12 @@ public final class FurnitureAnimatedBlocks {
                                     "sweeper_dock",
                                     FurnitureBlockProperties::metalNoOcclusion,
                                     SweeperDockBlock::new,
-                                    SweeperDockBlockEntity::new)));
+                                    SweeperDockBlockEntity::new),
+                            BedPlateAnimatedSpecs.spec(
+                                    FantasyFurniture.MODID,
+                                    "bed_plate6",
+                                    FurnitureBlockProperties::cherryWoodFurnitureNoOcclusion,
+                                    BedPlate6BlockEntity::new)));
 
     private static final int I_BANQUETTE = 0;
     private static final int I_MIXING_BOWL = 1;
@@ -174,6 +182,7 @@ public final class FurnitureAnimatedBlocks {
     private static final int I_KITCHEN_COUNTER = 9;
     private static final int I_COMBINED_ORNAMENT = 10;
     private static final int I_SWEEPER_DOCK = 11;
+    private static final int I_BED_PLATE6 = 12;
 
     @SuppressWarnings("unchecked")
     private static <BE extends BlockEntity> AnimatedBlockEntry<BE> animatedEntry(int index) {
@@ -211,4 +220,6 @@ public final class FurnitureAnimatedBlocks {
             animatedEntry(I_COMBINED_ORNAMENT);
 
     public static final AnimatedBlockEntry<SweeperDockBlockEntity> SWEEPER_DOCK = animatedEntry(I_SWEEPER_DOCK);
+
+    public static final AnimatedBlockEntry<BedPlateBaseBlockEntity> BED_PLATE6 = animatedEntry(I_BED_PLATE6);
 }

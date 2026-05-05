@@ -41,7 +41,7 @@ minecraft {
 sourceSets.main.resources { srcDir 'src/generated/resources' }
 
 repositories {
-    // 玉（Jade）可选：用于开发时编译/运行，与 Curse 上 1.20.1 Forge 发行包一致
+    // Jade / MaFgLib / Tweakerge：开发时 fg.deobf，与 Curse 上 1.20.1 Forge 发行包一致
     maven {
         name = 'Curse Maven'
         url = 'https://cursemaven.com'
@@ -56,6 +56,15 @@ dependencies {
     compileOnly jadeDeobf
     // 随 Minecraft Client 运行类路径与 run/mods 解析（Forge 用 runtimeOnly；非发行传递依赖）
     runtimeOnly jadeDeobf
+
+    // Tweakerge 依赖 MaFgLib；二者均与 parchment 同映射反混淆
+    def mafglibDeobf = fg.deobf("curse.maven:mafglib-910766:${mafglib_curse_file_id}")
+    compileOnly mafglibDeobf
+    runtimeOnly mafglibDeobf
+
+    def tweakergeDeobf = fg.deobf("curse.maven:tweakerge-915857:${tweakerge_curse_file_id}")
+    compileOnly tweakergeDeobf
+    runtimeOnly tweakergeDeobf
 
     testImplementation 'org.junit.jupiter:junit-jupiter:5.10.2'
     testImplementation 'org.mockito:mockito-junit-jupiter:5.11.0'
