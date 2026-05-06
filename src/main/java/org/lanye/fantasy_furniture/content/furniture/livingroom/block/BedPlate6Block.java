@@ -16,6 +16,7 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import net.minecraft.world.phys.shapes.CollisionContext;
+import org.lanye.fantasy_furniture.bootstrap.block.ModBlocks;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.blockentity.BedPlate6BlockEntity;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.item.BedPlate6DuvetCoverItem;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.item.BedPlate6DuvetItem;
@@ -25,8 +26,9 @@ import org.lanye.reverie_core.geolib.bed.BedPlateBaseBlockEntity;
 import org.lanye.reverie_core.geolib.bed.BedPlateBlock;
 
 /**
- * 床板 6：在 {@link net.minecraft.world.level.block.BedBlock#use} 之前处理被套、大号枕头、中号枕头、床单；否则原版床会先消耗交互，
- * 物品的 {@link BedPlate6DuvetItem#useOn} 等无法正常触发。顺序：<strong>被套 → 大号枕头 → 中号枕头 → 床单</strong>。
+ * 床板 6：在 {@link net.minecraft.world.level.block.BedBlock#use} 之前处理被套、大号枕头、潜行拆中号（空手等）、中号枕头、床单。
+ * 顺序：<strong>被套 →（主手大号且另一手中号、且床已摆大件且中号未满两只时先放中号）→ 大号枕头 → 潜行拆中号 →
+ * 中号枕头（两手任一持中号）→ 床单</strong>。
  */
 public final class BedPlate6Block extends BedPlateBlock {
 
@@ -83,14 +85,25 @@ public final class BedPlate6Block extends BedPlateBlock {
                 return cover;
             }
         }
+        InteractionResult mediumBeforeLarge =
+                tryMediumWhenHeldLargeWouldHideOtherHandMedium(level, pos, state, player, hand);
+        if (mediumBeforeLarge != InteractionResult.PASS) {
+            return mediumBeforeLarge;
+        }
         if (player.getItemInHand(hand).getItem() instanceof BedPlate6LargePillowItem) {
             InteractionResult pillow = BedPlate6LargePillowItem.applyToBed(level, pos, state, player, hand);
             if (pillow != InteractionResult.PASS) {
                 return pillow;
             }
         }
-        if (player.getItemInHand(hand).getItem() instanceof BedPlate6MediumPillowItem) {
-            InteractionResult medium = BedPlate6MediumPillowItem.applyToBed(level, pos, state, player, hand);
+        InteractionResult sneakMedium =
+                BedPlate6MediumPillowItem.trySneakRemoveFromBedWhenNotHoldingMedium(level, pos, state, player, hand);
+        if (sneakMedium != InteractionResult.PASS) {
+            return sneakMedium;
+        }
+        InteractionHand mediumHand = handHoldingMediumPillowPreferUsed(player, hand);
+        if (mediumHand != null) {
+            InteractionResult medium = BedPlate6MediumPillowItem.applyToBed(level, pos, state, player, mediumHand);
             if (medium != InteractionResult.PASS) {
                 return medium;
             }
@@ -102,5 +115,51 @@ public final class BedPlate6Block extends BedPlateBlock {
             }
         }
         return super.use(state, level, pos, player, hand, hit);
+    }
+
+    /**
+     * 当前用于右键的手拿大号、另一手拿中号时，大号分支会先成功并吞掉交互，副手中号永远放不上。
+     * 在「床已摆大号或至少一只中号」且中号未满两只时，改为先消耗另一手中的中号放置逻辑。
+     */
+    private static InteractionResult tryMediumWhenHeldLargeWouldHideOtherHandMedium(
+            Level level, BlockPos pos, BlockState state, Player player, InteractionHand usedHand) {
+        if (player.isShiftKeyDown()) {
+            return InteractionResult.PASS;
+        }
+        if (!state.is(ModBlocks.BED_PLATE6.block().get())) {
+            return InteractionResult.PASS;
+        }
+        if (!(player.getItemInHand(usedHand).getItem() instanceof BedPlate6LargePillowItem)) {
+            return InteractionResult.PASS;
+        }
+        InteractionHand other =
+                usedHand == InteractionHand.MAIN_HAND ? InteractionHand.OFF_HAND : InteractionHand.MAIN_HAND;
+        if (!(player.getItemInHand(other).getItem() instanceof BedPlate6MediumPillowItem)) {
+            return InteractionResult.PASS;
+        }
+        var be = level.getBlockEntity(footPos(state, pos));
+        if (!(be instanceof BedPlate6BlockEntity plate) || !plate.hasDuvet()) {
+            return InteractionResult.PASS;
+        }
+        if (plate.getMediumPillowCount() >= 2) {
+            return InteractionResult.PASS;
+        }
+        if (!plate.hasLargePillow() && plate.getMediumPillowCount() == 0) {
+            return InteractionResult.PASS;
+        }
+        return BedPlate6MediumPillowItem.applyToBed(level, pos, state, player, other);
+    }
+
+    /** 优先使用本次交互的手上的中号，否则若另一手为中号则使用该手（例如仅副手持有中号）。 */
+    private static InteractionHand handHoldingMediumPillowPreferUsed(Player player, InteractionHand usedHand) {
+        if (player.getItemInHand(usedHand).getItem() instanceof BedPlate6MediumPillowItem) {
+            return usedHand;
+        }
+        InteractionHand other =
+                usedHand == InteractionHand.MAIN_HAND ? InteractionHand.OFF_HAND : InteractionHand.MAIN_HAND;
+        if (player.getItemInHand(other).getItem() instanceof BedPlate6MediumPillowItem) {
+            return other;
+        }
+        return null;
     }
 }

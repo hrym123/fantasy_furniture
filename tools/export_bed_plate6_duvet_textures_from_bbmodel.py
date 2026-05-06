@@ -5,14 +5,14 @@ bbmodel 的 ``textures`` 数组里通常有 7 份内嵌 base64 PNG（七种被�
 游戏内通过 ``bed_plate6_duvet_1.png`` … ``bed_plate6_duvet_7.png`` 切换材质。
 
 常见错误（会导致七种看起来是同一张图）：
-  - 沿用 ``export_bed_plate6_from_bbmodel.py`` 的逻辑只解码 ``textures[0]``；
+  - 只解码 ``textures[0]`` 却复制成 7 份命名成 _1…_7；
   - 把同一张 PNG 复制 7 份命名成 _1…_7；
   - 只导出模型里当前立方体正在使用的那一个槽位，却复制 7 次。
 
 本脚本按 ``textures`` 数组顺序依次写出 ``bed_plate6_duvet_{1+index}.png``。
 若你在 Blockbench 里纹理顺序与游戏期望不一致，可在导出后手动对调文件或改数组顺序。
 
-主体床板单张贴图仍请使用 ``export_bed_plate6_from_bbmodel.py``。
+主体床板单张贴图请使用 ``export_bed_plate6_texture_from_bbmodel.py``（仅 PNG）。
 """
 from __future__ import annotations
 
