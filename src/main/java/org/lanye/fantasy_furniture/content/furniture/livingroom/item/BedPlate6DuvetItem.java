@@ -5,7 +5,6 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.item.context.UseOnContext;
@@ -22,7 +21,7 @@ import org.lanye.fantasy_furniture.content.furniture.livingroom.blockentity.BedP
 /**
  * 床板 6 专用床单（七种材质之一）：仅能对 {@link ModBlocks#BED_PLATE6} 使用，不可放置为方块。
  */
-public final class BedPlate6DuvetItem extends Item {
+public final class BedPlate6DuvetItem extends BedPlate6GeolibDecorItem {
 
     private final int materialId;
 

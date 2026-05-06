@@ -1,0 +1,6 @@
+{
+  "parent": "fantasy_furniture:item/bed_plate6_geolib_decor",
+  "textures": {
+    "particle": "fantasy_furniture:block/bed_plate6_pillow_large_plaid_cream"
+  }
+}

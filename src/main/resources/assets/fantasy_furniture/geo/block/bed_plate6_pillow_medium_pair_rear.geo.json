@@ -1,0 +1,179 @@
+{
+	"format_version": "1.21.110",
+	"minecraft:geometry": [
+		{
+			"description": {
+				"identifier": "geometry.bed_plate6_pillow_medium_pair_rear",
+				"texture_width": 64,
+				"texture_height": 64,
+				"visible_bounds_width": 4,
+				"visible_bounds_height": 2.5,
+				"visible_bounds_offset": [
+					0,
+					0.75,
+					0
+				]
+			},
+			"bones": [
+				{
+					"name": "bed_plate6_pillow_medium_pair_rear",
+					"pivot": [
+						0,
+						8,
+						0
+					],
+					"cubes": [
+						{
+							"origin": [
+								-3,
+								7,
+								20.7
+							],
+							"size": [
+								10,
+								7,
+								2
+							],
+							"uv": {
+								"north": {
+									"uv": [
+										24.0,
+										0.0
+									],
+									"uv_size": [
+										20.0,
+										14.0
+									]
+								},
+								"east": {
+									"uv": [
+										0.0,
+										32.0
+									],
+									"uv_size": [
+										4.0,
+										14.0
+									]
+								},
+								"south": {
+									"uv": [
+										24.0,
+										14.0
+									],
+									"uv_size": [
+										20.0,
+										14.0
+									]
+								},
+								"west": {
+									"uv": [
+										4.0,
+										32.0
+									],
+									"uv_size": [
+										4.0,
+										14.0
+									]
+								},
+								"up": {
+									"uv": [
+										0.0,
+										28.0
+									],
+									"uv_size": [
+										20.0,
+										4.0
+									]
+								},
+								"down": {
+									"uv": [
+										20.0,
+										32.0
+									],
+									"uv_size": [
+										20.0,
+										-4.0
+									]
+								}
+							}
+						},
+						{
+							"origin": [
+								-4,
+								7,
+								21.6
+							],
+							"size": [
+								12,
+								7,
+								0.2
+							],
+							"uv": {
+								"north": {
+									"uv": [
+										0.0,
+										0.0
+									],
+									"uv_size": [
+										24.0,
+										14.0
+									]
+								},
+								"east": {
+									"uv": [
+										8.0,
+										34.0
+									],
+									"uv_size": [
+										1.0,
+										14.0
+									]
+								},
+								"south": {
+									"uv": [
+										0.0,
+										14.0
+									],
+									"uv_size": [
+										24.0,
+										14.0
+									]
+								},
+								"west": {
+									"uv": [
+										10.0,
+										34.0
+									],
+									"uv_size": [
+										1.0,
+										14.0
+									]
+								},
+								"up": {
+									"uv": [
+										8.0,
+										32.0
+									],
+									"uv_size": [
+										24.0,
+										1.0
+									]
+								},
+								"down": {
+									"uv": [
+										32.0,
+										33.0
+									],
+									"uv_size": [
+										24.0,
+										-1.0
+									]
+								}
+							}
+						}
+					]
+				}
+			]
+		}
+	]
+}

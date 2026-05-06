@@ -1,0 +1,7 @@
+{
+  "parent": "fantasy_furniture:block/bed_plate6_pillow_large_shape",
+  "textures": {
+    "all": "fantasy_furniture:block/bed_plate6_pillow_large_plain_cream",
+    "particle": "fantasy_furniture:block/bed_plate6_pillow_large_plain_cream"
+  }
+}

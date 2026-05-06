@@ -1,5 +1,7 @@
 package org.lanye.fantasy_furniture.bootstrap.item;
 
+import java.util.ArrayList;
+import java.util.List;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.SwordItem;
 import net.minecraft.world.item.Tiers;
@@ -9,8 +11,14 @@ import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
 import org.lanye.fantasy_furniture.FantasyFurniture;
 import org.lanye.fantasy_furniture.content.furniture.common.item.ArcaneWandItem;
+import org.lanye.fantasy_furniture.content.furniture.livingroom.BedPlate6DuvetMaterials;
+import org.lanye.fantasy_furniture.content.furniture.livingroom.BedPlate6LargePillowStyles;
+import org.lanye.fantasy_furniture.content.furniture.livingroom.BedPlate6MediumPillowMaterials;
+import org.lanye.fantasy_furniture.content.furniture.livingroom.BedPlate6PillowPalette;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.item.BedPlate6DuvetCoverItem;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.item.BedPlate6DuvetItem;
+import org.lanye.fantasy_furniture.content.furniture.livingroom.item.BedPlate6LargePillowItem;
+import org.lanye.fantasy_furniture.content.furniture.livingroom.item.BedPlate6MediumPillowItem;
 import org.lanye.reverie_core.geolib.GeolibItemAssets;
 import org.lanye.reverie_core.item.DecorativeHelmetRegistration;
 
@@ -60,6 +68,37 @@ public final class ModItems {
             ITEMS.register("bed_plate6_duvet_cover_6", () -> new BedPlate6DuvetCoverItem(BED_PLATE6_DUVET_PROPS, 6));
     public static final RegistryObject<Item> BED_PLATE6_DUVET_COVER_7 =
             ITEMS.register("bed_plate6_duvet_cover_7", () -> new BedPlate6DuvetCoverItem(BED_PLATE6_DUVET_PROPS, 7));
+
+    /**
+     * 床板 6 大号枕头：{@code bed_plate6_pillow_large_{striped|plain|plaid}_{cream|rose|…}}，共 {@code 3×7}
+     * 个；存储 id 仍为款式 {@code 1..3}，见 {@link BedPlate6LargePillowStyles} / {@link BedPlate6PillowPalette}。
+     */
+    public static final List<RegistryObject<Item>> BED_PLATE6_PILLOW_LARGE_ITEMS = new ArrayList<>();
+
+    /** 床板 6 中号枕头六种材质（{@code bed_plate6_pillow_medium_1} … {@code _6}）。 */
+    public static final List<RegistryObject<Item>> BED_PLATE6_PILLOW_MEDIUM_ITEMS = new ArrayList<>();
+
+    static {
+        for (int s = 1; s <= BedPlate6LargePillowStyles.COUNT; s++) {
+            for (int m = 1; m <= BedPlate6DuvetMaterials.COUNT; m++) {
+                final int style = s;
+                final int mat = m;
+                String regId = "bed_plate6_pillow_large_"
+                        + BedPlate6LargePillowStyles.resourceSlug(s)
+                        + "_"
+                        + BedPlate6PillowPalette.colorSlug(m);
+                BED_PLATE6_PILLOW_LARGE_ITEMS.add(
+                        ITEMS.register(regId, () -> new BedPlate6LargePillowItem(BED_PLATE6_DUVET_PROPS, style, mat)));
+            }
+        }
+        for (int m = 1; m <= BedPlate6MediumPillowMaterials.COUNT; m++) {
+            final int mat = m;
+            BED_PLATE6_PILLOW_MEDIUM_ITEMS.add(
+                    ITEMS.register(
+                            "bed_plate6_pillow_medium_" + m,
+                            () -> new BedPlate6MediumPillowItem(BED_PLATE6_DUVET_PROPS, mat)));
+        }
+    }
 
     /**
      * 糖葫芦：木级剑属性基底，额外攻击伤害 +1（与木剑的 +3 不同，作低伤玩具武器）。

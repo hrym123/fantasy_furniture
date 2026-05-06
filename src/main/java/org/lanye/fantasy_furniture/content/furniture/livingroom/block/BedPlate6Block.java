@@ -19,12 +19,14 @@ import net.minecraft.world.phys.shapes.CollisionContext;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.blockentity.BedPlate6BlockEntity;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.item.BedPlate6DuvetCoverItem;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.item.BedPlate6DuvetItem;
+import org.lanye.fantasy_furniture.content.furniture.livingroom.item.BedPlate6LargePillowItem;
+import org.lanye.fantasy_furniture.content.furniture.livingroom.item.BedPlate6MediumPillowItem;
 import org.lanye.reverie_core.geolib.bed.BedPlateBaseBlockEntity;
 import org.lanye.reverie_core.geolib.bed.BedPlateBlock;
 
 /**
- * 床板 6：在 {@link net.minecraft.world.level.block.BedBlock#use} 之前处理被套、床单物品；否则原版床会先消耗交互，
- * 物品的 {@link BedPlate6DuvetItem#useOn} / {@link BedPlate6DuvetCoverItem#useOn} 无法正常触发。
+ * 床板 6：在 {@link net.minecraft.world.level.block.BedBlock#use} 之前处理被套、大号枕头、中号枕头、床单；否则原版床会先消耗交互，
+ * 物品的 {@link BedPlate6DuvetItem#useOn} 等无法正常触发。顺序：<strong>被套 → 大号枕头 → 中号枕头 → 床单</strong>。
  */
 public final class BedPlate6Block extends BedPlateBlock {
 
@@ -79,6 +81,18 @@ public final class BedPlate6Block extends BedPlateBlock {
             InteractionResult cover = BedPlate6DuvetCoverItem.applyToBed(level, pos, state, player, hand);
             if (cover != InteractionResult.PASS) {
                 return cover;
+            }
+        }
+        if (player.getItemInHand(hand).getItem() instanceof BedPlate6LargePillowItem) {
+            InteractionResult pillow = BedPlate6LargePillowItem.applyToBed(level, pos, state, player, hand);
+            if (pillow != InteractionResult.PASS) {
+                return pillow;
+            }
+        }
+        if (player.getItemInHand(hand).getItem() instanceof BedPlate6MediumPillowItem) {
+            InteractionResult medium = BedPlate6MediumPillowItem.applyToBed(level, pos, state, player, hand);
+            if (medium != InteractionResult.PASS) {
+                return medium;
             }
         }
         if (player.getItemInHand(hand).getItem() instanceof BedPlate6DuvetItem) {
