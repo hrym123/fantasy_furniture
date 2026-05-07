@@ -77,12 +77,14 @@ public final class ModCreativeTabs {
                 ModItems.BED_PLATE6_DUVET_COVER_3::get,
                 ModItems.BED_PLATE6_DUVET_COVER_4::get,
                 ModItems.BED_PLATE6_DUVET_COVER_5::get,
-                ModItems.BED_PLATE6_DUVET_COVER_6::get,
-                ModItems.BED_PLATE6_DUVET_COVER_7::get);
+                ModItems.BED_PLATE6_DUVET_COVER_6::get);
         for (var pillow : ModItems.BED_PLATE6_PILLOW_LARGE_ITEMS) {
             list.add(pillow::get);
         }
         for (var pillow : ModItems.BED_PLATE6_PILLOW_MEDIUM_ITEMS) {
+            list.add(pillow::get);
+        }
+        for (var pillow : ModItems.BED_PLATE6_PILLOW_SMALL_ITEMS) {
             list.add(pillow::get);
         }
         Collections.addAll(

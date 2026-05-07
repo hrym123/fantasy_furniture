@@ -79,6 +79,10 @@ public final class BedPlate6LargePillowItem extends BedPlate6GeolibDecorItem {
         if (!plate.hasDuvet()) {
             return InteractionResult.FAIL;
         }
+        if (!plate.hasLargePillow() && plate.getMediumPillowCount() == 2) {
+            /* 合法组合不含「两只中号再叠大号」 */
+            return InteractionResult.FAIL;
+        }
         ItemStack stack = player.getItemInHand(hand);
         if (!(stack.getItem() instanceof BedPlate6LargePillowItem held)) {
             return InteractionResult.PASS;
@@ -90,6 +94,11 @@ public final class BedPlate6LargePillowItem extends BedPlate6GeolibDecorItem {
                 int onStyle = plate.getLargePillowStyleId();
                 int onMat = plate.getLargePillowMaterialId();
                 if (onStyle == style && onMat == material) {
+                    if (plate.hasSmallPillow()) {
+                        int sm = plate.getSmallPillowMat();
+                        givePillow(player, BedPlate6SmallPillowItem.stackForRegistry(sm));
+                        plate.setSmallPillowMat(0);
+                    }
                     plate.setLargePillow(0, 0);
                     givePillow(player, stackForRegistry(style, material));
                 } else if (onStyle == style) {

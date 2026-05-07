@@ -15,10 +15,12 @@ import org.lanye.fantasy_furniture.content.furniture.livingroom.BedPlate6DuvetMa
 import org.lanye.fantasy_furniture.content.furniture.livingroom.BedPlate6LargePillowStyles;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.BedPlate6MediumPillowMaterials;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.BedPlate6PillowPalette;
+import org.lanye.fantasy_furniture.content.furniture.livingroom.BedPlate6SmallPillowMaterials;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.item.BedPlate6DuvetCoverItem;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.item.BedPlate6DuvetItem;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.item.BedPlate6LargePillowItem;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.item.BedPlate6MediumPillowItem;
+import org.lanye.fantasy_furniture.content.furniture.livingroom.item.BedPlate6SmallPillowItem;
 import org.lanye.reverie_core.geolib.GeolibItemAssets;
 import org.lanye.reverie_core.item.DecorativeHelmetRegistration;
 
@@ -53,7 +55,7 @@ public final class ModItems {
     public static final RegistryObject<Item> BED_PLATE6_DUVET_7 =
             ITEMS.register("bed_plate6_duvet_7", () -> new BedPlate6DuvetItem(BED_PLATE6_DUVET_PROPS, 7));
 
-    /** 床板 6 被套七种材质（仅能在已铺床单的床板上使用）。 */
+    /** 床板 6 被套六种材质（仅能在已铺床单的床板上使用）。 */
     public static final RegistryObject<Item> BED_PLATE6_DUVET_COVER_1 =
             ITEMS.register("bed_plate6_duvet_cover_1", () -> new BedPlate6DuvetCoverItem(BED_PLATE6_DUVET_PROPS, 1));
     public static final RegistryObject<Item> BED_PLATE6_DUVET_COVER_2 =
@@ -66,8 +68,6 @@ public final class ModItems {
             ITEMS.register("bed_plate6_duvet_cover_5", () -> new BedPlate6DuvetCoverItem(BED_PLATE6_DUVET_PROPS, 5));
     public static final RegistryObject<Item> BED_PLATE6_DUVET_COVER_6 =
             ITEMS.register("bed_plate6_duvet_cover_6", () -> new BedPlate6DuvetCoverItem(BED_PLATE6_DUVET_PROPS, 6));
-    public static final RegistryObject<Item> BED_PLATE6_DUVET_COVER_7 =
-            ITEMS.register("bed_plate6_duvet_cover_7", () -> new BedPlate6DuvetCoverItem(BED_PLATE6_DUVET_PROPS, 7));
 
     /**
      * 床板 6 大号枕头：{@code bed_plate6_pillow_large_{striped|plain|plaid}_{cream|rose|…}}，共 {@code 3×7}
@@ -77,6 +77,9 @@ public final class ModItems {
 
     /** 床板 6 中号枕头六种材质（{@code bed_plate6_pillow_medium_1} … {@code _6}）。 */
     public static final List<RegistryObject<Item>> BED_PLATE6_PILLOW_MEDIUM_ITEMS = new ArrayList<>();
+
+    /** 床板 6 小号枕头六种材质（{@code bed_plate6_pillow_small_1} … {@code _6}）。 */
+    public static final List<RegistryObject<Item>> BED_PLATE6_PILLOW_SMALL_ITEMS = new ArrayList<>();
 
     static {
         for (int s = 1; s <= BedPlate6LargePillowStyles.COUNT; s++) {
@@ -97,6 +100,13 @@ public final class ModItems {
                     ITEMS.register(
                             "bed_plate6_pillow_medium_" + m,
                             () -> new BedPlate6MediumPillowItem(BED_PLATE6_DUVET_PROPS, mat)));
+        }
+        for (int m = 1; m <= BedPlate6SmallPillowMaterials.COUNT; m++) {
+            final int mat = m;
+            BED_PLATE6_PILLOW_SMALL_ITEMS.add(
+                    ITEMS.register(
+                            "bed_plate6_pillow_small_" + m,
+                            () -> new BedPlate6SmallPillowItem(BED_PLATE6_DUVET_PROPS, mat)));
         }
     }
 

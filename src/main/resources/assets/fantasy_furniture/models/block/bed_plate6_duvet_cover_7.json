@@ -1,7 +1,0 @@
-{
-  "parent": "fantasy_furniture:block/bed_plate6_duvet_cover_shape",
-  "textures": {
-    "all": "fantasy_furniture:block/bed_plate6_duvet_cover_7",
-    "particle": "fantasy_furniture:block/bed_plate6_duvet_cover_7"
-  }
-}

@@ -13,10 +13,12 @@ import net.minecraft.world.level.block.state.properties.BedPart;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.lanye.fantasy_furniture.FantasyFurniture;
+import org.lanye.fantasy_furniture.content.furniture.livingroom.BedPlate6DuvetCoverMaterials;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.BedPlate6DuvetMaterials;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.BedPlate6LargePillowStyles;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.BedPlate6MediumPillowMaterials;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.BedPlate6PillowPalette;
+import org.lanye.fantasy_furniture.content.furniture.livingroom.BedPlate6SmallPillowMaterials;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.blockentity.BedPlate6BlockEntity;
 import org.lanye.reverie_core.geolib.bed.BedPlateBaseBlockEntity;
 import org.lanye.reverie_core.geolib.client.BedPlateGeoBlockRenderer;
@@ -25,15 +27,17 @@ import software.bernie.geckolib.model.GeoModel;
 import software.bernie.geckolib.renderer.GeoBlockRenderer;
 
 /**
- * 床板 6：床体 Geo + 可选床单 Geo + 可选被套 Geo + 可选大号枕头 Geo + 可选中号枕头 Geo（须先有床单）。
+ * 床板 6：床体 Geo + 可选床单 Geo + 可选被套 Geo + 可选大号枕头 Geo + 可选中号枕头 Geo + 可选小号枕头 Geo（须先有床单）。
  *
- * <p>中号枕头 Geo 选择（与大号可叠放；渲染顺序：大号后、中号最后）：
+ * <p>中号枕头 Geo 选择（与大号可叠放；渲染顺序：大号 → 中号 → 小号）：
  *
  * <ul>
  *   <li>仅 1 个中号、且无大号 → {@code bed_plate6_pillow_medium_solo}（单人摆放）
  *   <li>仅 1 个中号、且有大号 → {@code bed_plate6_pillow_medium_pair_front}（与前排一致）
  *   <li>2 个中号 → {@code pair_rear}（先放槽）+ {@code pair_front}（后放槽）
  * </ul>
+ *
+ * <p>小号枕头：{@code bed_plate6_pillow_small_stack}（叠在中号/大+中之上）。
  */
 @OnlyIn(Dist.CLIENT)
 public final class BedPlate6GeoBlockRenderer implements BlockEntityRenderer<BedPlateBaseBlockEntity> {
@@ -135,6 +139,8 @@ public final class BedPlate6GeoBlockRenderer implements BlockEntityRenderer<BedP
     private final GeoBlockRenderer<BedPlateBaseBlockEntity> pillowMediumPairFront =
             pillowMediumRenderer("pair_front", PillowMediumTextureMode.PAIR_FRONT);
 
+    private final GeoBlockRenderer<BedPlateBaseBlockEntity> pillowSmallStack = pillowSmallStackRenderer();
+
     private final GeoBlockRenderer<BedPlateBaseBlockEntity> duvetCover =
             new GeoBlockRenderer<BedPlateBaseBlockEntity>(
                     new GeoModel<BedPlateBaseBlockEntity>() {
@@ -148,7 +154,7 @@ public final class BedPlate6GeoBlockRenderer implements BlockEntityRenderer<BedP
                             int m = 1;
                             if (entity instanceof BedPlate6BlockEntity b6) {
                                 m = b6.getCoverMaterialId();
-                                if (!BedPlate6DuvetMaterials.isValid(m)) {
+                                if (!BedPlate6DuvetCoverMaterials.isValid(m)) {
                                     m = 1;
                                 }
                             }
@@ -234,6 +240,9 @@ public final class BedPlate6GeoBlockRenderer implements BlockEntityRenderer<BedP
                 }
             }
             renderMediumPillows(b6, blockEntity, partialTick, poseStack, bufferSource, packedLight, packedOverlay);
+            if (b6.hasSmallPillow()) {
+                pillowSmallStack.render(blockEntity, partialTick, poseStack, bufferSource, packedLight, packedOverlay);
+            }
         }
     }
 
@@ -264,6 +273,82 @@ public final class BedPlate6GeoBlockRenderer implements BlockEntityRenderer<BedP
         SOLO,
         PAIR_REAR,
         PAIR_FRONT
+    }
+
+    private static GeoBlockRenderer<BedPlateBaseBlockEntity> pillowSmallStackRenderer() {
+        ResourceLocation geo = ResourceLocation.fromNamespaceAndPath(
+                FantasyFurniture.MODID, "geo/block/bed_plate6_pillow_small_stack.geo.json");
+        ResourceLocation anim = ResourceLocation.fromNamespaceAndPath(
+                FantasyFurniture.MODID, "animations/block/bed_plate6_pillow_small_stack.animation.json");
+        return new GeoBlockRenderer<BedPlateBaseBlockEntity>(
+                new GeoModel<BedPlateBaseBlockEntity>() {
+                    @Override
+                    public ResourceLocation getModelResource(BedPlateBaseBlockEntity entity) {
+                        return geo;
+                    }
+
+                    @Override
+                    public ResourceLocation getTextureResource(BedPlateBaseBlockEntity entity) {
+                        int m = 1;
+                        if (entity instanceof BedPlate6BlockEntity b6) {
+                            m = b6.getSmallPillowMat();
+                            if (!BedPlate6SmallPillowMaterials.isValid(m)) {
+                                m = 1;
+                            }
+                        }
+                        return ResourceLocation.fromNamespaceAndPath(
+                                FantasyFurniture.MODID, "textures/block/bed_plate6_pillow_small_" + m + ".png");
+                    }
+
+                    @Override
+                    public ResourceLocation getAnimationResource(BedPlateBaseBlockEntity entity) {
+                        return anim;
+                    }
+                }) {
+            @Override
+            public void actuallyRender(
+                    PoseStack poseStack,
+                    BedPlateBaseBlockEntity animatable,
+                    BakedGeoModel model,
+                    RenderType renderType,
+                    MultiBufferSource bufferSource,
+                    VertexConsumer buffer,
+                    boolean isReRender,
+                    float partialTick,
+                    int packedLight,
+                    int packedOverlay,
+                    float red,
+                    float green,
+                    float blue,
+                    float alpha) {
+                if (animatable.getBlockState().getValue(BedBlock.PART) != BedPart.FOOT) {
+                    return;
+                }
+                super.actuallyRender(
+                        poseStack,
+                        animatable,
+                        model,
+                        renderType,
+                        bufferSource,
+                        buffer,
+                        isReRender,
+                        partialTick,
+                        packedLight,
+                        packedOverlay,
+                        red,
+                        green,
+                        blue,
+                        alpha);
+            }
+
+            @Override
+            protected void rotateBlock(Direction facing, PoseStack poseStack) {
+                super.rotateBlock(facing, poseStack);
+                if (facing.getAxis() != Direction.Axis.Y) {
+                    poseStack.mulPose(Axis.YP.rotationDegrees(180));
+                }
+            }
+        };
     }
 
     private static GeoBlockRenderer<BedPlateBaseBlockEntity> pillowMediumRenderer(

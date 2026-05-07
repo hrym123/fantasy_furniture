@@ -9,6 +9,7 @@ import org.lanye.fantasy_furniture.content.furniture.livingroom.item.BedPlate6Du
 import org.lanye.fantasy_furniture.content.furniture.livingroom.item.BedPlate6GeolibDecorItem;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.item.BedPlate6LargePillowItem;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.item.BedPlate6MediumPillowItem;
+import org.lanye.fantasy_furniture.content.furniture.livingroom.item.BedPlate6SmallPillowItem;
 import software.bernie.geckolib.model.GeoModel;
 
 /** 床板 6 附属品：物品栏 / 手持与世界里同套 GeckoLib 方块 Geo。 */
@@ -36,6 +37,9 @@ public final class BedPlate6AccessoryGeoItemModel extends GeoModel<BedPlate6Geol
             // 与 Blockbench「床板6枕头（中 1个放置的样子）」一致，物品栏用 solo
             return rl("geo/block/bed_plate6_pillow_medium_solo.geo.json");
         }
+        if (item instanceof BedPlate6SmallPillowItem) {
+            return rl("geo/block/bed_plate6_pillow_small_stack.geo.json");
+        }
         throw new IllegalArgumentException("Unknown decor item: " + item);
     }
 
@@ -54,6 +58,9 @@ public final class BedPlate6AccessoryGeoItemModel extends GeoModel<BedPlate6Geol
         }
         if (item instanceof BedPlate6MediumPillowItem mp) {
             return rl("textures/block/bed_plate6_pillow_medium_" + mp.getMaterialId() + ".png");
+        }
+        if (item instanceof BedPlate6SmallPillowItem sp) {
+            return rl("textures/block/bed_plate6_pillow_small_" + sp.getMaterialId() + ".png");
         }
         throw new IllegalArgumentException("Unknown decor item: " + item);
     }
@@ -74,6 +81,9 @@ public final class BedPlate6AccessoryGeoItemModel extends GeoModel<BedPlate6Geol
         }
         if (item instanceof BedPlate6MediumPillowItem) {
             return rl("animations/block/bed_plate6_pillow_medium_solo.animation.json");
+        }
+        if (item instanceof BedPlate6SmallPillowItem) {
+            return rl("animations/block/bed_plate6_pillow_small_stack.animation.json");
         }
         throw new IllegalArgumentException("Unknown decor item: " + item);
     }

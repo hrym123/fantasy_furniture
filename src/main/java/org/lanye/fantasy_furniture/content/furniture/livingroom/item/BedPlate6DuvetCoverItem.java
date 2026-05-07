@@ -15,11 +15,11 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BedPart;
 import org.lanye.fantasy_furniture.FantasyFurniture;
 import org.lanye.fantasy_furniture.bootstrap.block.ModBlocks;
-import org.lanye.fantasy_furniture.content.furniture.livingroom.BedPlate6DuvetMaterials;
+import org.lanye.fantasy_furniture.content.furniture.livingroom.BedPlate6DuvetCoverMaterials;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.blockentity.BedPlate6BlockEntity;
 
 /**
- * 床板 6 被套（七种材质之一）：仅能在已铺床单的 {@link ModBlocks#BED_PLATE6} 上使用。
+ * 床板 6 被套（六种材质，与床单色 1..6 对应）：仅能在已铺床单的 {@link ModBlocks#BED_PLATE6} 上使用。
  */
 public final class BedPlate6DuvetCoverItem extends BedPlate6GeolibDecorItem {
 
@@ -27,7 +27,7 @@ public final class BedPlate6DuvetCoverItem extends BedPlate6GeolibDecorItem {
 
     public BedPlate6DuvetCoverItem(Properties properties, int materialId) {
         super(properties);
-        if (!BedPlate6DuvetMaterials.isValid(materialId)) {
+        if (!BedPlate6DuvetCoverMaterials.isValid(materialId)) {
             throw new IllegalArgumentException("materialId out of range: " + materialId);
         }
         this.materialId = materialId;
@@ -75,7 +75,7 @@ public final class BedPlate6DuvetCoverItem extends BedPlate6GeolibDecorItem {
         int materialId = held.getMaterialId();
         if (!level.isClientSide) {
             int onBed = plate.getCoverMaterialId();
-            if (BedPlate6DuvetMaterials.isValid(onBed)) {
+            if (BedPlate6DuvetCoverMaterials.isValid(onBed)) {
                 if (onBed == materialId) {
                     plate.setCoverMaterialId(0);
                     giveCover(player, stackForRegistryMaterial(materialId));
@@ -106,7 +106,7 @@ public final class BedPlate6DuvetCoverItem extends BedPlate6GeolibDecorItem {
     }
 
     private static ItemStack stackForRegistryMaterial(int id) {
-        if (!BedPlate6DuvetMaterials.isValid(id)) {
+        if (!BedPlate6DuvetCoverMaterials.isValid(id)) {
             return ItemStack.EMPTY;
         }
         ResourceLocation rl =

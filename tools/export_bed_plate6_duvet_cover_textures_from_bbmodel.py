@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
-"""从「床板6（被套）」.bbmodel 导出 7 张被套贴图到 bed_plate6_duvet_cover_1..7.png。"""
+"""从「床板6（被套）」.bbmodel 导出被套贴图到 bed_plate6_duvet_cover_1..6.png（与游戏内被套六种材质一致）。"""
 from __future__ import annotations
 
 import argparse
 import base64
 import json
-import shutil
 import sys
 from pathlib import Path
 
@@ -45,12 +44,6 @@ def main() -> int:
         p.write_bytes(decode_texture_source(src))
         written.append(p)
         print("Wrote:", p)
-    # 与床单物品编号对齐为 7：若 Blockbench 仅 6 张贴图，复制最后一张为第 7 张
-    if len(written) == 6:
-        last = written[-1]
-        p7 = args.out_dir / "bed_plate6_duvet_cover_7.png"
-        shutil.copy2(last, p7)
-        print("Wrote (copy of texture 6):", p7)
     return 0
 
 

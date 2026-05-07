@@ -15,29 +15,19 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BedPart;
 import org.lanye.fantasy_furniture.FantasyFurniture;
 import org.lanye.fantasy_furniture.bootstrap.block.ModBlocks;
-import org.lanye.fantasy_furniture.content.furniture.livingroom.BedPlate6MediumPillowMaterials;
+import org.lanye.fantasy_furniture.content.furniture.livingroom.BedPlate6SmallPillowMaterials;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.blockentity.BedPlate6BlockEntity;
 
 /**
- * 床板 6 中号枕头：须先有床单。有大号时<strong>至多一只</strong>中号（大中 / 大中小）；无大号时可放两只（中中 / 中中小）。槽位顺序「先放 → 后放」。
- *
- * <p><strong>交互</strong>：非潜行右键仅<strong>放置</strong>（空槽放第一只；已有一只且手持<strong>相同</strong>材质则再放第二只，允许两槽同材质；
- * 已有一只且手持<strong>不同</strong>材质则放第二只异色；已两只则<strong>不再替换</strong>任一槽，手持任意中号均不消耗、不改变）。
- * 潜行右键<strong>拆除</strong>一只，顺序为后放 → 先放（LIFO）；手持中号枕头时由 {@link #applyToBed} 处理，空手或其它物品时由
- * {@link #trySneakRemoveFromBedWhenNotHoldingMedium} 在床方块交互中优先处理。
- *
- * <p>无床单则 {@link InteractionResult#FAIL}（仅在手握中号枕头且非潜行拆除路径时）。
- *
- * <p>{@link org.lanye.fantasy_furniture.content.furniture.livingroom.block.BedPlate6Block#use} 中顺序为：被套 → 大号枕头 →
- * 潜行拆中号（空手等）→ <strong>中号枕头</strong> → 床单。
+ * 床板 6 小号枕头：仅当 {@link BedPlate6BlockEntity#canAddSmallPillow()} 为真时可放置并消耗（底枕为「大+一中」或「二中」，即大中小 / 中中小）。
  */
-public final class BedPlate6MediumPillowItem extends BedPlate6GeolibDecorItem {
+public final class BedPlate6SmallPillowItem extends BedPlate6GeolibDecorItem {
 
     private final int materialId;
 
-    public BedPlate6MediumPillowItem(Properties properties, int materialId) {
+    public BedPlate6SmallPillowItem(Properties properties, int materialId) {
         super(properties);
-        if (!BedPlate6MediumPillowMaterials.isValid(materialId)) {
+        if (!BedPlate6SmallPillowMaterials.isValid(materialId)) {
             throw new IllegalArgumentException("materialId out of range: " + materialId);
         }
         this.materialId = materialId;
@@ -62,10 +52,9 @@ public final class BedPlate6MediumPillowItem extends BedPlate6GeolibDecorItem {
     }
 
     /**
-     * 潜行、且主手未拿中号枕头时：从床上拆下一只中号枕头（后槽优先）。供 {@link
-     * org.lanye.fantasy_furniture.content.furniture.livingroom.block.BedPlate6Block#use} 在手持其它物品或空手时调用。
+     * 潜行、且未拿小号枕头时：从床上卸下小号。须在潜行拆中号之前调用，以便先拆顶枕。
      */
-    public static InteractionResult trySneakRemoveFromBedWhenNotHoldingMedium(
+    public static InteractionResult trySneakRemoveFromBedWhenNotHoldingSmall(
             Level level, BlockPos pos, BlockState state, Player player, InteractionHand hand) {
         if (!player.isShiftKeyDown()) {
             return InteractionResult.PASS;
@@ -81,19 +70,20 @@ public final class BedPlate6MediumPillowItem extends BedPlate6GeolibDecorItem {
         if (!plate.hasDuvet()) {
             return InteractionResult.PASS;
         }
-        if (player.getItemInHand(hand).getItem() instanceof BedPlate6MediumPillowItem) {
+        if (player.getItemInHand(hand).getItem() instanceof BedPlate6SmallPillowItem) {
             return InteractionResult.PASS;
         }
-        if (plate.getMediumPillowCount() == 0) {
+        if (!plate.hasSmallPillow()) {
             return InteractionResult.PASS;
         }
         if (!level.isClientSide) {
-            removeOneServer(plate, player);
+            int m = plate.getSmallPillowMat();
+            plate.setSmallPillowMat(0);
+            givePillow(player, stackForRegistry(m));
         }
         return InteractionResult.sidedSuccess(level.isClientSide);
     }
 
-    /** 供 {@link org.lanye.fantasy_furniture.content.furniture.livingroom.block.BedPlate6Block#use} 调用。 */
     public static InteractionResult applyToBed(
             Level level, BlockPos pos, BlockState state, Player player, InteractionHand hand) {
         if (!state.is(ModBlocks.BED_PLATE6.block().get())) {
@@ -105,7 +95,7 @@ public final class BedPlate6MediumPillowItem extends BedPlate6GeolibDecorItem {
             return InteractionResult.PASS;
         }
         ItemStack stack = player.getItemInHand(hand);
-        if (!(stack.getItem() instanceof BedPlate6MediumPillowItem held)) {
+        if (!(stack.getItem() instanceof BedPlate6SmallPillowItem held)) {
             return InteractionResult.PASS;
         }
         if (!plate.hasDuvet()) {
@@ -113,11 +103,13 @@ public final class BedPlate6MediumPillowItem extends BedPlate6GeolibDecorItem {
         }
         int m = held.getMaterialId();
         if (player.isShiftKeyDown()) {
-            if (plate.getMediumPillowCount() == 0) {
+            if (!plate.hasSmallPillow()) {
                 return InteractionResult.PASS;
             }
             if (!level.isClientSide) {
-                removeOneServer(plate, player);
+                int on = plate.getSmallPillowMat();
+                plate.setSmallPillowMat(0);
+                givePillow(player, stackForRegistry(on));
             }
             return InteractionResult.sidedSuccess(level.isClientSide);
         }
@@ -127,49 +119,17 @@ public final class BedPlate6MediumPillowItem extends BedPlate6GeolibDecorItem {
         return InteractionResult.sidedSuccess(level.isClientSide);
     }
 
-    /** 拆一只：先卸后槽，再卸前槽；若卸下后小号不再合法则返还小号。 */
-    private static void removeOneServer(BedPlate6BlockEntity plate, Player player) {
-        int a = plate.getMediumPillowMatFirst();
-        int b = plate.getMediumPillowMatSecond();
-        int count = plate.getMediumPillowCount();
-        if (count == 2) {
-            plate.setMediumPillowSlots(a, 0);
-            givePillow(player, stackForRegistry(b));
-        } else if (count == 1) {
-            plate.setMediumPillowSlots(0, 0);
-            givePillow(player, stackForRegistry(a));
-        }
-        if (plate.hasSmallPillow() && !plate.smallPillowCombinationValid()) {
-            int sm = plate.getSmallPillowMat();
-            plate.setSmallPillowMat(0);
-            givePillow(player, BedPlate6SmallPillowItem.stackForRegistry(sm));
-        }
-    }
-
-    /** 非潜行：仅放置第二只；已满两只时不替换。 */
     private static void applyServerPlaceOnly(BedPlate6BlockEntity plate, Player player, ItemStack stack, int m) {
-        int a = plate.getMediumPillowMatFirst();
-        int count = plate.getMediumPillowCount();
-
-        if (count == 0) {
-            plate.setMediumPillowSlots(m, 0);
-            if (!player.getAbilities().instabuild) {
-                stack.shrink(1);
-            }
+        if (plate.hasSmallPillow()) {
             return;
         }
-        if (count == 1) {
-            if (plate.hasLargePillow()) {
-                /* 大中：有大号时仅允许一只中号 */
-                return;
-            }
-            plate.setMediumPillowSlots(a, m);
-            if (!player.getAbilities().instabuild) {
-                stack.shrink(1);
-            }
+        if (!plate.canAddSmallPillow()) {
             return;
         }
-        /* count == 2：不替换已有枕头，不消耗物品 */
+        plate.setSmallPillowMat(m);
+        if (!player.getAbilities().instabuild) {
+            stack.shrink(1);
+        }
     }
 
     private static void givePillow(Player player, ItemStack give) {
@@ -181,12 +141,12 @@ public final class BedPlate6MediumPillowItem extends BedPlate6GeolibDecorItem {
         }
     }
 
-    static ItemStack stackForRegistry(int materialId) {
-        if (!BedPlate6MediumPillowMaterials.isValid(materialId)) {
+    public static ItemStack stackForRegistry(int materialId) {
+        if (!BedPlate6SmallPillowMaterials.isValid(materialId)) {
             return ItemStack.EMPTY;
         }
         ResourceLocation rl =
-                ResourceLocation.fromNamespaceAndPath(FantasyFurniture.MODID, "bed_plate6_pillow_medium_" + materialId);
+                ResourceLocation.fromNamespaceAndPath(FantasyFurniture.MODID, "bed_plate6_pillow_small_" + materialId);
         if (!BuiltInRegistries.ITEM.containsKey(rl)) {
             return ItemStack.EMPTY;
         }
