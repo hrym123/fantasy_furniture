@@ -16,6 +16,7 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import net.minecraft.world.phys.shapes.CollisionContext;
+import org.lanye.fantasy_furniture.Config;
 import org.lanye.fantasy_furniture.bootstrap.block.ModBlocks;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.blockentity.BedPlate6BlockEntity;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.item.BedPlate6DuvetCoverItem;
@@ -35,6 +36,7 @@ public final class BedPlate6Block extends BedPlateBlock {
 
     /**
      * 被单在本格上的轴对齐外接盒（薄层，叠在床垫顶 y=5 之上）：整格水平 16×16、高 2/16。床尾/床头两格各加一份，不再按朝向切条带。
+     * 用于 {@link #getShape} 与射线；是否并入 {@link #getCollisionShape} 由通用配置 {@link Config#bedPlate6DuvetCollision()} 决定（默认关闭）。
      * 被套无碰撞。
      */
     private static final VoxelShape DUVET_OUTER_BOX = Block.box(0, 5, 0, 16, 7, 16);
@@ -54,17 +56,26 @@ public final class BedPlate6Block extends BedPlateBlock {
 
     @Override
     public VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
-        return shapeWithOptionalDuvet(state, level, pos, super.getShape(state, level, pos, context));
+        return shapeWithOptionalDuvet(
+                state, level, pos, super.getShape(state, level, pos, context), true);
     }
 
     @Override
     public VoxelShape getCollisionShape(
             BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
-        return shapeWithOptionalDuvet(state, level, pos, super.getCollisionShape(state, level, pos, context));
+        return shapeWithOptionalDuvet(
+                state,
+                level,
+                pos,
+                super.getCollisionShape(state, level, pos, context),
+                Config.bedPlate6DuvetCollision());
     }
 
     private static VoxelShape shapeWithOptionalDuvet(
-            BlockState state, BlockGetter level, BlockPos pos, VoxelShape base) {
+            BlockState state, BlockGetter level, BlockPos pos, VoxelShape base, boolean mergeDuvetCollision) {
+        if (!mergeDuvetCollision) {
+            return base;
+        }
         var be = level.getBlockEntity(footPos(state, pos));
         if (!(be instanceof BedPlate6BlockEntity plate) || !plate.hasDuvet()) {
             return base;

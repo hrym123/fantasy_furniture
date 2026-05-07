@@ -26,6 +26,7 @@ public final class Config {
     private static final ForgeConfigSpec.DoubleValue SWEEPER_DOCK_REVERSE_RANGE;
     private static final ForgeConfigSpec.BooleanValue SWEEPER_ENABLE_WALL_CLIMB;
     private static final ForgeConfigSpec.IntValue SWEEPER_RETURN_DOCK_INSURANCE_TICKS;
+    private static final ForgeConfigSpec.BooleanValue BED_PLATE6_DUVET_COLLISION;
 
     static {
         ForgeConfigSpec.Builder b = new ForgeConfigSpec.Builder();
@@ -89,6 +90,13 @@ public final class Config {
                                 "低血回仓（RETURNING_LOW_HEALTH）期间若持续无法入仓达到该 tick 数，则先在当前位置丢光背包物品再传送到机仓；"
                                         + "防止卡死。20 tick = 1 秒。")
                         .defineInRange("returnDockInsuranceTicks", 20 * 60, 20 * 10, 20 * 60 * 15);
+        b.pop();
+
+        b.push("bedPlate6");
+        BED_PLATE6_DUVET_COLLISION =
+                b.comment(
+                                "床板 6 已铺被单时，是否将被单薄层并入方块碰撞盒；false 时实体可穿过该层（默认关闭，仅保留床垫等基座碰撞）。")
+                        .define("duvetCollision", false);
         b.pop();
         SPEC = b.build();
     }
@@ -178,6 +186,11 @@ public final class Config {
      */
     public static int sweeperReturnDockInsuranceTicks() {
         return SWEEPER_RETURN_DOCK_INSURANCE_TICKS.get();
+    }
+
+    /** 床板 6 被单是否参与碰撞（默认 false）。 */
+    public static boolean bedPlate6DuvetCollision() {
+        return BED_PLATE6_DUVET_COLLISION.get();
     }
 
 }
