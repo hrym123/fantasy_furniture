@@ -14,6 +14,7 @@ import org.lanye.fantasy_furniture.content.furniture.livingroom.client.model.Ban
 import org.lanye.fantasy_furniture.content.furniture.livingroom.client.renderer.BanquetteGeoBlockRenderer;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.client.renderer.BedPlate6GeoBlockRenderer;
 import org.lanye.fantasy_furniture.content.furniture.decor.client.renderer.CombinedOrnamentGeoBlockRenderer;
+import org.lanye.fantasy_furniture.content.furniture.decor.client.renderer.PlainGlassWindowGeoBlockRenderer;
 import org.lanye.fantasy_furniture.content.furniture.common.client.renderer.FurnitureSeatRenderer;
 import org.lanye.fantasy_furniture.content.sweeper.client.renderer.SweeperRobotRenderer;
 import org.lanye.fantasy_furniture.bootstrap.entity.ModEntities;
@@ -65,6 +66,8 @@ public final class ClientModEvents {
                 ModBlocks.SWEEPER_DOCK,
                 GeolibAnimatedBlockRenderers.variableTextureGeoRendererProvider(
                         FantasyFurniture.MODID, "sweeper_dock", SweeperDockBlockEntity::getTextureLocation));
+        AnimatedBlockClientRegistration.registerBlockEntityRenderer(
+                ModBlocks.PLAIN_GLASS_WINDOW, ctx -> new PlainGlassWindowGeoBlockRenderer());
     }
 
     @SubscribeEvent

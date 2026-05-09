@@ -10,6 +10,7 @@ import org.lanye.fantasy_furniture.FantasyFurniture;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.blockentity.BanquetteBlockEntity;
 import org.lanye.reverie_core.geolib.bed.BedPlateBaseBlockEntity;
 import org.lanye.fantasy_furniture.content.furniture.decor.blockentity.CombinedOrnamentBlockEntity;
+import org.lanye.fantasy_furniture.content.furniture.decor.blockentity.PlainGlassWindowBlockEntity;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.blockentity.GreenSofaBlockEntity;
 import org.lanye.fantasy_furniture.content.furniture.kitchen.blockentity.HalfHalfPotBlockEntity;
 import org.lanye.fantasy_furniture.content.furniture.kitchen.blockentity.JamPotBlockEntity;
@@ -128,6 +129,9 @@ public final class ModBlocks {
     public static final AnimatedBlockEntry<SweeperDockBlockEntity> SWEEPER_DOCK =
             FurnitureAnimatedBlocks.SWEEPER_DOCK;
     public static final AnimatedBlockEntry<BedPlateBaseBlockEntity> BED_PLATE6 = FurnitureAnimatedBlocks.BED_PLATE6;
+
+    public static final AnimatedBlockEntry<PlainGlassWindowBlockEntity> PLAIN_GLASS_WINDOW =
+            FurnitureAnimatedBlocks.PLAIN_GLASS_WINDOW;
 
     public static void register(IEventBus modEventBus) {
         BLOCKS.register(modEventBus);

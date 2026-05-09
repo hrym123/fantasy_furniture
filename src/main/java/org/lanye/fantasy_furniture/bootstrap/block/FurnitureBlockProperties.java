@@ -61,4 +61,13 @@ public final class FurnitureBlockProperties {
                 .sound(SoundType.WOOL)
                 .noOcclusion();
     }
+
+    /** 玻璃窗：易碎、玻璃声、渲染不遮挡面剔除；透光由 {@link org.lanye.fantasy_furniture.content.furniture.decor.block.PlainGlassWindowBlock} 的光照方法实现。 */
+    public static BlockBehaviour.Properties glassWindow() {
+        return BlockBehaviour.Properties.of()
+                .mapColor(MapColor.COLOR_LIGHT_BLUE)
+                .strength(0.3f, 0.3f)
+                .sound(SoundType.GLASS)
+                .noOcclusion();
+    }
 }

@@ -1,6 +1,15 @@
 {
   "replace": false,
   "values": [
+    "fantasy_furniture:plain_glass_window_white",
+    "fantasy_furniture:plain_glass_window_black",
+    "fantasy_furniture:plain_glass_window_tan",
+    "fantasy_furniture:plain_glass_window_ice_blue",
+    "fantasy_furniture:plain_glass_window_cream",
+    "fantasy_furniture:plain_glass_window_pale_green",
+    "fantasy_furniture:plain_glass_window_cream_b",
+    "fantasy_furniture:plain_glass_window_mixed",
+    "fantasy_furniture:plain_glass_window_cream_c",
     "fantasy_furniture:decorative_screen",
     "fantasy_furniture:mixing_bowl",
     "fantasy_furniture:jam_pot",

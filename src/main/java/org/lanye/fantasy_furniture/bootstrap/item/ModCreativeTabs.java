@@ -15,6 +15,7 @@ import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.RegistryObject;
 import org.lanye.fantasy_furniture.FantasyFurniture;
 import org.lanye.fantasy_furniture.bootstrap.block.ModBlocks;
+import org.lanye.fantasy_furniture.bootstrap.block.PlainGlassWindowRegistration;
 
 /**
  * 本模组创造模式物品栏（CreativeModeTab）注册。
@@ -92,6 +93,9 @@ public final class ModCreativeTabs {
                 ModBlocks.KITCHEN_COUNTER.item()::get,
                 ModBlocks.KITCHEN_COUNTER_CABINET.item()::get,
                 ModBlocks.COMBINED_ORNAMENT.item()::get);
+        for (var ro : PlainGlassWindowRegistration.items()) {
+            list.add(ro::get);
+        }
         return List.copyOf(list);
     }
 
