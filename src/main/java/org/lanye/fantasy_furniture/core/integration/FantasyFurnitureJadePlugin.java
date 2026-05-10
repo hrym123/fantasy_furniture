@@ -1,5 +1,6 @@
 package org.lanye.fantasy_furniture.core.integration;
 
+import org.lanye.fantasy_furniture.bootstrap.block.ModBlocks;
 import org.lanye.fantasy_furniture.content.sweeper.entity.SweeperRobotEntity;
 import snownee.jade.api.IWailaClientRegistration;
 import snownee.jade.api.IWailaCommonRegistration;
@@ -19,6 +20,8 @@ public final class FantasyFurnitureJadePlugin implements IWailaPlugin {
 
     @Override
     public void registerClient(IWailaClientRegistration registration) {
+        // 普通玻璃窗：多方块共用一个 Block，名称须来自 pick（与 getCloneItemStack 一致），否则玉只显示方块译名「普通玻璃窗」
+        registration.usePickedResult(ModBlocks.PLAIN_GLASS_WINDOW.block().get());
         registration.registerEntityComponent(SweeperRobotJadeProvider.INSTANCE, SweeperRobotEntity.class);
     }
 }

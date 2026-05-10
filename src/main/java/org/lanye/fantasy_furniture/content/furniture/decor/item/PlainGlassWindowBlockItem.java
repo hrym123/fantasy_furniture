@@ -1,5 +1,7 @@
 package org.lanye.fantasy_furniture.content.furniture.decor.item;
 
+import net.minecraft.Util;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.util.Mth;
@@ -36,6 +38,15 @@ public final class PlainGlassWindowBlockItem extends GeolibBlockItem {
 
     public int materialIndex() {
         return variant.ordinal();
+    }
+
+    /**
+     * {@link net.minecraft.world.item.BlockItem} 默认使用方块的描述 id，九种材质会全部显示为「普通玻璃窗」。
+     * 每种注册物品应对应 {@code item.fantasy_furniture.plain_glass_window_<材质>}。
+     */
+    @Override
+    public String getDescriptionId() {
+        return Util.makeDescriptionId("item", BuiltInRegistries.ITEM.getKey(this));
     }
 
     @Override
