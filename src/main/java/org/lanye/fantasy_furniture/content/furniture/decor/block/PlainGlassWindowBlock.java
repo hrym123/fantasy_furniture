@@ -47,6 +47,12 @@ import org.jetbrains.annotations.Nullable;
  */
 public class PlainGlassWindowBlock extends GeolibFacingEntityBlockWithFactory<PlainGlassWindowBlockEntity> {
 
+    /**
+     * {@link #playerWillDestroy} 在方块被替换前调用，{@link #onRemove} 需知是否为创造玩家以抑制掉落（见 T006）。
+     * 非玩家破坏（爆炸等）下为 {@code null}，仍应掉落默认物品。
+     */
+    private static final ThreadLocal<Player> BREAKING_PLAYER = new ThreadLocal<>();
+
     public static final IntegerProperty SHAPE =
             IntegerProperty.create("shape", 0, PlainGlassWindowShapes.COUNT - 1);
 
@@ -149,11 +155,25 @@ public class PlainGlassWindowBlock extends GeolibFacingEntityBlockWithFactory<Pl
     }
 
     @Override
+    public void playerWillDestroy(Level level, BlockPos pos, BlockState state, Player player) {
+        BREAKING_PLAYER.set(player);
+        super.playerWillDestroy(level, pos, state, player);
+    }
+
+    @Override
     public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean isMoving) {
-        if (!state.is(newState.getBlock()) && !level.isClientSide) {
-            popResource(level, pos, stackForState(state));
+        try {
+            if (!state.is(newState.getBlock()) && !level.isClientSide) {
+                Player p = BREAKING_PLAYER.get();
+                boolean creative = p != null && p.getAbilities().instabuild;
+                if (!creative) {
+                    Block.popResource(level, pos, defaultDropStack(state));
+                }
+            }
+            super.onRemove(state, level, pos, newState, isMoving);
+        } finally {
+            BREAKING_PLAYER.remove();
         }
-        super.onRemove(state, level, pos, newState, isMoving);
     }
 
     @Override
@@ -161,18 +181,30 @@ public class PlainGlassWindowBlock extends GeolibFacingEntityBlockWithFactory<Pl
         return stackForState(state);
     }
 
+    /**
+     * 破坏、爆炸等非创造掉落：保留被拆方块 {@linkplain #materialIndex 材质}，造型固定为 0（默认模型、无
+     * {@link PlainGlassWindowBlockItem#TAG_SHAPE}），与 T006 口径一致。
+     */
+    private static ItemStack defaultDropStack(BlockState state) {
+        return stackForMaterialAndShape(materialIndex(state), 0);
+    }
+
+    /** 选取方块（Ctrl 中键等）仍反映当前材质与造型。 */
     private static ItemStack stackForState(BlockState state) {
-        int m = materialIndex(state);
+        int shape = Mth.clamp(state.getValue(SHAPE), 0, PlainGlassWindowShapes.COUNT - 1);
+        return stackForMaterialAndShape(materialIndex(state), shape);
+    }
+
+    private static ItemStack stackForMaterialAndShape(int materialIndex, int shape) {
         Item item =
                 ForgeRegistries.ITEMS.getValue(
                         ResourceLocation.fromNamespaceAndPath(
                                 FantasyFurniture.MODID,
-                                "plain_glass_window_" + PlainGlassWindowMaterials.itemSuffix(m)));
+                                "plain_glass_window_" + PlainGlassWindowMaterials.itemSuffix(materialIndex)));
         if (item == null) {
             item = ModBlocks.PLAIN_GLASS_WINDOW.item().get();
         }
         ItemStack stack = new ItemStack(item);
-        int shape = Mth.clamp(state.getValue(SHAPE), 0, PlainGlassWindowShapes.COUNT - 1);
         // 与创造栏默认物品一致：造型 0 不写 NBT，否则无法与无标签堆叠
         if (shape != 0) {
             stack.getOrCreateTag().putInt(PlainGlassWindowBlockItem.TAG_SHAPE, shape);
