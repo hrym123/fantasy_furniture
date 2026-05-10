@@ -3,7 +3,7 @@
 
 条纹款含 7 张材质；纯色 / 格子各 6 张时，将第 7 色复用最后一张贴图（与 Java 侧
 ``BedPlate6PillowPalette`` 一致）。下列组合已从游戏内移除，导出时跳过不写：
-``striped+butter``、``plain+cocoa``、``plaid+cocoa``（与 ``BedPlate6LargePillowItem#isUnavailableLargeVariant`` 一致）。
+``striped+cream``、``plain+cocoa``、``plaid+cocoa``（与 ``BedPlate6LargePillowItem#isUnavailableLargeVariant`` 一致）。
 """
 from __future__ import annotations
 
@@ -24,7 +24,7 @@ PLAIN_FILE = "枕头6枕头（大号 纯色）.bbmodel"
 PLAID_FILE = "枕头6枕头（大号 格子）.bbmodel"
 
 # 与 BedPlate6LargePillowItem.isUnavailableLargeVariant 一致
-_EXCLUDED = {("striped", "butter"), ("plain", "cocoa"), ("plaid", "cocoa")}
+_EXCLUDED = {("striped", "cream"), ("plain", "cocoa"), ("plaid", "cocoa")}
 
 
 def _decode_data_url(data: str) -> bytes:

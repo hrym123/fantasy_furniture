@@ -77,7 +77,7 @@ public final class ModItems {
             ITEMS.register("bed_plate6_duvet_cover_6", () -> new BedPlate6DuvetCoverItem(BED_PLATE6_DUVET_PROPS, 6));
 
     /**
-     * 床板 6 大号枕头：{@code bed_plate6_pillow_large_{striped|plain|plaid}_{cream|rose|…}}；共 18 个（已移除条纹黄油黄、
+     * 床板 6 大号枕头：{@code bed_plate6_pillow_large_{striped|plain|plaid}_{cream|rose|…}}；共 18 个（已移除条纹奶油色、
      * 纯色可可棕、格子可可棕），见 {@link BedPlate6LargePillowStyles} / {@link BedPlate6PillowPalette} /
      * {@link BedPlate6LargePillowItem#isUnavailableLargeVariant(int, int)}。
      */

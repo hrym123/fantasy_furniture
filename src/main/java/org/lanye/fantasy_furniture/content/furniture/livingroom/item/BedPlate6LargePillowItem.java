@@ -34,7 +34,7 @@ public final class BedPlate6LargePillowItem extends BedPlate6GeolibDecorItem {
      * org.lanye.fantasy_furniture.bootstrap.item.ModItems} 不再注册对应物品。
      */
     public static boolean isUnavailableLargeVariant(int styleId, int materialId) {
-        return (styleId == 1 && materialId == 3) /* 条纹·黄油黄 */
+        return (styleId == 1 && materialId == 1) /* 条纹·奶油色 */
                 || (styleId == 2 && materialId == 7) /* 纯色·可可棕 */
                 || (styleId == 3 && materialId == 7); /* 格子·可可棕 */
     }
