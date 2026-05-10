@@ -19,6 +19,7 @@ import net.minecraft.world.phys.shapes.CollisionContext;
 import org.lanye.fantasy_furniture.Config;
 import org.lanye.fantasy_furniture.bootstrap.block.ModBlocks;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.blockentity.BedPlate6BlockEntity;
+import org.lanye.fantasy_furniture.content.furniture.livingroom.item.BedPlate6BedDecorRemoval;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.item.BedPlate6DuvetCoverItem;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.item.BedPlate6DuvetItem;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.item.BedPlate6LargePillowItem;
@@ -28,9 +29,9 @@ import org.lanye.reverie_core.geolib.bed.BedPlateBaseBlockEntity;
 import org.lanye.reverie_core.geolib.bed.BedPlateBlock;
 
 /**
- * 床板 6：在 {@link net.minecraft.world.level.block.BedBlock#use} 之前处理被套、大号、潜行拆小号、潜行拆中号、中号、小号、床单。
- * 顺序：<strong>被套 →（主手大号且另一手中号、且床已摆大件且仍可加中号时先放中号）→ 大号 → 潜行拆小号（未拿中号时）→
- * 潜行拆中号 → 中号 → 小号 → 床单</strong>。
+ * 床板 6：在 {@link net.minecraft.world.level.block.BedBlock#use} 之前处理拆卸手套、被套、大号、中号、小号、床单。
+ * 卸下/替换床品改由主手 {@link org.lanye.fantasy_furniture.content.furniture.livingroom.item.BedPlate6DisassemblyGloveItem} 按叠放逆序逐层拆除。
+ * 顺序：<strong>拆卸手套 → 被套 →（主手大号且另一手中号、且床已摆大件且仍可加中号时先放中号）→ 大号 → 中号 → 小号 → 床单</strong>。
  */
 public final class BedPlate6Block extends BedPlateBlock {
 
@@ -91,6 +92,10 @@ public final class BedPlate6Block extends BedPlateBlock {
             Player player,
             InteractionHand hand,
             BlockHitResult hit) {
+        InteractionResult glove = BedPlate6BedDecorRemoval.tryRemoveLastWithMainHandGlove(level, state, pos, player, hand);
+        if (glove != InteractionResult.PASS) {
+            return glove;
+        }
         if (player.getItemInHand(hand).getItem() instanceof BedPlate6DuvetCoverItem) {
             InteractionResult cover = BedPlate6DuvetCoverItem.applyToBed(level, pos, state, player, hand);
             if (cover != InteractionResult.PASS) {
@@ -107,18 +112,6 @@ public final class BedPlate6Block extends BedPlateBlock {
             if (pillow != InteractionResult.PASS) {
                 return pillow;
             }
-        }
-        if (!(player.getItemInHand(hand).getItem() instanceof BedPlate6MediumPillowItem)) {
-            InteractionResult sneakSmall =
-                    BedPlate6SmallPillowItem.trySneakRemoveFromBedWhenNotHoldingSmall(level, pos, state, player, hand);
-            if (sneakSmall != InteractionResult.PASS) {
-                return sneakSmall;
-            }
-        }
-        InteractionResult sneakMedium =
-                BedPlate6MediumPillowItem.trySneakRemoveFromBedWhenNotHoldingMedium(level, pos, state, player, hand);
-        if (sneakMedium != InteractionResult.PASS) {
-            return sneakMedium;
         }
         InteractionHand mediumHand = handHoldingMediumPillowPreferUsed(player, hand);
         if (mediumHand != null) {

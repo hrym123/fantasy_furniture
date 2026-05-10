@@ -1,0 +1,6 @@
+{
+  "parent": "item/generated",
+  "textures": {
+    "layer0": "fantasy_furniture:item/bed_plate6_disassembly_glove"
+  }
+}

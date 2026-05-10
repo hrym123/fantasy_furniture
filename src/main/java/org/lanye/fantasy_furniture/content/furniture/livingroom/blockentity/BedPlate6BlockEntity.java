@@ -12,6 +12,7 @@ import org.lanye.fantasy_furniture.content.furniture.livingroom.BedPlate6LargePi
 import org.lanye.fantasy_furniture.content.furniture.livingroom.BedPlate6MediumPillowMaterials;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.BedPlate6SmallPillowMaterials;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.item.BedPlate6DuvetItem;
+import org.lanye.fantasy_furniture.content.furniture.livingroom.item.BedPlate6LargePillowItem;
 import org.lanye.reverie_core.geolib.bed.BedPlateBaseBlockEntity;
 
 /**
@@ -204,7 +205,8 @@ public final class BedPlate6BlockEntity extends BedPlateBaseBlockEntity {
                 return;
             }
             if (!BedPlate6LargePillowStyles.isValid(styleId)
-                    || !BedPlate6DuvetMaterials.isValid(materialId)) {
+                    || !BedPlate6DuvetMaterials.isValid(materialId)
+                    || BedPlate6LargePillowItem.isUnavailableLargeVariant(styleId, materialId)) {
                 return;
             }
             this.largePillowStyleId = styleId;
@@ -331,7 +333,9 @@ public final class BedPlate6BlockEntity extends BedPlateBaseBlockEntity {
         if (this.largePillowStyleId != 0
                 && (!BedPlate6LargePillowStyles.isValid(this.largePillowStyleId)
                         || !BedPlate6DuvetMaterials.isValid(this.largePillowMaterialId)
-                        || !BedPlate6DuvetMaterials.isValid(this.duvetMaterialId))) {
+                        || !BedPlate6DuvetMaterials.isValid(this.duvetMaterialId)
+                        || BedPlate6LargePillowItem.isUnavailableLargeVariant(
+                                this.largePillowStyleId, this.largePillowMaterialId))) {
             this.largePillowStyleId = 0;
             this.largePillowMaterialId = 0;
         }

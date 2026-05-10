@@ -2,7 +2,8 @@
 """从 MoonStarfish 床板 6 大号枕头 Blockbench 工程提取 PNG 到游戏资源目录。
 
 条纹款含 7 张材质；纯色 / 格子各 6 张时，将第 7 色复用最后一张贴图（与 Java 侧
-``BedPlate6PillowPalette`` 一致）。
+``BedPlate6PillowPalette`` 一致）。下列组合已从游戏内移除，导出时跳过不写：
+``striped+butter``、``plain+cocoa``、``plaid+cocoa``（与 ``BedPlate6LargePillowItem#isUnavailableLargeVariant`` 一致）。
 """
 from __future__ import annotations
 
@@ -21,6 +22,9 @@ COLORS = ("cream", "rose", "butter", "mint", "denim", "lilac", "cocoa")
 STRIPED_FILE = "床板6枕头（大号 条纹）.bbmodel"
 PLAIN_FILE = "枕头6枕头（大号 纯色）.bbmodel"
 PLAID_FILE = "枕头6枕头（大号 格子）.bbmodel"
+
+# 与 BedPlate6LargePillowItem.isUnavailableLargeVariant 一致
+_EXCLUDED = {("striped", "butter"), ("plain", "cocoa"), ("plaid", "cocoa")}
 
 
 def _decode_data_url(data: str) -> bytes:
@@ -51,6 +55,9 @@ def extract_for_style(bb_name: str, style_slug: str, repeat_last_if_short: bool)
     if len(textures) < n and not repeat_last_if_short:
         raise SystemExit(f"{style_slug}: need {n} textures, got {len(textures)}")
     for i, color in enumerate(COLORS):
+        if (style_slug, color) in _EXCLUDED:
+            print("Skip (removed variant):", style_slug, color)
+            continue
         t = textures[i] if i < len(textures) else textures[-1]
         png = _decode_data_url(t["source"])
         out = DST / f"bed_plate6_pillow_large_{style_slug}_{color}.png"

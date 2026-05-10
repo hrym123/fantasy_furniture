@@ -66,6 +66,7 @@ public final class ModCreativeTabs {
                 ModBlocks.SWEEPER_DOCK.item()::get,
                 ModBlocks.GREEN_SOFA.item()::get,
                 ModBlocks.BED_PLATE6.item()::get,
+                ModItems.BED_PLATE6_DISASSEMBLY_GLOVE::get,
                 ModItems.BED_PLATE6_DUVET_1::get,
                 ModItems.BED_PLATE6_DUVET_2::get,
                 ModItems.BED_PLATE6_DUVET_3::get,

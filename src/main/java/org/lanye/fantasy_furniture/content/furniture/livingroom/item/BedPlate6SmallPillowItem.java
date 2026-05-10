@@ -51,39 +51,6 @@ public final class BedPlate6SmallPillowItem extends BedPlate6GeolibDecorItem {
                 context.getHand());
     }
 
-    /**
-     * 潜行、且未拿小号枕头时：从床上卸下小号。须在潜行拆中号之前调用，以便先拆顶枕。
-     */
-    public static InteractionResult trySneakRemoveFromBedWhenNotHoldingSmall(
-            Level level, BlockPos pos, BlockState state, Player player, InteractionHand hand) {
-        if (!player.isShiftKeyDown()) {
-            return InteractionResult.PASS;
-        }
-        if (!state.is(ModBlocks.BED_PLATE6.block().get())) {
-            return InteractionResult.PASS;
-        }
-        BlockPos footPos = footPos(state, pos);
-        BlockEntity be = level.getBlockEntity(footPos);
-        if (!(be instanceof BedPlate6BlockEntity plate)) {
-            return InteractionResult.PASS;
-        }
-        if (!plate.hasDuvet()) {
-            return InteractionResult.PASS;
-        }
-        if (player.getItemInHand(hand).getItem() instanceof BedPlate6SmallPillowItem) {
-            return InteractionResult.PASS;
-        }
-        if (!plate.hasSmallPillow()) {
-            return InteractionResult.PASS;
-        }
-        if (!level.isClientSide) {
-            int m = plate.getSmallPillowMat();
-            plate.setSmallPillowMat(0);
-            givePillow(player, stackForRegistry(m));
-        }
-        return InteractionResult.sidedSuccess(level.isClientSide);
-    }
-
     public static InteractionResult applyToBed(
             Level level, BlockPos pos, BlockState state, Player player, InteractionHand hand) {
         if (!state.is(ModBlocks.BED_PLATE6.block().get())) {
@@ -102,17 +69,6 @@ public final class BedPlate6SmallPillowItem extends BedPlate6GeolibDecorItem {
             return InteractionResult.FAIL;
         }
         int m = held.getMaterialId();
-        if (player.isShiftKeyDown()) {
-            if (!plate.hasSmallPillow()) {
-                return InteractionResult.PASS;
-            }
-            if (!level.isClientSide) {
-                int on = plate.getSmallPillowMat();
-                plate.setSmallPillowMat(0);
-                givePillow(player, stackForRegistry(on));
-            }
-            return InteractionResult.sidedSuccess(level.isClientSide);
-        }
         if (!level.isClientSide) {
             applyServerPlaceOnly(plate, player, stack, m);
         }

@@ -73,39 +73,21 @@ public final class BedPlate6DuvetCoverItem extends BedPlate6GeolibDecorItem {
             return InteractionResult.PASS;
         }
         int materialId = held.getMaterialId();
+        int onBed = plate.getCoverMaterialId();
+        if (BedPlate6DuvetCoverMaterials.isValid(onBed)) {
+            /* 已有被套：替换/卸下改由拆卸手套 */
+            return InteractionResult.FAIL;
+        }
         if (!level.isClientSide) {
-            int onBed = plate.getCoverMaterialId();
-            if (BedPlate6DuvetCoverMaterials.isValid(onBed)) {
-                if (onBed == materialId) {
-                    plate.setCoverMaterialId(0);
-                    giveCover(player, stackForRegistryMaterial(materialId));
-                } else {
-                    plate.setCoverMaterialId(materialId);
-                    if (!player.getAbilities().instabuild) {
-                        stack.shrink(1);
-                    }
-                    giveCover(player, stackForRegistryMaterial(onBed));
-                }
-            } else {
-                plate.setCoverMaterialId(materialId);
-                if (!player.getAbilities().instabuild) {
-                    stack.shrink(1);
-                }
+            plate.setCoverMaterialId(materialId);
+            if (!player.getAbilities().instabuild) {
+                stack.shrink(1);
             }
         }
         return InteractionResult.sidedSuccess(level.isClientSide);
     }
 
-    private static void giveCover(Player player, ItemStack stack) {
-        if (player == null || stack.isEmpty() || player.getAbilities().instabuild) {
-            return;
-        }
-        if (!player.getInventory().add(stack)) {
-            player.drop(stack, false);
-        }
-    }
-
-    private static ItemStack stackForRegistryMaterial(int id) {
+    public static ItemStack stackForRegistry(int id) {
         if (!BedPlate6DuvetCoverMaterials.isValid(id)) {
             return ItemStack.EMPTY;
         }

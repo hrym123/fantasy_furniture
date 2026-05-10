@@ -21,12 +21,23 @@ import org.lanye.fantasy_furniture.content.furniture.livingroom.BedPlate6PillowP
 import org.lanye.fantasy_furniture.content.furniture.livingroom.blockentity.BedPlate6BlockEntity;
 
 /**
- * 床板 6 大号枕头：三种款式互斥，每款七种材质；仅能在已铺床单的 {@link ModBlocks#BED_PLATE6} 上放置。
+ * 床板 6 大号枕头：三种款式互斥，每款至多七种材质（部分款式+材质组合已从模组移除）；仅能在已铺床单的 {@link
+ * ModBlocks#BED_PLATE6} 上放置。
  */
 public final class BedPlate6LargePillowItem extends BedPlate6GeolibDecorItem {
 
     private final int styleId;
     private final int materialId;
+
+    /**
+     * 已从游戏内移除的大号枕头（款式 id × 床单色系 id）；读档遇此组合时卸下大号，{@link
+     * org.lanye.fantasy_furniture.bootstrap.item.ModItems} 不再注册对应物品。
+     */
+    public static boolean isUnavailableLargeVariant(int styleId, int materialId) {
+        return (styleId == 1 && materialId == 3) /* 条纹·黄油黄 */
+                || (styleId == 2 && materialId == 7) /* 纯色·可可棕 */
+                || (styleId == 3 && materialId == 7); /* 格子·可可棕 */
+    }
 
     public BedPlate6LargePillowItem(Properties properties, int styleId, int materialId) {
         super(properties);
@@ -35,6 +46,9 @@ public final class BedPlate6LargePillowItem extends BedPlate6GeolibDecorItem {
         }
         if (!BedPlate6DuvetMaterials.isValid(materialId)) {
             throw new IllegalArgumentException("materialId out of range: " + materialId);
+        }
+        if (isUnavailableLargeVariant(styleId, materialId)) {
+            throw new IllegalArgumentException("removed large pillow variant: " + styleId + "," + materialId);
         }
         this.styleId = styleId;
         this.materialId = materialId;
@@ -89,52 +103,23 @@ public final class BedPlate6LargePillowItem extends BedPlate6GeolibDecorItem {
         }
         int style = held.getStyleId();
         int material = held.getMaterialId();
+        if (plate.hasLargePillow()) {
+            /* 已有大号：替换/卸下改由拆卸手套 */
+            return InteractionResult.FAIL;
+        }
         if (!level.isClientSide) {
-            if (plate.hasLargePillow()) {
-                int onStyle = plate.getLargePillowStyleId();
-                int onMat = plate.getLargePillowMaterialId();
-                if (onStyle == style && onMat == material) {
-                    if (plate.hasSmallPillow()) {
-                        int sm = plate.getSmallPillowMat();
-                        givePillow(player, BedPlate6SmallPillowItem.stackForRegistry(sm));
-                        plate.setSmallPillowMat(0);
-                    }
-                    plate.setLargePillow(0, 0);
-                    givePillow(player, stackForRegistry(style, material));
-                } else if (onStyle == style) {
-                    plate.setLargePillow(style, material);
-                    if (!player.getAbilities().instabuild) {
-                        stack.shrink(1);
-                    }
-                    givePillow(player, stackForRegistry(style, onMat));
-                } else {
-                    plate.setLargePillow(style, material);
-                    if (!player.getAbilities().instabuild) {
-                        stack.shrink(1);
-                    }
-                    givePillow(player, stackForRegistry(onStyle, onMat));
-                }
-            } else {
-                plate.setLargePillow(style, material);
-                if (!player.getAbilities().instabuild) {
-                    stack.shrink(1);
-                }
+            plate.setLargePillow(style, material);
+            if (!player.getAbilities().instabuild) {
+                stack.shrink(1);
             }
         }
         return InteractionResult.sidedSuccess(level.isClientSide);
     }
 
-    private static void givePillow(Player player, ItemStack stack) {
-        if (player == null || stack.isEmpty() || player.getAbilities().instabuild) {
-            return;
-        }
-        if (!player.getInventory().add(stack)) {
-            player.drop(stack, false);
-        }
-    }
-
     static ItemStack stackForRegistry(int style, int material) {
-        if (!BedPlate6LargePillowStyles.isValid(style) || !BedPlate6DuvetMaterials.isValid(material)) {
+        if (!BedPlate6LargePillowStyles.isValid(style)
+                || !BedPlate6DuvetMaterials.isValid(material)
+                || isUnavailableLargeVariant(style, material)) {
             return ItemStack.EMPTY;
         }
         String path = "bed_plate6_pillow_large_"

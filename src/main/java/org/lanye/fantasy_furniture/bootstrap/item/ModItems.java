@@ -16,6 +16,7 @@ import org.lanye.fantasy_furniture.content.furniture.livingroom.BedPlate6LargePi
 import org.lanye.fantasy_furniture.content.furniture.livingroom.BedPlate6MediumPillowMaterials;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.BedPlate6PillowPalette;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.BedPlate6SmallPillowMaterials;
+import org.lanye.fantasy_furniture.content.furniture.livingroom.item.BedPlate6DisassemblyGloveItem;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.item.BedPlate6DuvetCoverItem;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.item.BedPlate6DuvetItem;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.item.BedPlate6LargePillowItem;
@@ -38,6 +39,12 @@ public final class ModItems {
             ITEMS.register("paint_brush", () -> new Item(new Item.Properties()));
 
     private static final Item.Properties BED_PLATE6_DUVET_PROPS = new Item.Properties().stacksTo(16);
+
+    /** 主手对床板 6 右键按逆序卸下最后一层床品。 */
+    public static final RegistryObject<Item> BED_PLATE6_DISASSEMBLY_GLOVE =
+            ITEMS.register(
+                    "bed_plate6_disassembly_glove",
+                    () -> new BedPlate6DisassemblyGloveItem(new Item.Properties().stacksTo(1)));
 
     /** 床板 6 床单七种材质（{@code bed_plate6_duvet_1} … {@code _7}）。 */
     public static final RegistryObject<Item> BED_PLATE6_DUVET_1 =
@@ -70,8 +77,9 @@ public final class ModItems {
             ITEMS.register("bed_plate6_duvet_cover_6", () -> new BedPlate6DuvetCoverItem(BED_PLATE6_DUVET_PROPS, 6));
 
     /**
-     * 床板 6 大号枕头：{@code bed_plate6_pillow_large_{striped|plain|plaid}_{cream|rose|…}}，共 {@code 3×7}
-     * 个；存储 id 仍为款式 {@code 1..3}，见 {@link BedPlate6LargePillowStyles} / {@link BedPlate6PillowPalette}。
+     * 床板 6 大号枕头：{@code bed_plate6_pillow_large_{striped|plain|plaid}_{cream|rose|…}}；共 18 个（已移除条纹黄油黄、
+     * 纯色可可棕、格子可可棕），见 {@link BedPlate6LargePillowStyles} / {@link BedPlate6PillowPalette} /
+     * {@link BedPlate6LargePillowItem#isUnavailableLargeVariant(int, int)}。
      */
     public static final List<RegistryObject<Item>> BED_PLATE6_PILLOW_LARGE_ITEMS = new ArrayList<>();
 
@@ -84,6 +92,9 @@ public final class ModItems {
     static {
         for (int s = 1; s <= BedPlate6LargePillowStyles.COUNT; s++) {
             for (int m = 1; m <= BedPlate6DuvetMaterials.COUNT; m++) {
+                if (BedPlate6LargePillowItem.isUnavailableLargeVariant(s, m)) {
+                    continue;
+                }
                 final int style = s;
                 final int mat = m;
                 String regId = "bed_plate6_pillow_large_"

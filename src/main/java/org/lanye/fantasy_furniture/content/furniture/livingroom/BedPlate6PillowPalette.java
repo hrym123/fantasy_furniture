@@ -4,7 +4,8 @@ package org.lanye.fantasy_furniture.content.furniture.livingroom;
  * 床板 6 大号枕头七种配色（与床单材质 id {@code 1..7} 对齐）的英文资源 slug。
  *
  * <p>MoonStarfish 工程中纯色 / 格子大号枕头仅含 6 张贴图时，第 7 色 {@code cocoa} 复用第 6 色贴图，与
- * {@code tools/extract_bed_plate6_pillow_large_textures_from_bbmodel.py} 一致。
+ * {@code tools/extract_bed_plate6_pillow_large_textures_from_bbmodel.py} 一致（纯色/格子可可棕大号物品已移除，条纹可可仍用
+ * {@code cocoa} slug）。
  */
 public final class BedPlate6PillowPalette {
 
