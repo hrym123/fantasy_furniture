@@ -41,9 +41,8 @@ import org.jetbrains.annotations.Nullable;
  *
  * <p>光照：与玻璃类方块一致，不挡光（{@link #getLightBlock} 为 0、允许天光竖直向下传播）。
  *
- * <p>碰撞：各 {@link #SHAPE} 对应 geo 在单格内裁切后的<strong>最小外接轴对齐盒</strong>（北向基准，与
- * {@code tools/geo_collision_box.py} 默认输出一致；改模后请对
- * {@code assets/.../geo/block/plain_glass_window_shape_*.geo.json} 重跑脚本更新数值）。随 {@link #FACING} 经
+ * <p>碰撞：北向基准与 {@code tools/geo_collision_box.py} 外接盒一致（多数造型）；斜角 45° 使用<strong>整格外接盒</strong>
+ * {@code Block.box(0,0,0,16,16,16)}，与单格线框及「占满一格」的交互预期一致。随 {@link #FACING} 经
  * {@link VoxelShapeRotation#rotateYFromNorth} 旋转。
  */
 public class PlainGlassWindowBlock extends GeolibFacingEntityBlockWithFactory<PlainGlassWindowBlockEntity> {
@@ -70,19 +69,15 @@ public class PlainGlassWindowBlock extends GeolibFacingEntityBlockWithFactory<Pl
     }
 
     /**
-     * 北向基准外接盒，索引与 {@link PlainGlassWindowShapes#geoBasename(int)} 顺序一致。
-     * 由 {@code python tools/geo_collision_box.py src/.../geo/block/<basename>.geo.json} 生成。
-     */
-    /**
-     * 北向外接盒：与 {@code tools/geo_collision_box.py} 一致（含骨骼父链 {@code rotation}，与 Gecko/Blockbench
-     * 一致）；右键换 {@link PlainGlassWindowBlock#SHAPE} 时同步变。
+     * 北向基准碰撞，索引与 {@link PlainGlassWindowShapes#geoBasename(int)} 一致。
+     * 造型 0～3 与 {@code tools/geo_collision_box.py} 外接盒一致；斜角 45°（索引 4）为整格 {@code 16³} 外接盒。
      */
     private static final VoxelShape[] SHAPES_NORTH = {
         Block.box(0.0D, 0.0D, 0.0D, 16.0D, 16.0D, 1.4D), // straight
         Block.box(0.0D, 0.0D, 0.0D, 16.0D, 1.4D, 16.0D), // 90°
         Block.box(0.0D, 0.0D, 0.0D, 16.0D, 7.3819D, 16.0D), // 22.5°
-        Block.box(0.0D, 0.0D, 0.205D, 16.0D, 16.5463D, 16.0D), // 45°
-        Block.box(14.7979D, 0.0D, 0.0D, 16.0D, 16.0D, 16.0D), // 斜角 45°（group ry=135，见 geo_collision_box）
+        Block.box(0.0D, 0.205D, 0.0D, 16.0D, 17.2463D, 16.0D), // 45°
+        Block.box(0.0D, 0.0D, 0.0D, 16.0D, 16.0D, 16.0D), // 斜角 45°：整格外接盒（单格立方）
     };
 
     public PlainGlassWindowBlock(BlockBehaviour.Properties properties) {

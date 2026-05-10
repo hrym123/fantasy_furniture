@@ -19,8 +19,8 @@
    再取轴对齐包围盒（与开发时用于抽奖机的脚本一致）。
 3. 再对八个角点施加**所属骨骼及其父链**上的 ``rotation``（绕各自 ``pivot``），**自叶向根**顺序与 GeckoLib /
    Blockbench 对子骨顶点的复合变换一致（旧版若按根→叶施加会与预览不符，并可能导致部分倾角窗裁切交为空）。
-   对 ``geometry.plain_glass_window_*`` 且骨骼为**纯 X 倾角**（仅 ``rx`` 非零）时，骨骼链欧拉再取 ``(-rx,-ry,rz)``
-   以与 Gecko 读入取反后的顶点一致；斜角 45°（纯 ``ry``）仍按 JSON 字面欧拉计算。
+   对 ``geometry.plain_glass_window_*``，骨骼链欧拉取 ``(-rx,-ry,rz)`` 以与 Gecko 读入 Bedrock 骨骼旋转后的顶点一致；
+   geo 中 ``rotation`` 须与 Blockbench Bedrock 导出一致（``bedrock.js`` compileGroup：``rx,ry`` 相对工程内取反）。
 4. 将模型坐标映射到方块内 0～16：x' = x + 8，z' = z + 8，y' = y（与模组内 Pestle/果酱锅等约定一致）。
 5. **默认输出**：各 cube 与 **水平单格 [0,16]×[0,16]、竖直不裁顶** 求交（y 可 >16，以包含超高模型），再对所有交盒取 **全局 min/max**，得到外接轴对齐盒（非布尔并集体积）。
 6. **``--emit-java``**：对每个裁切盒输出 ``Shapes.or`` 链（真并集），与 ``block_collision_detail.py`` 的 Java 片段类似，但无逐条说明。
@@ -93,7 +93,7 @@ def _geometry_identifier(data: dict) -> str | None:
 
 
 def _plain_glass_window_geo(ident: str | None) -> bool:
-    """此类 geo 中「纯 X 倾角」骨骼已按 Blockbench Bedrock 的 rx 符号书写，骨骼链需与 Gecko 读入取反一致。"""
+    """骨骼 ``rotation`` 已按 Blockbench Bedrock 导出（``bedrock.js`` compileGroup：对 rx、ry 取反）书写。"""
     return ident is not None and ident.startswith("geometry.plain_glass_window_")
 
 
@@ -101,9 +101,10 @@ def _bone_rotation_deg_for_collision(
     rot_deg: list[float] | tuple[float, ...], geometry_identifier: str | None
 ) -> tuple[float, float, float]:
     rx, ry, rz = (float(rot_deg[0]), float(rot_deg[1]), float(rot_deg[2]))
-    # 仅纯 X 倾角与 Java→Bedrock 的 rx 取反成对；斜角 45° 为纯 Y，仓库 geo 与 Gecko 一致，勿再对 ry 取反（否则线框又偏）。
+    # GeckoLib 读入 Bedrock geo 骨骼旋转时仍对 x/y 分量取反；与 ``bedrock.js`` 写入的 JSON 组合后，顶点与碰撞脚本中
+    # 对骨骼链施加 euler(-rx,-ry,rz) 一致（见 Blockbench 源码 ``js/formats/bedrock/bedrock.js`` compileGroup）。
     if _plain_glass_window_geo(geometry_identifier):
-        if abs(ry) < 1e-6 and abs(rz) < 1e-6 and abs(rx) > 1e-6:
+        if abs(rx) > 1e-9 or abs(ry) > 1e-9 or abs(rz) > 1e-9:
             return (-rx, -ry, rz)
     return (rx, ry, rz)
 
