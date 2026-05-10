@@ -55,7 +55,6 @@ public final class PlainGlassWindowRegistration {
         List<RegistryObject<Item>> list = new ArrayList<>();
         for (PlainGlassWindowMaterialVariant v : PlainGlassWindowMaterialVariant.values()) {
             final PlainGlassWindowMaterialVariant vv = v;
-            int m = vv.ordinal();
             list.add(
                     ModBlocks.BLOCK_ITEMS.register(
                             "plain_glass_window_" + vv.getSerializedName(),
@@ -68,7 +67,8 @@ public final class PlainGlassWindowRegistration {
                                                     ResourceLocation.fromNamespaceAndPath(
                                                             FantasyFurniture.MODID,
                                                             "textures/block/"
-                                                                    + PlainGlassWindowMaterials.itemPreviewStem(m)
+                                                                    + PlainGlassWindowMaterials.itemPreviewStem(
+                                                                            vv.ordinal())
                                                                     + ".png"),
                                                     GEOLIB_STATIC_ANIMATION),
                                             vv)));

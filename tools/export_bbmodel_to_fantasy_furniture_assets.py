@@ -15,7 +15,8 @@
 
 **普通玻璃窗导出核对（模型「不对」时优先看）**
 
-- **分组旋转**：Blockbench 里父级空物体/组的 ``rotation`` 必须进 geo 骨骼的 ``rotation`` 字段。旧流程若漏写，游戏中会与 BB 预览差一截（如 90°/45°/22.5°/斜角造型）。本仓库 ``tools/bbmodel_to_geojson.py`` 会写入分组旋转。
+- **原则**：普通玻璃窗在 **Java 客户端不得做任何姿态/渲染补偿**（不覆盖 ``GeoBlockRenderer#rotateBlock``、不追加 ``mulPose``）。与 Gecko / MC 方块朝向、倾角、薄片位置的差异，**只能**通过改 ``bbmodel_to_geojson.py`` 的 geo 生成（或直接改已生成的 ``geo/block/plain_glass_window_shape_*.geo.json``）解决；改 geo 后须对对应文件运行 ``tools/geo_collision_box.py`` 更新 ``PlainGlassWindowBlock`` 碰撞。
+- **分组旋转**：Blockbench 里父级空物体/组的 ``rotation`` 必须进 geo 骨骼的 ``rotation`` 字段。本仓库 ``tools/bbmodel_to_geojson.py`` 会写入分组旋转；倾角与 Gecko 仍不一致时优先用 **Blockbench GeckoLib 插件** 对照 golden，或在 ``plain_glass_window`` 后处理里做矩阵烘焙（勿在 Java 渲染器里补姿态）。
 - **薄片窗扇**：Bedrock geo 里若某一轴 ``size`` 极小（如 0.4），对应 Blockbench 里窗厚所在轴；放置后应对齐 MC 水平 ``facing`` 与 Blockbench 前向约定。
 - **多槽位贴图**：非 0 号槽的 UV 在本流程可能不完整；若 BB 里多张贴图而游戏里只认一张，请用 Blockbench GeckoLib 插件导出 geo，或合并为单张 atlas 再导出。
 - **九张 PNG**：``--shared-textures plain_glass_window`` 会按槽位主色命名；须与 Java ``PlainGlassWindowSharedTextures.TEXTURE_STEMS`` 一致，否则绑定会错图。
@@ -541,6 +542,7 @@ def main() -> int:
                 data,
                 format_version=args.format_version,
                 geometry_prefix=args.geometry_prefix,
+                plain_glass_window_gecko_geo_post=(shared_key == "plain_glass_window"),
             )
         except ValueError as e:
             print(f"转换 geo 失败: {e}", file=sys.stderr)

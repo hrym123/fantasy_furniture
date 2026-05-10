@@ -4,7 +4,6 @@ import java.util.List;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.util.Mth;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
@@ -37,7 +36,8 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * 普通玻璃窗：{@link #FACING}×{@link #SHAPE} 必选；{@link #MATERIAL}（颜色名枚举）仅在
- * {@link PlainGlassWindowMaterials#count()} &gt; 1 时存在于 BlockState。贴图按材质序数选用。右键循环切换造型。
+ * {@link PlainGlassWindowMaterials#count()} &gt; 1 时存在于 BlockState。贴图按材质序数选用。右键按
+ * {@link PlainGlassWindowShapes#nextShapeInCycle(int)} 顺序切换造型。
  *
  * <p>光照：与玻璃类方块一致，不挡光（{@link #getLightBlock} 为 0、允许天光竖直向下传播）。
  *
@@ -73,12 +73,16 @@ public class PlainGlassWindowBlock extends GeolibFacingEntityBlockWithFactory<Pl
      * 北向基准外接盒，索引与 {@link PlainGlassWindowShapes#geoBasename(int)} 顺序一致。
      * 由 {@code python tools/geo_collision_box.py src/.../geo/block/<basename>.geo.json} 生成。
      */
+    /**
+     * 北向外接盒：与 {@code tools/geo_collision_box.py} 一致（含骨骼父链 {@code rotation}，与 Gecko/Blockbench
+     * 一致）；右键换 {@link PlainGlassWindowBlock#SHAPE} 时同步变。
+     */
     private static final VoxelShape[] SHAPES_NORTH = {
         Block.box(0.0D, 0.0D, 0.0D, 16.0D, 16.0D, 1.4D), // straight
-        Block.box(0.0D, 0.7D, 0.0D, 16.0D, 16.7D, 0.7D), // 90°
-        Block.box(0.0D, 0.0D, 0.0D, 16.0D, 17.6D, 0.4D), // 22.5°
-        Block.box(0.0D, 0.0D, 0.0D, 16.0D, 22.7D, 1.4D), // 45°（模型超高，y 穿出单格）
-        Block.box(0.0D, 0.0D, 0.0D, 16.0D, 16.0D, 1.4D), // diag45
+        Block.box(0.0D, 0.0D, 0.0D, 16.0D, 1.4D, 16.0D), // 90°
+        Block.box(0.0D, 0.0D, 0.0D, 16.0D, 7.3819D, 16.0D), // 22.5°
+        Block.box(0.0D, 0.0D, 0.205D, 16.0D, 16.5463D, 16.0D), // 45°
+        Block.box(14.7979D, 0.0D, 0.0D, 16.0D, 16.0D, 16.0D), // 斜角 45°（group ry=135，见 geo_collision_box）
     };
 
     public PlainGlassWindowBlock(BlockBehaviour.Properties properties) {
@@ -173,15 +177,18 @@ public class PlainGlassWindowBlock extends GeolibFacingEntityBlockWithFactory<Pl
             item = ModBlocks.PLAIN_GLASS_WINDOW.item().get();
         }
         ItemStack stack = new ItemStack(item);
-        CompoundTag tag = stack.getOrCreateTag();
-        tag.putInt(PlainGlassWindowBlockItem.TAG_SHAPE, state.getValue(SHAPE));
+        int shape = Mth.clamp(state.getValue(SHAPE), 0, PlainGlassWindowShapes.COUNT - 1);
+        // 与创造栏默认物品一致：造型 0 不写 NBT，否则无法与无标签堆叠
+        if (shape != 0) {
+            stack.getOrCreateTag().putInt(PlainGlassWindowBlockItem.TAG_SHAPE, shape);
+        }
         return stack;
     }
 
     @Override
     protected InteractionResult onUseServer(
             BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
-        int s = (state.getValue(SHAPE) + 1) % PlainGlassWindowShapes.COUNT;
+        int s = PlainGlassWindowShapes.nextShapeInCycle(state.getValue(SHAPE));
         level.setBlock(pos, state.setValue(SHAPE, s), Block.UPDATE_ALL_IMMEDIATE);
         return InteractionResult.sidedSuccess(level.isClientSide);
     }

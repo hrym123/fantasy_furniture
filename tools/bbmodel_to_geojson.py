@@ -7,6 +7,12 @@
 绕枢轴旋转（如普通窗 90° 的 ``[90,0,0]``、斜角窗的 ``[0,45,0]``），省略该字段会导致与
 Blockbench 预览不一致。
 
+**普通玻璃窗（``plain_glass_window_gecko_geo_post``）**：模组内 **禁止** 在 Java 渲染器里对姿态做补偿；
+导出 ``--shared-textures plain_glass_window`` 时 ``_postprocess_plain_glass_window_gecko_bones``：（1）纯 X 倾角骨骼
+（``ry=rz=0``、``rx≠0``）写 ``[-rx,0,0]``；（2）若 ``model_identifier`` 为 ``plain_glass_window_shape_diag45`` 且某骨骼
+为 ``[0,45,0]``（与 Blockbench 斜角窗常见值），改为 ``[0,135,0]``，使游戏内平面朝向与墙角预期一致；已在 Blockbench 中
+改为 ``135`` 的源模型不会触发该条。
+
 限制（与 ``export_bbmodel_to_fantasy_furniture_assets`` 说明一致）：
 
 - 每个面的 UV 仅当 ``texture == 0`` 时导出；其它槽位需合并 atlas 或用官方 GeckoLib 插件导出。
@@ -16,6 +22,27 @@ Blockbench 预览不一致。
 from __future__ import annotations
 
 from typing import Any
+
+
+def _postprocess_plain_glass_window_gecko_bones(bones: list[dict[str, Any]], geometry_stem: str) -> None:
+    """
+    普通玻璃窗：纯 X 倾角时 Java bbmodel 的 ``rx`` 与 Bedrock 插件/geo 中符号相反（见 ``shape_90`` 等）；
+    斜角 ``shape_diag45``：Blockbench 里常见的 ``[0,45,0]`` 在游戏内与墙角平面差 90°，导出为 ``[0,135,0]``。
+    """
+    stem = geometry_stem.strip()
+    for b in bones:
+        rot = b.get("rotation")
+        if not isinstance(rot, list) or len(rot) != 3:
+            continue
+        rx, ry, rz = (float(rot[0]), float(rot[1]), float(rot[2]))
+        if abs(rx) < 1e-9 and abs(ry) < 1e-9 and abs(rz) < 1e-9:
+            continue
+        if stem.endswith("plain_glass_window_shape_diag45"):
+            if abs(rx) < 1e-6 and abs(rz) < 1e-6 and abs(ry - 45.0) < 1.0:
+                b["rotation"] = [0.0, 135.0, 0.0]
+                continue
+        if abs(ry) < 1e-9 and abs(rz) < 1e-9 and abs(rx) > 1e-9:
+            b["rotation"] = [-rx, -ry, rz]
 
 
 def _face_to_bedrock(face: dict[str, Any]) -> dict[str, Any] | None:
@@ -107,6 +134,7 @@ def bbmodel_to_geo(
     *,
     format_version: str = "1.21.110",
     geometry_prefix: str = "geometry.",
+    plain_glass_window_gecko_geo_post: bool = False,
 ) -> dict[str, Any]:
     mid = data.get("model_identifier")
     if not isinstance(mid, str) or not mid.strip():
@@ -151,6 +179,9 @@ def bbmodel_to_geo(
         if name == "bb_main":
             continue
         b["cubes"] = cubes_by_bone.get(name, [])
+
+    if plain_glass_window_gecko_geo_post:
+        _postprocess_plain_glass_window_gecko_bones(bones, str(mid).strip())
 
     desc: dict[str, Any] = {
         "identifier": f"{geometry_prefix}{mid}",

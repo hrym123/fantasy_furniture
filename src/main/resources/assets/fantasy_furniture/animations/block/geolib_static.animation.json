@@ -5,6 +5,31 @@
 			"loop": true,
 			"animation_length": 1,
 			"bones": {}
+		},
+		"animation.plain_glass_window_shape_straight.idle": {
+			"loop": true,
+			"animation_length": 1,
+			"bones": {}
+		},
+		"animation.plain_glass_window_shape_90.idle": {
+			"loop": true,
+			"animation_length": 1,
+			"bones": {}
+		},
+		"animation.plain_glass_window_shape_22p5.idle": {
+			"loop": true,
+			"animation_length": 1,
+			"bones": {}
+		},
+		"animation.plain_glass_window_shape_45.idle": {
+			"loop": true,
+			"animation_length": 1,
+			"bones": {}
+		},
+		"animation.plain_glass_window_shape_diag45.idle": {
+			"loop": true,
+			"animation_length": 1,
+			"bones": {}
 		}
 	}
 }

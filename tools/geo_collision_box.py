@@ -17,9 +17,13 @@
 1. 遍历 geometry 下所有 bone 的 cubes（与 Blockbench 导出一致：cube 坐标已在模型空间）。
 2. 每个 cube：无 rotation 时用 origin/size 直接得 AABB；有 rotation 时对 8 个角点绕 pivot 做 XYZ 欧拉旋转（度），
    再取轴对齐包围盒（与开发时用于抽奖机的脚本一致）。
-3. 将模型坐标映射到方块内 0～16：x' = x + 8，z' = z + 8，y' = y（与模组内 Pestle/果酱锅等约定一致）。
-4. **默认输出**：各 cube 与 **水平单格 [0,16]×[0,16]、竖直不裁顶** 求交（y 可 >16，以包含超高模型），再对所有交盒取 **全局 min/max**，得到外接轴对齐盒（非布尔并集体积）。
-5. **``--emit-java``**：对每个裁切盒输出 ``Shapes.or`` 链（真并集），与 ``block_collision_detail.py`` 的 Java 片段类似，但无逐条说明。
+3. 再对八个角点施加**所属骨骼及其父链**上的 ``rotation``（绕各自 ``pivot``），**自叶向根**顺序与 GeckoLib /
+   Blockbench 对子骨顶点的复合变换一致（旧版若按根→叶施加会与预览不符，并可能导致部分倾角窗裁切交为空）。
+   对 ``geometry.plain_glass_window_*`` 且骨骼为**纯 X 倾角**（仅 ``rx`` 非零）时，骨骼链欧拉再取 ``(-rx,-ry,rz)``
+   以与 Gecko 读入取反后的顶点一致；斜角 45°（纯 ``ry``）仍按 JSON 字面欧拉计算。
+4. 将模型坐标映射到方块内 0～16：x' = x + 8，z' = z + 8，y' = y（与模组内 Pestle/果酱锅等约定一致）。
+5. **默认输出**：各 cube 与 **水平单格 [0,16]×[0,16]、竖直不裁顶** 求交（y 可 >16，以包含超高模型），再对所有交盒取 **全局 min/max**，得到外接轴对齐盒（非布尔并集体积）。
+6. **``--emit-java``**：对每个裁切盒输出 ``Shapes.or`` 链（真并集），与 ``block_collision_detail.py`` 的 Java 片段类似，但无逐条说明。
 
 **``--mc-block-model``（Java 方块模型 JSON）**
 
@@ -32,6 +36,7 @@
 - 与游戏内骨骼层级动画无关，仅静态几何；旋转顺序若与引擎/GeckoLib 不一致，结果会有误差。
 - **外接盒**若几何几乎占满单格，结果会接近 ``Block.box(0,0,0,16,16,16)``，游戏中体感与整格碰撞相似，**不一定是脚本算错**。
 - 不对称时需配合 ``org.lanye.fantasy_furniture.block.util.VoxelShapeRotation.rotateYFromNorth(shape, state.getValue(FACING))`` 使用。
+- 骨骼层级若与 Blockbench 导出约定不一致（例如非欧拉 XYZ），结果会有误差。
 
 用法（在 fantasy_furniture 仓库根目录）::
 
@@ -76,6 +81,33 @@ def _rot_z(p: tuple[float, float, float], ang: float) -> tuple[float, float, flo
     return (x * c - y * s, x * s + y * c, z)
 
 
+def _geometry_identifier(data: dict) -> str | None:
+    geoms = data.get("minecraft:geometry")
+    if not geoms or not isinstance(geoms[0], dict):
+        return None
+    desc = geoms[0].get("description")
+    if not isinstance(desc, dict):
+        return None
+    ident = desc.get("identifier")
+    return ident if isinstance(ident, str) else None
+
+
+def _plain_glass_window_geo(ident: str | None) -> bool:
+    """此类 geo 中「纯 X 倾角」骨骼已按 Blockbench Bedrock 的 rx 符号书写，骨骼链需与 Gecko 读入取反一致。"""
+    return ident is not None and ident.startswith("geometry.plain_glass_window_")
+
+
+def _bone_rotation_deg_for_collision(
+    rot_deg: list[float] | tuple[float, ...], geometry_identifier: str | None
+) -> tuple[float, float, float]:
+    rx, ry, rz = (float(rot_deg[0]), float(rot_deg[1]), float(rot_deg[2]))
+    # 仅纯 X 倾角与 Java→Bedrock 的 rx 取反成对；斜角 45° 为纯 Y，仓库 geo 与 Gecko 一致，勿再对 ry 取反（否则线框又偏）。
+    if _plain_glass_window_geo(geometry_identifier):
+        if abs(ry) < 1e-6 and abs(rz) < 1e-6 and abs(rx) > 1e-6:
+            return (-rx, -ry, rz)
+    return (rx, ry, rz)
+
+
 def _apply_rot_euler_xyz_deg(
     v: tuple[float, float, float], rot_deg: list[float] | tuple[float, ...]
 ) -> tuple[float, float, float]:
@@ -94,6 +126,21 @@ def _cube_aabb_model(
     rotation: list[float] | tuple[float, ...] | None,
     pivot: tuple[float, float, float],
 ) -> tuple[float, float, float, float, float, float]:
+    """仅 cube 级旋转、**不含**骨骼链；与 ``_cube_eight_corners_model`` 的 AABB 一致。"""
+    pts = _cube_eight_corners_model(origin, size, rotation, pivot)
+    xs = [p[0] for p in pts]
+    ys = [p[1] for p in pts]
+    zs = [p[2] for p in pts]
+    return (min(xs), max(xs), min(ys), max(ys), min(zs), max(zs))
+
+
+def _cube_eight_corners_model(
+    origin: list[float],
+    size: list[float],
+    rotation: list[float] | tuple[float, ...] | None,
+    pivot: tuple[float, float, float],
+) -> list[tuple[float, float, float]]:
+    """cube 八个角点（模型空间），先施加 cube 自身 rotation（与 ``_cube_aabb_model`` 一致）。"""
     ox, oy, oz = origin
     sx, sy, sz = size
     corners: list[tuple[float, float, float]] = []
@@ -102,35 +149,106 @@ def _cube_aabb_model(
             for dz in (0.0, sz):
                 corners.append((ox + dx, oy + dy, oz + dz))
     if rotation is None:
-        pts = corners
-    else:
-        px, py, pz = pivot
-        pts = []
-        for c in corners:
-            rel = (c[0] - px, c[1] - py, c[2] - pz)
-            rr = _apply_rot_euler_xyz_deg(rel, rotation)
-            pts.append((rr[0] + px, rr[1] + py, rr[2] + pz))
-    xs = [p[0] for p in pts]
-    ys = [p[1] for p in pts]
-    zs = [p[2] for p in pts]
+        return corners
+    px, py, pz = pivot
+    out: list[tuple[float, float, float]] = []
+    for c in corners:
+        rel = (c[0] - px, c[1] - py, c[2] - pz)
+        rr = _apply_rot_euler_xyz_deg(rel, rotation)
+        out.append((rr[0] + px, rr[1] + py, rr[2] + pz))
+    return out
+
+
+def _build_bone_by_name(bones: list) -> dict[str, dict]:
+    out: dict[str, dict] = {}
+    for bone in bones:
+        if isinstance(bone, dict) and isinstance(bone.get("name"), str):
+            out[bone["name"]] = bone
+    return out
+
+
+def _bone_chain_root_first(bone_name: str, bone_by_name: dict[str, dict]) -> list[str]:
+    """自根到叶（含 ``bone_name``），用于遍历层级；对点的旋转施加须用 ``reversed(...)`` 即叶→根。"""
+    up: list[str] = []
+    cur: str | None = bone_name
+    seen: set[str] = set()
+    while cur and cur not in seen:
+        seen.add(cur)
+        up.append(cur)
+        b = bone_by_name.get(cur)
+        parent = b.get("parent") if isinstance(b, dict) else None
+        cur = parent if isinstance(parent, str) and parent else None
+    up.reverse()
+    return up
+
+
+def _rotate_model_point_by_bone_chain(
+    p: tuple[float, float, float],
+    bone_name: str,
+    bone_by_name: dict[str, dict],
+    geometry_identifier: str | None,
+) -> tuple[float, float, float]:
+    """对模型空间点施加 ``bone_name`` 及其祖先骨骼上的 ``rotation``（绕各自 ``pivot``，欧拉顺序同 cube）。
+
+    复合顺序为**叶→根**（与 Gecko / Blockbench：子空间点先经子骨、再经父骨……一致）。
+    """
+    q = p
+    for bn in reversed(_bone_chain_root_first(bone_name, bone_by_name)):
+        b = bone_by_name.get(bn)
+        if not isinstance(b, dict):
+            continue
+        rot = b.get("rotation")
+        if not isinstance(rot, (list, tuple)) or len(rot) != 3:
+            continue
+        if all(abs(float(x)) < 1e-9 for x in rot):
+            continue
+        pivot = tuple(float(x) for x in b.get("pivot", (0.0, 0.0, 0.0)))
+        rel = (q[0] - pivot[0], q[1] - pivot[1], q[2] - pivot[2])
+        rr = _apply_rot_euler_xyz_deg(rel, _bone_rotation_deg_for_collision(rot, geometry_identifier))
+        q = (rr[0] + pivot[0], rr[1] + pivot[1], rr[2] + pivot[2])
+    return q
+
+
+def _cube_aabb_model_after_bones(
+    bone_by_name: dict[str, dict],
+    bone_name: str,
+    origin: list[float],
+    size: list[float],
+    rotation: list[float] | tuple[float, ...] | None,
+    pivot: tuple[float, float, float],
+    geometry_identifier: str | None,
+) -> tuple[float, float, float, float, float, float]:
+    """cube 角点经 cube 旋转后再经骨骼链旋转，取模型空间 AABB。"""
+    corners = _cube_eight_corners_model(origin, size, rotation, pivot)
+    transformed = [
+        _rotate_model_point_by_bone_chain(c, bone_name, bone_by_name, geometry_identifier) for c in corners
+    ]
+    xs = [p[0] for p in transformed]
+    ys = [p[1] for p in transformed]
+    zs = [p[2] for p in transformed]
     return (min(xs), max(xs), min(ys), max(ys), min(zs), max(zs))
 
 
-def _iter_cubes_from_geo(data: dict) -> list[tuple[list[float], list[float], list[float] | None, tuple[float, float, float]]]:
-    """解析 geometry[0].bones，收集 (origin, size, rotation, pivot)。"""
+def _iter_cubes_from_geo(data: dict) -> list[tuple[str, list[float], list[float], list[float] | None, tuple[float, float, float]]]:
+    """解析 geometry[0].bones，收集 (bone_name, origin, size, rotation, pivot)。"""
     geoms = data.get("minecraft:geometry")
     if not geoms:
         raise ValueError("缺少 minecraft:geometry")
     bones = geoms[0].get("bones", [])
-    out: list[tuple[list[float], list[float], list[float] | None, tuple[float, float, float]]] = []
+    out: list[tuple[str, list[float], list[float], list[float] | None, tuple[float, float, float]]] = []
     for bone in bones:
+        if not isinstance(bone, dict):
+            continue
+        bone_name = bone.get("name")
+        if not isinstance(bone_name, str):
+            continue
         pivot = tuple(bone.get("pivot", [0.0, 8.0, 0.0]))
         for cube in bone.get("cubes", []):
             o = cube["origin"]
             s = cube["size"]
             rot = cube.get("rotation")
             piv = tuple(cube.get("pivot", pivot))
-            out.append((o, s, rot, piv))
+            out.append((bone_name, o, s, rot, piv))
     return out
 
 
@@ -303,13 +421,18 @@ def _intersect_block_xz_single_cell_unbounded_y(
 
 
 def _cube_block_aabb_clipped(
+    bone_by_name: dict[str, dict],
+    bone_name: str,
     origin: list[float],
     size: list[float],
     rotation: list[float] | None,
     pivot: tuple[float, float, float],
+    geometry_identifier: str | None,
 ) -> tuple[float, float, float, float, float, float] | None:
-    """单个 cube：模型空间 AABB → 方块坐标 → 水平单格 + 竖直可超高。"""
-    m = _cube_aabb_model(origin, size, rotation, pivot)
+    """单个 cube：骨骼链 + cube 旋转 → 模型空间 AABB → 方块坐标 → 水平单格 + 竖直可超高。"""
+    m = _cube_aabb_model_after_bones(
+        bone_by_name, bone_name, origin, size, rotation, pivot, geometry_identifier
+    )
     b = _model_aabb_to_block_space(m)
     return _intersect_block_xz_single_cell_unbounded_y(b[0], b[1], b[2], b[3], b[4], b[5])
 
@@ -320,9 +443,12 @@ def compute_north_clipped_boxes(geo_path: Path) -> list[tuple[float, float, floa
     旧版 compute_shape_north_union_clipped 仅取全局 min/max，是外接盒而非几何并集，中间空洞会被填满。
     """
     data = json.loads(geo_path.read_text(encoding="utf-8"))
+    geoms = data.get("minecraft:geometry")
+    ident = _geometry_identifier(data)
+    bone_by_name = _build_bone_by_name(geoms[0].get("bones", [])) if geoms else {}
     boxes: list[tuple[float, float, float, float, float, float]] = []
-    for o, s, rot, piv in _iter_cubes_from_geo(data):
-        clipped = _cube_block_aabb_clipped(o, s, rot, piv)
+    for bn, o, s, rot, piv in _iter_cubes_from_geo(data):
+        clipped = _cube_block_aabb_clipped(bone_by_name, bn, o, s, rot, piv, ident)
         if clipped is not None:
             boxes.append(clipped)
     if not boxes:
@@ -338,11 +464,14 @@ def compute_shape_north_union_clipped(geo_path: Path) -> tuple[float, float, flo
     y 方向可大于 16，以匹配高出单格的模型；x/z 仍限制在放置格内。
     """
     data = json.loads(geo_path.read_text(encoding="utf-8"))
+    geoms = data.get("minecraft:geometry")
+    ident = _geometry_identifier(data)
+    bone_by_name = _build_bone_by_name(geoms[0].get("bones", [])) if geoms else {}
     cubes = _iter_cubes_from_geo(data)
     min_x = min_y = min_z = float("inf")
     max_x = max_y = max_z = float("-inf")
-    for o, s, rot, piv in cubes:
-        clipped = _cube_block_aabb_clipped(o, s, rot, piv)
+    for bn, o, s, rot, piv in cubes:
+        clipped = _cube_block_aabb_clipped(bone_by_name, bn, o, s, rot, piv, ident)
         if clipped is None:
             continue
         x0, x1, y0, y1, z0, z1 = clipped
@@ -360,11 +489,14 @@ def compute_shape_north_union_clipped(geo_path: Path) -> tuple[float, float, flo
 def compute_raw_mapped_box(geo_path: Path) -> tuple[float, float, float, float, float, float]:
     """全模型并集（模型空间）映射到方块坐标，不与单格求交（用于调试）。"""
     data = json.loads(geo_path.read_text(encoding="utf-8"))
+    geoms = data.get("minecraft:geometry")
+    ident = _geometry_identifier(data)
+    bone_by_name = _build_bone_by_name(geoms[0].get("bones", [])) if geoms else {}
     cubes = _iter_cubes_from_geo(data)
     min_x = min_y = min_z = float("inf")
     max_x = max_y = max_z = float("-inf")
-    for o, s, rot, piv in cubes:
-        m = _cube_aabb_model(o, s, rot, piv)
+    for bn, o, s, rot, piv in cubes:
+        m = _cube_aabb_model_after_bones(bone_by_name, bn, o, s, rot, piv, ident)
         bx0, bx1, by0, by1, bz0, bz1 = _model_aabb_to_block_space(m)
         min_x = min(min_x, bx0)
         max_x = max(max_x, bx1)
@@ -383,11 +515,14 @@ def compute_model_space_union(geo_path: Path) -> tuple[float, float, float, floa
     坐标与 Blockbench 导出一致；通常 16 单位 = 1 方块（与方块碰撞脚本中 Block.box 的 0～16 刻度一致）。
     """
     data = json.loads(geo_path.read_text(encoding="utf-8"))
+    geoms = data.get("minecraft:geometry")
+    ident = _geometry_identifier(data)
+    bone_by_name = _build_bone_by_name(geoms[0].get("bones", [])) if geoms else {}
     cubes = _iter_cubes_from_geo(data)
     min_x = min_y = min_z = float("inf")
     max_x = max_y = max_z = float("-inf")
-    for o, s, rot, piv in cubes:
-        m = _cube_aabb_model(o, s, rot, piv)
+    for bn, o, s, rot, piv in cubes:
+        m = _cube_aabb_model_after_bones(bone_by_name, bn, o, s, rot, piv, ident)
         minx, maxx, miny, maxy, minz, maxz = m
         min_x = min(min_x, minx)
         max_x = max(max_x, maxx)

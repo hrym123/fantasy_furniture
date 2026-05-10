@@ -57,9 +57,12 @@ public final class PlainGlassWindowBlockItem extends GeolibBlockItem {
 
     public static ItemStack presetStack(net.minecraft.world.item.Item item, int shape) {
         ItemStack stack = new ItemStack(item);
-        CompoundTag tag = new CompoundTag();
-        tag.putInt(TAG_SHAPE, Mth.clamp(shape, 0, PlainGlassWindowShapes.COUNT - 1));
-        stack.setTag(tag);
+        int s = Mth.clamp(shape, 0, PlainGlassWindowShapes.COUNT - 1);
+        if (s != 0) {
+            CompoundTag tag = new CompoundTag();
+            tag.putInt(TAG_SHAPE, s);
+            stack.setTag(tag);
+        }
         return stack;
     }
 }

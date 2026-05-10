@@ -40,7 +40,7 @@ _TOOLS_DIR = Path(__file__).resolve().parent
 if str(_TOOLS_DIR) not in sys.path:
     sys.path.insert(0, str(_TOOLS_DIR))
 
-from geo_collision_box import _cube_block_aabb_clipped  # noqa: E402
+from geo_collision_box import _build_bone_by_name, _cube_block_aabb_clipped  # noqa: E402
 
 
 def _volume(
@@ -88,6 +88,7 @@ def iter_clipped_cubes(
     if not geoms:
         raise ValueError("缺少 minecraft:geometry")
     bones = geoms[0].get("bones", [])
+    bone_by_name = _build_bone_by_name(bones)
     for bi, bone in enumerate(bones):
         bone_name = bone.get("name", f"bone_{bi}")
         pivot_bone = tuple(bone.get("pivot", [0.0, 8.0, 0.0]))
@@ -96,7 +97,7 @@ def iter_clipped_cubes(
             s = cube["size"]
             rot = cube.get("rotation")
             piv = tuple(cube.get("pivot", pivot_bone))
-            clipped = _cube_block_aabb_clipped(o, s, rot, piv)
+            clipped = _cube_block_aabb_clipped(bone_by_name, str(bone_name), o, s, rot, piv)
             yield bone_name, ci, o, s, rot, piv, clipped
 
 
