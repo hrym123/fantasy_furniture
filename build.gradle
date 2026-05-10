@@ -41,7 +41,7 @@ minecraft {
 sourceSets.main.resources { srcDir 'src/generated/resources' }
 
 repositories {
-    // Jade / MaFgLib / Tweakerge：开发时 fg.deobf，与 Curse 上 1.20.1 Forge 发行包一致
+    // Jade / MaFgLib / Tweakerge：开发时 fg.deobf；IMBlocker 见下方可选块（gradle.properties 非空才启用）
     maven {
         name = 'Curse Maven'
         url = 'https://cursemaven.com'
@@ -65,6 +65,13 @@ dependencies {
     def tweakergeDeobf = fg.deobf("curse.maven:tweakerge-915857:${tweakerge_curse_file_id}")
     compileOnly tweakergeDeobf
     runtimeOnly tweakergeDeobf
+
+    def imblockerFileId = (findProperty('imblocker_curse_file_id') ?: '').toString().trim()
+    if (!imblockerFileId.isEmpty()) {
+        def imblockerDeobf = fg.deobf("curse.maven:imblocker-483760:${imblockerFileId}")
+        compileOnly imblockerDeobf
+        runtimeOnly imblockerDeobf
+    }
 
     testImplementation 'org.junit.jupiter:junit-jupiter:5.10.2'
     testImplementation 'org.mockito:mockito-junit-jupiter:5.11.0'
