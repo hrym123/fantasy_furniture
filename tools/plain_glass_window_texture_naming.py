@@ -12,6 +12,19 @@ from PIL import Image
 
 BLOCK_ID = "plain_glass_window"
 
+# 与 PlainGlassWindowSharedTextures.TEXTURE_STEMS 顺序一致（材质 ordinal = 槽位索引）
+PLAIN_GLASS_WINDOW_TEXTURE_STEMS: tuple[str, ...] = (
+    "plain_glass_window_0_white",
+    "plain_glass_window_1_black",
+    "plain_glass_window_2_tan",
+    "plain_glass_window_3_ice_blue",
+    "plain_glass_window_4_cream",
+    "plain_glass_window_5_pale_green",
+    "plain_glass_window_6_cream",
+    "plain_glass_window_7_mixed",
+    "plain_glass_window_8_cream",
+)
+
 
 def dominant_rgb_from_bytes(raw: bytes) -> tuple[int, int, int]:
     im = Image.open(BytesIO(raw)).convert("RGBA")
