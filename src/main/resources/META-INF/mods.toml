@@ -47,5 +47,13 @@ versionRange = "[11.0.0,)"
 ordering = "NONE"
 side = "CLIENT"
 
+# IMBlocker（输入法冲突修复）：可选，仅客户端；开发环境由 Gradle 注入经 patch 的 JAR。
+[[dependencies."${mod_id}"]]
+modId = "imblocker"
+mandatory = false
+versionRange = "[1.0,)"
+ordering = "NONE"
+side = "CLIENT"
+
 [[mixins]]
 config = "fantasy_furniture.mixins.json"

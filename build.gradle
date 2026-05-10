@@ -1,3 +1,16 @@
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+    dependencies {
+        classpath 'org.ow2.asm:asm-tree:9.7'
+    }
+}
+
+import org.objectweb.asm.ClassReader
+import org.objectweb.asm.ClassWriter
+import org.objectweb.asm.tree.ClassNode
+
 plugins {
     id 'eclipse'
     id 'idea'
@@ -40,12 +53,64 @@ minecraft {
 
 sourceSets.main.resources { srcDir 'src/generated/resources' }
 
+def imblockerCurseFileId = (findProperty('imblocker_curse_file_id') ?: '').toString().trim()
+
+configurations {
+    imblockerDeobfInbound {
+        canBeConsumed = false
+        canBeResolved = true
+    }
+}
+
 repositories {
-    // Jade / MaFgLib / Tweakerge：开发时 fg.deobf；IMBlocker 见下方可选块（gradle.properties 非空才启用）
+    // Jade / MaFgLib / Tweakerge：开发时 fg.deobf；IMBlocker 经 patch 后见下方（gradle.properties 非空才启用）
     maven {
         name = 'Curse Maven'
         url = 'https://cursemaven.com'
         content { includeGroup 'curse.maven' }
+    }
+}
+
+def imblockerPatchedJar = layout.buildDirectory.file("imblocker/imblocker-483760-${imblockerCurseFileId}-parchment-patched.jar")
+
+// 剥离 WindowMixin 中有问题的 onScaleFactorChanged(I, CallbackInfo)（1.20.1 仅有 setGuiScale(double)，Mixin 会误绑导致崩溃）
+def patchImblockerJar = imblockerCurseFileId.isEmpty() ? null : tasks.register('patchImblockerJar') {
+    dependsOn configurations.imblockerDeobfInbound
+    inputs.file(configurations.imblockerDeobfInbound.singleFile)
+    outputs.file(imblockerPatchedJar)
+    doLast {
+        def inJar = configurations.imblockerDeobfInbound.singleFile
+        def outFile = imblockerPatchedJar.get().asFile
+        outFile.parentFile.mkdirs()
+        def windowMixinPath = 'io/github/reserveword/imblocker/mixin/WindowMixin.class'
+        def jf = new java.util.jar.JarFile(inJar)
+        def jos = new java.util.jar.JarOutputStream(new java.io.FileOutputStream(outFile))
+        try {
+            jf.entries().each { e ->
+                def ent = new java.util.jar.JarEntry(e.name)
+                ent.time = e.time
+                jos.putNextEntry(ent)
+                if (e.name == windowMixinPath) {
+                    def raw = jf.getInputStream(e).bytes
+                    def reader = new ClassReader(raw)
+                    def node = new ClassNode()
+                    reader.accept(node, 0)
+                    node.methods.removeIf { m ->
+                        m.name == 'onScaleFactorChanged' &&
+                            m.desc == '(ILorg/spongepowered/asm/mixin/injection/callback/CallbackInfo;)V'
+                    }
+                    def writer = new ClassWriter(ClassWriter.COMPUTE_MAXS)
+                    node.accept(writer)
+                    jos.write(writer.toByteArray())
+                } else {
+                    jf.getInputStream(e).withStream { ins -> ins.transferTo(jos) }
+                }
+                jos.closeEntry()
+            }
+        } finally {
+            jos.close()
+            jf.close()
+        }
     }
 }
 
@@ -66,11 +131,11 @@ dependencies {
     compileOnly tweakergeDeobf
     runtimeOnly tweakergeDeobf
 
-    def imblockerFileId = (findProperty('imblocker_curse_file_id') ?: '').toString().trim()
-    if (!imblockerFileId.isEmpty()) {
-        def imblockerDeobf = fg.deobf("curse.maven:imblocker-483760:${imblockerFileId}")
-        compileOnly imblockerDeobf
-        runtimeOnly imblockerDeobf
+    // IMBlocker：Curse 包在 Parchment userdev 下 int 版 setGuiScale 注入会误绑；patchImblockerJar 会剥离该回调后再加入类路径
+    if (!imblockerCurseFileId.isEmpty()) {
+        imblockerDeobfInbound fg.deobf("curse.maven:imblocker-483760:${imblockerCurseFileId}")
+        compileOnly files(imblockerPatchedJar).builtBy(patchImblockerJar)
+        runtimeOnly files(imblockerPatchedJar).builtBy(patchImblockerJar)
     }
 
     testImplementation 'org.junit.jupiter:junit-jupiter:5.10.2'
