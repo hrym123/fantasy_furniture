@@ -7,7 +7,7 @@ import net.minecraft.util.Mth;
  * 普通玻璃窗：与 Blockbench / bbmodel 中「同一套」多槽贴图对应；五套造型 geo 共用本组 PNG（不按造型复制）。
  *
  * <p>命名：<code>textures/block/plain_glass_window_&lt;槽索引&gt;_&lt;颜色后缀&gt;.png</code>（方块 id + 槽位 + 由图像主色推断的英文颜色名，与
- * {@code tools/plain_glass_window_texture_naming.py} 一致）。重新导出后若主色变化导致文件名变化，须同步修改 {@link #TEXTURE_STEMS}。
+ * {@code tools/glass/plain_glass_window_texture_naming.py} 一致）。重新导出后若主色变化导致文件名变化，须同步修改 {@link #TEXTURE_STEMS}。
  *
  * <p>GeckoLib 的 {@link software.bernie.geckolib.model.GeoModel#getTextureResource} 仅返回一张主纹理，
  * 当前以 {@link #PRIMARY_SLOT} 对应文件为准。

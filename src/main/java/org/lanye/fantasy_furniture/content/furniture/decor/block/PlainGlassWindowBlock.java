@@ -41,7 +41,7 @@ import org.jetbrains.annotations.Nullable;
  *
  * <p>光照：与玻璃类方块一致，不挡光（{@link #getLightBlock} 为 0、允许天光竖直向下传播）。
  *
- * <p>碰撞：北向基准与 {@code tools/geo_collision_box.py} 外接盒一致（多数造型）；斜角 45° 使用<strong>整格外接盒</strong>
+ * <p>碰撞：北向基准与 {@code tools/collision/geo_collision_box.py} 外接盒一致（多数造型）；斜角 45° 使用<strong>整格外接盒</strong>
  * {@code Block.box(0,0,0,16,16,16)}，与单格线框及「占满一格」的交互预期一致。随 {@link #FACING} 经
  * {@link VoxelShapeRotation#rotateYFromNorth} 旋转。
  */
@@ -76,7 +76,7 @@ public class PlainGlassWindowBlock extends GeolibFacingEntityBlockWithFactory<Pl
 
     /**
      * 北向基准碰撞，索引与 {@link PlainGlassWindowShapes#geoBasename(int)} 一致。
-     * 造型 0～3 与 {@code tools/geo_collision_box.py} 外接盒一致；斜角 45°（索引 4）为整格 {@code 16³} 外接盒。
+     * 造型 0～3 与 {@code tools/collision/geo_collision_box.py} 外接盒一致；斜角 45°（索引 4）为整格 {@code 16³} 外接盒。
      */
     private static final VoxelShape[] SHAPES_NORTH = {
         Block.box(0.0D, 0.0D, 0.0D, 16.0D, 16.0D, 1.4D), // straight

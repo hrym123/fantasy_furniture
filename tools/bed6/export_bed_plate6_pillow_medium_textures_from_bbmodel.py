@@ -8,9 +8,14 @@ from __future__ import annotations
 import base64
 import json
 import re
+import sys
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[1]
+_TOOLS_ROOT = Path(__file__).resolve().parent.parent
+if str(_TOOLS_ROOT) not in sys.path:
+    sys.path.insert(0, str(_TOOLS_ROOT))
+from paths import FF_ROOT as ROOT  # noqa: E402
+
 DST = ROOT / "src/main/resources/assets/fantasy_furniture/textures/block"
 BBMODEL = Path(r"d:\warehouse\MoonStarfish素材\床板6-Geo\床板6枕头（中 1个放置的样子）.bbmodel")
 

@@ -8,14 +8,14 @@
 - ``animations/.../<asset_id>.animation.json``：**仅当** bbmodel 有内嵌动画数据，或 ``geckolib_filepath_cache.animation`` 指向已存在的 JSON 时才写入（否则跳过，静态窗不会生成占位）。``--delete-stale-animation`` 可在无动画时删除目标路径旧文件。
 - 窗户等多造型共用贴图：``--shared-textures plain_glass_window`` → ``textures/block/plain_glass_window_<槽>_<颜色>.png``（颜色由像素主色推断；**导出开始前会删除** ``textures/block/plain_glass_window_*.png``，避免旧占位图与新文件名并存导致「九张看起来一样」；须同步 Java ``PlainGlassWindowSharedTextures.TEXTURE_STEMS``）。勿与 ``--only-primary-texture`` 联用除非只需槽 0。
 
-几何转换默认使用本目录下的 ``bbmodel_to_geojson.py``（含分组骨骼 ``rotation``）；也可用
+几何转换默认使用同目录下的 ``bbmodel_to_geojson.py``（含分组骨骼 ``rotation``）；也可用
 ``--moonstar-tools`` 指向其它目录中的同名脚本。
 与《C009-Blockbench-bbmodel-导出GeckoLib-geo与贴图-调查》一致：本流程为务实折中，与 Blockbench 官方 GeckoLib
 插件逐字节一致不保证；复杂 mesh / 多贴图 UV 请以插件导出为准并对照 golden。
 
 **普通玻璃窗导出核对（模型「不对」时优先看）**
 
-- **原则**：普通玻璃窗在 **Java 客户端不得做任何姿态/渲染补偿**（不覆盖 ``GeoBlockRenderer#rotateBlock``、不追加 ``mulPose``）。与 Gecko / MC 方块朝向、倾角、薄片位置的差异，**只能**通过改 ``bbmodel_to_geojson.py`` 的 geo 生成（或直接改已生成的 ``geo/block/plain_glass_window_shape_*.geo.json``）解决；改 geo 后须对对应文件运行 ``tools/geo_collision_box.py`` 更新 ``PlainGlassWindowBlock`` 碰撞。
+- **原则**：普通玻璃窗在 **Java 客户端不得做任何姿态/渲染补偿**（不覆盖 ``GeoBlockRenderer#rotateBlock``、不追加 ``mulPose``）。与 Gecko / MC 方块朝向、倾角、薄片位置的差异，**只能**通过改 ``bbmodel_to_geojson.py`` 的 geo 生成（或直接改已生成的 ``geo/block/plain_glass_window_shape_*.geo.json``）解决；改 geo 后须对对应文件运行 ``tools/collision/geo_collision_box.py`` 更新 ``PlainGlassWindowBlock`` 碰撞。
 - **分组旋转 / 立方体原点**：``bbmodel_to_geojson.py`` 按 Blockbench 源码 ``js/formats/bedrock/bedrock.js`` 的 ``compileGroup`` / ``compileCube`` 写骨骼 ``pivot``/``rotation`` 与 cube ``origin``，与 Bedrock 导出及预览一致；仍不一致时用 Blockbench 官方 Bedrock 导出对照。
 - **薄片窗扇**：Bedrock geo 里若某一轴 ``size`` 极小（如 0.4），对应 Blockbench 里窗厚所在轴；放置后应对齐 MC 水平 ``facing`` 与 Blockbench 前向约定。
 - **多槽位贴图**：非 0 号槽的 UV 在本流程可能不完整；若 BB 里多张贴图而游戏里只认一张，请用 Blockbench GeckoLib 插件导出 geo，或合并为单张 atlas 再导出。
@@ -23,12 +23,12 @@
 
 示例::
 
-  python tools/export_bbmodel_to_fantasy_furniture_assets.py \\
+  python tools/blockbench/export_bbmodel_to_fantasy_furniture_assets.py \\
     "D:/warehouse/MoonStarfish素材/窗户/普通窗户90°.bbmodel" \\
     --asset-id plain_glass_window_shape_90 \\
     --shared-textures plain_glass_window
 
-  python tools/export_bbmodel_to_fantasy_furniture_assets.py model.bbmodel --dry-run
+  python tools/blockbench/export_bbmodel_to_fantasy_furniture_assets.py model.bbmodel --dry-run
 """
 
 from __future__ import annotations
@@ -48,8 +48,11 @@ DATA_URL_RE = re.compile(
     re.IGNORECASE | re.DOTALL,
 )
 
-FF_ROOT = Path(__file__).resolve().parents[1]
-TOOLS_DIR = Path(__file__).resolve().parent
+_TOOLS_BOOT = Path(__file__).resolve().parent.parent
+if str(_TOOLS_BOOT) not in sys.path:
+    sys.path.insert(0, str(_TOOLS_BOOT))
+from paths import FF_ROOT, TOOLS_ROOT  # noqa: E402
+
 DEFAULT_ASSETS = FF_ROOT / "src/main/resources/assets/fantasy_furniture"
 
 
@@ -57,8 +60,10 @@ def _plain_glass_texture_file(
     textures_out: Path, slot: int, ext: str, *, raw: bytes | None = None, src_file: Path | None = None
 ) -> Path:
     """``--shared-textures plain_glass_window``：``textures/block/plain_glass_window_<槽>_<颜色>.png``。"""
-    if str(TOOLS_DIR) not in sys.path:
-        sys.path.insert(0, str(TOOLS_DIR))
+    _glass = TOOLS_ROOT / "glass"
+    for _p in (TOOLS_ROOT, _glass):
+        if str(_p) not in sys.path:
+            sys.path.insert(0, str(_p))
     from plain_glass_window_texture_naming import (
         dominant_rgb,
         dominant_rgb_from_bytes,

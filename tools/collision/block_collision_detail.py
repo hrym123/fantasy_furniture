@@ -19,11 +19,11 @@
 
 用法（在仓库根目录）::
 
-    python tools/block_collision_detail.py src/main/resources/assets/fantasy_furniture/geo/block/banquette_corner.geo.json
+    python tools/collision/block_collision_detail.py src/main/resources/assets/fantasy_furniture/geo/block/banquette_corner.geo.json
 
-    python tools/block_collision_detail.py path/to/model.geo.json --format json
+    python tools/collision/block_collision_detail.py path/to/model.geo.json --format json
 
-    python tools/block_collision_detail.py path/to/model.geo.json --java-or
+    python tools/collision/block_collision_detail.py path/to/model.geo.json --java-or
 """
 
 from __future__ import annotations
@@ -31,16 +31,10 @@ from __future__ import annotations
 import argparse
 import json
 import math
-import sys
 from pathlib import Path
 from typing import Any, Iterator
 
-# 与同目录 geo_collision_box 共用几何实现，避免两套公式漂移
-_TOOLS_DIR = Path(__file__).resolve().parent
-if str(_TOOLS_DIR) not in sys.path:
-    sys.path.insert(0, str(_TOOLS_DIR))
-
-from geo_collision_box import _build_bone_by_name, _cube_block_aabb_clipped  # noqa: E402
+from geo_collision_box import _build_bone_by_name, _cube_block_aabb_clipped
 
 
 def _volume(

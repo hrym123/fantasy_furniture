@@ -12,7 +12,7 @@ bbmodel 的 ``textures`` 数组里通常有 7 份内嵌 base64 PNG（七种被�
 本脚本按 ``textures`` 数组顺序依次写出 ``bed_plate6_duvet_{1+index}.png``。
 若你在 Blockbench 里纹理顺序与游戏期望不一致，可在导出后手动对调文件或改数组顺序。
 
-主体床板单张贴图请使用 ``export_bed_plate6_texture_from_bbmodel.py``（仅 PNG）。
+主体床板单张贴图请使用 ``tools/bed6/export_bed_plate6_texture_from_bbmodel.py``（仅 PNG）。
 """
 from __future__ import annotations
 
@@ -22,7 +22,11 @@ import json
 import sys
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[1]
+_TOOLS_ROOT = Path(__file__).resolve().parent.parent
+if str(_TOOLS_ROOT) not in sys.path:
+    sys.path.insert(0, str(_TOOLS_ROOT))
+from paths import FF_ROOT as ROOT  # noqa: E402
+
 DEFAULT_BBMODEL = Path(r"d:\warehouse\MoonStarfish素材\床板6-Geo\床板6（被单）.bbmodel")
 ASSETS_BLOCK = ROOT / "src/main/resources/assets/fantasy_furniture/textures/block"
 

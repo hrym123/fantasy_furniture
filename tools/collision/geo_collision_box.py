@@ -7,7 +7,7 @@
 **全局 min/max**，得到**包住整段模型的最小外接盒**（单条 ``Block.box``）。中间镂空、分体式结构会被「糊成」一整块，
 体积大于真实并集——这是外接盒的定义，不是 bug。
 
-若需要**多个矩形拼合、保留镂空**的具体碰撞，请用 ``tools/block_collision_detail.py``（逐 cube 列表、JSON、
+若需要**多个矩形拼合、保留镂空**的具体碰撞，请用 ``tools/collision/block_collision_detail.py``（逐 cube 列表、JSON、
 ``orParts`` 等）。本脚本的 ``--emit-java`` 也能生成多盒 ``Shapes.or``，但不做明细报表。
 
 算法概要
@@ -40,19 +40,19 @@
 
 用法（在 fantasy_furniture 仓库根目录）::
 
-    python tools/geo_collision_box.py path/to/model.geo.json
+    python tools/collision/geo_collision_box.py path/to/model.geo.json
 
-    python tools/geo_collision_box.py src/main/resources/assets/fantasy_furniture/geo/block/lottery_machine.geo.json
+    python tools/collision/geo_collision_box.py src/main/resources/assets/fantasy_furniture/geo/block/lottery_machine.geo.json
 
     # Java 方块模型（Blockbench 导出的 models/block/*.json，from/to 为 0～16 刻度）
-    python tools/geo_collision_box.py src/main/resources/assets/fantasy_furniture/models/block/decorative_screen.json --mc-block-model
+    python tools/collision/geo_collision_box.py src/main/resources/assets/fantasy_furniture/models/block/decorative_screen.json --mc-block-model
 
     # 实体 GeckoLib geo：估算 EntityType.Builder.sized(width, height)（水平取 xz 外包正方形边长）
-    python tools/geo_collision_box.py src/main/resources/assets/fantasy_furniture/geo/entity/sweeper_robot.geo.json --entity-hitbox
+    python tools/collision/geo_collision_box.py src/main/resources/assets/fantasy_furniture/geo/entity/sweeper_robot.geo.json --entity-hitbox
 
 可选：``--raw`` 仅打印模型空间并集（映射到方块坐标但未与单格求交），用于排查模型是否超出格子。
 
-逐 cube 明细、骨骼名与 ``orParts`` 片段见 ``tools/block_collision_detail.py``。
+逐 cube 明细、骨骼名与 ``orParts`` 片段见 ``tools/collision/block_collision_detail.py``。
 """
 
 from __future__ import annotations
@@ -421,6 +421,134 @@ def _intersect_block_xz_single_cell_unbounded_y(
     return (x0, x1, y0, y1, z0, z1)
 
 
+def _intersect_block_axis_aligned(
+    bx0: float,
+    bx1: float,
+    by0: float,
+    by1: float,
+    bz0: float,
+    bz1: float,
+    *,
+    xmin: float = 0.0,
+    xmax: float = 16.0,
+    ymin: float = 0.0,
+    ymax: float = 16.0,
+    zmin: float = 0.0,
+    zmax: float = 16.0,
+) -> tuple[float, float, float, float, float, float] | None:
+    """与轴对齐闭盒 ``[xmin,xmax]×[ymin,ymax]×[zmin,zmax]`` 求交。"""
+    x0, x1 = max(xmin, bx0), min(xmax, bx1)
+    y0, y1 = max(ymin, by0), min(ymax, by1)
+    z0, z1 = max(zmin, bz0), min(zmax, bz1)
+    if x0 >= x1 or y0 >= y1 or z0 >= z1:
+        return None
+    return (x0, x1, y0, y1, z0, z1)
+
+
+def _intersect_block_full_cell(
+    bx0: float, bx1: float, by0: float, by1: float, bz0: float, bz1: float
+) -> tuple[float, float, float, float, float, float] | None:
+    """与轴对齐闭区域 ``[0,16]^3`` 求交（床板选取等：整格内截取，含 y 顶）。"""
+    return _intersect_block_axis_aligned(bx0, bx1, by0, by1, bz0, bz1)
+
+
+def _cube_block_aabb_clipped_axis_aligned(
+    bone_by_name: dict[str, dict],
+    bone_name: str,
+    origin: list[float],
+    size: list[float],
+    rotation: list[float] | None,
+    pivot: tuple[float, float, float],
+    geometry_identifier: str | None,
+    *,
+    xmin: float = 0.0,
+    xmax: float = 16.0,
+    ymin: float = 0.0,
+    ymax: float = 16.0,
+    zmin: float = 0.0,
+    zmax: float = 16.0,
+) -> tuple[float, float, float, float, float, float] | None:
+    """单 cube：骨骼链 → 方块坐标 → 与给定轴对齐盒求交。"""
+    m = _cube_aabb_model_after_bones(
+        bone_by_name, bone_name, origin, size, rotation, pivot, geometry_identifier
+    )
+    b = _model_aabb_to_block_space(m)
+    return _intersect_block_axis_aligned(
+        b[0], b[1], b[2], b[3], b[4], b[5], xmin=xmin, xmax=xmax, ymin=ymin, ymax=ymax, zmin=zmin, zmax=zmax
+    )
+
+
+def _cube_block_aabb_clipped_full_cell(
+    bone_by_name: dict[str, dict],
+    bone_name: str,
+    origin: list[float],
+    size: list[float],
+    rotation: list[float] | None,
+    pivot: tuple[float, float, float],
+    geometry_identifier: str | None,
+) -> tuple[float, float, float, float, float, float] | None:
+    """单 cube：骨骼链 → 方块坐标 → 与 ``[0,16]^3`` 求交。"""
+    return _cube_block_aabb_clipped_axis_aligned(
+        bone_by_name, bone_name, origin, size, rotation, pivot, geometry_identifier
+    )
+
+
+def compute_north_pick_boxes_axis_aligned(
+    geo_path: Path,
+    *,
+    xmin: float = 0.0,
+    xmax: float = 16.0,
+    ymin: float = 0.0,
+    ymax: float = 16.0,
+    zmin: float = 0.0,
+    zmax: float = 16.0,
+) -> list[tuple[float, float, float, float, float, float]]:
+    """
+    各 cube 映射到方块坐标后与轴对齐裁切盒求交后的列表。
+
+    床板 6 枕头 geo 常铺在 z≈16..32（两格床身的床头半段），选取体素在**床尾方块**局部坐标下须用 ``zmax=32`` 等；
+    被单/被套仍在 ``[0,16]^3`` 即可（``zmax=16``）。
+    """
+    data = json.loads(geo_path.read_text(encoding="utf-8"))
+    geoms = data.get("minecraft:geometry")
+    ident = _geometry_identifier(data)
+    bone_by_name = _build_bone_by_name(geoms[0].get("bones", [])) if geoms else {}
+    boxes: list[tuple[float, float, float, float, float, float]] = []
+    for bn, o, s, rot, piv in _iter_cubes_from_geo(data):
+        clipped = _cube_block_aabb_clipped_axis_aligned(
+            bone_by_name,
+            bn,
+            o,
+            s,
+            rot,
+            piv,
+            ident,
+            xmin=xmin,
+            xmax=xmax,
+            ymin=ymin,
+            ymax=ymax,
+            zmin=zmin,
+            zmax=zmax,
+        )
+        if clipped is not None:
+            boxes.append(clipped)
+    if not boxes:
+        raise ValueError(
+            f"没有与裁切盒 [{xmin},{xmax}]×[{ymin},{ymax}]×[{zmin},{zmax}] 相交的几何，请检查 geo 或坐标约定"
+        )
+    return boxes
+
+
+def compute_north_pick_boxes_full_cell(geo_path: Path) -> list[tuple[float, float, float, float, float, float]]:
+    """
+    各 cube 映射到方块坐标后与 ``[0,16]^3`` 求交后的轴对齐盒列表。
+
+    与 ``compute_north_clipped_boxes`` 不同：后者先与「水平单格 + 竖直无限」棱柱求交（y 可 >16），
+    枕头等仅落在「床头侧 z」的 cube 在后者下会与床尾水平格**无交**；本函数用于**选取**体素整格裁切。
+    """
+    return compute_north_pick_boxes_axis_aligned(geo_path)
+
+
 def _cube_block_aabb_clipped(
     bone_by_name: dict[str, dict],
     bone_name: str,
@@ -640,7 +768,7 @@ def main() -> None:
         else:
             boxes = compute_north_clipped_boxes(path)
             src = "geo"
-        print(f"    // 由 tools/geo_collision_box.py --emit-java 自 {src} 生成（每 element/cube 裁切后 Shapes.or）")
+        print(f"    // 由 tools/collision/geo_collision_box.py --emit-java 自 {src} 生成（每 element/cube 裁切后 Shapes.or）")
         print("    private static VoxelShape buildShapeNorthUnion() {")
         print("        VoxelShape s = Shapes.empty();")
         for b in boxes:

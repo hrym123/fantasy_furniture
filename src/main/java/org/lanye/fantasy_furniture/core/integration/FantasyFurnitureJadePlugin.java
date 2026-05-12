@@ -22,6 +22,8 @@ public final class FantasyFurnitureJadePlugin implements IWailaPlugin {
     public void registerClient(IWailaClientRegistration registration) {
         // 普通玻璃窗：多方块共用一个 Block，名称须来自 pick（与 getCloneItemStack 一致），否则玉只显示方块译名「普通玻璃窗」
         registration.usePickedResult(ModBlocks.PLAIN_GLASS_WINDOW.block().get());
+        // 床板 6：按击中高度区分被单/被套/枕头，玉标题与床品物品译名一致
+        registration.usePickedResult(ModBlocks.BED_PLATE6.block().get());
         registration.registerEntityComponent(SweeperRobotJadeProvider.INSTANCE, SweeperRobotEntity.class);
     }
 }

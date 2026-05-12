@@ -27,7 +27,7 @@ public final class ModEntities {
                                     .updateInterval(1)
                                     .build(FantasyFurniture.MODID + ":furniture_seat"));
 
-    /** 碰撞：{@code python tools/geo_collision_box.py geo/entity/sweeper_robot.geo.json --entity-hitbox}（静态 cube 并集，16=1 格）。 */
+    /** 碰撞：{@code python tools/collision/geo_collision_box.py geo/entity/sweeper_robot.geo.json --entity-hitbox}（静态 cube 并集，16=1 格）。 */
     public static final RegistryObject<EntityType<SweeperRobotEntity>> SWEEPER_ROBOT =
             ENTITY_TYPES.register(
                     "sweeper_robot",

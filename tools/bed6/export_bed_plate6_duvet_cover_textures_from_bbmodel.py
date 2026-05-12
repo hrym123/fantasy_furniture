@@ -8,7 +8,11 @@ import json
 import sys
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[1]
+_TOOLS_ROOT = Path(__file__).resolve().parent.parent
+if str(_TOOLS_ROOT) not in sys.path:
+    sys.path.insert(0, str(_TOOLS_ROOT))
+from paths import FF_ROOT as ROOT  # noqa: E402
+
 DEFAULT_BBMODEL = Path(r"d:\warehouse\MoonStarfish素材\床板6-Geo\床板6（被套）.bbmodel")
 ASSETS_BLOCK = ROOT / "src/main/resources/assets/fantasy_furniture/textures/block"
 

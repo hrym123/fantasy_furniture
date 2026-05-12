@@ -123,4 +123,8 @@ run-data/
 
 # 勿忽略 Gradle Wrapper 的 jar（*.jar 规则会忽略 wrapper）
 !gradle/wrapper/gradle-wrapper.jar
-tools/__pycache__/
+
+# Python（tools 下任意子目录的 __pycache__ / 字节码）
+**/__pycache__/
+*.py[cod]
+*$py.class

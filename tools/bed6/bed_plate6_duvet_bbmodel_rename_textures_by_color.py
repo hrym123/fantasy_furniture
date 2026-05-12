@@ -10,14 +10,14 @@
 
 常见用法（先看再写）::
 
-  python tools/bed_plate6_duvet_bbmodel_rename_textures_by_color.py --bbmodel "…/床板6（被单）.bbmodel"
-  python tools/bed_plate6_duvet_bbmodel_rename_textures_by_color.py --bbmodel … --write
+  python tools/bed6/bed_plate6_duvet_bbmodel_rename_textures_by_color.py --bbmodel "…/床板6（被单）.bbmodel"
+  python tools/bed6/bed_plate6_duvet_bbmodel_rename_textures_by_color.py --bbmodel … --write
 
 Windows 终端若中文乱码，可先 ``chcp 65001`` 或 ``set PYTHONIOENCODING=utf-8``，或使用 ``--report`` 输出 UTF-8 文本文件查看。
 
 可选从已导出的 PNG 目录读取（顺序 ``bed_plate6_duvet_1.png`` …）::
 
-  python tools/bed_plate6_duvet_bbmodel_rename_textures_by_color.py --png-dir src/main/resources/assets/fantasy_furniture/textures/block
+  python tools/bed6/bed_plate6_duvet_bbmodel_rename_textures_by_color.py --png-dir src/main/resources/assets/fantasy_furniture/textures/block
 """
 from __future__ import annotations
 
@@ -29,10 +29,12 @@ from pathlib import Path
 
 import numpy as np
 
-ROOT = Path(__file__).resolve().parents[1]
-TOOLS = ROOT / "tools"
-if str(TOOLS) not in sys.path:
-    sys.path.insert(0, str(TOOLS))
+_TOOLS_ROOT = Path(__file__).resolve().parent.parent
+_GLASS = _TOOLS_ROOT / "glass"
+for _p in (_TOOLS_ROOT, _GLASS):
+    if str(_p) not in sys.path:
+        sys.path.insert(0, str(_p))
+from paths import FF_ROOT as ROOT  # noqa: E402
 
 from plain_glass_window_texture_naming import dominant_rgb_from_bytes, dominant_rgb  # noqa: E402
 

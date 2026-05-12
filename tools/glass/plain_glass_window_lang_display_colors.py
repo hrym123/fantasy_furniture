@@ -6,8 +6,8 @@
 仍可选读主纹理 PNG 的 dominant_rgb，仅在终端打印供对照；写回语言文件时使用下方固定表。
 
 用法：
-  python tools/plain_glass_window_lang_display_colors.py           # 打印表（含 RGB）
-  python tools/plain_glass_window_lang_display_colors.py --write   # 写回 zh_cn.json / en_us.json
+  python tools/glass/plain_glass_window_lang_display_colors.py           # 打印表（含 RGB）
+  python tools/glass/plain_glass_window_lang_display_colors.py --write   # 写回 zh_cn.json / en_us.json
 
 若某 stem 的 PNG 不存在，使用脚本内 FALLBACK_DOMINANT_RGB（仅影响打印列，不影响译名）。
 """
@@ -19,12 +19,16 @@ import json
 import sys
 from pathlib import Path
 
+_TOOLS_ROOT = Path(__file__).resolve().parent.parent
+if str(_TOOLS_ROOT) not in sys.path:
+    sys.path.insert(0, str(_TOOLS_ROOT))
+from paths import FF_ROOT as REPO_ROOT  # noqa: E402
+
 from plain_glass_window_texture_naming import (
     PLAIN_GLASS_WINDOW_TEXTURE_STEMS,
     dominant_rgb,
 )
 
-REPO_ROOT = Path(__file__).resolve().parents[1]
 TEXTURES_BLOCK = REPO_ROOT / "src/main/resources/assets/fantasy_furniture/textures/block"
 LANG_ZH = REPO_ROOT / "src/main/resources/assets/fantasy_furniture/lang/zh_cn.json"
 LANG_EN = REPO_ROOT / "src/main/resources/assets/fantasy_furniture/lang/en_us.json"

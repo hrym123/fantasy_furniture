@@ -9,14 +9,20 @@
   - 上半：保留 y∈[16,32) 的部分，整体下移 16（dy=-16），使落在上半格方块局部坐标 0～16 内。
 
 运行方式（在仓库 fantasy_furniture 根目录下）：
-    python tools/split_screen_model.py
+    python tools/block_model/split_screen_model.py
 
 输入：src/main/resources/assets/fantasy_furniture/models/block/decorative_screen_full.json
 输出：decorative_screen_lower.json、decorative_screen_upper.json（同目录）。
 """
 
 import json
+import sys
 from pathlib import Path
+
+_TOOLS = Path(__file__).resolve().parent.parent
+if str(_TOOLS) not in sys.path:
+    sys.path.insert(0, str(_TOOLS))
+from paths import FF_ROOT  # noqa: E402
 
 
 def clip_el(el: dict, y0: float, y1: float, dy: float):
@@ -58,7 +64,7 @@ def clip_el(el: dict, y0: float, y1: float, dy: float):
 
 def main():
     """读取 full 模型，拆分并写入 lower / upper 两个文件。"""
-    root = Path(__file__).resolve().parents[1]
+    root = FF_ROOT
     p = root / "src/main/resources/assets/fantasy_furniture/models/block/decorative_screen_full.json"
     data = json.loads(p.read_text(encoding="utf-8"))
     # 保留除 elements / groups 外的顶层字段（如 credit、textures、parent 等），两组输出共用

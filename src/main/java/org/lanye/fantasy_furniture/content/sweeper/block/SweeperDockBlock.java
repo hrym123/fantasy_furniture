@@ -36,7 +36,7 @@ import org.lanye.fantasy_furniture.bootstrap.entity.ModEntities;
  */
 public class SweeperDockBlock extends GeolibFacingEntityBlockWithFactory<SweeperDockBlockEntity> {
 
-    /** 由 tools/geo_collision_box.py 计算得出（sweeper_dock.geo.json）。 */
+    /** 由 tools/collision/geo_collision_box.py 计算得出（sweeper_dock.geo.json）。 */
     private static final VoxelShape SHAPE = box(0.0, 0.0, 0.0, 16.0, 8.5, 16.0);
 
     /**

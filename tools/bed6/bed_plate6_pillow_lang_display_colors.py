@@ -5,7 +5,7 @@
 与「被单」一致：中文为 ``床板 6 …（××色）`` 风格；英文保持 ``Bed Plate 6 … (Color)``。
 
 用法：
-  python tools/bed_plate6_pillow_lang_display_colors.py
+  python tools/bed6/bed_plate6_pillow_lang_display_colors.py
   # 仅打印 RGB 与当前脚本内嵌表，不写文件。改译名时：先跑脚本对照贴图，再改本文件 *_DISPLAY_ZH / *_DISPLAY_EN 与 zh_cn.json / en_us.json。
 """
 from __future__ import annotations
@@ -13,10 +13,12 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[1]
-TOOLS = ROOT / "tools"
-if str(TOOLS) not in sys.path:
-    sys.path.insert(0, str(TOOLS))
+_TOOLS_ROOT = Path(__file__).resolve().parent.parent
+_GLASS = _TOOLS_ROOT / "glass"
+for _p in (_TOOLS_ROOT, _GLASS):
+    if str(_p) not in sys.path:
+        sys.path.insert(0, str(_p))
+from paths import FF_ROOT as ROOT  # noqa: E402
 
 from plain_glass_window_texture_naming import dominant_rgb  # noqa: E402
 

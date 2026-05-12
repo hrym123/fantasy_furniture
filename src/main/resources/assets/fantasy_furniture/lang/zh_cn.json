@@ -60,6 +60,8 @@
   "container.fantasy_furniture.sweeper_robot": "扫地机器人",
   "jade.fantasy_furniture.sweeper_robot.health": "生命值：%s / %s",
   "config.jade.plugin_fantasy_furniture.sweeper_robot": "扫地机器人（幻想家具）",
+  "modmenu.nameTranslation.fantasy_furniture": "幻想家具 (Fantasy Furniture)",
+  "jade.modName.fantasy_furniture": "幻想家具 (Fantasy Furniture)",
   "key.fantasy_furniture.dev_magnify_hold": "测试：按住放大观察",
   "itemGroup.fantasy_furniture.main": "幻想家具",
   "item.fantasy_furniture.bed_plate6_pillow_large_striped_butter": "床板 6 大号枕头（条纹·春芽绿）",
