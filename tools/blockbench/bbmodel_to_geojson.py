@@ -14,7 +14,8 @@
 
 限制（与 ``export_bbmodel_to_fantasy_furniture_assets`` 说明一致）：
 
-- 每个面的 UV 仅当 ``texture == 0`` 时导出；其它槽位需合并 atlas 或用官方 GeckoLib 插件导出。
+- 面的 UV：凡 ``texture`` 已绑定（非 ``null`` / ``false``）且能解析 ``uv`` 即导出，与 Blockbench ``compileCube`` 一致。
+  顶/底面在写出前做与 ``bedrock.js`` 相同的角点偏移与 ``uv_size`` 取反（见 ``_face_uv_to_bedrock``）。
 """
 
 from __future__ import annotations
@@ -22,14 +23,39 @@ from __future__ import annotations
 from typing import Any
 
 
-def _face_to_bedrock(face: dict[str, Any]) -> dict[str, Any] | None:
-    if face.get("texture", 0) != 0:
+def _face_uv_to_bedrock(face: dict[str, Any], side: str) -> dict[str, Any] | None:
+    """
+    Blockbench ``bedrock.js`` ``compileCube``：顶/底面在 ``uv``/``uv_size`` 初值上再平移角点并翻转尺寸。
+    """
+    tex = face.get("texture")
+    if tex is None or tex is False:
         return None
-    uv = face.get("uv")
-    if not isinstance(uv, (list, tuple)) or len(uv) != 4:
+
+    uv_raw = face.get("uv")
+    u0 = v0 = su = sv = None
+    if isinstance(uv_raw, (list, tuple)) and len(uv_raw) == 4:
+        u1, v1, u2, v2 = (float(x) for x in uv_raw)
+        u0, v0, su, sv = u1, v1, u2 - u1, v2 - v1
+    elif isinstance(uv_raw, (list, tuple)) and len(uv_raw) == 2:
+        us = face.get("uv_size")
+        if not isinstance(us, (list, tuple)) or len(us) != 2:
+            return None
+        u0, v0 = float(uv_raw[0]), float(uv_raw[1])
+        su, sv = float(us[0]), float(us[1])
+    else:
         return None
-    u1, v1, u2, v2 = (float(x) for x in uv)
-    return {"uv": [u1, v1], "uv_size": [u2 - u1, v2 - v1]}
+
+    if side in ("up", "down"):
+        u0 = u0 + su
+        v0 = v0 + sv
+        su = -su
+        sv = -sv
+
+    out: dict[str, Any] = {"uv": [u0, v0], "uv_size": [su, sv]}
+    rot = face.get("rotation")
+    if isinstance(rot, (int, float)) and rot != 0:
+        out["uv_rotation"] = int(rot) % 360
+    return out
 
 
 def _element_to_cube(el: dict[str, Any]) -> dict[str, Any] | None:
@@ -51,7 +77,7 @@ def _element_to_cube(el: dict[str, Any]) -> dict[str, Any] | None:
             fd = faces.get(side)
             if not isinstance(fd, dict):
                 continue
-            conv = _face_to_bedrock(fd)
+            conv = _face_uv_to_bedrock(fd, side)
             if conv is not None:
                 uv_block[side] = conv
     cube: dict[str, Any] = {"origin": origin, "size": size}

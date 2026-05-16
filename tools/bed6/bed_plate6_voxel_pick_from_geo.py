@@ -12,6 +12,7 @@
 
     python tools/bed6/bed_plate6_voxel_pick_from_geo.py src/main/resources/assets/fantasy_furniture/geo/block/bed_plate6_pillow_medium_solo.geo.json
     python tools/bed6/bed_plate6_voxel_pick_from_geo.py path/to/model.geo.json --no-snap --precision 4
+    python tools/bed6/bed_plate6_voxel_pick_from_geo.py path/to/model.geo.json --clip 0 16 0 16 0 16
 
 - 若 ``compute_north_pick_boxes_axis_aligned`` 仍抛出无相交：检查 geo 是否与默认裁切盒相交，或传入 ``--zmax`` / ``--bounds``（待 CLI 扩展）。
 
@@ -132,6 +133,16 @@ def ensure_min_extents_cell(
     return ensure_min_extents_bounds(box, (lo, hi, lo, hi, lo, hi), min_extent=min_extent)
 
 
+def mirror_x_box(box: Box6, xmin: float, xmax: float) -> Box6:
+    """关于局部坐标竖直面 ``x=(xmin+xmax)/2`` 镜像。"""
+    x0, x1, y0, y1, z0, z1 = box
+    nx0 = xmin + xmax - x1
+    nx1 = xmin + xmax - x0
+    if nx0 > nx1:
+        nx0, nx1 = nx1, nx0
+    return (nx0, nx1, y0, y1, z0, z1)
+
+
 def snap_half_grid(
     box: Box6,
     bounds: tuple[float, float, float, float, float, float] = BED_PLATE6_PICK_CLIP_DEFAULT,
@@ -185,6 +196,7 @@ def north_pick_boxes_from_geo(
     min_extent: float = 0.5,
     snap_half: bool = True,
     clip_bounds: tuple[float, float, float, float, float, float] = BED_PLATE6_PICK_CLIP_DEFAULT,
+    mirror_x: bool = False,
 ) -> list[Box6]:
     """
     读取 geo，返回北向基准、裁切盒内选取盒列表（经最小边长处理；可选半格量化）。
@@ -208,6 +220,8 @@ def north_pick_boxes_from_geo(
         if snap_half:
             fixed = snap_half_grid(fixed, clip_bounds)
             fixed = ensure_min_extents_bounds(fixed, clip_bounds, min_extent=min_extent)
+        if mirror_x:
+            fixed = mirror_x_box(fixed, xmin, xmax)
         out.append(fixed)
     return out
 
@@ -257,29 +271,47 @@ def emit_java_shapes_or(
 
 
 def main() -> None:
-    p = argparse.ArgumentParser(description="从 bedrock geo 生成床板6选取用 VoxelShape Java 片段（北向、[0,16]³）")
+    p = argparse.ArgumentParser(
+        description="从 bedrock geo 生成床板6选取用 VoxelShape Java 片段（北向；默认裁切含床尾两格深度 z∈[0,32]）"
+    )
     p.add_argument("geo", type=Path, help="geo.json 路径")
+    p.add_argument(
+        "--clip",
+        type=float,
+        nargs=6,
+        metavar=("XMIN", "XMAX", "YMIN", "YMAX", "ZMIN", "ZMAX"),
+        default=None,
+        help="裁切盒 xmin xmax ymin ymax zmin zmax（像素=1/16 格；默认与 BED_PLATE6_PICK_CLIP_DEFAULT 一致）",
+    )
     p.add_argument("--no-snap", action="store_true", help="不做 0.5 网格量化（§3.6.1）")
     p.add_argument("--min-extent", type=float, default=0.5, help="单盒三轴最小边长（默认 0.5）")
     p.add_argument("--precision", type=int, default=4, help="Java 小数位（默认 4）")
     p.add_argument("--method-name", type=str, default="buildPickShapeNorthUnionGenerated", help="生成的 Java 方法名")
+    p.add_argument("--mirror-x", action="store_true", help="输出前按裁切盒 x 中线镜像（用于与渲染手系对齐）")
     args = p.parse_args()
     geo = args.geo
     if not geo.is_file():
         raise SystemExit(f"文件不存在: {geo}")
+    clip_bounds: tuple[float, float, float, float, float, float] = (
+        tuple(args.clip) if args.clip is not None else BED_PLATE6_PICK_CLIP_DEFAULT
+    )
+    xmin, xmax, ymin, ymax, zmin, zmax = clip_bounds
+    clip_note = f"clip=[{xmin},{xmax}]x[{ymin},{ymax}]x[{zmin},{zmax}] pick-shape"
     boxes = north_pick_boxes_from_geo(
         geo,
         min_extent=args.min_extent,
         snap_half=not args.no_snap,
+        clip_bounds=clip_bounds,
+        mirror_x=args.mirror_x,
     )
     if not boxes:
-        raise SystemExit("无有效选取盒（检查 geo 是否与单格相交）")
+        raise SystemExit("无有效选取盒（检查 geo 是否与裁切盒相交；可试 --clip 0 16 0 16 0 32）")
     text = emit_java_shapes_or(
         boxes,
         geo,
         precision=args.precision,
         method_name=args.method_name,
-        extra_note="clip=[0,16]^3 pick-shape",
+        extra_note=clip_note,
     )
     print(text, end="")
 

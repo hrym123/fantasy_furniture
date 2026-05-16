@@ -1,5 +1,6 @@
 # 用户个人配置
 .idea/
+.cursor/
 
 *.iml
 *.ipr

@@ -386,8 +386,8 @@ def print_java_hint(
         )
     print()
     print(
-        "注意：bbmodel_to_geojson 当前仅对面使用 texture 索引 0 的 UV 做完整映射；"
-        "多贴图模型请用 Blockbench 插件导出或合并 atlas。"
+        "注意：bbmodel_to_geojson 会对已绑定贴图的面写出 UV（含顶/底与 Blockbench bedrock.js 一致的变换）；"
+        "若仍缺面或 UV 异常，请用 Blockbench 官方 Bedrock 导出对照或合并 atlas。"
     )
 
 

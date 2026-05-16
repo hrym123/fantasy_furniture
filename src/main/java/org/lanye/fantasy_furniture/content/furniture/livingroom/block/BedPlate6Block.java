@@ -10,20 +10,19 @@ import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.BedBlock;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BedPart;
 import net.minecraft.world.phys.BlockHitResult;
-import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
+import net.minecraft.world.phys.shapes.EntityCollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import org.lanye.fantasy_furniture.Config;
 import org.lanye.fantasy_furniture.bootstrap.block.ModBlocks;
-import org.lanye.fantasy_furniture.content.furniture.livingroom.BedPlate6CrosshairPick;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.blockentity.BedPlate6BlockEntity;
+import org.lanye.fantasy_furniture.content.furniture.livingroom.client.BedPlate6ClientPick;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.item.BedPlate6BedDecorRemoval;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.item.BedPlate6ComponentPick;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.item.BedPlate6DuvetCoverItem;
@@ -33,15 +32,14 @@ import org.lanye.fantasy_furniture.content.furniture.livingroom.item.BedPlate6Me
 import org.lanye.fantasy_furniture.content.furniture.livingroom.item.BedPlate6SmallPillowItem;
 import org.lanye.reverie_core.geolib.bed.BedPlateBaseBlockEntity;
 import org.lanye.reverie_core.geolib.bed.BedPlateBlock;
-import org.lanye.reverie_core.util.VoxelShapeRotation;
+import org.lanye.reverie_core.util.VoxelShapeTranslation;
 
 /**
  * 床板 6：在 {@link net.minecraft.world.level.block.BedBlock#use} 之前处理拆卸手套、被套、大号、中号、小号、床单。
  * 卸下/替换床品改由主手 {@link org.lanye.fantasy_furniture.content.furniture.livingroom.item.BedPlate6DisassemblyGloveItem} 按叠放逆序逐层拆除。
  * 顺序：<strong>拆卸手套 → 被套 →（主手大号且另一手中号、且床已摆大件且仍可加中号时先放中号）→ 大号 → 中号 → 小号 → 床单</strong>。
  *
- * <p>准心/中键/玉 HUD 选取：{@link #getCloneItemStack(BlockGetter, BlockPos, BlockState)} 在客户端结合
- * {@link BedPlate6CrosshairPick} 记录的准心射线，按击中高度映射到当前床品物品，见 {@link BedPlate6ComponentPick}。
+ * <p>准心/中键/玉 HUD 选取：客户端由 {@link BedPlate6ClientPick} 读 {@link net.minecraft.client.Minecraft#hitResult}（无 Mixin），见 {@link BedPlate6ComponentPick}。
  */
 public final class BedPlate6Block extends BedPlateBlock {
 
@@ -72,18 +70,9 @@ public final class BedPlate6Block extends BedPlateBlock {
     @Override
     public ItemStack getCloneItemStack(BlockGetter level, BlockPos pos, BlockState state) {
         if (level instanceof Level l && l.isClientSide()) {
-            HitResult hit = BedPlate6CrosshairPick.peek();
-            if (hit instanceof BlockHitResult bhr && hit.getType() == HitResult.Type.BLOCK) {
-                BlockState hitState = level.getBlockState(bhr.getBlockPos());
-                // 双人床两格：准心可能在床头、而 Jade / pick 用床尾格（或相反）。仅 pos==击中格会整段失效，改为同一床尾锚点。
-                if (hitState.getBlock() == this && state.getBlock() == this) {
-                    BlockPos footQueried = bedFootWorldPos(state, pos);
-                    BlockPos footHit = bedFootWorldPos(hitState, bhr.getBlockPos());
-                    if (footQueried.equals(footHit)) {
-                        return BedPlate6ComponentPick.stackForHit(
-                                level, state, pos, bhr.getLocation(), bhr.getBlockPos());
-                    }
-                }
+            ItemStack picked = BedPlate6ClientPick.resolveCloneItemStack(l, state, pos);
+            if (!picked.isEmpty()) {
+                return picked;
             }
         }
         return new ItemStack(ModBlocks.BED_PLATE6.item().get());
@@ -91,7 +80,8 @@ public final class BedPlate6Block extends BedPlateBlock {
 
     @Override
     public VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
-        return pickShapeForBedPlate6(state, level, pos, super.getShape(state, level, pos, context));
+        return pickShapeForBedPlate6(
+                state, level, pos, super.getShape(state, level, pos, context), context);
     }
 
     @Override
@@ -107,32 +97,39 @@ public final class BedPlate6Block extends BedPlateBlock {
 
     /**
      * 床尾格：床垫 + 由 geo 导出的被单/被套/枕头北向并集，再按朝向旋转（与 {@link org.lanye.reverie_core.geolib.client.BedPlateGeoBlockRenderer} 一致补 180° Y）。
-     * 床头格：床垫 + 薄被单盒 {@link #DUVET_OUTER_BOX}，避免依赖床尾方块实体上的 geo 并集。
+     * 床头格：与床尾<strong>同一套</strong>选取并集，沿 {@link BedBlock#FACING} 平移 −1 格到床头局部原点，使轮廓 / 射线命中与仅床尾绘制的 Geo 一致（不再仅用 {@link #DUVET_OUTER_BOX} 近似）。
+     *
+     * <p>客户端且 {@link CollisionContext} 含玩家时：若准心与本床同一锚点，则用 {@link BedPlate6PickShapesNorth#northOutlinePieceNorth} 仅合并当前解析子件体素，避免多枕同亮（T007 #6）。
      */
     private static VoxelShape pickShapeForBedPlate6(
-            BlockState state, BlockGetter level, BlockPos pos, VoxelShape base) {
+            BlockState state, BlockGetter level, BlockPos pos, VoxelShape base, CollisionContext context) {
         var be = level.getBlockEntity(footPos(state, pos));
         if (!(be instanceof BedPlate6BlockEntity plate) || !plate.hasDuvet()) {
             return base;
-        }
-        if (state.getValue(BedBlock.PART) != BedPart.FOOT) {
-            return Shapes.or(base, DUVET_OUTER_BOX);
         }
         VoxelShape north = BedPlate6PickShapesNorth.unionNorthForPick(plate);
         if (north.isEmpty()) {
             return Shapes.or(base, DUVET_OUTER_BOX);
         }
         Direction facing = state.getValue(BedBlock.FACING);
-        VoxelShape oriented = applyBedPlateFacingToNorthPick(north, facing);
-        return Shapes.or(base, oriented);
+        VoxelShape orientedFull = applyBedPlateFacingToNorthPick(north, facing);
+        if (level instanceof Level lvl
+                && lvl.isClientSide()
+                && context instanceof EntityCollisionContext ecc
+                && ecc.getEntity() instanceof Player) {
+            return BedPlate6ClientPick.clientPlayerOutlineShape(lvl, state, pos, base, plate, facing);
+        }
+        if (state.getValue(BedBlock.PART) != BedPart.FOOT) {
+            double tx = -facing.getStepX();
+            double ty = -facing.getStepY();
+            double tz = -facing.getStepZ();
+            return Shapes.or(base, VoxelShapeTranslation.translate(orientedFull, tx, ty, tz));
+        }
+        return Shapes.or(base, orientedFull);
     }
 
     private static VoxelShape applyBedPlateFacingToNorthPick(VoxelShape northShape, Direction facing) {
-        VoxelShape r = VoxelShapeRotation.rotateYFromNorth(northShape, facing);
-        if (facing.getAxis() != Direction.Axis.Y) {
-            r = VoxelShapeRotation.rotate(r, Rotation.CLOCKWISE_180);
-        }
-        return r;
+        return BedPlate6PickShapesNorth.orientForBedFacing(northShape, facing);
     }
 
     /** 可选并入薄被单碰撞盒（配置开启时），与 geo 选取形独立。 */

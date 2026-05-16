@@ -116,7 +116,7 @@ public final class BedPlate6LargePillowItem extends BedPlate6GeolibDecorItem {
         return InteractionResult.sidedSuccess(level.isClientSide);
     }
 
-    static ItemStack stackForRegistry(int style, int material) {
+    public static ItemStack stackForRegistry(int style, int material) {
         if (!BedPlate6LargePillowStyles.isValid(style)
                 || !BedPlate6DuvetMaterials.isValid(material)
                 || isUnavailableLargeVariant(style, material)) {

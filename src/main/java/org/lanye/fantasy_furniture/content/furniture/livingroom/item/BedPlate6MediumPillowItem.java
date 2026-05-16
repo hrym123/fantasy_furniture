@@ -110,7 +110,7 @@ public final class BedPlate6MediumPillowItem extends BedPlate6GeolibDecorItem {
         /* count == 2：不替换已有枕头，不消耗物品 */
     }
 
-    static ItemStack stackForRegistry(int materialId) {
+    public static ItemStack stackForRegistry(int materialId) {
         if (!BedPlate6MediumPillowMaterials.isValid(materialId)) {
             return ItemStack.EMPTY;
         }

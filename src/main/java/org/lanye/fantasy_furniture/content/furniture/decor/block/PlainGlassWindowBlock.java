@@ -81,8 +81,8 @@ public class PlainGlassWindowBlock extends GeolibFacingEntityBlockWithFactory<Pl
     private static final VoxelShape[] SHAPES_NORTH = {
         Block.box(0.0D, 0.0D, 0.0D, 16.0D, 16.0D, 1.4D), // straight
         Block.box(0.0D, 0.0D, 0.0D, 16.0D, 1.4D, 16.0D), // 90°
-        Block.box(0.0D, 0.0D, 0.0D, 16.0D, 7.3819D, 16.0D), // 22.5°
-        Block.box(0.0D, 0.205D, 0.0D, 16.0D, 17.2463D, 16.0D), // 45°
+        Block.box(0.0D, 0.0D, 0.0D, 16.0D, 7.3581D, 16.0D), // 22.5°
+        Block.box(0.0D, 0.0D, 0.205D, 16.0D, 16.5463D, 16.0D), // 45°
         Block.box(0.0D, 0.0D, 0.0D, 16.0D, 16.0D, 16.0D), // 斜角 45°：整格外接盒（单格立方）
     };
 
