@@ -1,6 +1,7 @@
 # 用户个人配置
 .idea/
 .cursor/
+.vscode/
 
 *.iml
 *.ipr
