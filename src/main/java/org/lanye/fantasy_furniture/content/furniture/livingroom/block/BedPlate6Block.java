@@ -2,6 +2,7 @@ package org.lanye.fantasy_furniture.content.furniture.livingroom.block;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
@@ -15,6 +16,7 @@ import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BedPart;
 import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.EntityCollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
@@ -40,6 +42,8 @@ import org.lanye.reverie_core.util.VoxelShapeTranslation;
  * 顺序：<strong>拆卸手套 → 被套 →（主手大号且另一手中号、且床已摆大件且仍可加中号时先放中号）→ 大号 → 中号 → 小号 → 床单</strong>。
  *
  * <p>准心/中键/玉 HUD 选取：客户端由 {@link BedPlate6ClientPick} 读 {@link net.minecraft.client.Minecraft#hitResult}（无 Mixin），见 {@link BedPlate6ComponentPick}。
+ *
+ * <p>落地弹跳与摔落减免：仅当床尾格 {@link BedPlate6BlockEntity#hasDuvet()} 为真时沿用 {@link BedBlock} 行为；裸床垫无被单时按普通方块受伤、不弹起。
  */
 public final class BedPlate6Block extends BedPlateBlock {
 
@@ -59,6 +63,41 @@ public final class BedPlate6Block extends BedPlateBlock {
     /** 床尾格世界坐标（与 {@link BedPlate6BlockEntity} 数据所在格一致），供选取与床品逻辑共用。 */
     public static BlockPos bedFootWorldPos(BlockState state, BlockPos anyPartPos) {
         return footPos(state, anyPartPos);
+    }
+
+    /** 仅当床尾格方块实体已铺被单时，沿用 {@link BedBlock} 的落地弹跳与摔落减免。 */
+    private static boolean duvetEnablesBedLanding(BlockGetter level, BlockState state, BlockPos pos) {
+        if (!state.is(ModBlocks.BED_PLATE6.block().get())) {
+            return false;
+        }
+        var be = level.getBlockEntity(footPos(state, pos));
+        return be instanceof BedPlate6BlockEntity plate && plate.hasDuvet();
+    }
+
+    private static void landLikeOrdinaryBlock(Entity entity) {
+        Vec3 motion = entity.getDeltaMovement();
+        if (motion.y < 0.0D) {
+            entity.setDeltaMovement(motion.x, 0.0D, motion.z);
+        }
+    }
+
+    @Override
+    public void updateEntityAfterFallOn(BlockGetter level, Entity entity) {
+        BlockState onState = level.getBlockState(entity.getOnPos());
+        if (duvetEnablesBedLanding(level, onState, entity.getOnPos())) {
+            super.updateEntityAfterFallOn(level, entity);
+        } else {
+            landLikeOrdinaryBlock(entity);
+        }
+    }
+
+    @Override
+    public void fallOn(Level level, BlockState state, BlockPos pos, Entity entity, float fallDistance) {
+        if (duvetEnablesBedLanding(level, state, pos)) {
+            super.fallOn(level, state, pos, entity, fallDistance);
+        } else {
+            entity.causeFallDamage(fallDistance, 1.0F, level.damageSources().fall());
+        }
     }
 
     public BedPlate6Block(
