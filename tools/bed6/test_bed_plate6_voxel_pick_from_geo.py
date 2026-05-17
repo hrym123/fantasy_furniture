@@ -53,6 +53,20 @@ class TestJavaConstantSync(unittest.TestCase):
         self.assertEqual(len(boxes), 1)
         self.assertEqual(_box4(boxes[0]), (1.0, 11.0, 7.06, 14.06, 28.7, 30.7))
 
+    def test_duvet_cover_matches_java(self) -> None:
+        geo = (
+            ROOT
+            / "src/main/resources/assets/fantasy_furniture/geo/block/bed_plate6_duvet_cover.geo.json"
+        )
+        if not geo.is_file():
+            self.skipTest("仓库内无该 geo 资源")
+        boxes = m.north_pick_boxes_from_geo(geo)
+        self.assertEqual(len(boxes), 1)
+        self.assertEqual(
+            _box4(boxes[0]),
+            (0.0, 16.0, 3.5522, 9.4, 0.0, 24.0),
+        )
+
     def test_small_stack_matches_java(self) -> None:
         geo = (
             ROOT

@@ -310,13 +310,7 @@ public final class BedPlate6PickShapesNorth {
   // bed_plate6_voxel_pick_from_geo: sha256[:12]=e4fa448485f0 bed_plate6_duvet_cover.geo.json
   private static VoxelShape duvetCoverNorth() {
     VoxelShape s = Shapes.empty();
-    s = Shapes.or(s, Block.box(0.8, 6.4, 18.0, 15.2, 9.4, 24.0));
-    s = Shapes.or(s, Block.box(0.3, 6.4, 0.0, 15.7, 8.4, 18.0));
-    s = Shapes.or(s, Block.box(0.0, 3.5522, 0.0, 16.0, 6.5522, 24.0));
-    s = Shapes.or(s, Block.box(14.6176, 6.5522, 0.0, 16.0, 9.1654, 18.0));
-    s = Shapes.or(s, Block.box(14.5522, 6.4, 18.0, 16.0, 9.937, 24.0));
-    s = Shapes.or(s, Block.box(0.0, 6.5522, 0.0, 1.3824, 9.1654, 18.0));
-    s = Shapes.or(s, Block.box(0.0, 6.4, 18.0, 1.4478, 9.937, 24.0));
+    s = Shapes.or(s, Block.box(0.0, 3.5522, 0.0, 16.0, 9.4, 24.0));
     return s;
   }
 

@@ -74,6 +74,10 @@ PICK_MIRROR_X_NORTH_MODELS: frozenset[str] = frozenset(
         "bed_plate6_pillow_small_stack",
     }
 )
+# 多盒合并为单外包盒；值为参与合并的骨骼名（排除斜角装饰骨，避免 AABB 顶面偏高）。
+PICK_MERGE_UNION_AABB_BONES: dict[str, frozenset[str]] = {
+    "bed_plate6_duvet_cover": frozenset({"group4"}),
+}
 
 
 def north_pick_boxes_unrotated_cubes_from_geo(
@@ -116,6 +120,25 @@ def apply_pick_mirror_x_north(
         return boxes
     xmin, xmax, _, _, _, _ = clip_bounds
     return [mirror_x_box(b, xmin, xmax) for b in boxes]
+
+
+def merge_boxes_union_aabb(boxes: list[Box6]) -> list[Box6]:
+    """多盒并成单轴对齐外包盒；空列表原样返回。"""
+    if not boxes:
+        return []
+    x0 = min(b[0] for b in boxes)
+    x1 = max(b[1] for b in boxes)
+    y0 = min(b[2] for b in boxes)
+    y1 = max(b[3] for b in boxes)
+    z0 = min(b[4] for b in boxes)
+    z1 = max(b[5] for b in boxes)
+    return [(x0, x1, y0, y1, z0, z1)]
+
+
+def apply_pick_merge_union_aabb(model_key: str, boxes: list[Box6]) -> list[Box6]:
+    if model_key not in PICK_MERGE_UNION_AABB_BONES:
+        return boxes
+    return merge_boxes_union_aabb(boxes)
 
 
 def swap_yz_extents_box(box: Box6) -> Box6:
@@ -290,15 +313,46 @@ def north_pick_boxes_raw_from_geo(
     geo_path: Path,
     *,
     clip_bounds: tuple[float, float, float, float, float, float] = BED_PLATE6_PICK_CLIP_DEFAULT,
+    bone_names: frozenset[str] | None = None,
 ) -> list[Box6]:
     """裁切后、后处理前的选取盒（与 ``north_pick_boxes_from_geo`` 同源）。"""
     model_key = model_key_from_geo(geo_path)
     if model_key in PICK_UNROTATED_CUBE_MODELS:
-        return north_pick_boxes_unrotated_cubes_from_geo(geo_path, clip_bounds=clip_bounds)
+        raw = north_pick_boxes_unrotated_cubes_from_geo(geo_path, clip_bounds=clip_bounds)
+        if bone_names is None:
+            return raw
+        raise ValueError(f"骨骼过滤与 unrotated 模式不兼容：{geo_path}")
     xmin, xmax, ymin, ymax, zmin, zmax = clip_bounds
-    return list(
-        gcb.compute_north_pick_boxes_axis_aligned(
-            geo_path,
+    if bone_names is None:
+        return list(
+            gcb.compute_north_pick_boxes_axis_aligned(
+                geo_path,
+                xmin=xmin,
+                xmax=xmax,
+                ymin=ymin,
+                ymax=ymax,
+                zmin=zmin,
+                zmax=zmax,
+            )
+        )
+    data = json.loads(geo_path.read_text(encoding="utf-8"))
+    geoms = data.get("minecraft:geometry")
+    if not geoms or not isinstance(geoms[0], dict):
+        raise ValueError(f"无效 geo：{geo_path}")
+    ident = gcb._geometry_identifier(data)
+    bone_by_name = gcb._build_bone_by_name(geoms[0].get("bones", []))
+    boxes: list[Box6] = []
+    for bn, o, s, rot, piv in gcb._iter_cubes_from_geo(data):
+        if bn not in bone_names:
+            continue
+        clipped = gcb._cube_block_aabb_clipped_axis_aligned(
+            bone_by_name,
+            bn,
+            o,
+            s,
+            rot,
+            piv,
+            ident,
             xmin=xmin,
             xmax=xmax,
             ymin=ymin,
@@ -306,7 +360,30 @@ def north_pick_boxes_raw_from_geo(
             zmin=zmin,
             zmax=zmax,
         )
-    )
+        if clipped is not None:
+            boxes.append(clipped)
+    if not boxes:
+        raise ValueError(f"骨骼 {sorted(bone_names)} 与裁切盒无相交：{geo_path}")
+    return boxes
+
+
+def _postprocess_pick_boxes(
+    model_key: str,
+    raw_boxes: list[Box6],
+    *,
+    clip_bounds: tuple[float, float, float, float, float, float],
+    min_extent: float,
+    mirror_x: bool,
+) -> list[Box6]:
+    xmin, xmax, _, _, _, _ = clip_bounds
+    raw_boxes = apply_pick_swap_yz(model_key, raw_boxes, clip_bounds)
+    out: list[Box6] = []
+    for b in raw_boxes:
+        fixed = ensure_min_extents_bounds(b, clip_bounds, min_extent=min_extent)
+        if mirror_x:
+            fixed = mirror_x_box(fixed, xmin, xmax)
+        out.append(fixed)
+    return apply_pick_mirror_x_north(model_key, out, clip_bounds)
 
 
 def box_size_xyz(box: Box6) -> tuple[float, float, float]:
@@ -381,7 +458,8 @@ def _stage_b_heading() -> str:
     return (
         "### 阶段 B — 最终盒（写入 Java）\n\n"
         "> **含义**：在阶段 A 基础上依次应用：**Y/Z 跨度交换**（若配置）→ **最小边长** → **半格量化** → "
-        "CLI `--mirror-x`（若指定）→ **北向 X 镜像**（若配置）。下表为**最终结果**。"
+        "CLI `--mirror-x`（若指定）→ **北向 X 镜像**（若配置）→ **单外包盒合并**（若配置）。"
+        "下表为**最终结果**。"
     )
 
 
@@ -423,6 +501,8 @@ def build_markdown_section(
         f"- **选取模式**：{pick_mode}",
         f"- **Y/Z 跨度交换**：{'是' if model_key in PICK_SWAP_YZ_CUBE_MODELS else '否'}",
         f"- **北向 X 镜像（与渲染 +180°Y 对齐）**：{'是' if model_key in PICK_MIRROR_X_NORTH_MODELS else '否'}",
+        f"- **合并为单外包盒**："
+        f"{'是（骨骼 ' + ', '.join(sorted(PICK_MERGE_UNION_AABB_BONES[model_key])) + '）' if model_key in PICK_MERGE_UNION_AABB_BONES else '否'}",
         "",
         _stage_a_heading(model_key),
         "",
@@ -586,32 +666,22 @@ def north_pick_boxes_from_geo(
     默认 ``clip_bounds`` 为床板 6 床尾局部 ``[0,16]×[0,16]×[0,32]``；若只要单格可传入
     ``(0,16,0,16,0,16)`` 并调用 ``geo_collision_box.compute_north_pick_boxes_full_cell`` 等价裁切。
     """
-    xmin, xmax, ymin, ymax, zmin, zmax = clip_bounds
     model_key = model_key_from_geo(geo_path)
-    if model_key in PICK_UNROTATED_CUBE_MODELS:
-        raw_boxes = north_pick_boxes_unrotated_cubes_from_geo(geo_path, clip_bounds=clip_bounds)
-    else:
-        raw_boxes = gcb.compute_north_pick_boxes_axis_aligned(
-            geo_path,
-            xmin=xmin,
-            xmax=xmax,
-            ymin=ymin,
-            ymax=ymax,
-            zmin=zmin,
-            zmax=zmax,
+    merge_bones = PICK_MERGE_UNION_AABB_BONES.get(model_key)
+    if merge_bones is not None:
+        raw_boxes = north_pick_boxes_raw_from_geo(
+            geo_path, clip_bounds=clip_bounds, bone_names=merge_bones
         )
-    raw_boxes = apply_pick_swap_yz(model_key, raw_boxes, clip_bounds)
-    out: list[Box6] = []
-    for b in raw_boxes:
-        fixed = ensure_min_extents_bounds(b, clip_bounds, min_extent=min_extent)
-        # §3.6.1 半格量化暂关：最近 0.5 取整易使 z 等轴向同一侧偏移（如形态 3 rear）。
-        # if snap_half:
-        #     fixed = snap_half_grid(fixed, clip_bounds)
-        #     fixed = ensure_min_extents_bounds(fixed, clip_bounds, min_extent=min_extent)
-        if mirror_x:
-            fixed = mirror_x_box(fixed, xmin, xmax)
-        out.append(fixed)
-    return apply_pick_mirror_x_north(model_key, out, clip_bounds)
+    else:
+        raw_boxes = north_pick_boxes_raw_from_geo(geo_path, clip_bounds=clip_bounds)
+    out = _postprocess_pick_boxes(
+        model_key,
+        raw_boxes,
+        clip_bounds=clip_bounds,
+        min_extent=min_extent,
+        mirror_x=mirror_x,
+    )
+    return apply_pick_merge_union_aabb(model_key, out)
 
 
 def emit_java_shapes_or(
