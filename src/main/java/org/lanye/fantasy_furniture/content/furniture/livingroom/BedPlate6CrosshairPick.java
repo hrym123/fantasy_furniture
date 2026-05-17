@@ -50,42 +50,42 @@ public final class BedPlate6CrosshairPick {
     }
 
     public static ItemStack stabilizeOutlinePick(ItemStack raw) {
+        ItemStack result;
         if (raw == null || raw.isEmpty()) {
             stableOutlinePick = null;
             pendingOutlinePick = null;
             pendingOutlineTicks = 0;
-            return ItemStack.EMPTY;
-        }
-        if (isBedPlateStack(raw)) {
+            result = ItemStack.EMPTY;
+        } else if (isBedPlateStack(raw)) {
             stableOutlinePick = null;
             pendingOutlinePick = null;
             pendingOutlineTicks = 0;
-            return raw;
-        }
-        if (stableOutlinePick == null || isBedPlateStack(stableOutlinePick)) {
+            result = raw;
+        } else if (stableOutlinePick == null || isBedPlateStack(stableOutlinePick)) {
             stableOutlinePick = raw.copy();
             pendingOutlinePick = null;
             pendingOutlineTicks = 0;
-            return stableOutlinePick;
-        }
-        if (stableOutlinePick != null && ItemStack.isSameItemSameTags(raw, stableOutlinePick)) {
+            result = stableOutlinePick;
+        } else if (stableOutlinePick != null && ItemStack.isSameItemSameTags(raw, stableOutlinePick)) {
             pendingOutlinePick = null;
             pendingOutlineTicks = 0;
-            return stableOutlinePick;
-        }
-        if (pendingOutlinePick != null && ItemStack.isSameItemSameTags(raw, pendingOutlinePick)) {
+            result = stableOutlinePick;
+        } else if (pendingOutlinePick != null && ItemStack.isSameItemSameTags(raw, pendingOutlinePick)) {
             pendingOutlineTicks++;
             if (pendingOutlineTicks >= OUTLINE_STABLE_TICKS) {
                 stableOutlinePick = pendingOutlinePick.copy();
                 pendingOutlinePick = null;
                 pendingOutlineTicks = 0;
-                return stableOutlinePick;
+                result = stableOutlinePick;
+            } else {
+                result = stableOutlinePick != null ? stableOutlinePick : raw;
             }
-            return stableOutlinePick != null ? stableOutlinePick : raw;
+        } else {
+            pendingOutlinePick = raw.copy();
+            pendingOutlineTicks = 1;
+            result = stableOutlinePick != null ? stableOutlinePick : raw;
         }
-        pendingOutlinePick = raw.copy();
-        pendingOutlineTicks = 1;
-        return stableOutlinePick != null ? stableOutlinePick : raw;
+        return result;
     }
 
     private static boolean isBedPlateStack(ItemStack stack) {

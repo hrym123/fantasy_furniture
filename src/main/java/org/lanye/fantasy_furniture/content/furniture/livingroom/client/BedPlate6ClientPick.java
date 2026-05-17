@@ -22,6 +22,7 @@ import org.lanye.fantasy_furniture.bootstrap.block.ModBlocks;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.BedPlate6CrosshairPick;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.block.BedPlate6Block;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.block.BedPlate6PickShapesNorth;
+import org.lanye.fantasy_furniture.content.furniture.livingroom.block.BedPlate6PickShapesNorth.PickedDecorLayer;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.blockentity.BedPlate6BlockEntity;
 import org.lanye.reverie_core.util.VoxelShapeTranslation;
 
@@ -62,6 +63,14 @@ public final class BedPlate6ClientPick {
         Vec3 extended = eye.add(delta.normalize().scale(delta.length() + 0.5));
         Vec3 localStart = eye.subtract(footOrigin);
         Vec3 localEnd = extended.subtract(footOrigin);
+        if (plate.getMediumPillowCount() == 2) {
+            Vec3 dual =
+                    BedPlate6PickShapesNorth.clipLocalDualMediumPreferFront(
+                            facing, localStart, localEnd);
+            if (dual != null) {
+                return dual.add(footOrigin);
+            }
+        }
         Vec3 bestLocal = null;
         double bestDist2 = Double.MAX_VALUE;
         for (AABB box : oriented.toAabbs()) {
@@ -115,15 +124,20 @@ public final class BedPlate6ClientPick {
             VoxelShape base,
             BedPlate6BlockEntity plate,
             Direction facing) {
-        ItemStack resolved =
-                BedPlate6CrosshairPick.resolveClientPickForOutline(
-                        level, state, pos, currentCrosshairHit());
+        HitResult hit = currentCrosshairHit();
+        PickedDecorLayer layer = PickedDecorLayer.NONE;
+        if (hit instanceof BlockHitResult bhr && hit.getType() == HitResult.Type.BLOCK) {
+            BlockPos foot = BedPlate6Block.bedFootWorldPos(state, pos);
+            Vec3 hitLoc = bhr.getLocation();
+            hitLoc = clipHitToDecorUnion(level, state, pos, bhr);
+            layer = BedPlate6PickShapesNorth.pickLayerByVoxelHit(plate, hitLoc, foot, facing);
+        }
 
         VoxelShape pieceLocal;
-        if (resolved.isEmpty() || resolved.is(ModBlocks.BED_PLATE6.item().get())) {
+        if (layer == PickedDecorLayer.NONE) {
             pieceLocal = Shapes.empty();
         } else {
-            VoxelShape pieceNorth = BedPlate6PickShapesNorth.northOutlinePieceNorth(plate, resolved);
+            VoxelShape pieceNorth = BedPlate6PickShapesNorth.northOutlinePieceNorth(plate, layer);
             if (pieceNorth == null || pieceNorth.isEmpty()) {
                 pieceLocal = Shapes.empty();
             } else {

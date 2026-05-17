@@ -1,5 +1,6 @@
 package org.lanye.fantasy_furniture.content.furniture.livingroom.block;
 
+import java.util.Optional;
 import javax.annotation.Nullable;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -242,6 +243,39 @@ public final class BedPlate6PickShapesNorth {
         || containsFootLocal(oriented, hitWorld, foot);
   }
 
+  /**
+   * 双中号：射线与并集求交时优先前枕盒，避免同色 {@link ItemStack} 无法区分时裁剪点落在后枕。
+   */
+  @Nullable
+  public static Vec3 clipLocalDualMediumPreferFront(
+      Direction facing, Vec3 localStart, Vec3 localEnd) {
+    Vec3 front =
+        closestClipOnNorthShape(pillowMediumPairFrontNorth(), facing, localStart, localEnd);
+    if (front != null) {
+      return front;
+    }
+    return closestClipOnNorthShape(pillowMediumPairRearNorth(), facing, localStart, localEnd);
+  }
+
+  @Nullable
+  private static Vec3 closestClipOnNorthShape(
+      VoxelShape north, Direction facing, Vec3 localStart, Vec3 localEnd) {
+    VoxelShape oriented = orientForBedFacing(north, facing);
+    Vec3 bestLocal = null;
+    double bestDist2 = Double.MAX_VALUE;
+    for (AABB box : oriented.toAabbs()) {
+      Optional<Vec3> hit = box.clip(localStart, localEnd);
+      if (hit.isPresent()) {
+        double d2 = localStart.distanceToSqr(hit.get());
+        if (d2 < bestDist2) {
+          bestDist2 = d2;
+          bestLocal = hit.get();
+        }
+      }
+    }
+    return bestLocal;
+  }
+
   /** 有床单时并入的北向选取体（与被套/枕头并集）。 */
   public static VoxelShape unionNorthForPick(BedPlate6BlockEntity plate) {
     if (!plate.hasDuvet()) {
@@ -271,60 +305,24 @@ public final class BedPlate6PickShapesNorth {
   }
 
   /**
-   * 客户端描边：与 {@link org.lanye.fantasy_furniture.content.furniture.livingroom.item.BedPlate6ComponentPick#stackForHit} 解析结果对应的北向体素，
-   * 不含床垫。返回 {@code null} 表示仍使用 {@link #unionNorthForPick} 整床并集。
+   * 客户端描边：与 {@link #pickLayerByVoxelHit} 同源，按层返回北向体素（双中号同色时勿用 {@link ItemStack} 比对）。
    */
   @Nullable
-  public static VoxelShape northOutlinePieceNorth(BedPlate6BlockEntity plate, ItemStack resolved) {
-    if (resolved == null || resolved.isEmpty() || resolved.is(ModBlocks.BED_PLATE6.item().get())) {
+  public static VoxelShape northOutlinePieceNorth(
+      BedPlate6BlockEntity plate, PickedDecorLayer layer) {
+    if (!plate.hasDuvet() || layer == null || layer == PickedDecorLayer.NONE) {
       return null;
     }
-    if (!plate.hasDuvet()) {
-      return null;
-    }
-    if (ItemStack.isSameItemSameTags(resolved, BedPlate6DuvetItem.stackForRegistry(plate.getDuvetMaterialId()))) {
-      return duvetNorth();
-    }
-    if (plate.hasCover()
-        && ItemStack.isSameItemSameTags(
-            resolved, BedPlate6DuvetCoverItem.stackForRegistry(plate.getCoverMaterialId()))) {
-      return duvetCoverNorth();
-    }
-    if (plate.hasSmallPillow()
-        && ItemStack.isSameItemSameTags(
-            resolved, BedPlate6SmallPillowItem.stackForRegistry(plate.getSmallPillowMat()))) {
-      return pillowSmallStackNorth();
-    }
-    int n = plate.getMediumPillowCount();
-    boolean large = plate.hasLargePillow();
-    if (n == 2) {
-      if (ItemStack.isSameItemSameTags(
-          resolved, BedPlate6MediumPillowItem.stackForRegistry(plate.getMediumPillowMatFirst()))) {
-        return pillowMediumPairRearNorth();
-      }
-      if (ItemStack.isSameItemSameTags(
-          resolved, BedPlate6MediumPillowItem.stackForRegistry(plate.getMediumPillowMatSecond()))) {
-        return pillowMediumPairFrontNorth();
-      }
-    } else if (n == 1 && large) {
-      if (ItemStack.isSameItemSameTags(
-          resolved, BedPlate6MediumPillowItem.stackForRegistry(plate.getMediumPillowMatFirst()))) {
-        return pillowMediumPairFrontNorth();
-      }
-    } else if (n == 1) {
-      if (ItemStack.isSameItemSameTags(
-          resolved, BedPlate6MediumPillowItem.stackForRegistry(plate.getMediumPillowMatFirst()))) {
-        return pillowMediumSoloNorth();
-      }
-    }
-    if (plate.hasLargePillow()
-        && ItemStack.isSameItemSameTags(
-            resolved,
-            BedPlate6LargePillowItem.stackForRegistry(
-                plate.getLargePillowStyleId(), plate.getLargePillowMaterialId()))) {
-      return largePillowNorth(plate.getLargePillowStyleId());
-    }
-    return null;
+    return switch (layer) {
+      case SMALL_PILLOW -> pillowSmallStackNorth();
+      case LARGE_PILLOW -> largePillowNorth(plate.getLargePillowStyleId());
+      case MEDIUM_REAR -> pillowMediumPairRearNorth();
+      case MEDIUM_FRONT -> pillowMediumPairFrontNorth();
+      case MEDIUM_SOLO -> pillowMediumSoloNorth();
+      case DUVET_COVER -> duvetCoverNorth();
+      case DUVET -> duvetNorth();
+      default -> null;
+    };
   }
 
   private static VoxelShape largePillowNorth(int styleId) {
