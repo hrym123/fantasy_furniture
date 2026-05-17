@@ -30,6 +30,18 @@ import org.lanye.fantasy_furniture.content.furniture.livingroom.item.BedPlate6Sm
  */
 public final class BedPlate6PickShapesNorth {
 
+  /** 准心体素命中对应的可拆卸床品层（与 {@link #pickStackByVoxelHit} 同源）。 */
+  public enum PickedDecorLayer {
+    NONE,
+    SMALL_PILLOW,
+    MEDIUM_REAR,
+    MEDIUM_FRONT,
+    MEDIUM_SOLO,
+    LARGE_PILLOW,
+    DUVET_COVER,
+    DUVET
+  }
+
   /** 仅用于浮点边界上的命中稳定，不改变 geo 盒尺寸。 */
   private static final double PICK_BOUNDARY_EPS = 1.0 / 256.0;
 
@@ -126,70 +138,74 @@ public final class BedPlate6PickShapesNorth {
   }
 
   /**
-   * 按体素命中解析应对应床品：在<strong>所有</strong>命中的候选中取 tier 最小者（枕 &gt; 被套 &gt; 被单）；无匹配返回 {@code null}。
+   * 按体素命中解析应对应床品层：在<strong>所有</strong>命中的候选中取 tier 最小者（枕 &gt; 被套 &gt; 被单）。
    */
-  @Nullable
-  public static ItemStack pickStackByVoxelHit(
+  public static PickedDecorLayer pickLayerByVoxelHit(
       BedPlate6BlockEntity plate, Vec3 hitWorld, BlockPos foot, Direction facing) {
     if (!plate.hasDuvet()) {
-      return null;
+      return PickedDecorLayer.NONE;
     }
     PillowPickTiers tiers = PillowPickTiers.forPlate(plate);
     VoxelPickState pick = new VoxelPickState(hitWorld, foot, facing);
     if (plate.hasSmallPillow()) {
-      pick.tryTier(
-          tiers.small(),
-          pillowSmallStackNorth(),
-          BedPlate6SmallPillowItem.stackForRegistry(plate.getSmallPillowMat()),
-          false);
+      pick.tryTier(tiers.small(), pillowSmallStackNorth(), PickedDecorLayer.SMALL_PILLOW, false);
     }
     if (plate.hasLargePillow()) {
       pick.tryTier(
           tiers.large(),
           largePillowNorth(plate.getLargePillowStyleId()),
-          BedPlate6LargePillowItem.stackForRegistry(
-              plate.getLargePillowStyleId(), plate.getLargePillowMaterialId()),
+          PickedDecorLayer.LARGE_PILLOW,
           false);
     }
     int n = plate.getMediumPillowCount();
     boolean large = plate.hasLargePillow();
     if (n == 2) {
       pick.tryTier(
-          tiers.mediumRear(),
-          pillowMediumPairRearNorth(),
-          BedPlate6MediumPillowItem.stackForRegistry(plate.getMediumPillowMatFirst()),
-          false);
+          tiers.mediumRear(), pillowMediumPairRearNorth(), PickedDecorLayer.MEDIUM_REAR, false);
       pick.tryTier(
-          tiers.mediumFront(),
-          pillowMediumPairFrontNorth(),
-          BedPlate6MediumPillowItem.stackForRegistry(plate.getMediumPillowMatSecond()),
-          false);
+          tiers.mediumFront(), pillowMediumPairFrontNorth(), PickedDecorLayer.MEDIUM_FRONT, false);
     } else if (n == 1 && large) {
       pick.tryTier(
-          tiers.mediumFront(),
-          pillowMediumPairFrontNorth(),
-          BedPlate6MediumPillowItem.stackForRegistry(plate.getMediumPillowMatFirst()),
-          false);
+          tiers.mediumFront(), pillowMediumPairFrontNorth(), PickedDecorLayer.MEDIUM_FRONT, false);
     } else if (n == 1) {
-      pick.tryTier(
-          tiers.mediumSolo(),
-          pillowMediumSoloNorth(),
-          BedPlate6MediumPillowItem.stackForRegistry(plate.getMediumPillowMatFirst()),
-          false);
+      pick.tryTier(tiers.mediumSolo(), pillowMediumSoloNorth(), PickedDecorLayer.MEDIUM_SOLO, false);
     }
     if (plate.hasCover()) {
-      pick.tryTier(
-          tiers.cover(),
-          duvetCoverNorth(),
-          BedPlate6DuvetCoverItem.stackForRegistry(plate.getCoverMaterialId()),
-          true);
+      pick.tryTier(tiers.cover(), duvetCoverNorth(), PickedDecorLayer.DUVET_COVER, true);
     }
-    pick.tryTier(
-        tiers.duvet(),
-        duvetNorth(),
-        BedPlate6DuvetItem.stackForRegistry(plate.getDuvetMaterialId()),
-        true);
-    return pick.best;
+    pick.tryTier(tiers.duvet(), duvetNorth(), PickedDecorLayer.DUVET, true);
+    return pick.bestLayer != null ? pick.bestLayer : PickedDecorLayer.NONE;
+  }
+
+  /**
+   * 按体素命中解析应对应床品：在<strong>所有</strong>命中的候选中取 tier 最小者（枕 &gt; 被套 &gt; 被单）；无匹配返回 {@code null}。
+   */
+  @Nullable
+  public static ItemStack pickStackByVoxelHit(
+      BedPlate6BlockEntity plate, Vec3 hitWorld, BlockPos foot, Direction facing) {
+    PickedDecorLayer layer = pickLayerByVoxelHit(plate, hitWorld, foot, facing);
+    return stackForPickedLayer(plate, layer);
+  }
+
+  @Nullable
+  private static ItemStack stackForPickedLayer(BedPlate6BlockEntity plate, PickedDecorLayer layer) {
+    return switch (layer) {
+      case SMALL_PILLOW ->
+          BedPlate6SmallPillowItem.stackForRegistry(plate.getSmallPillowMat());
+      case LARGE_PILLOW ->
+          BedPlate6LargePillowItem.stackForRegistry(
+              plate.getLargePillowStyleId(), plate.getLargePillowMaterialId());
+      case MEDIUM_REAR, MEDIUM_FRONT, MEDIUM_SOLO -> {
+        int mat =
+            layer == PickedDecorLayer.MEDIUM_FRONT && plate.getMediumPillowCount() == 2
+                ? plate.getMediumPillowMatSecond()
+                : plate.getMediumPillowMatFirst();
+        yield BedPlate6MediumPillowItem.stackForRegistry(mat);
+      }
+      case DUVET_COVER -> BedPlate6DuvetCoverItem.stackForRegistry(plate.getCoverMaterialId());
+      case DUVET -> BedPlate6DuvetItem.stackForRegistry(plate.getDuvetMaterialId());
+      case NONE -> null;
+    };
   }
 
   private static final class VoxelPickState {
@@ -197,7 +213,7 @@ public final class BedPlate6PickShapesNorth {
     private final BlockPos foot;
     private final Direction facing;
     private int bestTier = Integer.MAX_VALUE;
-    @Nullable private ItemStack best;
+    @Nullable private PickedDecorLayer bestLayer;
 
     private VoxelPickState(Vec3 hitWorld, BlockPos foot, Direction facing) {
       this.hitWorld = hitWorld;
@@ -205,13 +221,13 @@ public final class BedPlate6PickShapesNorth {
       this.facing = facing;
     }
 
-    private void tryTier(int tier, VoxelShape north, ItemStack candidate, boolean beddingLayer) {
+    private void tryTier(int tier, VoxelShape north, PickedDecorLayer layer, boolean beddingLayer) {
       if (tier >= bestTier) {
         return;
       }
       if (matchesPickShape(north, hitWorld, foot, facing, beddingLayer)) {
         bestTier = tier;
-        best = candidate;
+        bestLayer = layer;
       }
     }
   }

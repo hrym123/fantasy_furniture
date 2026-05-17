@@ -40,7 +40,7 @@ public final class ModItems {
 
     private static final Item.Properties BED_PLATE6_DUVET_PROPS = new Item.Properties().stacksTo(16);
 
-    /** 主手对床板 6 右键按逆序卸下最后一层床品。 */
+    /** 主手对床板 6 右键按准心选中组件卸下床品。 */
     public static final RegistryObject<Item> BED_PLATE6_DISASSEMBLY_GLOVE =
             ITEMS.register(
                     "bed_plate6_disassembly_glove",

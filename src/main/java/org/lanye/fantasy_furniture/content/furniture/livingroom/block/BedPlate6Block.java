@@ -38,7 +38,7 @@ import org.lanye.reverie_core.util.VoxelShapeTranslation;
 
 /**
  * 床板 6：在 {@link net.minecraft.world.level.block.BedBlock#use} 之前处理拆卸手套、被套、大号、中号、小号、床单。
- * 卸下/替换床品改由主手 {@link org.lanye.fantasy_furniture.content.furniture.livingroom.item.BedPlate6DisassemblyGloveItem} 按叠放逆序逐层拆除。
+ * 卸下床品改由主手 {@link org.lanye.fantasy_furniture.content.furniture.livingroom.item.BedPlate6DisassemblyGloveItem} 按准心选中组件拆除（与选取体素同源）。
  * 顺序：<strong>拆卸手套 → 被套 →（主手大号且另一手中号、且床已摆大件且仍可加中号时先放中号）→ 大号 → 中号 → 小号 → 床单</strong>。
  *
  * <p>准心/中键/玉 HUD 选取：客户端由 {@link BedPlate6ClientPick} 读 {@link net.minecraft.client.Minecraft#hitResult}（无 Mixin），见 {@link BedPlate6ComponentPick}。
@@ -192,7 +192,8 @@ public final class BedPlate6Block extends BedPlateBlock {
             Player player,
             InteractionHand hand,
             BlockHitResult hit) {
-        InteractionResult glove = BedPlate6BedDecorRemoval.tryRemoveLastWithMainHandGlove(level, state, pos, player, hand);
+        InteractionResult glove =
+                BedPlate6BedDecorRemoval.tryRemoveSelectedWithMainHandGlove(level, state, pos, player, hand, hit);
         if (glove != InteractionResult.PASS) {
             return glove;
         }

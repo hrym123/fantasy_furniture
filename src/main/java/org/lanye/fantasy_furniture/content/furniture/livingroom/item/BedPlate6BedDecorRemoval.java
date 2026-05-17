@@ -1,6 +1,7 @@
 package org.lanye.fantasy_furniture.content.furniture.livingroom.item;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
@@ -10,22 +11,27 @@ import net.minecraft.world.level.block.BedBlock;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BedPart;
+import net.minecraft.world.phys.BlockHitResult;
 import org.lanye.fantasy_furniture.bootstrap.block.ModBlocks;
+import org.lanye.fantasy_furniture.content.furniture.livingroom.block.BedPlate6PickShapesNorth;
+import org.lanye.fantasy_furniture.content.furniture.livingroom.block.BedPlate6PickShapesNorth.PickedDecorLayer;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.blockentity.BedPlate6BlockEntity;
 
 /**
- * 床板 6 床品拆除：仅 {@link BedPlate6DisassemblyGloveItem} 主手交互，按叠放逆序卸下<strong>一层</strong>（小号 → 后中号 → 前中号 → 大号 → 被套 → 床单）。
+ * 床板 6 床品拆除：仅 {@link BedPlate6DisassemblyGloveItem} 主手交互，按准心体素命中（与
+ * {@link BedPlate6ComponentPick} / {@link BedPlate6PickShapesNorth#pickLayerByVoxelHit} 一致）卸下<strong>选中</strong>组件。
  */
 public final class BedPlate6BedDecorRemoval {
 
     private BedPlate6BedDecorRemoval() {}
 
-    public static InteractionResult tryRemoveLastWithMainHandGlove(
+    public static InteractionResult tryRemoveSelectedWithMainHandGlove(
             Level level,
             BlockState state,
             BlockPos pos,
             Player player,
-            InteractionHand hand) {
+            InteractionHand hand,
+            BlockHitResult hit) {
         if (hand != InteractionHand.MAIN_HAND) {
             return InteractionResult.PASS;
         }
@@ -44,54 +50,105 @@ public final class BedPlate6BedDecorRemoval {
         if (!plate.hasDuvet()) {
             return InteractionResult.PASS;
         }
+        double ly = (hit.getLocation().y - footPos.getY()) * 16.0;
+        if (ly < 5.0) {
+            return InteractionResult.PASS;
+        }
+        Direction towardHead = state.getValue(BedBlock.FACING);
+        PickedDecorLayer layer =
+                BedPlate6PickShapesNorth.pickLayerByVoxelHit(plate, hit.getLocation(), footPos, towardHead);
+        if (layer == PickedDecorLayer.NONE) {
+            return InteractionResult.PASS;
+        }
         if (!level.isClientSide) {
-            if (!popOneLayerServer(plate, player)) {
+            if (!popLayerServer(plate, player, layer)) {
                 return InteractionResult.PASS;
             }
         }
         return InteractionResult.sidedSuccess(level.isClientSide);
     }
 
-    private static boolean popOneLayerServer(BedPlate6BlockEntity plate, Player player) {
-        if (plate.hasSmallPillow()) {
-            int m = plate.getSmallPillowMat();
-            plate.setSmallPillowMat(0);
-            give(player, BedPlate6SmallPillowItem.stackForRegistry(m));
-            return true;
-        }
-        int mc = plate.getMediumPillowCount();
-        if (mc == 2) {
-            int a = plate.getMediumPillowMatFirst();
-            int b = plate.getMediumPillowMatSecond();
-            plate.setMediumPillowSlots(a, 0);
-            give(player, BedPlate6MediumPillowItem.stackForRegistry(b));
-            ensureSmallStillValidOrReturn(plate, player);
-            return true;
-        }
-        if (mc == 1) {
-            int a = plate.getMediumPillowMatFirst();
-            plate.setMediumPillowSlots(0, 0);
-            give(player, BedPlate6MediumPillowItem.stackForRegistry(a));
-            ensureSmallStillValidOrReturn(plate, player);
-            return true;
-        }
-        if (plate.hasLargePillow()) {
-            int style = plate.getLargePillowStyleId();
-            int mat = plate.getLargePillowMaterialId();
-            plate.setLargePillow(0, 0);
-            give(player, BedPlate6LargePillowItem.stackForRegistry(style, mat));
-            return true;
-        }
-        if (plate.hasCover()) {
-            int c = plate.getCoverMaterialId();
-            plate.setCoverMaterialId(0);
-            give(player, BedPlate6DuvetCoverItem.stackForRegistry(c));
-            return true;
-        }
-        int d = plate.getDuvetMaterialId();
-        plate.setDuvetMaterialId(0);
-        give(player, BedPlate6DuvetItem.stackForRegistry(d));
-        return true;
+    private static boolean popLayerServer(
+            BedPlate6BlockEntity plate, Player player, PickedDecorLayer layer) {
+        return switch (layer) {
+            case SMALL_PILLOW -> {
+                if (!plate.hasSmallPillow()) {
+                    yield false;
+                }
+                int m = plate.getSmallPillowMat();
+                plate.setSmallPillowMat(0);
+                give(player, BedPlate6SmallPillowItem.stackForRegistry(m));
+                yield true;
+            }
+            case MEDIUM_REAR -> {
+                if (plate.getMediumPillowCount() != 2) {
+                    yield false;
+                }
+                int rear = plate.getMediumPillowMatFirst();
+                int front = plate.getMediumPillowMatSecond();
+                plate.setMediumPillowSlots(front, 0);
+                give(player, BedPlate6MediumPillowItem.stackForRegistry(rear));
+                ensureSmallStillValidOrReturn(plate, player);
+                yield true;
+            }
+            case MEDIUM_FRONT -> {
+                int mc = plate.getMediumPillowCount();
+                if (mc == 2) {
+                    int front = plate.getMediumPillowMatSecond();
+                    plate.setMediumPillowSlots(plate.getMediumPillowMatFirst(), 0);
+                    give(player, BedPlate6MediumPillowItem.stackForRegistry(front));
+                    ensureSmallStillValidOrReturn(plate, player);
+                    yield true;
+                }
+                if (mc == 1 && plate.hasLargePillow()) {
+                    int a = plate.getMediumPillowMatFirst();
+                    plate.setMediumPillowSlots(0, 0);
+                    give(player, BedPlate6MediumPillowItem.stackForRegistry(a));
+                    ensureSmallStillValidOrReturn(plate, player);
+                    yield true;
+                }
+                yield false;
+            }
+            case MEDIUM_SOLO -> {
+                if (plate.getMediumPillowCount() != 1 || plate.hasLargePillow()) {
+                    yield false;
+                }
+                int a = plate.getMediumPillowMatFirst();
+                plate.setMediumPillowSlots(0, 0);
+                give(player, BedPlate6MediumPillowItem.stackForRegistry(a));
+                ensureSmallStillValidOrReturn(plate, player);
+                yield true;
+            }
+            case LARGE_PILLOW -> {
+                if (!plate.hasLargePillow()) {
+                    yield false;
+                }
+                int style = plate.getLargePillowStyleId();
+                int mat = plate.getLargePillowMaterialId();
+                plate.setLargePillow(0, 0);
+                give(player, BedPlate6LargePillowItem.stackForRegistry(style, mat));
+                yield true;
+            }
+            case DUVET_COVER -> {
+                if (!plate.hasCover()) {
+                    yield false;
+                }
+                int c = plate.getCoverMaterialId();
+                plate.setCoverMaterialId(0);
+                give(player, BedPlate6DuvetCoverItem.stackForRegistry(c));
+                yield true;
+            }
+            case DUVET -> {
+                int d = plate.getDuvetMaterialId();
+                if (d == 0) {
+                    yield false;
+                }
+                plate.setDuvetMaterialId(0);
+                give(player, BedPlate6DuvetItem.stackForRegistry(d));
+                yield true;
+            }
+            case NONE -> false;
+        };
     }
 
     private static void ensureSmallStillValidOrReturn(BedPlate6BlockEntity plate, Player player) {
