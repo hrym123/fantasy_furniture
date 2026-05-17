@@ -62,6 +62,15 @@ public final class BedPlate6DecorStorage {
         }
     }
 
+    /** 将当前床上全部床品返还玩家（先收集再清空 BE）。 */
+    public static void giveAllStoredDecorToPlayer(BedPlate6BlockEntity plate, Player player) {
+        List<ItemStack> stacks = collectStoredDecorStacks(plate);
+        clearAllStoredDecor(plate);
+        for (ItemStack stack : stacks) {
+            giveOrDropToPlayer(player, stack);
+        }
+    }
+
     /**
      * 方块被破坏等：在床尾格位置散落全部存储床品。
      *

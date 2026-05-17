@@ -91,7 +91,7 @@ public final class BedPlate6BedDecorRemoval {
                 plate.setMediumPillowSlots(front, 0);
                 BedPlate6DecorStorage.giveOrDropToPlayer(
                         player, BedPlate6MediumPillowItem.stackForRegistry(rear));
-                ensureSmallStillValidOrReturn(plate, player);
+                returnInvalidatedDependents(plate, player);
                 yield true;
             }
             case MEDIUM_FRONT -> {
@@ -101,7 +101,7 @@ public final class BedPlate6BedDecorRemoval {
                     plate.setMediumPillowSlots(plate.getMediumPillowMatFirst(), 0);
                     BedPlate6DecorStorage.giveOrDropToPlayer(
                             player, BedPlate6MediumPillowItem.stackForRegistry(front));
-                    ensureSmallStillValidOrReturn(plate, player);
+                    returnInvalidatedDependents(plate, player);
                     yield true;
                 }
                 if (mc == 1 && plate.hasLargePillow()) {
@@ -109,7 +109,7 @@ public final class BedPlate6BedDecorRemoval {
                     plate.setMediumPillowSlots(0, 0);
                     BedPlate6DecorStorage.giveOrDropToPlayer(
                             player, BedPlate6MediumPillowItem.stackForRegistry(a));
-                    ensureSmallStillValidOrReturn(plate, player);
+                    returnInvalidatedDependents(plate, player);
                     yield true;
                 }
                 yield false;
@@ -122,7 +122,7 @@ public final class BedPlate6BedDecorRemoval {
                 plate.setMediumPillowSlots(0, 0);
                 BedPlate6DecorStorage.giveOrDropToPlayer(
                         player, BedPlate6MediumPillowItem.stackForRegistry(a));
-                ensureSmallStillValidOrReturn(plate, player);
+                returnInvalidatedDependents(plate, player);
                 yield true;
             }
             case LARGE_PILLOW -> {
@@ -134,6 +134,7 @@ public final class BedPlate6BedDecorRemoval {
                 plate.setLargePillow(0, 0);
                 BedPlate6DecorStorage.giveOrDropToPlayer(
                         player, BedPlate6LargePillowItem.stackForRegistry(style, mat));
+                returnInvalidatedDependents(plate, player);
                 yield true;
             }
             case DUVET_COVER -> {
@@ -147,20 +148,20 @@ public final class BedPlate6BedDecorRemoval {
                 yield true;
             }
             case DUVET -> {
-                int d = plate.getDuvetMaterialId();
-                if (d == 0) {
+                if (!plate.hasDuvet()) {
                     yield false;
                 }
-                plate.setDuvetMaterialId(0);
-                BedPlate6DecorStorage.giveOrDropToPlayer(
-                        player, BedPlate6DuvetItem.stackForRegistry(d));
+                BedPlate6DecorStorage.giveAllStoredDecorToPlayer(plate, player);
                 yield true;
             }
             case NONE -> false;
         };
     }
 
-    private static void ensureSmallStillValidOrReturn(BedPlate6BlockEntity plate, Player player) {
+    /**
+     * 卸下某层后若组合不再合法，连带卸下并返还依赖件（当前主要为：失去大号或中号底枕后的小号枕）。
+     */
+    private static void returnInvalidatedDependents(BedPlate6BlockEntity plate, Player player) {
         if (plate.hasSmallPillow() && !plate.smallPillowCombinationValid()) {
             int sm = plate.getSmallPillowMat();
             plate.setSmallPillowMat(0);
