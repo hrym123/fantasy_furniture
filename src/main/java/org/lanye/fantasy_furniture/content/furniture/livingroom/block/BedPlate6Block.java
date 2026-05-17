@@ -1,5 +1,6 @@
 package org.lanye.fantasy_furniture.content.furniture.livingroom.block;
 
+import java.util.List;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.entity.Entity;
@@ -9,12 +10,14 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.BedBlock;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BedPart;
+import net.minecraft.world.level.storage.loot.LootParams;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.shapes.CollisionContext;
@@ -23,6 +26,7 @@ import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import org.lanye.fantasy_furniture.Config;
 import org.lanye.fantasy_furniture.bootstrap.block.ModBlocks;
+import org.lanye.fantasy_furniture.content.furniture.livingroom.BedPlate6DecorStorage;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.blockentity.BedPlate6BlockEntity;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.client.BedPlate6ClientPick;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.item.BedPlate6BedDecorRemoval;
@@ -44,8 +48,13 @@ import org.lanye.reverie_core.util.VoxelShapeTranslation;
  * <p>准心/中键/玉 HUD 选取：客户端由 {@link BedPlate6ClientPick} 读 {@link net.minecraft.client.Minecraft#hitResult}（无 Mixin），见 {@link BedPlate6ComponentPick}。
  *
  * <p>落地弹跳与摔落减免：仅当床尾格 {@link BedPlate6BlockEntity#hasDuvet()} 为真时沿用 {@link BedBlock} 行为；裸床垫无被单时按普通方块受伤、不弹起。
+ *
+ * <p>寝具存储：数据在床尾格 {@link BedPlate6BlockEntity}；生存破坏时在床尾格散落全部床品（{@link BedPlate6DecorStorage}）。创造模式破坏不掉落床板方块物品。
  */
 public final class BedPlate6Block extends BedPlateBlock {
+
+    /** 供 {@link #onRemove} 判断是否为创造模式破坏（与 {@link PlainGlassWindowBlock} 同思路）。 */
+    private static final ThreadLocal<Player> BREAKING_PLAYER = new ThreadLocal<>();
 
     /**
      * 被单薄层外接盒（整格 16×16、床垫顶 y=5 起高约 2/16）：用于床头格 {@link #getShape} 回退、以及 {@link #getCollisionShape}（配置开启时）。
@@ -104,6 +113,43 @@ public final class BedPlate6Block extends BedPlateBlock {
             BlockBehaviour.Properties properties,
             BlockEntityType.BlockEntitySupplier<? extends BedPlateBaseBlockEntity> entitySupplier) {
         super(properties, entitySupplier);
+    }
+
+    @Override
+    public void playerWillDestroy(Level level, BlockPos pos, BlockState state, Player player) {
+        BREAKING_PLAYER.set(player);
+        try {
+            super.playerWillDestroy(level, pos, state, player);
+        } finally {
+            BREAKING_PLAYER.remove();
+        }
+    }
+
+    @Override
+    public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean isMoving) {
+        if (!level.isClientSide && !state.is(newState.getBlock())) {
+            Player breaker = BREAKING_PLAYER.get();
+            boolean creative = breaker != null && breaker.getAbilities().instabuild;
+            BlockPos foot = bedFootWorldPos(state, pos);
+            BlockEntity be = level.getBlockEntity(foot);
+            if (be instanceof BedPlate6BlockEntity plate && BedPlate6DecorStorage.hasStoredDecor(plate)) {
+                if (creative) {
+                    BedPlate6DecorStorage.clearAllStoredDecor(plate);
+                } else {
+                    BedPlate6DecorStorage.spillAllAsWorldDrops(level, foot, plate);
+                }
+            }
+            if (!creative && state.getValue(BedBlock.PART) == BedPart.FOOT) {
+                Block.popResource(level, foot, new ItemStack(ModBlocks.BED_PLATE6.item().get()));
+            }
+        }
+        super.onRemove(state, level, pos, newState, isMoving);
+    }
+
+    /** 床板掉落改由 {@link #onRemove} 在床尾格手动处理，避免战利品表在创造模式等路径仍掉落。 */
+    @Override
+    public List<ItemStack> getDrops(BlockState state, LootParams.Builder builder) {
+        return List.of();
     }
 
     @Override
