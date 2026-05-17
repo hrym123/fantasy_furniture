@@ -47,6 +47,28 @@ public final class BedPlate6PickShapesNorth {
   private static final int TIER_COVER = 4;
   private static final int TIER_DUVET = 5;
 
+  /**
+   * 双中号时并集裁剪命中点常落在大号/小号/后枕柱内；固定 tier 会使大号(1)压过前枕(2)。
+   * 双中号组合下将前/后中号提为最高枕 tier，大号/小号降为 3/4，不改变单中号或「大+单中」语义。
+   */
+  private record PillowPickTiers(
+      int small, int large, int mediumFront, int mediumRear, int mediumSolo, int cover, int duvet) {
+
+    static PillowPickTiers forPlate(BedPlate6BlockEntity plate) {
+      if (plate.getMediumPillowCount() == 2) {
+        return new PillowPickTiers(4, 3, 0, 1, TIER_MEDIUM_SOLO, 5, 6);
+      }
+      return new PillowPickTiers(
+          TIER_SMALL,
+          TIER_LARGE,
+          TIER_MEDIUM_FRONT,
+          TIER_MEDIUM_REAR,
+          TIER_MEDIUM_SOLO,
+          TIER_COVER,
+          TIER_DUVET);
+    }
+  }
+
   private BedPlate6PickShapesNorth() {}
 
   /** 与 {@link BedPlate6Block} 中床品体素朝向一致。 */
@@ -112,17 +134,18 @@ public final class BedPlate6PickShapesNorth {
     if (!plate.hasDuvet()) {
       return null;
     }
+    PillowPickTiers tiers = PillowPickTiers.forPlate(plate);
     VoxelPickState pick = new VoxelPickState(hitWorld, foot, facing);
     if (plate.hasSmallPillow()) {
       pick.tryTier(
-          TIER_SMALL,
+          tiers.small(),
           pillowSmallStackNorth(),
           BedPlate6SmallPillowItem.stackForRegistry(plate.getSmallPillowMat()),
           false);
     }
     if (plate.hasLargePillow()) {
       pick.tryTier(
-          TIER_LARGE,
+          tiers.large(),
           largePillowNorth(plate.getLargePillowStyleId()),
           BedPlate6LargePillowItem.stackForRegistry(
               plate.getLargePillowStyleId(), plate.getLargePillowMaterialId()),
@@ -132,37 +155,37 @@ public final class BedPlate6PickShapesNorth {
     boolean large = plate.hasLargePillow();
     if (n == 2) {
       pick.tryTier(
-          TIER_MEDIUM_REAR,
+          tiers.mediumRear(),
           pillowMediumPairRearNorth(),
           BedPlate6MediumPillowItem.stackForRegistry(plate.getMediumPillowMatFirst()),
           false);
       pick.tryTier(
-          TIER_MEDIUM_FRONT,
+          tiers.mediumFront(),
           pillowMediumPairFrontNorth(),
           BedPlate6MediumPillowItem.stackForRegistry(plate.getMediumPillowMatSecond()),
           false);
     } else if (n == 1 && large) {
       pick.tryTier(
-          TIER_MEDIUM_FRONT,
+          tiers.mediumFront(),
           pillowMediumPairFrontNorth(),
           BedPlate6MediumPillowItem.stackForRegistry(plate.getMediumPillowMatFirst()),
           false);
     } else if (n == 1) {
       pick.tryTier(
-          TIER_MEDIUM_SOLO,
+          tiers.mediumSolo(),
           pillowMediumSoloNorth(),
           BedPlate6MediumPillowItem.stackForRegistry(plate.getMediumPillowMatFirst()),
           false);
     }
     if (plate.hasCover()) {
       pick.tryTier(
-          TIER_COVER,
+          tiers.cover(),
           duvetCoverNorth(),
           BedPlate6DuvetCoverItem.stackForRegistry(plate.getCoverMaterialId()),
           true);
     }
     pick.tryTier(
-        TIER_DUVET,
+        tiers.duvet(),
         duvetNorth(),
         BedPlate6DuvetItem.stackForRegistry(plate.getDuvetMaterialId()),
         true);
