@@ -134,12 +134,12 @@ public final class BedPlate6PickShapesNorth {
       pick.tryTier(
           TIER_MEDIUM_REAR,
           pillowMediumPairRearNorth(),
-          BedPlate6MediumPillowItem.stackForRegistry(plate.getMediumPillowMatSecond()),
+          BedPlate6MediumPillowItem.stackForRegistry(plate.getMediumPillowMatFirst()),
           false);
       pick.tryTier(
           TIER_MEDIUM_FRONT,
           pillowMediumPairFrontNorth(),
-          BedPlate6MediumPillowItem.stackForRegistry(plate.getMediumPillowMatFirst()),
+          BedPlate6MediumPillowItem.stackForRegistry(plate.getMediumPillowMatSecond()),
           false);
     } else if (n == 1 && large) {
       pick.tryTier(
@@ -261,11 +261,11 @@ public final class BedPlate6PickShapesNorth {
     if (n == 2) {
       if (ItemStack.isSameItemSameTags(
           resolved, BedPlate6MediumPillowItem.stackForRegistry(plate.getMediumPillowMatFirst()))) {
-        return pillowMediumPairFrontNorth();
+        return pillowMediumPairRearNorth();
       }
       if (ItemStack.isSameItemSameTags(
           resolved, BedPlate6MediumPillowItem.stackForRegistry(plate.getMediumPillowMatSecond()))) {
-        return pillowMediumPairRearNorth();
+        return pillowMediumPairFrontNorth();
       }
     } else if (n == 1 && large) {
       if (ItemStack.isSameItemSameTags(

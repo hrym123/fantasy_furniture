@@ -38,9 +38,14 @@ public final class BedPlate6CrosshairPick {
                 .equals(BedPlate6Block.bedFootWorldPos(hitState, bhr.getBlockPos()))) {
             return ItemStack.EMPTY;
         }
+        net.minecraft.world.phys.Vec3 hitLoc = bhr.getLocation();
+        if (level.isClientSide()) {
+            hitLoc = org.lanye.fantasy_furniture.content.furniture.livingroom.client.BedPlate6ClientPick
+                    .clipHitToDecorUnion(level, partState, partPos, bhr);
+        }
         ItemStack raw =
                 BedPlate6ComponentPick.stackForHit(
-                        level, partState, partPos, bhr.getLocation(), bhr.getBlockPos());
+                        level, partState, partPos, hitLoc, bhr.getBlockPos());
         return stabilizeOutlinePick(raw);
     }
 
@@ -50,6 +55,18 @@ public final class BedPlate6CrosshairPick {
             pendingOutlinePick = null;
             pendingOutlineTicks = 0;
             return ItemStack.EMPTY;
+        }
+        if (isBedPlateStack(raw)) {
+            stableOutlinePick = null;
+            pendingOutlinePick = null;
+            pendingOutlineTicks = 0;
+            return raw;
+        }
+        if (stableOutlinePick == null || isBedPlateStack(stableOutlinePick)) {
+            stableOutlinePick = raw.copy();
+            pendingOutlinePick = null;
+            pendingOutlineTicks = 0;
+            return stableOutlinePick;
         }
         if (stableOutlinePick != null && ItemStack.isSameItemSameTags(raw, stableOutlinePick)) {
             pendingOutlinePick = null;
@@ -69,5 +86,9 @@ public final class BedPlate6CrosshairPick {
         pendingOutlinePick = raw.copy();
         pendingOutlineTicks = 1;
         return stableOutlinePick != null ? stableOutlinePick : raw;
+    }
+
+    private static boolean isBedPlateStack(ItemStack stack) {
+        return stack.is(ModBlocks.BED_PLATE6.item().get());
     }
 }

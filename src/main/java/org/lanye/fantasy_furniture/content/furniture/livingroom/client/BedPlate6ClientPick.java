@@ -1,18 +1,19 @@
 package org.lanye.fantasy_furniture.content.furniture.livingroom.client;
 
-import com.google.gson.JsonObject;
+import java.util.Optional;
 import javax.annotation.Nullable;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.BedBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BedPart;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
+import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import net.minecraftforge.api.distmarker.Dist;
@@ -22,7 +23,6 @@ import org.lanye.fantasy_furniture.content.furniture.livingroom.BedPlate6Crossha
 import org.lanye.fantasy_furniture.content.furniture.livingroom.block.BedPlate6Block;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.block.BedPlate6PickShapesNorth;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.blockentity.BedPlate6BlockEntity;
-import org.lanye.fantasy_furniture.debug.AgentDebugNdjson;
 import org.lanye.reverie_core.util.VoxelShapeTranslation;
 
 /** 床板 6 客户端准心 / 描边（读 {@link Minecraft#hitResult}，无 Mixin）。 */
@@ -30,6 +30,55 @@ import org.lanye.reverie_core.util.VoxelShapeTranslation;
 public final class BedPlate6ClientPick {
 
     private BedPlate6ClientPick() {}
+
+    /**
+     * 将射线与床品并集体素求交，得到用于 {@link org.lanye.fantasy_furniture.content.furniture.livingroom.item.BedPlate6ComponentPick}
+     * 的命中点。描边仍仅用当前子件薄盒（T007 #6）；并集仅用于解析，使命中体素与 geo 盒一致（T008 H5）。
+     */
+    public static Vec3 clipHitToDecorUnion(
+            Level level, BlockState state, BlockPos partPos, BlockHitResult bhr) {
+        BlockPos foot = BedPlate6Block.bedFootWorldPos(state, partPos);
+        var be = level.getBlockEntity(foot);
+        if (!(be instanceof BedPlate6BlockEntity plate) || !plate.hasDuvet()) {
+            return bhr.getLocation();
+        }
+        VoxelShape north = BedPlate6PickShapesNorth.unionNorthForPick(plate);
+        if (north.isEmpty()) {
+            return bhr.getLocation();
+        }
+        Direction facing = state.getValue(BedBlock.FACING);
+        VoxelShape oriented = BedPlate6PickShapesNorth.orientForBedFacing(north, facing);
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.player == null) {
+            return bhr.getLocation();
+        }
+        Vec3 footOrigin = Vec3.atLowerCornerOf(foot);
+        Vec3 eye = mc.player.getEyePosition(1.0F);
+        Vec3 end = bhr.getLocation();
+        Vec3 delta = end.subtract(eye);
+        if (delta.lengthSqr() < 1.0E-8) {
+            return bhr.getLocation();
+        }
+        Vec3 extended = eye.add(delta.normalize().scale(delta.length() + 0.5));
+        Vec3 localStart = eye.subtract(footOrigin);
+        Vec3 localEnd = extended.subtract(footOrigin);
+        Vec3 bestLocal = null;
+        double bestDist2 = Double.MAX_VALUE;
+        for (AABB box : oriented.toAabbs()) {
+            Optional<Vec3> hit = box.clip(localStart, localEnd);
+            if (hit.isPresent()) {
+                double d2 = localStart.distanceToSqr(hit.get());
+                if (d2 < bestDist2) {
+                    bestDist2 = d2;
+                    bestLocal = hit.get();
+                }
+            }
+        }
+        if (bestLocal == null) {
+            return bhr.getLocation();
+        }
+        return bestLocal.add(footOrigin);
+    }
 
     @Nullable
     public static HitResult currentCrosshairHit() {
@@ -70,37 +119,17 @@ public final class BedPlate6ClientPick {
                 BedPlate6CrosshairPick.resolveClientPickForOutline(
                         level, state, pos, currentCrosshairHit());
 
-        String outlineMode;
         VoxelShape pieceLocal;
         if (resolved.isEmpty() || resolved.is(ModBlocks.BED_PLATE6.item().get())) {
-            outlineMode = "base_only";
             pieceLocal = Shapes.empty();
         } else {
             VoxelShape pieceNorth = BedPlate6PickShapesNorth.northOutlinePieceNorth(plate, resolved);
             if (pieceNorth == null || pieceNorth.isEmpty()) {
-                outlineMode = "base_only_unmapped";
                 pieceLocal = Shapes.empty();
             } else {
-                outlineMode = "single_piece";
                 pieceLocal = BedPlate6PickShapesNorth.orientForBedFacing(pieceNorth, facing);
             }
         }
-
-        // #region agent log
-        JsonObject d = new JsonObject();
-        d.addProperty("outlineMode", outlineMode);
-        d.addProperty("atPos", pos.toString());
-        if (!resolved.isEmpty()) {
-            d.addProperty(
-                    "item",
-                    BuiltInRegistries.ITEM.getKey(resolved.getItem()).toString());
-        }
-        AgentDebugNdjson.append(
-                "H9",
-                "BedPlate6ClientPick:clientPlayerOutlineShape",
-                "outline_resolve",
-                d);
-        // #endregion
 
         if (state.getValue(BedBlock.PART) != BedPart.FOOT) {
             double tx = -facing.getStepX();
