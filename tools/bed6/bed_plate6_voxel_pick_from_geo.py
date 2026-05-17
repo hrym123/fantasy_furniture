@@ -5,14 +5,15 @@
 
 - 复用 ``tools/collision/geo_collision_box.compute_north_pick_boxes_axis_aligned``：默认裁切盒为 ``[0,16]×[0,16]×[0,32]``（床板 6 两格身长：枕头 geo 常在 z≈16..32，仅用 ``[0,16]³`` 会空）；被单/被套仍在 x/y/z 内与盒求交即可。
 - 裁后按文档 §3.6 保证三轴边长 **≥ min_extent**（默认 0.5）；在各轴裁切区间内对称扩张。
-- 可选按 §3.6.1 将 **min/max 量化到 0.5 网格**（四舍五入到最近半格，再裁回同一裁切盒）。
+- §3.6.1 半格量化 **暂关闭**（`snap_half_grid` 已注释；避免双端 round 导致盒心偏移，见 T007）。
 - 输出 Java 片段时写入 **溯源注释**（geo 短哈希、生成时间、路径），见 §2.3。
 
 用法（在 ``fantasy_furniture`` 仓库根目录）::
 
     python tools/bed6/bed_plate6_voxel_pick_from_geo.py src/main/resources/assets/fantasy_furniture/geo/block/bed_plate6_pillow_medium_solo.geo.json
-    python tools/bed6/bed_plate6_voxel_pick_from_geo.py path/to/model.geo.json --no-snap --precision 4
+    python tools/bed6/bed_plate6_voxel_pick_from_geo.py path/to/model.geo.json --snap-half --precision 4
     python tools/bed6/bed_plate6_voxel_pick_from_geo.py path/to/model.geo.json --clip 0 16 0 16 0 16
+    python tools/bed6/bed_plate6_voxel_pick_from_geo.py path/to/model.geo.json --export-md
 
 - 若 ``compute_north_pick_boxes_axis_aligned`` 仍抛出无相交：检查 geo 是否与默认裁切盒相交，或传入 ``--zmax`` / ``--bounds``（待 CLI 扩展）。
 
@@ -27,6 +28,7 @@ import argparse
 import hashlib
 import json
 import math
+import re
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -45,6 +47,11 @@ ROOT = FF_ROOT
 
 Box6 = tuple[float, float, float, float, float, float]  # x0 x1 y0 y1 z0 z1
 
+# 共用导出文档（每个 geo 文件名仅保留最新一节）
+DEFAULT_EXPORT_MD = Path(__file__).resolve().parent / "床板6-选取体素导出.md"
+_MODEL_MARKER_RE = re.compile(r"^<!-- model: (.+?) -->\s*$", re.MULTILINE)
+_MODEL_END_RE = re.compile(r"^<!-- /model: (.+?) -->\s*$", re.MULTILINE)
+
 # xmin, xmax, ymin, ymax, zmin, zmax — 床板 6 床尾方块局部坐标（北向基准 geo）
 BED_PLATE6_PICK_CLIP_DEFAULT: tuple[float, float, float, float, float, float] = (
     0.0,
@@ -54,6 +61,89 @@ BED_PLATE6_PICK_CLIP_DEFAULT: tuple[float, float, float, float, float, float] = 
     0.0,
     32.0,
 )
+
+# 仅当确认渲染不施加骨/cube 旋转时使用 unrotated（当前床品枕类均走 axis_aligned + 骨旋转）。
+PICK_UNROTATED_CUBE_MODELS: frozenset[str] = frozenset()
+# 选取专用后处理（不改 geo）：默认空；勿对未改动的 geo 做 swap_yz / 镜像。
+PICK_SWAP_YZ_CUBE_MODELS: frozenset[str] = frozenset()
+# 与 BedPlate 渲染 +180°Y 叠加后，个别 geo 北向盒与模型左右相反；cx≈8 已对齐的勿加入。
+PICK_MIRROR_X_NORTH_MODELS: frozenset[str] = frozenset(
+    {
+        "bed_plate6_pillow_medium_pair_front",
+        "bed_plate6_pillow_medium_pair_rear",
+        "bed_plate6_pillow_small_stack",
+    }
+)
+
+
+def north_pick_boxes_unrotated_cubes_from_geo(
+    geo_path: Path,
+    *,
+    clip_bounds: tuple[float, float, float, float, float, float] = BED_PLATE6_PICK_CLIP_DEFAULT,
+) -> list[Box6]:
+    """未旋转 cube + 骨骼链（跳过骨 rotation），与床尾 Geo 静态绘制一致。"""
+    data = json.loads(geo_path.read_text(encoding="utf-8"))
+    ident = gcb._geometry_identifier(data)
+    bone_by_name = gcb._build_bone_by_name(data["minecraft:geometry"][0]["bones"])
+    xmin, xmax, ymin, ymax, zmin, zmax = clip_bounds
+    out: list[Box6] = []
+    for bn, origin, size, rot, pivot in gcb._iter_cubes_from_geo(data):
+        m_aabb = gcb._cube_aabb_model_after_bones(
+            bone_by_name,
+            bn,
+            origin,
+            size,
+            rot,
+            pivot,
+            ident,
+            apply_bone_rotation=False,
+        )
+        b = gcb._model_aabb_to_block_space(m_aabb)
+        clipped = clip_aabb_to_bounds(b[0], b[1], b[2], b[3], b[4], b[5], clip_bounds)
+        if clipped is not None:
+            out.append(clipped)
+    if not out:
+        raise ValueError(f"无有效选取盒（unrotated）：{geo_path}")
+    return out
+
+
+def apply_pick_mirror_x_north(
+    model_key: str,
+    boxes: list[Box6],
+    clip_bounds: tuple[float, float, float, float, float, float],
+) -> list[Box6]:
+    if model_key not in PICK_MIRROR_X_NORTH_MODELS:
+        return boxes
+    xmin, xmax, _, _, _, _ = clip_bounds
+    return [mirror_x_box(b, xmin, xmax) for b in boxes]
+
+
+def swap_yz_extents_box(box: Box6) -> Box6:
+    """geo 竖放 10×7×2 → 与 solo 一致的平躺 10×2×7 跨度（绕盒心交换 y/z 边长）。"""
+    x0, x1, y0, y1, z0, z1 = box
+    dy, dz = y1 - y0, z1 - z0
+    if dy <= dz + 1e-6:
+        return box
+    cy = 0.5 * (y0 + y1)
+    cz = 0.5 * (z0 + z1)
+    hy, hz = 0.5 * dz, 0.5 * dy
+    return (x0, x1, cy - hy, cy + hy, cz - hz, cz + hz)
+
+
+def apply_pick_swap_yz(
+    model_key: str,
+    boxes: list[Box6],
+    clip_bounds: tuple[float, float, float, float, float, float],
+) -> list[Box6]:
+    if model_key not in PICK_SWAP_YZ_CUBE_MODELS:
+        return boxes
+    out: list[Box6] = []
+    for b in boxes:
+        swapped = swap_yz_extents_box(b)
+        clipped = clip_aabb_to_bounds(*swapped, clip_bounds)
+        if clipped is not None:
+            out.append(clipped)
+    return out if out else boxes
 
 
 def clip_aabb_to_bounds(
@@ -147,7 +237,7 @@ def snap_half_grid(
     box: Box6,
     bounds: tuple[float, float, float, float, float, float] = BED_PLATE6_PICK_CLIP_DEFAULT,
 ) -> Box6:
-    """§3.6.1：各 min/max 四舍五入到最近 0.5，再裁回 ``bounds``。"""
+    """§3.6.1：各 min/max 四舍五入到最近 0.5，再裁回 ``bounds``（当前管线未调用，保留供日后恢复）。"""
     x0, x1, y0, y1, z0, z1 = box
 
     def snap(v: float) -> float:
@@ -164,6 +254,298 @@ def snap_half_grid(
         z0, z1 = z1, z0
     c = clip_aabb_to_bounds(x0, x1, y0, y1, z0, z1, bounds)
     return c if c is not None else box
+
+
+def model_key_from_geo(geo_path: Path) -> str:
+    """导出文档分节键：geo 文件名（不含 ``.geo.json``）。"""
+    name = geo_path.name
+    if name.endswith(".geo.json"):
+        return name[: -len(".geo.json")]
+    return geo_path.stem
+
+
+def geometry_identifier_from_geo(geo_path: Path) -> str | None:
+    try:
+        data = json.loads(geo_path.read_text(encoding="utf-8"))
+    except OSError:
+        return None
+    geoms = data.get("minecraft:geometry")
+    if not geoms or not isinstance(geoms[0], dict):
+        return None
+    desc = geoms[0].get("description")
+    if not isinstance(desc, dict):
+        return None
+    ident = desc.get("identifier")
+    return ident if isinstance(ident, str) else None
+
+
+def geo_source_path_for_display(geo_path: Path) -> str:
+    try:
+        return str(geo_path.resolve().relative_to(ROOT)).replace("\\", "/")
+    except ValueError:
+        return str(geo_path.resolve()).replace("\\", "/")
+
+
+def north_pick_boxes_raw_from_geo(
+    geo_path: Path,
+    *,
+    clip_bounds: tuple[float, float, float, float, float, float] = BED_PLATE6_PICK_CLIP_DEFAULT,
+) -> list[Box6]:
+    """裁切后、后处理前的选取盒（与 ``north_pick_boxes_from_geo`` 同源）。"""
+    model_key = model_key_from_geo(geo_path)
+    if model_key in PICK_UNROTATED_CUBE_MODELS:
+        return north_pick_boxes_unrotated_cubes_from_geo(geo_path, clip_bounds=clip_bounds)
+    xmin, xmax, ymin, ymax, zmin, zmax = clip_bounds
+    return list(
+        gcb.compute_north_pick_boxes_axis_aligned(
+            geo_path,
+            xmin=xmin,
+            xmax=xmax,
+            ymin=ymin,
+            ymax=ymax,
+            zmin=zmin,
+            zmax=zmax,
+        )
+    )
+
+
+def box_size_xyz(box: Box6) -> tuple[float, float, float]:
+    x0, x1, y0, y1, z0, z1 = box
+    return (x1 - x0, y1 - y0, z1 - z0)
+
+
+def format_boxes_markdown_table_origin_size(boxes: list[Box6], *, precision: int = 4) -> str:
+    """原点 (x,y,z) + 尺寸 (宽,高,深)，单位 1/16 格；原点为 ``Block.box`` 的 min 角。"""
+    if not boxes:
+        return "_（无盒）_\n"
+    fmt = f"{{:.{precision}f}}"
+    lines = [
+        "| # | x | y | z | 宽 | 高 | 深 |",
+        "|---:|---:|---:|---:|---:|---:|---:|",
+    ]
+    for i, b in enumerate(boxes, start=1):
+        x0, x1, y0, y1, z0, z1 = b
+        dx, dy, dz = box_size_xyz(b)
+        lines.append(
+            "| "
+            + " | ".join(
+                [
+                    str(i),
+                    fmt.format(x0),
+                    fmt.format(y0),
+                    fmt.format(z0),
+                    fmt.format(dx),
+                    fmt.format(dy),
+                    fmt.format(dz),
+                ]
+            )
+            + " |"
+        )
+    return "\n".join(lines) + "\n"
+
+
+def format_box_origin_size_line(box: Box6, *, precision: int = 4) -> str:
+    x0, x1, y0, y1, z0, z1 = box
+    dx, dy, dz = box_size_xyz(box)
+    fmt = f"{{:.{precision}f}}"
+    return (
+        f"原点 ({fmt.format(x0)}, {fmt.format(y0)}, {fmt.format(z0)})，"
+        f"尺寸 ({fmt.format(dx)} × {fmt.format(dy)} × {fmt.format(dz)})"
+    )
+
+
+def boxes_equal(a: Box6, b: Box6, eps: float = 1e-4) -> bool:
+    return all(abs(x - y) <= eps for x, y in zip(a, b))
+
+
+def pipeline_changed_raw_vs_final(raw: list[Box6], final: list[Box6]) -> bool:
+    if len(raw) != len(final):
+        return True
+    return any(not boxes_equal(r, f) for r, f in zip(raw, final))
+
+
+def _stage_a_heading(model_key: str) -> str:
+    if model_key in PICK_UNROTATED_CUBE_MODELS:
+        return (
+            "### 阶段 A — 未旋转 cube + 骨骼链（`north_pick_boxes_unrotated_cubes_from_geo`）\n\n"
+            "> **含义**：仅把 geo cube 变到床尾北向局部坐标并裁切；**未**做最小边长、半格量化、Y/Z 交换、北向 X 镜像。"
+        )
+    return (
+        "### 阶段 A — geo 轴对齐外包盒（`compute_north_pick_boxes_axis_aligned`）\n\n"
+        "> **含义**：cube 经骨骼/自身旋转后的**轴对齐外包盒**，再裁到床体范围；**未**做最小边长、半格量化、"
+        "Y/Z 交换、北向 X 镜像。斜摆时「高/深」常与视觉厚度不一致，属正常现象。"
+    )
+
+
+def _stage_b_heading() -> str:
+    return (
+        "### 阶段 B — 最终盒（写入 Java）\n\n"
+        "> **含义**：在阶段 A 基础上依次应用：**Y/Z 跨度交换**（若配置）→ **最小边长** → **半格量化** → "
+        "CLI `--mirror-x`（若指定）→ **北向 X 镜像**（若配置）。下表为**最终结果**。"
+    )
+
+
+def build_markdown_section(
+    geo_path: Path,
+    *,
+    raw_boxes: list[Box6],
+    final_boxes: list[Box6],
+    clip_bounds: tuple[float, float, float, float, float, float],
+    min_extent: float,
+    snap_half: bool,
+    mirror_x: bool,
+    generated_utc: str,
+) -> str:
+    model_key = model_key_from_geo(geo_path)
+    ident = geometry_identifier_from_geo(geo_path) or "_unknown_"
+    short = file_sha256_short(geo_path)
+    rel = geo_source_path_for_display(geo_path)
+    xmin, xmax, ymin, ymax, zmin, zmax = clip_bounds
+    changed = pipeline_changed_raw_vs_final(raw_boxes, final_boxes)
+    pick_mode = (
+        "未旋转 cube（对齐渲染）"
+        if model_key in PICK_UNROTATED_CUBE_MODELS
+        else "轴对齐（含骨骼/cube 旋转）"
+    )
+
+    lines: list[str] = [
+        f"<!-- model: {model_key} -->",
+        f"## `{model_key}`",
+        "",
+        f"- **几何标识符**：`{ident}`",
+        f"- **源 geo 路径**：`{rel}`",
+        f"- **sha256（前 12 位）**：`{short}`",
+        f"- **生成时间（UTC）**：`{generated_utc}`",
+        f"- **裁切盒**：x∈[{xmin},{xmax}] y∈[{ymin},{ymax}] z∈[{zmin},{zmax}]（1/16 格）",
+        f"- **处理管线**：最小边长 {min_extent}；半格量化 {'是' if snap_half else '否'}；"
+        f"CLI `--mirror-x` {'是' if mirror_x else '否'}",
+        f"- **后处理是否改变 原始→最终**：{'是' if changed else '否'}",
+        f"- **选取模式**：{pick_mode}",
+        f"- **Y/Z 跨度交换**：{'是' if model_key in PICK_SWAP_YZ_CUBE_MODELS else '否'}",
+        f"- **北向 X 镜像（与渲染 +180°Y 对齐）**：{'是' if model_key in PICK_MIRROR_X_NORTH_MODELS else '否'}",
+        "",
+        _stage_a_heading(model_key),
+        "",
+        format_boxes_markdown_table_origin_size(raw_boxes),
+        "",
+        _stage_b_heading(),
+        "",
+        format_boxes_markdown_table_origin_size(final_boxes),
+        "",
+        "### 最终结果（坐标 + 尺寸 → Java）",
+        "",
+        "> 原点为 `Block.box` 的 **min 角** (x0,y0,z0)；尺寸为宽×高×深 (Δx,Δy,Δz)。单位：1/16 格。",
+        "",
+    ]
+    for i, b in enumerate(final_boxes, start=1):
+        x0, x1, y0, y1, z0, z1 = b
+        lines.append(f"{i}. {format_box_origin_size_line(b)}")
+        lines.append(
+            f"   → `Block.box({x0:.4f}, {y0:.4f}, {z0:.4f}, {x1:.4f}, {y1:.4f}, {z1:.4f})`"
+        )
+    lines.extend(
+        [
+            "",
+            "> **说明**：斜摆 cube 经欧拉旋转后取轴对齐外包盒，Δy/Δz 常明显大于视觉厚度；"
+            "若与 `BedPlate6PickShapesNorth` 中溯源 sha 一致，则 Java **未**额外补偿，问题在脚本/旋转链。",
+            "",
+            f"<!-- /model: {model_key} -->",
+            "",
+        ]
+    )
+    return "\n".join(lines)
+
+
+def _parse_model_sections(text: str) -> dict[str, str]:
+    """按 ``<!-- model: key -->`` … ``<!-- /model: key -->`` 解析各节正文（含标记行）。"""
+    sections: dict[str, str] = {}
+    for m in _MODEL_MARKER_RE.finditer(text):
+        key = m.group(1)
+        end = _MODEL_END_RE.search(text, m.end())
+        if end is None or end.group(1) != key:
+            continue
+        end_pos = end.end()
+        sections[key] = text[m.start() : end_pos].rstrip() + "\n"
+    return sections
+
+
+def _export_md_header() -> str:
+    return (
+        "# 床板 6 选取体素导出\n\n"
+        "> 由 `tools/bed6/bed_plate6_voxel_pick_from_geo.py --export-md` 维护"
+        "（默认写入本目录 `床板6-选取体素导出.md`）。"
+        "同一 geo **仅保留最新一节**（按文件名 `model_key` 覆盖）。\n"
+        "坐标为床尾北向局部 **1/16 格**；默认裁切 z∈[0,32]。\n\n"
+        "## 阶段 A / B 区别\n\n"
+        "| 阶段 | 内容 | 用途 |\n"
+        "|------|------|------|\n"
+        "| **A** | geo → 轴对齐外包盒，再裁到床体范围 | 对照 geo 与旋转后外包盒是否合理；**不是**写入游戏的盒 |\n"
+        "| **B** | A + 最小边长、半格量化、Y/Z 交换、北向镜像等 | **写入 `BedPlate6PickShapesNorth` 的最终盒** |\n\n"
+        "表中 **x,y,z** 为盒原点（min 角），**宽/高/深** 为三轴跨度。\n\n"
+    )
+
+
+def _rebuild_index(sections: dict[str, str]) -> str:
+    rows = ["<!-- EXPORT_INDEX -->", "| 模型 | 最后更新 (UTC) |", "|------|----------------|"]
+    meta_ts: dict[str, str] = {}
+    for key, body in sections.items():
+        m = re.search(r"\*\*(?:generated_utc|生成时间（UTC）)\*\*：`([^`]+)`", body)
+        meta_ts[key] = m.group(1) if m else "—"
+    for key in sorted(sections.keys()):
+        rows.append(f"| `{key}` | {meta_ts[key]} |")
+    rows.append("<!-- /EXPORT_INDEX -->")
+    return "\n".join(rows) + "\n\n"
+
+
+def upsert_export_markdown(md_path: Path, model_key: str, section_body: str) -> None:
+    """写入或覆盖 ``model_key`` 对应节，并刷新索引表。"""
+    if md_path.is_file():
+        existing = md_path.read_text(encoding="utf-8")
+        sections = _parse_model_sections(existing)
+    else:
+        sections = {}
+    # 移除旧版误用 Path.stem 产生的 ``*.geo`` 重复节
+    legacy = f"{model_key}.geo"
+    if legacy in sections:
+        del sections[legacy]
+    sections[model_key] = section_body.rstrip() + "\n"
+    index = _rebuild_index(sections)
+    body_parts = [sections[k] for k in sorted(sections.keys())]
+    md_path.write_text(_export_md_header() + index + "\n".join(body_parts), encoding="utf-8")
+
+
+def export_geo_to_markdown(
+    geo_path: Path,
+    md_path: Path,
+    *,
+    min_extent: float = 0.5,
+    snap_half: bool = True,
+    clip_bounds: tuple[float, float, float, float, float, float] = BED_PLATE6_PICK_CLIP_DEFAULT,
+    mirror_x: bool = False,
+) -> str:
+    """生成并 upsert 单模型 Markdown 节；返回 model_key。"""
+    generated_utc = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    raw_boxes = north_pick_boxes_raw_from_geo(geo_path, clip_bounds=clip_bounds)
+    final_boxes = north_pick_boxes_from_geo(
+        geo_path,
+        min_extent=min_extent,
+        snap_half=snap_half,
+        clip_bounds=clip_bounds,
+        mirror_x=mirror_x,
+    )
+    model_key = model_key_from_geo(geo_path)
+    section = build_markdown_section(
+        geo_path,
+        raw_boxes=raw_boxes,
+        final_boxes=final_boxes,
+        clip_bounds=clip_bounds,
+        min_extent=min_extent,
+        snap_half=snap_half,
+        mirror_x=mirror_x,
+        generated_utc=generated_utc,
+    )
+    upsert_export_markdown(md_path, model_key, section)
+    return model_key
 
 
 def file_sha256_short(path: Path, n: int = 12) -> str:
@@ -194,36 +576,42 @@ def north_pick_boxes_from_geo(
     geo_path: Path,
     *,
     min_extent: float = 0.5,
-    snap_half: bool = True,
+    snap_half: bool = False,
     clip_bounds: tuple[float, float, float, float, float, float] = BED_PLATE6_PICK_CLIP_DEFAULT,
     mirror_x: bool = False,
 ) -> list[Box6]:
     """
-    读取 geo，返回北向基准、裁切盒内选取盒列表（经最小边长处理；可选半格量化）。
+    读取 geo，返回北向基准、裁切盒内选取盒列表（经最小边长处理；半格量化默认关闭）。
 
     默认 ``clip_bounds`` 为床板 6 床尾局部 ``[0,16]×[0,16]×[0,32]``；若只要单格可传入
     ``(0,16,0,16,0,16)`` 并调用 ``geo_collision_box.compute_north_pick_boxes_full_cell`` 等价裁切。
     """
     xmin, xmax, ymin, ymax, zmin, zmax = clip_bounds
-    raw_boxes = gcb.compute_north_pick_boxes_axis_aligned(
-        geo_path,
-        xmin=xmin,
-        xmax=xmax,
-        ymin=ymin,
-        ymax=ymax,
-        zmin=zmin,
-        zmax=zmax,
-    )
+    model_key = model_key_from_geo(geo_path)
+    if model_key in PICK_UNROTATED_CUBE_MODELS:
+        raw_boxes = north_pick_boxes_unrotated_cubes_from_geo(geo_path, clip_bounds=clip_bounds)
+    else:
+        raw_boxes = gcb.compute_north_pick_boxes_axis_aligned(
+            geo_path,
+            xmin=xmin,
+            xmax=xmax,
+            ymin=ymin,
+            ymax=ymax,
+            zmin=zmin,
+            zmax=zmax,
+        )
+    raw_boxes = apply_pick_swap_yz(model_key, raw_boxes, clip_bounds)
     out: list[Box6] = []
     for b in raw_boxes:
         fixed = ensure_min_extents_bounds(b, clip_bounds, min_extent=min_extent)
-        if snap_half:
-            fixed = snap_half_grid(fixed, clip_bounds)
-            fixed = ensure_min_extents_bounds(fixed, clip_bounds, min_extent=min_extent)
+        # §3.6.1 半格量化暂关：最近 0.5 取整易使 z 等轴向同一侧偏移（如形态 3 rear）。
+        # if snap_half:
+        #     fixed = snap_half_grid(fixed, clip_bounds)
+        #     fixed = ensure_min_extents_bounds(fixed, clip_bounds, min_extent=min_extent)
         if mirror_x:
             fixed = mirror_x_box(fixed, xmin, xmax)
         out.append(fixed)
-    return out
+    return apply_pick_mirror_x_north(model_key, out, clip_bounds)
 
 
 def emit_java_shapes_or(
@@ -283,11 +671,23 @@ def main() -> None:
         default=None,
         help="裁切盒 xmin xmax ymin ymax zmin zmax（像素=1/16 格；默认与 BED_PLATE6_PICK_CLIP_DEFAULT 一致）",
     )
-    p.add_argument("--no-snap", action="store_true", help="不做 0.5 网格量化（§3.6.1）")
+    p.add_argument(
+        "--snap-half",
+        action="store_true",
+        help="启用 §3.6.1 半格量化（默认关闭）",
+    )
     p.add_argument("--min-extent", type=float, default=0.5, help="单盒三轴最小边长（默认 0.5）")
     p.add_argument("--precision", type=int, default=4, help="Java 小数位（默认 4）")
     p.add_argument("--method-name", type=str, default="buildPickShapeNorthUnionGenerated", help="生成的 Java 方法名")
     p.add_argument("--mirror-x", action="store_true", help="输出前按裁切盒 x 中线镜像（用于与渲染手系对齐）")
+    p.add_argument(
+        "--export-md",
+        nargs="?",
+        const=str(DEFAULT_EXPORT_MD),
+        default=None,
+        metavar="PATH",
+        help=f"将本 geo 的体素数据写入共用 Markdown（默认 {DEFAULT_EXPORT_MD.name}）；同文件名覆盖旧节",
+    )
     args = p.parse_args()
     geo = args.geo
     if not geo.is_file():
@@ -300,12 +700,24 @@ def main() -> None:
     boxes = north_pick_boxes_from_geo(
         geo,
         min_extent=args.min_extent,
-        snap_half=not args.no_snap,
+        snap_half=args.snap_half,
         clip_bounds=clip_bounds,
         mirror_x=args.mirror_x,
     )
     if not boxes:
         raise SystemExit("无有效选取盒（检查 geo 是否与裁切盒相交；可试 --clip 0 16 0 16 0 32）")
+    if args.export_md is not None:
+        md_path = Path(args.export_md)
+        key = export_geo_to_markdown(
+            geo,
+            md_path,
+            min_extent=args.min_extent,
+            snap_half=args.snap_half,
+            clip_bounds=clip_bounds,
+            mirror_x=args.mirror_x,
+        )
+        print(f"// exported markdown section: {key} -> {md_path}", file=sys.stderr)
+
     text = emit_java_shapes_or(
         boxes,
         geo,

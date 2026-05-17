@@ -19,7 +19,7 @@
    再取轴对齐包围盒（与开发时用于抽奖机的脚本一致）。
 3. 再对八个角点施加**所属骨骼及其父链**上的 ``rotation``（绕各自 ``pivot``），**自叶向根**顺序与 GeckoLib /
    Blockbench 对子骨顶点的复合变换一致（旧版若按根→叶施加会与预览不符，并可能导致部分倾角窗裁切交为空）。
-   对 ``geometry.plain_glass_window_*``，骨骼链欧拉取 ``(-rx,-ry,rz)`` 以与 Gecko 读入 Bedrock 骨骼旋转后的顶点一致；
+   对 ``geometry.plain_glass_window_*`` / ``geometry.bed_plate6_*``，骨骼链欧拉取 ``(-rx,-ry,rz)`` 以与 Gecko 读入 Bedrock 骨骼旋转后的顶点一致；
    geo 中 ``rotation`` 须与 Blockbench Bedrock 导出一致（``bedrock.js`` compileGroup：``rx,ry`` 相对工程内取反）。
 4. 将模型坐标映射到方块内 0～16：x' = x + 8，z' = z + 8，y' = y（与模组内 Pestle/果酱锅等约定一致）。
 5. **默认输出**：各 cube 与 **水平单格 [0,16]×[0,16]、竖直不裁顶** 求交（y 可 >16，以包含超高模型），再对所有交盒取 **全局 min/max**，得到外接轴对齐盒（非布尔并集体积）。
@@ -97,13 +97,20 @@ def _plain_glass_window_geo(ident: str | None) -> bool:
     return ident is not None and ident.startswith("geometry.plain_glass_window_")
 
 
+def _geckolib_bedrock_bone_rotation_geo(ident: str | None) -> bool:
+    """床板 6 等与玻璃窗相同：JSON 经 BB 导出后，顶点姿态须用 ``(-rx,-ry,rz)`` 才与 GeckoLib 一致。"""
+    if ident is None:
+        return False
+    return ident.startswith("geometry.plain_glass_window_") or ident.startswith("geometry.bed_plate6_")
+
+
 def _bone_rotation_deg_for_collision(
     rot_deg: list[float] | tuple[float, ...], geometry_identifier: str | None
 ) -> tuple[float, float, float]:
     rx, ry, rz = (float(rot_deg[0]), float(rot_deg[1]), float(rot_deg[2]))
     # GeckoLib 读入 Bedrock geo 骨骼旋转时仍对 x/y 分量取反；与 ``bedrock.js`` 写入的 JSON 组合后，顶点与碰撞脚本中
     # 对骨骼链施加 euler(-rx,-ry,rz) 一致（见 Blockbench 源码 ``js/formats/bedrock/bedrock.js`` compileGroup）。
-    if _plain_glass_window_geo(geometry_identifier):
+    if _geckolib_bedrock_bone_rotation_geo(geometry_identifier):
         if abs(rx) > 1e-9 or abs(ry) > 1e-9 or abs(rz) > 1e-9:
             return (-rx, -ry, rz)
     return (rx, ry, rz)
@@ -126,13 +133,23 @@ def _cube_aabb_model(
     size: list[float],
     rotation: list[float] | tuple[float, ...] | None,
     pivot: tuple[float, float, float],
+    geometry_identifier: str | None = None,
 ) -> tuple[float, float, float, float, float, float]:
     """仅 cube 级旋转、**不含**骨骼链；与 ``_cube_eight_corners_model`` 的 AABB 一致。"""
-    pts = _cube_eight_corners_model(origin, size, rotation, pivot)
+    pts = _cube_eight_corners_model(origin, size, rotation, pivot, geometry_identifier)
     xs = [p[0] for p in pts]
     ys = [p[1] for p in pts]
     zs = [p[2] for p in pts]
     return (min(xs), max(xs), min(ys), max(ys), min(zs), max(zs))
+
+
+def _cube_rotation_deg_for_collision(
+    rotation: list[float] | tuple[float, ...] | None,
+    geometry_identifier: str | None,
+) -> list[float] | tuple[float, ...] | None:
+    if rotation is None:
+        return None
+    return _bone_rotation_deg_for_collision(rotation, geometry_identifier)
 
 
 def _cube_eight_corners_model(
@@ -140,6 +157,7 @@ def _cube_eight_corners_model(
     size: list[float],
     rotation: list[float] | tuple[float, ...] | None,
     pivot: tuple[float, float, float],
+    geometry_identifier: str | None = None,
 ) -> list[tuple[float, float, float]]:
     """cube 八个角点（模型空间），先施加 cube 自身 rotation（与 ``_cube_aabb_model`` 一致）。"""
     ox, oy, oz = origin
@@ -151,11 +169,12 @@ def _cube_eight_corners_model(
                 corners.append((ox + dx, oy + dy, oz + dz))
     if rotation is None:
         return corners
+    rot = _cube_rotation_deg_for_collision(rotation, geometry_identifier)
     px, py, pz = pivot
     out: list[tuple[float, float, float]] = []
     for c in corners:
         rel = (c[0] - px, c[1] - py, c[2] - pz)
-        rr = _apply_rot_euler_xyz_deg(rel, rotation)
+        rr = _apply_rot_euler_xyz_deg(rel, rot)
         out.append((rr[0] + px, rr[1] + py, rr[2] + pz))
     return out
 
@@ -188,10 +207,13 @@ def _rotate_model_point_by_bone_chain(
     bone_name: str,
     bone_by_name: dict[str, dict],
     geometry_identifier: str | None,
+    *,
+    apply_bone_rotation: bool = True,
 ) -> tuple[float, float, float]:
     """对模型空间点施加 ``bone_name`` 及其祖先骨骼上的 ``rotation``（绕各自 ``pivot``，欧拉顺序同 cube）。
 
     复合顺序为**叶→根**（与 Gecko / Blockbench：子空间点先经子骨、再经父骨……一致）。
+    ``apply_bone_rotation=False`` 时跳过各骨 ``rotation``（床品 Geo 静态绘制与碰撞旋转不一致时用）。
     """
     q = p
     for bn in reversed(_bone_chain_root_first(bone_name, bone_by_name)):
@@ -202,6 +224,8 @@ def _rotate_model_point_by_bone_chain(
         if not isinstance(rot, (list, tuple)) or len(rot) != 3:
             continue
         if all(abs(float(x)) < 1e-9 for x in rot):
+            continue
+        if not apply_bone_rotation:
             continue
         pivot = tuple(float(x) for x in b.get("pivot", (0.0, 0.0, 0.0)))
         rel = (q[0] - pivot[0], q[1] - pivot[1], q[2] - pivot[2])
@@ -218,11 +242,16 @@ def _cube_aabb_model_after_bones(
     rotation: list[float] | tuple[float, ...] | None,
     pivot: tuple[float, float, float],
     geometry_identifier: str | None,
+    *,
+    apply_bone_rotation: bool = True,
 ) -> tuple[float, float, float, float, float, float]:
     """cube 角点经 cube 旋转后再经骨骼链旋转，取模型空间 AABB。"""
-    corners = _cube_eight_corners_model(origin, size, rotation, pivot)
+    corners = _cube_eight_corners_model(origin, size, rotation, pivot, geometry_identifier)
     transformed = [
-        _rotate_model_point_by_bone_chain(c, bone_name, bone_by_name, geometry_identifier) for c in corners
+        _rotate_model_point_by_bone_chain(
+            c, bone_name, bone_by_name, geometry_identifier, apply_bone_rotation=apply_bone_rotation
+        )
+        for c in corners
     ]
     xs = [p[0] for p in transformed]
     ys = [p[1] for p in transformed]

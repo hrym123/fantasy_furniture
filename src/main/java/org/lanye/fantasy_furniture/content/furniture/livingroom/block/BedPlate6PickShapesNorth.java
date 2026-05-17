@@ -310,13 +310,13 @@ public final class BedPlate6PickShapesNorth {
   // bed_plate6_voxel_pick_from_geo: sha256[:12]=e4fa448485f0 bed_plate6_duvet_cover.geo.json
   private static VoxelShape duvetCoverNorth() {
     VoxelShape s = Shapes.empty();
-    s = Shapes.or(s, Block.box(1.0, 6.5, 18.0, 15.0, 9.5, 24.0));
-    s = Shapes.or(s, Block.box(0.5, 6.5, 0.0, 15.5, 8.5, 18.0));
-    s = Shapes.or(s, Block.box(0.0, 3.5, 0.0, 16.0, 6.5, 24.0));
-    s = Shapes.or(s, Block.box(14.5, 6.5, 0.0, 16.0, 9.0, 18.0));
-    s = Shapes.or(s, Block.box(14.5, 6.5, 18.0, 16.0, 10.0, 24.0));
-    s = Shapes.or(s, Block.box(0.0, 6.5, 0.0, 1.5, 9.0, 18.0));
-    s = Shapes.or(s, Block.box(0.0, 6.5, 18.0, 1.5, 10.0, 24.0));
+    s = Shapes.or(s, Block.box(0.8, 6.4, 18.0, 15.2, 9.4, 24.0));
+    s = Shapes.or(s, Block.box(0.3, 6.4, 0.0, 15.7, 8.4, 18.0));
+    s = Shapes.or(s, Block.box(0.0, 3.5522, 0.0, 16.0, 6.5522, 24.0));
+    s = Shapes.or(s, Block.box(14.6176, 6.5522, 0.0, 16.0, 9.1654, 18.0));
+    s = Shapes.or(s, Block.box(14.5522, 6.4, 18.0, 16.0, 9.937, 24.0));
+    s = Shapes.or(s, Block.box(0.0, 6.5522, 0.0, 1.3824, 9.1654, 18.0));
+    s = Shapes.or(s, Block.box(0.0, 6.4, 18.0, 1.4478, 9.937, 24.0));
     return s;
   }
 
@@ -353,19 +353,19 @@ public final class BedPlate6PickShapesNorth {
 
   // bed_plate6_voxel_pick_from_geo: sha256[:12]=eb7dc3507626 bed_plate6_pillow_medium_pair_front.geo.json
   private static VoxelShape pillowMediumPairFrontNorth() {
-    return Block.box(1.0, 5.5, 24.5, 11.0, 12.5, 29.0);
+    return Block.box(5.0, 6.2284, 24.7042, 15.0, 13.4609, 29.2307);
   }
 
   // bed_plate6_voxel_pick_from_geo: sha256[:12]=285c9348ed54 bed_plate6_pillow_medium_pair_rear.geo.json
   private static VoxelShape pillowMediumPairRearNorth() {
-    return Block.box(5.0, 7.0, 28.5, 15.0, 14.0, 30.5);
+    return Block.box(1.0, 7.06, 28.7, 11.0, 14.06, 30.7);
   }
 
   // bed_plate6_voxel_pick_from_geo: sha256[:12]=9a35b8057aa9 bed_plate6_pillow_small_stack.geo.json
   private static VoxelShape pillowSmallStackNorth() {
     VoxelShape s = Shapes.empty();
-    s = Shapes.or(s, Block.box(11.5, 7.5, 26.0, 15.5, 11.5, 27.5));
-    s = Shapes.or(s, Block.box(12.0, 8.0, 26.0, 15.0, 11.0, 28.0));
+    s = Shapes.or(s, Block.box(0.4, 7.3085, 27.2706, 4.4, 11.0422, 28.8937));
+    s = Shapes.or(s, Block.box(0.9, 7.6173, 27.0, 3.9, 10.7716, 29.0719));
     return s;
   }
 }
