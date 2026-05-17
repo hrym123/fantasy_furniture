@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>幻想家具 · 开发工具</title>
+  <link rel="stylesheet" href="/static/app.css" />
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <header class="brand">
+        <h1>幻想家具</h1>
+        <p class="sub">开发工具 · 本地</p>
+      </header>
+      <nav id="catalog" class="catalog" aria-label="工具分类"></nav>
+    </aside>
+    <main class="main">
+      <section class="panel form-panel">
+        <header class="panel-head">
+          <h2 id="tool-title">请选择工具</h2>
+          <p id="tool-desc" class="muted"></p>
+        </header>
+        <form id="tool-form" class="tool-form" hidden>
+          <div id="fields"></div>
+          <div class="actions">
+            <button type="submit" id="btn-run" class="btn primary">运行</button>
+            <button type="button" id="btn-clear-out" class="btn ghost">清空输出</button>
+          </div>
+        </form>
+        <p id="empty-hint" class="empty-hint">从左侧选择一项工具。</p>
+      </section>
+      <section class="panel out-panel">
+        <header class="panel-head row">
+          <h2>输出</h2>
+          <span id="job-status" class="badge idle">就绪</span>
+        </header>
+        <pre id="output" class="output" aria-live="polite"></pre>
+      </section>
+    </main>
+  </div>
+  <script src="/static/app.js"></script>
+</body>
+</html>

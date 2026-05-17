@@ -11,9 +11,21 @@
 | [`collision/`](collision/) | ③ | `geo` / 方块模型 → 碰撞外接盒、多盒明细 |
 | [`bed6/`](bed6/) | ④⑤ | 床板 6：选取 `VoxelShape`、贴图导出、被单命名、枕头主色对照、单测 |
 | [`glass/`](glass/) | ⑥ | 普通玻璃窗：贴图 stem 库、语言/主色对照 |
-| （根目录） | ⑦ | [`paths.py`](paths.py) 路径常量、[`tools_gui.py`](tools_gui.py) 图形启动器、本 README |
+| [`launcher/`](launcher/) | — | 工具注册表与命令拼装（GUI / Web 共用） |
+| [`web/`](web/) | — | FastAPI 服务与静态前端 |
+| （根目录） | ⑦ | [`paths.py`](paths.py)、[`tools_gui.py`](tools_gui.py)（tkinter）、[`tools_webview.py`](tools_webview.py)（内嵌 Web）、本 README |
 
-图形启动器：在仓库根执行 `python tools/tools_gui.py`。
+**图形界面（二选一）**
+
+- tkinter：`python tools/tools_gui.py`
+- **内嵌 Web（FastAPI + pywebview）**：
+
+```text
+pip install -r tools/requirements-web.txt
+python tools/tools_webview.py
+```
+
+仅 HTTP + 系统浏览器：`python tools/tools_webview.py --server-only`
 
 ---
 
@@ -28,7 +40,7 @@
 | **④ 床板 6 → 选取形状** | `tools/bed6/` | [`bed_plate6_voxel_pick_from_geo.py`](bed6/bed_plate6_voxel_pick_from_geo.py)、[`test_bed_plate6_voxel_pick_from_geo.py`](bed6/test_bed_plate6_voxel_pick_from_geo.py) | `VoxelShape` 片段 + 单测 |
 | **⑤ 床板 6 → 贴图与工程** | `tools/bed6/` | [`export_bed_plate6_texture_from_bbmodel.py`](bed6/export_bed_plate6_texture_from_bbmodel.py) 等 | 见下表 |
 | **⑥ 普通玻璃窗** | `tools/glass/` | [`plain_glass_window_texture_naming.py`](glass/plain_glass_window_texture_naming.py)、[`plain_glass_window_lang_display_colors.py`](glass/plain_glass_window_lang_display_colors.py) | 命名库 + 语言对照 |
-| **⑦ 开发环境** | `tools/` | [`paths.py`](paths.py)、[`tools_gui.py`](tools_gui.py) | 路径常量、GUI |
+| **⑦ 开发环境** | `tools/` | [`paths.py`](paths.py)、[`tools_gui.py`](tools_gui.py)、[`tools_webview.py`](tools_webview.py) | 路径常量、tkinter / 内嵌 Web 启动器 |
 
 ### ⑤ 床板 6 脚本列表（均在 `bed6/`）
 
