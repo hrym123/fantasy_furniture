@@ -14,6 +14,8 @@ import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.RegistryObject;
 import org.lanye.fantasy_furniture.FantasyFurniture;
+import org.lanye.fantasy_furniture.bootstrap.block.BedPlate6Registration;
+import org.lanye.fantasy_furniture.bootstrap.block.FurnitureGeolibBlockCatalog;
 import org.lanye.fantasy_furniture.bootstrap.block.ModBlocks;
 import org.lanye.fantasy_furniture.bootstrap.block.PlainGlassWindowRegistration;
 
@@ -64,36 +66,14 @@ public final class ModCreativeTabs {
                 ModBlocks.HALF_HALF_POT.item()::get,
                 ModBlocks.LOTTERY_MACHINE.item()::get,
                 ModBlocks.SWEEPER_DOCK.item()::get,
-                ModBlocks.GREEN_SOFA.item()::get,
-                ModBlocks.BED_PLATE6.item()::get,
-                ModItems.BED_PLATE6_DISASSEMBLY_GLOVE::get,
-                ModItems.BED_PLATE6_DUVET_1::get,
-                ModItems.BED_PLATE6_DUVET_2::get,
-                ModItems.BED_PLATE6_DUVET_3::get,
-                ModItems.BED_PLATE6_DUVET_4::get,
-                ModItems.BED_PLATE6_DUVET_5::get,
-                ModItems.BED_PLATE6_DUVET_6::get,
-                ModItems.BED_PLATE6_DUVET_7::get,
-                ModItems.BED_PLATE6_DUVET_COVER_1::get,
-                ModItems.BED_PLATE6_DUVET_COVER_2::get,
-                ModItems.BED_PLATE6_DUVET_COVER_3::get,
-                ModItems.BED_PLATE6_DUVET_COVER_4::get,
-                ModItems.BED_PLATE6_DUVET_COVER_5::get,
-                ModItems.BED_PLATE6_DUVET_COVER_6::get);
-        for (var pillow : ModItems.BED_PLATE6_PILLOW_LARGE_ITEMS) {
-            list.add(pillow::get);
-        }
-        for (var pillow : ModItems.BED_PLATE6_PILLOW_MEDIUM_ITEMS) {
-            list.add(pillow::get);
-        }
-        for (var pillow : ModItems.BED_PLATE6_PILLOW_SMALL_ITEMS) {
-            list.add(pillow::get);
-        }
+                ModBlocks.GREEN_SOFA.item()::get);
+        list.addAll(BedPlate6Registration.creativeTabSegment());
         Collections.addAll(
                 list,
                 ModBlocks.KITCHEN_COUNTER.item()::get,
                 ModBlocks.KITCHEN_COUNTER_CABINET.item()::get,
                 ModBlocks.COMBINED_ORNAMENT.item()::get);
+        list.addAll(FurnitureGeolibBlockCatalog.creativeTabItems());
         for (var ro : PlainGlassWindowRegistration.items()) {
             list.add(ro::get);
         }

@@ -7,6 +7,7 @@ import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
 import org.lanye.fantasy_furniture.FantasyFurniture;
+import org.lanye.fantasy_furniture.bootstrap.block.BedPlate6Registration;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.blockentity.BanquetteBlockEntity;
 import org.lanye.reverie_core.geolib.bed.BedPlateBaseBlockEntity;
 import org.lanye.fantasy_furniture.content.furniture.decor.blockentity.CombinedOrnamentBlockEntity;
@@ -22,6 +23,7 @@ import org.lanye.fantasy_furniture.content.furniture.kitchen.blockentity.OvenBlo
 import org.lanye.fantasy_furniture.content.furniture.kitchen.blockentity.PestleBowlBlockEntity;
 import org.lanye.fantasy_furniture.content.sweeper.blockentity.SweeperDockBlockEntity;
 import org.lanye.reverie_core.geolib.AnimatedBlockEntry;
+import org.lanye.reverie_core.geolib.declarative.CatalogGeolibBlockEntity;
 
 /**
  * 模组方块与对应 {@link net.minecraft.world.item.BlockItem} 的 {@link DeferredRegister} 入口，以及对外
@@ -128,10 +130,14 @@ public final class ModBlocks {
             FurnitureAnimatedBlocks.COMBINED_ORNAMENT;
     public static final AnimatedBlockEntry<SweeperDockBlockEntity> SWEEPER_DOCK =
             FurnitureAnimatedBlocks.SWEEPER_DOCK;
-    public static final AnimatedBlockEntry<BedPlateBaseBlockEntity> BED_PLATE6 = FurnitureAnimatedBlocks.BED_PLATE6;
+    public static final AnimatedBlockEntry<BedPlateBaseBlockEntity> BED_PLATE6 = BedPlate6Registration.mainEntry();
 
     public static final AnimatedBlockEntry<PlainGlassWindowBlockEntity> PLAIN_GLASS_WINDOW =
             FurnitureAnimatedBlocks.PLAIN_GLASS_WINDOW;
+
+    /** 声明式 catalog 注册（{@link FurnitureGeolibBlockCatalog}）。 */
+    public static final AnimatedBlockEntry<CatalogGeolibBlockEntity> SPRUCE_TABLE =
+            FurnitureGeolibBlockCatalog.SPRUCE_TABLE;
 
     public static void register(IEventBus modEventBus) {
         BLOCKS.register(modEventBus);

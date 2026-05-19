@@ -12,15 +12,17 @@ import org.lanye.fantasy_furniture.content.sweeper.blockentity.SweeperDockBlockE
 import org.lanye.fantasy_furniture.bootstrap.block.ModBlocks;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.client.model.BanquetteBlockGeoModel;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.client.renderer.BanquetteGeoBlockRenderer;
-import org.lanye.fantasy_furniture.content.furniture.livingroom.client.renderer.BedPlate6GeoBlockRenderer;
 import org.lanye.fantasy_furniture.content.furniture.decor.client.renderer.CombinedOrnamentGeoBlockRenderer;
 import org.lanye.fantasy_furniture.content.furniture.decor.client.renderer.PlainGlassWindowGeoBlockRenderer;
 import org.lanye.fantasy_furniture.content.furniture.common.client.renderer.FurnitureSeatRenderer;
 import org.lanye.fantasy_furniture.content.sweeper.client.renderer.SweeperRobotRenderer;
 import org.lanye.fantasy_furniture.bootstrap.entity.ModEntities;
 import org.lanye.fantasy_furniture.content.sweeper.menu.ModMenuTypes;
+import org.lanye.fantasy_furniture.bootstrap.block.BedPlate6Registration;
+import org.lanye.fantasy_furniture.bootstrap.block.FurnitureGeolibBlockCatalog;
 import org.lanye.reverie_core.geolib.client.AnimatedBlockClientRegistration;
 import org.lanye.reverie_core.geolib.client.GeolibAnimatedBlockRenderers;
+import org.lanye.reverie_core.geolib.declarative.client.ReflectiveGeolibClientRegistration;
 
 @Mod.EventBusSubscriber(modid = FantasyFurniture.MODID, bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
 public final class ClientModEvents {
@@ -49,8 +51,7 @@ public final class ClientModEvents {
         AnimatedBlockClientRegistration.registerBlockEntityRenderer(
                 ModBlocks.GREEN_SOFA,
                 GeolibAnimatedBlockRenderers.defaultGeoRendererProvider(FantasyFurniture.MODID, "green_sofa"));
-        AnimatedBlockClientRegistration.registerBlockEntityRenderer(
-                ModBlocks.BED_PLATE6, ctx -> new BedPlate6GeoBlockRenderer());
+        BedPlate6Registration.registerClientRenderer();
         AnimatedBlockClientRegistration.registerBlockEntityRenderer(
                 ModBlocks.KITCHEN_COUNTER_CABINET,
                 GeolibAnimatedBlockRenderers.defaultGeoRendererProvider(
@@ -68,6 +69,8 @@ public final class ClientModEvents {
                         FantasyFurniture.MODID, "sweeper_dock", SweeperDockBlockEntity::getTextureLocation));
         AnimatedBlockClientRegistration.registerBlockEntityRenderer(
                 ModBlocks.PLAIN_GLASS_WINDOW, ctx -> new PlainGlassWindowGeoBlockRenderer());
+        ReflectiveGeolibClientRegistration.registerDefaultGeoRenderers(
+                FantasyFurniture.MODID, FurnitureGeolibBlockCatalog.entries());
     }
 
     @SubscribeEvent
