@@ -4,7 +4,7 @@
 将 Blockbench .bbmodel 导出为「幻想家具」模组可直接引用的资源：
 
 - ``geo/block/<asset_id>.geo.json``
-- ``textures/block/<asset_id>.png``；多槽位时默认还会写 ``<asset_id>_tex<N>.png``
+- ``textures/block/<asset_id>_1.png`` … ``<asset_id>_N.png``（按 ``textures[]`` 顺序 1 起编号；槽位内容重复时仍各写一份，避免误用同一张图填满多槽）
 - ``animations/.../<asset_id>.animation.json``：**仅当** bbmodel 有内嵌动画数据，或 ``geckolib_filepath_cache.animation`` 指向已存在的 JSON 时才写入（否则跳过，静态窗不会生成占位）。``--delete-stale-animation`` 可在无动画时删除目标路径旧文件。
 - 窗户等多造型共用贴图：``--shared-textures plain_glass_window`` → ``textures/block/plain_glass_window_<槽>_<颜色>.png``（颜色由像素主色推断；**导出开始前会删除** ``textures/block/plain_glass_window_*.png``，避免旧占位图与新文件名并存导致「九张看起来一样」；须同步 Java ``PlainGlassWindowSharedTextures.TEXTURE_STEMS``）。勿与 ``--only-primary-texture`` 联用除非只需槽 0。
 
@@ -35,6 +35,7 @@ from __future__ import annotations
 
 import argparse
 import base64
+import hashlib
 import importlib.util
 import json
 import re
@@ -54,6 +55,14 @@ if str(_TOOLS_BOOT) not in sys.path:
 from paths import FF_ROOT, TOOLS_ROOT  # noqa: E402
 
 DEFAULT_ASSETS = FF_ROOT / "src/main/resources/assets/fantasy_furniture"
+
+
+def _log_path(path: Path) -> str:
+    """日志用相对路径；输出目录不在 FF_ROOT 下时退回绝对路径（如 Web 预览临时目录）。"""
+    try:
+        return str(path.relative_to(FF_ROOT))
+    except ValueError:
+        return str(path)
 
 
 def _plain_glass_texture_file(
@@ -171,6 +180,7 @@ def export_textures_to_mod(
     written: list[Path] = []
     base_dir = bbmodel_path.parent
     plain_glass_flat = shared_textures_key == "plain_glass_window"
+    content_hash_first_slot: dict[str, int] = {}
 
     if not dry_run:
         textures_out.mkdir(parents=True, exist_ok=True)
@@ -192,16 +202,28 @@ def export_textures_to_mod(
         file_format = tex.get("file_format")
         written_one = False
 
+        slot_no = idx + 1
+
         def out_path_for_ext(
             ext: str, *, raw: bytes | None = None, src: Path | None = None
         ) -> Path:
             if plain_glass_flat:
                 return _plain_glass_texture_file(textures_out, idx, ext, raw=raw, src_file=src)
             if shared_textures_key:
-                return textures_out / shared_textures_key / f"t{idx}.{ext}"
-            if idx == 0:
-                return textures_out / f"{asset_id}.{ext}"
-            return textures_out / f"{asset_id}_tex{idx}.{ext}"
+                return textures_out / shared_textures_key / f"{slot_no}.{ext}"
+            return textures_out / f"{asset_id}_{slot_no}.{ext}"
+
+        def note_duplicate_payload(payload: bytes) -> None:
+            digest = hashlib.sha256(payload).hexdigest()
+            first = content_hash_first_slot.get(digest)
+            if first is not None:
+                print(
+                    f"注意: textures[{idx}] 与 textures[{first - 1}] 贴图内容相同，"
+                    f"仍写出 #{slot_no}（{asset_id}_{slot_no}）",
+                    file=sys.stderr,
+                )
+            else:
+                content_hash_first_slot[digest] = slot_no
 
         if isinstance(source, str) and source.startswith("data:"):
             decoded = decode_data_url(source)
@@ -209,12 +231,14 @@ def export_textures_to_mod(
                 print(f"无法解析 data URL: [#{idx}]", file=sys.stderr)
                 continue
             raw, ext = decoded
+            if not plain_glass_flat:
+                note_duplicate_payload(raw)
             out_file = out_path_for_ext(ext, raw=raw) if plain_glass_flat else out_path_for_ext(ext)
             if dry_run:
                 print(f"[dry-run] texture -> {out_file}")
             else:
                 out_file.write_bytes(raw)
-                print(f"OK texture -> {out_file.relative_to(FF_ROOT)}")
+                print(f"OK texture -> {_log_path(out_file)}")
             written.append(out_file)
             written_one = True
 
@@ -224,6 +248,8 @@ def export_textures_to_mod(
                 ext = src_file.suffix.lower().lstrip(".") or ext_from_format(file_format)
                 if ext not in ("png", "jpg", "jpeg", "webp"):
                     ext = ext_from_format(file_format)
+                if not plain_glass_flat:
+                    note_duplicate_payload(src_file.read_bytes())
                 out_file = (
                     out_path_for_ext(ext, src=src_file)
                     if plain_glass_flat
@@ -233,7 +259,7 @@ def export_textures_to_mod(
                     print(f"[dry-run] copy {src_file} -> {out_file}")
                 else:
                     shutil.copy2(src_file, out_file)
-                    print(f"OK texture (copy) -> {out_file.relative_to(FF_ROOT)}")
+                    print(f"OK texture (copy) -> {_log_path(out_file)}")
                 written.append(out_file)
                 written_one = True
 
@@ -367,11 +393,12 @@ def print_java_hint(
     elif shared_textures_key:
         print(
             f'  ResourceLocation.fromNamespaceAndPath("{modid}", '
-            f'"textures/block/{shared_textures_key}/t0.png")  # 主槽'
+            f'"textures/block/{shared_textures_key}/1.png")  # 槽位 1 起编号'
         )
     else:
         print(
-            f'  ResourceLocation.fromNamespaceAndPath("{modid}", "textures/block/{asset_id}.png")'
+            f'  ResourceLocation.fromNamespaceAndPath("{modid}", '
+            f'"textures/block/{asset_id}_1.png")  # 槽位 1 起编号，多槽为 _2 … _7 等'
         )
     print()
     if shared_textures_key == "plain_glass_window":
@@ -559,7 +586,7 @@ def main() -> int:
         else:
             geo_dir.mkdir(parents=True, exist_ok=True)
             out_file.write_text(body, encoding="utf-8", newline="\n")
-            print(f"OK geo -> {out_file.relative_to(FF_ROOT)}")
+            print(f"OK geo -> {_log_path(out_file)}")
 
     if not args.skip_animation:
         export_animation_json(

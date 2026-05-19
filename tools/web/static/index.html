@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>幻想家具 · 开发工具</title>
-  <link rel="stylesheet" href="/static/app.css" />
+  <link rel="stylesheet" href="/static/app.css?v=15" />
 </head>
 <body>
   <div class="app">
@@ -24,21 +24,35 @@
         <form id="tool-form" class="tool-form" hidden>
           <div id="fields"></div>
           <div class="actions">
+            <button type="button" id="btn-preview-refresh" class="btn ghost" hidden>刷新预览</button>
             <button type="submit" id="btn-run" class="btn primary">运行</button>
-            <button type="button" id="btn-clear-out" class="btn ghost">清空输出</button>
+            <span id="job-status" class="badge idle">就绪</span>
           </div>
         </form>
         <p id="empty-hint" class="empty-hint">从左侧选择一项工具。</p>
       </section>
-      <section class="panel out-panel">
+      <section class="panel preview-panel" aria-label="预览">
         <header class="panel-head row">
-          <h2>输出</h2>
-          <span id="job-status" class="badge idle">就绪</span>
+          <div>
+            <h2>预览</h2>
+            <p id="preview-hint" class="muted preview-hint">选择 JSON / 图片路径，或 bbmodel 导出结果</p>
+          </div>
+          <span id="preview-status" class="badge idle">—</span>
         </header>
-        <pre id="output" class="output" aria-live="polite"></pre>
+        <div id="preview-stem-bar" class="preview-stem-bar" hidden>
+          <span class="preview-stem-bar-label">资源 ID</span>
+          <span id="preview-asset-id-prefix" class="preview-asset-id-prefix"></span>
+          <span id="preview-stem-status" class="preview-stem-status muted"
+            >每个文件可单独编辑造型段（见下方预览区）</span
+          >
+        </div>
+        <div id="preview-body" class="preview-body">
+          <div id="preview-tabs" class="preview-tabs" role="tablist"></div>
+          <div id="preview-pane" class="preview-pane"></div>
+        </div>
       </section>
     </main>
   </div>
-  <script src="/static/app.js"></script>
+  <script src="/static/app.js?v=15"></script>
 </body>
 </html>

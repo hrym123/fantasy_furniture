@@ -25,6 +25,7 @@ TOOLS_DIR = FF_ROOT / "tools"
 if str(TOOLS_DIR) not in sys.path:
     sys.path.insert(0, str(TOOLS_DIR))
 from launcher.registry import catalog_for_api  # noqa: E402
+from paths import DEFAULT_ASSETS  # noqa: E402
 T_BLOCKBENCH = TOOLS_DIR / "blockbench"
 T_COLLISION = TOOLS_DIR / "collision"
 T_BED6 = TOOLS_DIR / "bed6"
@@ -147,24 +148,26 @@ class ToolsGuiApp:
         ttk.Label(row, text=label, width=14).pack(side=tk.LEFT)
         var = tk.StringVar()
         self._vars[key] = var
-        ent = ttk.Entry(row, textvariable=var)
-        ent.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 4))
         ttk.Button(
             row,
             text="浏览…",
             width=8,
             command=lambda: _browse_file(var, patterns=patterns),
-        ).pack(side=tk.LEFT)
+        ).pack(side=tk.LEFT, padx=(0, 4))
+        ent = ttk.Entry(row, textvariable=var)
+        ent.pack(side=tk.LEFT, fill=tk.X, expand=True)
 
-    def _add_dir_row(self, label: str, key: str) -> None:
+    def _add_dir_row(self, label: str, key: str, default: str = "") -> None:
         row = ttk.Frame(self.form_inner)
         row.pack(fill=tk.X, pady=2)
         ttk.Label(row, text=label, width=14).pack(side=tk.LEFT)
-        var = tk.StringVar()
+        var = tk.StringVar(value=default)
         self._vars[key] = var
+        ttk.Button(row, text="文件夹…", width=8, command=lambda: _browse_dir(var)).pack(
+            side=tk.LEFT, padx=(0, 4)
+        )
         ent = ttk.Entry(row, textvariable=var)
-        ent.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 4))
-        ttk.Button(row, text="文件夹…", width=8, command=lambda: _browse_dir(var)).pack(side=tk.LEFT)
+        ent.pack(side=tk.LEFT, fill=tk.X, expand=True)
 
     def _add_entry_row(self, label: str, key: str, default: str = "") -> None:
         row = ttk.Frame(self.form_inner)
@@ -223,6 +226,11 @@ class ToolsGuiApp:
                 patterns=[("Blockbench", "*.bbmodel"), ("所有文件", "*.*")],
             )
             self._add_entry_row("asset-id", "asset_id", "")
+            self._add_dir_row(
+                "导出目标（assets 根）",
+                "assets_root",
+                default=str(DEFAULT_ASSETS),
+            )
             self._add_check("仅预览（--dry-run）", "dry_run")
             self._add_combo(
                 "共享贴图键",
@@ -369,6 +377,9 @@ class ToolsGuiApp:
                 cmd.append("--skip-textures")
             if self._vars["del_anim"].get():
                 cmd.append("--delete-stale-animation")
+            ar = str(self._vars["assets_root"].get()).strip()
+            if ar:
+                cmd += ["--assets-root", ar]
             return cmd + extra
 
         if tid == "split_screen":

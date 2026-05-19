@@ -8,7 +8,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Literal
 
-from paths import FF_ROOT, TOOLS_ROOT
+from paths import DEFAULT_ASSETS, FF_ROOT, TOOLS_ROOT
 
 T_BLOCKBENCH = TOOLS_ROOT / "blockbench"
 T_COLLISION = TOOLS_ROOT / "collision"
@@ -117,6 +117,13 @@ _EXTRA = FieldSpec(
 _EXPORT_BBMODEL_FIELDS = (
     FieldSpec("path", "file", ".bbmodel", required=True),
     FieldSpec("asset_id", "text", "asset-id", default=""),
+    FieldSpec(
+        "assets_root",
+        "directory",
+        "导出目标（assets 根目录）",
+        default=str(DEFAULT_ASSETS),
+        hint="geo / textures / animations 相对此目录；默认本模组 assets/fantasy_furniture",
+    ),
     FieldSpec("dry_run", "bool", "仅预览（--dry-run）"),
     FieldSpec(
         "shared",
@@ -184,16 +191,31 @@ _BBMODEL_OUT_DIR = FieldSpec("out_dir", "directory", "输出目录（可选）")
 
 TOOL_CATALOG: tuple[CategorySpec, ...] = (
     CategorySpec(
-        "cat_bb_export",
-        "① Blockbench 导出资源",
+        "cat_bb_toolchain",
+        "① BlockBench 工具链",
         (
             ToolSpec(
                 "export_bbmodel",
-                "bbmodel → geo / 贴图 / 动画",
-                "将 .bbmodel 导出到 assets（geo、贴图、动画）。玻璃窗共享贴图需 Pillow/NumPy。",
+                "bbmodel → 材质 / geo.json / 动画",
+                "将 .bbmodel 导出到 assets：textures/block 贴图（默认 <asset-id>_1 … _N 按槽位顺序）、"
+                "geo/block/*.geo.json、animations（若有）。玻璃窗 --shared-textures 需 Pillow/NumPy。",
                 _EXPORT_BBMODEL_FIELDS,
                 supports_extra_args=True,
             ),
+            ToolSpec(
+                "voxel_pick",
+                "geo.json → 体素形状（VoxelShape）",
+                "由 Blockbench 导出的 geo.json 生成北向选取用 VoxelShape Java 片段；"
+                "床板6 请在「系列预设」选 bed-plate6（等同原 bed_voxel 入口）。",
+                _VOXEL_PICK_FIELDS,
+                supports_extra_args=True,
+            ),
+        ),
+    ),
+    CategorySpec(
+        "cat_bb_export",
+        "② Blockbench 导出贴图",
+        (
             ToolSpec(
                 "export_bed_png",
                 "床板6 · 主贴图 PNG",
@@ -240,7 +262,7 @@ TOOL_CATALOG: tuple[CategorySpec, ...] = (
     ),
     CategorySpec(
         "cat_blockjson",
-        "② 方块模型 JSON",
+        "③ 方块模型 JSON",
         (
             ToolSpec(
                 "split_screen",
@@ -251,7 +273,7 @@ TOOL_CATALOG: tuple[CategorySpec, ...] = (
     ),
     CategorySpec(
         "cat_collision",
-        "③ Geo / 碰撞",
+        "④ Geo / 碰撞",
         (
             ToolSpec(
                 "geo_collision",
@@ -270,31 +292,6 @@ TOOL_CATALOG: tuple[CategorySpec, ...] = (
         ),
     ),
     CategorySpec(
-        "cat_voxel",
-        "④ Geo 选取",
-        (
-            ToolSpec(
-                "voxel_pick",
-                "geo → VoxelShape Java",
-                "从 geo 生成北向选取用 VoxelShape Java 片段（默认单格裁切 [0,16]³）。",
-                _VOXEL_PICK_FIELDS,
-                supports_extra_args=True,
-            ),
-            ToolSpec(
-                "bed_voxel",
-                "床板6 geo → VoxelShape",
-                "等同 voxel_pick + --preset bed-plate6（床尾 z∈[0,32] 等规则）。",
-                _VOXEL_PICK_FIELDS,
-                supports_extra_args=True,
-            ),
-            ToolSpec(
-                "test_voxel",
-                "单元测试 voxel_pick",
-                "运行通用与床板6 voxel_pick 单测。",
-            ),
-        ),
-    ),
-    CategorySpec(
         "cat_lang",
         "⑤ 语言 / 贴图对照",
         (
@@ -308,6 +305,17 @@ TOOL_CATALOG: tuple[CategorySpec, ...] = (
                 "pillow_lang",
                 "床板6 枕头 · 主色对照",
                 "按已导出 PNG 打印主色，供核对译名（不写文件）。",
+            ),
+        ),
+    ),
+    CategorySpec(
+        "cat_test",
+        "⑥ 测试",
+        (
+            ToolSpec(
+                "test_voxel",
+                "voxel_pick 单测",
+                "运行通用与床板6 voxel_pick 单测。",
             ),
         ),
     ),
@@ -376,6 +384,9 @@ def build_command(tool_id: str, params: dict[str, Any]) -> list[str]:
             cmd.append("--skip-textures")
         if _param_bool(params, "del_anim"):
             cmd.append("--delete-stale-animation")
+        ar = _param_str(params, "assets_root")
+        if ar:
+            cmd += ["--assets-root", ar]
         return cmd + extra
 
     if tool_id == "split_screen":

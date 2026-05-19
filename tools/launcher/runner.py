@@ -11,9 +11,41 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from typing import Any, Iterator
 
+from pathlib import Path
+
 from paths import FF_ROOT
 
 from launcher.registry import build_command
+
+
+def apply_asset_renames(assets_root: str, renames: list[dict[str, str]]) -> list[str]:
+    """导出完成后按预览区指定的路径重命名文件。"""
+    root = Path(assets_root).expanduser().resolve()
+    logs: list[str] = []
+    for entry in renames:
+        src = Path(entry.get("from", "")).expanduser()
+        dst = Path(entry.get("to", "")).expanduser()
+        if not src.is_absolute():
+            src = root / src
+        if not dst.is_absolute():
+            dst = root / dst
+        try:
+            src = src.resolve()
+            dst = dst.resolve()
+        except OSError:
+            logs.append(f"[跳过] 无效路径: {entry}")
+            continue
+        if src == dst:
+            continue
+        if not src.is_file():
+            logs.append(f"[跳过] 源文件不存在: {src}")
+            continue
+        dst.parent.mkdir(parents=True, exist_ok=True)
+        if dst.exists():
+            dst.unlink()
+        src.rename(dst)
+        logs.append(f"重命名: {src.name} → {dst.name}")
+    return logs
 
 
 @dataclass
@@ -35,6 +67,13 @@ class JobRecord:
     def append_line(self, text: str) -> None:
         with self._lock:
             self._lines.append(text)
+        # 同步打到启动服务的终端（bat / python tools_webview.py）
+        if text:
+            try:
+                sys.stdout.write(text)
+                sys.stdout.flush()
+            except OSError:
+                pass
         with self._cond:
             self._cond.notify_all()
 
@@ -93,7 +132,9 @@ class JobManager:
             return self._jobs.get(job_id)
 
     def start(self, tool_id: str, params: dict[str, Any]) -> JobRecord:
-        argv_tail = build_command(tool_id, params)
+        run_params = {k: v for k, v in params.items() if not str(k).startswith("_")}
+        asset_renames = params.get("_asset_renames")
+        argv_tail = build_command(tool_id, run_params)
         argv = [sys.executable, "-u", *argv_tail]
         job_id = uuid.uuid4().hex[:12]
         rec = JobRecord(
@@ -124,6 +165,17 @@ class JobManager:
                 code = proc.wait(timeout=3600)
                 if code != 0:
                     rec.append_line(f"\n进程退出码: {code}\n")
+                elif (
+                    tool_id == "export_bbmodel"
+                    and code == 0
+                    and isinstance(asset_renames, list)
+                    and asset_renames
+                ):
+                    assets_root = str(run_params.get("assets_root") or "").strip()
+                    if assets_root:
+                        rec.append_line("\n--- 按预览造型段重命名 ---\n")
+                        for log_line in apply_asset_renames(assets_root, asset_renames):
+                            rec.append_line(log_line + "\n")
                 rec.mark_done(code)
             except subprocess.TimeoutExpired:
                 rec.append_line("\n[超时]\n")

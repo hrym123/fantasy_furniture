@@ -129,6 +129,12 @@ run-data/
 !gradle/wrapper/gradle-wrapper.jar
 
 # Python（tools 下任意子目录的 __pycache__ / 字节码）
+tools/.form_history.json
 **/__pycache__/
 *.py[cod]
 *$py.class
+.venv/
+
+# 误生成于仓库根目录的第三方/编译产物目录
+/org/
+/software/

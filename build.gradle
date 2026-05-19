@@ -156,15 +156,10 @@ mixin {
     add sourceSets.main, 'fantasy_furniture.refmap.json'
 }
 
-// runClient 通过 project 依赖使用 reverie_core 的 JAR；若子工程未在本会话内 jar，会沿用旧包并出现缺 client 类（如 GeolibBlockItemModel）的 NoClassDefFoundError。
-// ForgeGradle 在 afterEvaluate 中注册 prepareRun* / run*，whenTaskAdded 若早于任务注册则不会触发，导致未强制刷新 reverie_core JAR。
+// runClient 通过 project 依赖使用 reverie_core 的 JAR（须含 client.model 等类）；若启动时 JAR 过旧会在渲染 Geolib 物品时 NoClassDefFoundError。
+// 使用路径字符串 dependsOn，避免子工程 jar 尚未注册时 tasks.named('jar') 配置失败。
 afterEvaluate {
-    // 使用路径字符串，避免在 jar 尚未注册时用 tasks.named 解析子工程任务导致配置失败。
     def rcJarPath = ':reverie_core:jar'
-    ['prepareRunClient', 'runClient', 'prepareRunServer', 'runServer', 'prepareRunGameTestServer', 'runGameTestServer'].each { taskName ->
-        def t = tasks.findByName(taskName)
-        if (t != null) {
-            t.dependsOn(rcJarPath)
-        }
-    }
+    tasks.matching { it.name in ['prepareRunClient', 'runClient', 'prepareRunServer', 'runServer', 'prepareRunGameTestServer', 'runGameTestServer'] }
+            .configureEach { dependsOn(rcJarPath) }
 }

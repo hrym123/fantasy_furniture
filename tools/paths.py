@@ -6,3 +6,4 @@ from pathlib import Path
 
 TOOLS_ROOT = Path(__file__).resolve().parent
 FF_ROOT = TOOLS_ROOT.parent
+DEFAULT_ASSETS = FF_ROOT / "src/main/resources/assets/fantasy_furniture"
