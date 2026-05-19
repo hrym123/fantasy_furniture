@@ -22,6 +22,9 @@ from tkinter import filedialog, messagebox, ttk
 
 FF_ROOT = Path(__file__).resolve().parents[1]
 TOOLS_DIR = FF_ROOT / "tools"
+if str(TOOLS_DIR) not in sys.path:
+    sys.path.insert(0, str(TOOLS_DIR))
+from launcher.registry import catalog_for_api  # noqa: E402
 T_BLOCKBENCH = TOOLS_DIR / "blockbench"
 T_COLLISION = TOOLS_DIR / "collision"
 T_BED6 = TOOLS_DIR / "bed6"
@@ -103,63 +106,17 @@ class ToolsGuiApp:
         ).pack(anchor=tk.W)
 
     def _fill_tree(self) -> None:
-        # 与 tools/README.md 分类 ①～⑦ 一致（GUI 不单独列出 ① 库脚本 bbmodel_to_geojson）
-        cats: list[tuple[str, str, list[tuple[str, str]]]] = [
-            (
-                "cat_bb",
-                "① Blockbench → 资源",
-                [
-                    ("export_bbmodel", "bbmodel → 模组资源"),
-                ],
-            ),
-            (
-                "cat_blockjson",
-                "② 方块模型 JSON",
-                [
-                    ("split_screen", "屏风 full → lower/upper"),
-                ],
-            ),
-            (
-                "cat_collision",
-                "③ 碰撞",
-                [
-                    ("geo_collision", "geo / 方块模型 → 外接盒"),
-                    ("block_collision", "geo → 多盒明细"),
-                ],
-            ),
-            (
-                "cat_voxel",
-                "④ 床板6 选取",
-                [
-                    ("bed_voxel", "geo → VoxelShape Java"),
-                    ("test_voxel", "单元测试 voxel_pick"),
-                ],
-            ),
-            (
-                "cat_bed_assets",
-                "⑤ 床板6 贴图与工程",
-                [
-                    ("export_duvet", "被单 7 张贴图"),
-                    ("export_duvet_cover", "被套贴图"),
-                    ("export_pillow_medium", "中号枕头贴图"),
-                    ("export_bed_png", "主贴图（脚本内固定路径）"),
-                    ("extract_pillow_large", "大号枕头（脚本内固定路径）"),
-                    ("duvet_rename", "被单 bbmodel 纹理中文名"),
-                    ("pillow_lang", "枕头主色 ↔ 译名（打印）"),
-                ],
-            ),
-            (
-                "cat_glass",
-                "⑥ 玻璃窗",
-                [
-                    ("glass_lang", "译名 / 主色对照（可选写回）"),
-                ],
-            ),
-        ]
-        for cid, cname, items in cats:
-            self.tree.insert("", tk.END, iid=cid, text=cname, open=True)
-            for tid, tlabel in items:
-                self.tree.insert(cid, tk.END, iid=tid, text=tlabel, tags=("tool",))
+        # 与 launcher.registry.TOOL_CATALOG 一致（Web 界面同源）
+        for cat in catalog_for_api():
+            self.tree.insert("", tk.END, iid=cat["id"], text=cat["label"], open=True)
+            for tool in cat["tools"]:
+                self.tree.insert(
+                    cat["id"],
+                    tk.END,
+                    iid=tool["id"],
+                    text=tool["label"],
+                    tags=("tool",),
+                )
 
         self.tree.tag_configure("tool", font=("", 9))
 
@@ -305,10 +262,15 @@ class ToolsGuiApp:
             self._add_check("Java Shapes.or（--java-or）", "java_or")
             self._add_check("Java orParts（--java-or-parts）", "java_parts")
             self._add_extra_args()
-        elif tid == "bed_voxel":
-            self._add_desc("从 geo 生成床板 6 选取用 VoxelShape Java 片段。")
+        elif tid in ("voxel_pick", "bed_voxel"):
+            if tid == "bed_voxel":
+                self._add_desc("床板6：等同通用选取 + preset bed-plate6（z∈[0,32] 等）。")
+            else:
+                self._add_desc("从 geo 生成北向选取 VoxelShape Java（默认单格 [0,16]³）。")
             self._add_path_row("geo.json", "path", patterns=[("JSON", "*.json"), ("所有文件", "*.*")])
-            self._add_check("不做 0.5 网格量化（--no-snap）", "no_snap")
+            if tid == "voxel_pick":
+                self._add_combo("系列预设", "preset", ("", "bed-plate6"), "")
+            self._add_check("半格量化（--snap-half）", "snap_half")
             self._add_entry_row("min-extent", "min_extent", "0.5")
             self._add_spin("Java 小数位", "precision", 4, 0, 8)
             self._add_entry_row("方法名", "method", "buildPickShapeNorthUnionGenerated")
@@ -344,7 +306,7 @@ class ToolsGuiApp:
         elif tid == "pillow_lang":
             self._add_desc("打印枕头系列 PNG 主色，不写文件。")
         elif tid == "test_voxel":
-            self._add_desc("运行 tools/bed6/test_bed_plate6_voxel_pick_from_geo.py。")
+            self._add_desc("运行 tools/collision 与 tools/bed6 的 voxel_pick 单测。")
         else:
             ttk.Label(self.form_inner, text="未知工具").pack(anchor=tk.W)
 
@@ -448,13 +410,19 @@ class ToolsGuiApp:
                 cmd.append("--java-or-parts")
             return cmd + extra
 
-        if tid == "bed_voxel":
+        if tid in ("voxel_pick", "bed_voxel"):
             p = path_req()
             if not p:
                 return None
-            cmd = [str(T_BED6 / "bed_plate6_voxel_pick_from_geo.py"), str(p)]
-            if self._vars["no_snap"].get():
-                cmd.append("--no-snap")
+            cmd = [str(T_COLLISION / "voxel_pick_from_geo.py"), str(p)]
+            if tid == "bed_voxel":
+                cmd += ["--preset", "bed-plate6"]
+            else:
+                pr = str(self._vars["preset"].get()).strip()
+                if pr:
+                    cmd += ["--preset", pr]
+            if self._vars["snap_half"].get():
+                cmd.append("--snap-half")
             me = str(self._vars["min_extent"].get()).strip()
             if me:
                 cmd += ["--min-extent", me]
@@ -516,7 +484,7 @@ class ToolsGuiApp:
             return [str(T_BED6 / "bed_plate6_pillow_lang_display_colors.py")] + extra
 
         if tid == "test_voxel":
-            return [str(T_BED6 / "test_bed_plate6_voxel_pick_from_geo.py")] + extra
+            return [str(TOOLS_DIR / "test_voxel_pick_all.py")] + extra
 
         messagebox.showerror("内部错误", f"未实现: {tid}")
         return None

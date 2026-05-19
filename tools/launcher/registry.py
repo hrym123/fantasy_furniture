@@ -158,9 +158,16 @@ _BLOCK_COLLISION_FIELDS = (
     _EXTRA,
 )
 
-_BED_VOXEL_FIELDS = (
+_VOXEL_PICK_FIELDS = (
     FieldSpec("path", "file", "geo.json", required=True),
-    FieldSpec("no_snap", "bool", "不做 0.5 网格量化（--no-snap）"),
+    FieldSpec(
+        "preset",
+        "select",
+        "系列预设",
+        default="",
+        options=("", "bed-plate6"),
+    ),
+    FieldSpec("snap_half", "bool", "半格量化（--snap-half）"),
     FieldSpec("min_extent", "text", "min-extent", default="0.5"),
     FieldSpec("precision", "number", "Java 小数位", default=4, min_value=0, max_value=8),
     FieldSpec(
@@ -172,16 +179,61 @@ _BED_VOXEL_FIELDS = (
     _EXTRA,
 )
 
+_BBMODEL_OPTIONAL = FieldSpec("bbmodel", "file", ".bbmodel（可选）")
+_BBMODEL_OUT_DIR = FieldSpec("out_dir", "directory", "输出目录（可选）")
+
 TOOL_CATALOG: tuple[CategorySpec, ...] = (
     CategorySpec(
-        "cat_bb",
-        "① Blockbench → 资源",
+        "cat_bb_export",
+        "① Blockbench 导出资源",
         (
             ToolSpec(
                 "export_bbmodel",
-                "bbmodel → 模组资源",
+                "bbmodel → geo / 贴图 / 动画",
                 "将 .bbmodel 导出到 assets（geo、贴图、动画）。玻璃窗共享贴图需 Pillow/NumPy。",
                 _EXPORT_BBMODEL_FIELDS,
+                supports_extra_args=True,
+            ),
+            ToolSpec(
+                "export_bed_png",
+                "床板6 · 主贴图 PNG",
+                "从「床板6」.bbmodel 解码 textures[0] → bed_plate6.png（脚本内默认 MoonStarfish 路径）。",
+            ),
+            ToolSpec(
+                "export_duvet",
+                "床板6 · 被单 7 张贴图",
+                "从「床板6（被单）」.bbmodel 按 textures[] 顺序导出 bed_plate6_duvet_1..7.png。",
+                (_BBMODEL_OPTIONAL, _BBMODEL_OUT_DIR, _EXTRA),
+                supports_extra_args=True,
+            ),
+            ToolSpec(
+                "export_duvet_cover",
+                "床板6 · 被套贴图",
+                "从「床板6（被套）」.bbmodel 导出 bed_plate6_duvet_cover_1..6.png。",
+                (_BBMODEL_OPTIONAL, _BBMODEL_OUT_DIR, _EXTRA),
+                supports_extra_args=True,
+            ),
+            ToolSpec(
+                "export_pillow_medium",
+                "床板6 · 中号枕头贴图",
+                "从「床板6枕头（中）」.bbmodel 导出 bed_plate6_pillow_medium_{1..6}.png。",
+                (_BBMODEL_OPTIONAL, _EXTRA),
+                supports_extra_args=True,
+            ),
+            ToolSpec(
+                "extract_pillow_large",
+                "床板6 · 大号枕头贴图",
+                "从 MoonStarfish 大号枕头 .bbmodel 批量写出 PNG（脚本内默认路径）。",
+            ),
+            ToolSpec(
+                "duvet_rename",
+                "床板6 · 被单纹理中文名",
+                "按内嵌贴图主色生成显示名，可选 --write 写回 .bbmodel。",
+                (
+                    _BBMODEL_OPTIONAL,
+                    FieldSpec("write", "bool", "写回 .bbmodel（--write）"),
+                    _EXTRA,
+                ),
                 supports_extra_args=True,
             ),
         ),
@@ -199,7 +251,7 @@ TOOL_CATALOG: tuple[CategorySpec, ...] = (
     ),
     CategorySpec(
         "cat_collision",
-        "③ 碰撞",
+        "③ Geo / 碰撞",
         (
             ToolSpec(
                 "geo_collision",
@@ -219,92 +271,43 @@ TOOL_CATALOG: tuple[CategorySpec, ...] = (
     ),
     CategorySpec(
         "cat_voxel",
-        "④ 床板6 选取",
+        "④ Geo 选取",
         (
             ToolSpec(
-                "bed_voxel",
+                "voxel_pick",
                 "geo → VoxelShape Java",
-                "从 geo 生成床板 6 选取用 VoxelShape Java 片段。",
-                _BED_VOXEL_FIELDS,
+                "从 geo 生成北向选取用 VoxelShape Java 片段（默认单格裁切 [0,16]³）。",
+                _VOXEL_PICK_FIELDS,
+                supports_extra_args=True,
+            ),
+            ToolSpec(
+                "bed_voxel",
+                "床板6 geo → VoxelShape",
+                "等同 voxel_pick + --preset bed-plate6（床尾 z∈[0,32] 等规则）。",
+                _VOXEL_PICK_FIELDS,
                 supports_extra_args=True,
             ),
             ToolSpec(
                 "test_voxel",
                 "单元测试 voxel_pick",
-                "运行 tools/bed6/test_bed_plate6_voxel_pick_from_geo.py。",
+                "运行通用与床板6 voxel_pick 单测。",
             ),
         ),
     ),
     CategorySpec(
-        "cat_bed_assets",
-        "⑤ 床板6 贴图与工程",
-        (
-            ToolSpec(
-                "export_duvet",
-                "被单 7 张贴图",
-                "export_bed_plate6_duvet_textures_from_bbmodel；默认路径见脚本。",
-                (
-                    FieldSpec("bbmodel", "file", "bbmodel（可选）"),
-                    FieldSpec("out_dir", "directory", "输出目录（可选）"),
-                    _EXTRA,
-                ),
-                supports_extra_args=True,
-            ),
-            ToolSpec(
-                "export_duvet_cover",
-                "被套贴图",
-                "export_bed_plate6_duvet_cover_textures_from_bbmodel。",
-                (
-                    FieldSpec("bbmodel", "file", "bbmodel（可选）"),
-                    FieldSpec("out_dir", "directory", "输出目录（可选）"),
-                    _EXTRA,
-                ),
-                supports_extra_args=True,
-            ),
-            ToolSpec(
-                "export_pillow_medium",
-                "中号枕头贴图",
-                "export_bed_plate6_pillow_medium_textures_from_bbmodel。",
-                (FieldSpec("bbmodel", "file", "bbmodel（可选）"), _EXTRA),
-                supports_extra_args=True,
-            ),
-            ToolSpec(
-                "export_bed_png",
-                "主贴图（脚本内固定路径）",
-                "脚本内硬编码 MoonStarfish 床板6.bbmodel；本机若无该文件会失败。",
-            ),
-            ToolSpec(
-                "extract_pillow_large",
-                "大号枕头（脚本内固定路径）",
-                "脚本内硬编码 MoonStarfish 目录。",
-            ),
-            ToolSpec(
-                "duvet_rename",
-                "被单 bbmodel 纹理中文名",
-                "按主色重写被单 bbmodel 内 texture 显示名。",
-                (
-                    FieldSpec("bbmodel", "file", "bbmodel（可选）"),
-                    FieldSpec("write", "bool", "写回文件（--write）"),
-                    _EXTRA,
-                ),
-                supports_extra_args=True,
-            ),
-            ToolSpec(
-                "pillow_lang",
-                "枕头主色 ↔ 译名（打印）",
-                "打印枕头系列 PNG 主色，不写文件。",
-            ),
-        ),
-    ),
-    CategorySpec(
-        "cat_glass",
-        "⑥ 玻璃窗",
+        "cat_lang",
+        "⑤ 语言 / 贴图对照",
         (
             ToolSpec(
                 "glass_lang",
-                "译名 / 主色对照（可选写回）",
-                "对照玻璃窗贴图主色与译名。",
+                "玻璃窗 · 译名 / 主色",
+                "对照玻璃窗贴图主色与译名；可选写回语言文件。",
                 (FieldSpec("write", "bool", "写回 zh_cn / en_us（--write）"),),
+            ),
+            ToolSpec(
+                "pillow_lang",
+                "床板6 枕头 · 主色对照",
+                "按已导出 PNG 打印主色，供核对译名（不写文件）。",
             ),
         ),
     ),
@@ -410,11 +413,17 @@ def build_command(tool_id: str, params: dict[str, Any]) -> list[str]:
             cmd.append("--java-or-parts")
         return cmd + extra
 
-    if tool_id == "bed_voxel":
+    if tool_id in ("voxel_pick", "bed_voxel"):
         p = _path_required(params)
-        cmd = [str(T_BED6 / "bed_plate6_voxel_pick_from_geo.py"), str(p)]
-        if _param_bool(params, "no_snap"):
-            cmd.append("--no-snap")
+        cmd = [str(T_COLLISION / "voxel_pick_from_geo.py"), str(p)]
+        preset = _param_str(params, "preset")
+        if tool_id == "bed_voxel":
+            cmd.append("--preset")
+            cmd.append("bed-plate6")
+        elif preset:
+            cmd += ["--preset", preset]
+        if _param_bool(params, "snap_half"):
+            cmd.append("--snap-half")
         me = _param_str(params, "min_extent")
         if me:
             cmd += ["--min-extent", me]
@@ -476,7 +485,7 @@ def build_command(tool_id: str, params: dict[str, Any]) -> list[str]:
         return [str(T_BED6 / "bed_plate6_pillow_lang_display_colors.py")] + extra
 
     if tool_id == "test_voxel":
-        return [str(T_BED6 / "test_bed_plate6_voxel_pick_from_geo.py")] + extra
+        return [str(TOOLS_ROOT / "test_voxel_pick_all.py")] + extra
 
     raise CommandBuildError(f"未知工具: {tool_id}")
 
