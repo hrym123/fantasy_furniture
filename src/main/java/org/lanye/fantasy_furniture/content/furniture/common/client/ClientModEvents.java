@@ -19,10 +19,8 @@ import org.lanye.fantasy_furniture.content.sweeper.client.renderer.SweeperRobotR
 import org.lanye.fantasy_furniture.bootstrap.entity.ModEntities;
 import org.lanye.fantasy_furniture.content.sweeper.menu.ModMenuTypes;
 import org.lanye.fantasy_furniture.bootstrap.block.BedPlate6Registration;
-import org.lanye.fantasy_furniture.bootstrap.block.FurnitureGeolibBlockCatalog;
 import org.lanye.reverie_core.geolib.client.AnimatedBlockClientRegistration;
 import org.lanye.reverie_core.geolib.client.GeolibAnimatedBlockRenderers;
-import org.lanye.reverie_core.geolib.declarative.client.ReflectiveGeolibClientRegistration;
 
 @Mod.EventBusSubscriber(modid = FantasyFurniture.MODID, bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
 public final class ClientModEvents {
@@ -69,8 +67,6 @@ public final class ClientModEvents {
                         FantasyFurniture.MODID, "sweeper_dock", SweeperDockBlockEntity::getTextureLocation));
         AnimatedBlockClientRegistration.registerBlockEntityRenderer(
                 ModBlocks.PLAIN_GLASS_WINDOW, ctx -> new PlainGlassWindowGeoBlockRenderer());
-        ReflectiveGeolibClientRegistration.registerDefaultGeoRenderers(
-                FantasyFurniture.MODID, FurnitureGeolibBlockCatalog.entries());
     }
 
     @SubscribeEvent
