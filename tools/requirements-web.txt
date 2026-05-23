@@ -1,5 +1,0 @@
-# fantasy_furniture tools web UI (FastAPI + pywebview)
-# pip install -r tools/requirements-web.txt
-fastapi>=0.115.0
-uvicorn[standard]>=0.32.0
-pywebview>=5.0

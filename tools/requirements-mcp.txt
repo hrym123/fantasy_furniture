@@ -1,3 +1,0 @@
-# MCP server for Cursor (stdio)
-# pip install -r tools/requirements-mcp.txt
-mcp>=1.2.0
