@@ -56,6 +56,20 @@ public class SweeperDockBlockEntity extends BlockEntity implements GeoBlockEntit
         super(ModBlocks.SWEEPER_DOCK.blockEntityType().get(), pos, state);
     }
 
+    /** 调试：读取当前强制贴图条带。 */
+    public int debugTextureBand() {
+        return syncedTextureBand;
+    }
+
+    /** 调试：强制贴图条带（0–4）；下一 tick 可能被绑定机器人血量覆盖。 */
+    public void debugSetTextureBand(byte band) {
+        syncedTextureBand = (byte) Mth.clamp(band, 0, 4);
+        setChanged();
+        if (this.level != null && !this.level.isClientSide) {
+            this.level.sendBlockUpdated(this.worldPosition, getBlockState(), getBlockState(), Block.UPDATE_CLIENTS);
+        }
+    }
+
     /** 将机器人血量（1~20）映射到贴图条带索引（0~4）。 */
     public static int healthToTextureBand(int health) {
         int h = Mth.clamp(health, 1, 20);

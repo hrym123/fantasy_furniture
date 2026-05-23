@@ -10,6 +10,7 @@ import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
 import org.lanye.fantasy_furniture.FantasyFurniture;
 import org.lanye.fantasy_furniture.bootstrap.block.BedPlate6Registration;
+import org.lanye.fantasy_furniture.content.debug.item.DebugVariantStickItem;
 import org.lanye.fantasy_furniture.content.furniture.common.item.ArcaneWandItem;
 import org.lanye.reverie_core.geolib.GeolibItemAssets;
 import org.lanye.reverie_core.item.DecorativeHelmetRegistration;
@@ -28,6 +29,12 @@ public final class ModItems {
 
     public static final RegistryObject<Item> PAINT_BRUSH =
             ITEMS.register("paint_brush", () -> new Item(new Item.Properties()));
+
+    /** 开发：循环本模组方块 / 物品变体；木棍外观 + 附魔光效。 */
+    public static final RegistryObject<Item> DEBUG_VARIANT_STICK =
+            ITEMS.register(
+                    "debug_variant_stick",
+                    () -> new DebugVariantStickItem(new Item.Properties().stacksTo(1)));
 
     /** 床板 6 组件：由 {@link BedPlate6Registration} 写入同一 {@link #ITEMS}。 */
     public static final RegistryObject<Item> BED_PLATE6_DISASSEMBLY_GLOVE = BedPlate6Registration.disassemblyGlove();

@@ -52,6 +52,7 @@ public final class ModCreativeTabs {
         list.add(out -> out.accept(ModBlocks.GREEN_WALLPAPER_ITEM.get()));
         list.add(out -> out.accept(ModBlocks.PURPLE_WALLPAPER_ITEM.get()));
         list.add(out -> out.accept(ModItems.PAINT_BRUSH.get()));
+        list.add(out -> out.accept(ModItems.DEBUG_VARIANT_STICK.get()));
         list.add(out -> out.accept(ModItems.TANGHULU.get()));
         list.add(out -> out.accept(ModItems.ARCANE_WAND.get()));
         list.add(out -> out.accept(ModItems.DECORATIVE_HELMET_BLUE_TOP_HAT.get()));
