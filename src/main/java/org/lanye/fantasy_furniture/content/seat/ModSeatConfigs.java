@@ -6,6 +6,7 @@ import net.minecraft.world.phys.Vec3;
 import org.lanye.fantasy_furniture.Config;
 import org.lanye.fantasy_furniture.bootstrap.block.ModBlocks;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.block.BanquetteBlock;
+import org.lanye.fantasy_furniture.content.furniture.livingroom.block.GreenSofaBlock;
 import org.lanye.reverie_core.seat.SeatConfig;
 import org.lanye.reverie_core.seat.SeatRegistry;
 import org.lanye.reverie_core.seat.entity.ReverieSeatEntity;
@@ -49,8 +50,16 @@ public final class ModSeatConfigs {
      */
     public static final String BANQUETTE_ID = "banquette";
 
+    public static final String GREEN_SOFA_ID = "green_sofa";
+
     /** 与 {@link BanquetteBlock} 模型坐垫高度对齐：在基准偏移上再向下 3/16 格，较最初配置累计上调 2/16 格。 */
     private static final double BANQUETTE_SEAT_Y = 0.35 - 3.0 / 16.0;
+
+    /**
+     * 与 {@link GreenSofaBlock} 碰撞坐垫 y∈[5,8]（{@link org.lanye.fantasy_furniture.content.furniture.livingroom.block.GreenSofaCollisionShapes}）中点对齐；
+     * 左/中/右各格锚点相同局部偏移，每格独立坐骑。
+     */
+    private static final double GREEN_SOFA_SEAT_Y = 6.5 / 16.0;
 
     private ModSeatConfigs() {}
 
@@ -64,6 +73,17 @@ public final class ModSeatConfigs {
                         new Vec3(0.5, BANQUETTE_SEAT_Y, 0.5),
                         state -> state.getValue(BanquetteBlock.FACING).toYRot(),
                         state -> state.getValue(BanquetteBlock.FACING),
+                        Config.seatCooldownTicks()));
+
+        Block greenSofa = ModBlocks.GREEN_SOFA.block().get();
+        SeatRegistry.register(
+                GREEN_SOFA_ID,
+                new SeatConfig(
+                        state -> state.is(greenSofa),
+                        new AABB(0, 0, 0, 1, 1, 1),
+                        new Vec3(0.5, GREEN_SOFA_SEAT_Y, 0.5),
+                        state -> state.getValue(GreenSofaBlock.FACING).toYRot(),
+                        state -> state.getValue(GreenSofaBlock.FACING),
                         Config.seatCooldownTicks()));
     }
 }

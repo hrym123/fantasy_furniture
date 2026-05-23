@@ -1,18 +1,23 @@
 package org.lanye.fantasy_furniture.content.furniture.livingroom.block;
 
+import java.util.List;
 import javax.annotation.Nullable;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.LevelReader;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockBehaviour;
@@ -20,23 +25,29 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.EnumProperty;
 import net.minecraft.world.level.material.PushReaction;
+import net.minecraft.world.level.storage.loot.LootParams;
 import net.minecraft.world.phys.shapes.CollisionContext;
-import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
+import org.lanye.fantasy_furniture.bootstrap.block.ModBlocks;
 import org.lanye.reverie_core.geolib.InteractiveGeolibFacingBlock;
+import org.lanye.reverie_core.seat.SeatInteraction;
+import org.lanye.reverie_core.util.VoxelShapeRotation;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.blockentity.GreenSofaBlockEntity;
 import org.lanye.fantasy_furniture.content.furniture.common.state.SofaPart;
 
 /**
  * 绿色沙发：占地横向三格（左 / 中 / 右），仅中间格含 {@link GreenSofaBlockEntity} 与 GeckoLib 模型。
+ * 每格可独立入座（{@link org.lanye.reverie_core.seat.SeatInteraction}，配置见
+ * {@link org.lanye.fantasy_furniture.content.seat.ModSeatConfigs#GREEN_SOFA_ID}）。
+ * <p>
+ * 破坏与掉落对齐原版床/门：玩家在 {@link #playerWillDestroy} 中拆掉另两格（{@code destroyBlock(..., false)}），
+ * 生存模式仅在玩家点击的那一格 {@link Block#popResource} 一次；创造模式不掉落（{@code getDrops} 亦为空）。
  * 水平 {@link org.lanye.reverie_core.geolib.GeolibFacingEntityBlock#FACING} 与放置逻辑见
  * {@link org.lanye.reverie_core.geolib.GeolibFacingEntityBlock}（{@link #getStateForPlacement} 覆盖以摆三联）。
  */
 public class GreenSofaBlock extends InteractiveGeolibFacingBlock {
 
     public static final EnumProperty<SofaPart> PART = EnumProperty.create("part", SofaPart.class);
-
-    private static final VoxelShape SHAPE = Shapes.block();
 
     /** 拆除三联中一格时避免连锁 {@link #onRemove} 重复拆 sibling。 */
     private static final ThreadLocal<Boolean> SUPPRESS_SIBLING_BREAK = ThreadLocal.withInitial(() -> false);
@@ -50,6 +61,17 @@ public class GreenSofaBlock extends InteractiveGeolibFacingBlock {
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
         super.createBlockStateDefinition(builder);
         builder.add(PART);
+    }
+
+    @Override
+    protected InteractionResult onUseServer(
+            BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+        if (player instanceof ServerPlayer sp && level instanceof ServerLevel sl) {
+            if (SeatInteraction.trySitFromBlockUse(sp, sl, pos, state)) {
+                return InteractionResult.CONSUME;
+            }
+        }
+        return InteractionResult.PASS;
     }
 
     @Nullable
@@ -130,29 +152,35 @@ public class GreenSofaBlock extends InteractiveGeolibFacingBlock {
             BlockPos currentPos,
             BlockPos neighborPos) {
         if (!state.canSurvive(level, currentPos)) {
-            return Blocks.AIR.defaultBlockState();
+            if (!level.isClientSide()) {
+                boolean wasSuppressed = SUPPRESS_SIBLING_BREAK.get();
+                if (!wasSuppressed) {
+                    SUPPRESS_SIBLING_BREAK.set(true);
+                }
+                try {
+                    level.destroyBlock(currentPos, false);
+                } finally {
+                    if (!wasSuppressed) {
+                        SUPPRESS_SIBLING_BREAK.set(false);
+                    }
+                }
+            }
+            return level.getBlockState(currentPos);
         }
         return super.updateShape(state, direction, neighborState, level, currentPos, neighborPos);
     }
 
+    /**
+     * 战利品表仅作备用；实际掉落由 {@link #playerWillDestroy} 在生存模式、玩家直接破坏的那一格处理一次。
+     */
     @Override
-    public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean isMoving) {
-        if (!state.is(newState.getBlock())) {
-            if (!SUPPRESS_SIBLING_BREAK.get()) {
-                SUPPRESS_SIBLING_BREAK.set(true);
-                try {
-                    destroySiblingsExcept(level, pos, state);
-                } finally {
-                    SUPPRESS_SIBLING_BREAK.set(false);
-                }
-            }
-        }
-        super.onRemove(state, level, pos, newState, isMoving);
+    public List<ItemStack> getDrops(BlockState state, LootParams.Builder builder) {
+        return List.of();
     }
 
     @Override
     public void playerWillDestroy(Level level, BlockPos pos, BlockState state, Player player) {
-        if (!level.isClientSide() && player.isCreative()) {
+        if (!level.isClientSide()) {
             if (!SUPPRESS_SIBLING_BREAK.get()) {
                 SUPPRESS_SIBLING_BREAK.set(true);
                 try {
@@ -161,8 +189,24 @@ public class GreenSofaBlock extends InteractiveGeolibFacingBlock {
                     SUPPRESS_SIBLING_BREAK.set(false);
                 }
             }
+            if (!player.isCreative() && !player.getAbilities().instabuild) {
+                Block.popResource(level, pos, new ItemStack(ModBlocks.GREEN_SOFA.item().get()));
+            }
         }
         super.playerWillDestroy(level, pos, state, player);
+    }
+
+    @Override
+    public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean isMoving) {
+        if (!level.isClientSide() && !state.is(newState.getBlock()) && !SUPPRESS_SIBLING_BREAK.get()) {
+            SUPPRESS_SIBLING_BREAK.set(true);
+            try {
+                destroySiblingsExcept(level, pos, state);
+            } finally {
+                SUPPRESS_SIBLING_BREAK.set(false);
+            }
+        }
+        super.onRemove(state, level, pos, newState, isMoving);
     }
 
     /** 拆掉除 {@code pos} 外的另两格，不掉落；被拆格的 {@link #onRemove} 内会因 flag 跳过。 */
@@ -204,9 +248,20 @@ public class GreenSofaBlock extends InteractiveGeolibFacingBlock {
         return new GreenSofaBlockEntity(pos, state);
     }
 
+    private static VoxelShape shapeFor(BlockState state) {
+        VoxelShape north = GreenSofaCollisionShapes.northForPart(state.getValue(PART));
+        return VoxelShapeRotation.rotateYFromNorth(north, state.getValue(FACING));
+    }
+
     @Override
     public VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
-        return SHAPE;
+        return shapeFor(state);
+    }
+
+    @Override
+    public VoxelShape getCollisionShape(
+            BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
+        return shapeFor(state);
     }
 
     @Override
