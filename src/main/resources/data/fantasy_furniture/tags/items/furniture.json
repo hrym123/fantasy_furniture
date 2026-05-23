@@ -11,11 +11,9 @@
     "fantasy_furniture:plain_glass_window_mixed",
     "fantasy_furniture:plain_glass_window_cream_c",
     "fantasy_furniture:decorative_screen",
-    "fantasy_furniture:mixing_bowl",
-    "fantasy_furniture:jam_pot",
-    "fantasy_furniture:oven",
-    "fantasy_furniture:pestle_bowl",
-    "fantasy_furniture:half_half_pot",
+    "fantasy_furniture:soap_bar",
+    "fantasy_furniture:soap_box",
+    "fantasy_furniture:soap_rack",
     "fantasy_furniture:lottery_machine",
     "fantasy_furniture:green_sofa",
     "fantasy_furniture:bed_plate6",
@@ -63,8 +61,6 @@
     "fantasy_furniture:bed_plate6_pillow_small_5",
     "fantasy_furniture:bed_plate6_pillow_small_6",
     "fantasy_furniture:banquette",
-    "fantasy_furniture:kitchen_counter",
-    "fantasy_furniture:kitchen_counter_cabinet",
     "fantasy_furniture:combined_ornament"
   ]
 }

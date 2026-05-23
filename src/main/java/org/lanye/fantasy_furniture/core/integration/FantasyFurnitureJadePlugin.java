@@ -24,6 +24,10 @@ public final class FantasyFurnitureJadePlugin implements IWailaPlugin {
         registration.usePickedResult(ModBlocks.PLAIN_GLASS_WINDOW.block().get());
         // 床板 6：按击中高度区分被单/被套/枕头，玉标题与床品物品译名一致
         registration.usePickedResult(ModBlocks.BED_PLATE6.block().get());
+        // 肥皂：方块状态含颜料/磨损，标题与 {@link org.lanye.fantasy_furniture.content.soap.item.SoapBarBlockItem#getName} 一致
+        registration.usePickedResult(ModBlocks.SOAP_BAR.block().get());
+        registration.usePickedResult(ModBlocks.SOAP_BOX.block().get());
+        registration.usePickedResult(ModBlocks.SOAP_RACK.block().get());
         registration.registerEntityComponent(SweeperRobotJadeProvider.INSTANCE, SweeperRobotEntity.class);
     }
 }

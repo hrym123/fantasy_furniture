@@ -13,15 +13,11 @@ import org.lanye.reverie_core.geolib.bed.BedPlateBaseBlockEntity;
 import org.lanye.fantasy_furniture.content.furniture.decor.blockentity.CombinedOrnamentBlockEntity;
 import org.lanye.fantasy_furniture.content.furniture.decor.blockentity.PlainGlassWindowBlockEntity;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.blockentity.GreenSofaBlockEntity;
-import org.lanye.fantasy_furniture.content.furniture.kitchen.blockentity.HalfHalfPotBlockEntity;
-import org.lanye.fantasy_furniture.content.furniture.kitchen.blockentity.JamPotBlockEntity;
-import org.lanye.fantasy_furniture.content.furniture.kitchen.blockentity.KitchenCounterBlockEntity;
-import org.lanye.fantasy_furniture.content.furniture.kitchen.blockentity.KitchenCounterCabinetBlockEntity;
 import org.lanye.fantasy_furniture.content.furniture.decor.blockentity.LotteryMachineBlockEntity;
-import org.lanye.fantasy_furniture.content.furniture.kitchen.blockentity.MixingBowlBlockEntity;
-import org.lanye.fantasy_furniture.content.furniture.kitchen.blockentity.OvenBlockEntity;
-import org.lanye.fantasy_furniture.content.furniture.kitchen.blockentity.PestleBowlBlockEntity;
 import org.lanye.fantasy_furniture.content.sweeper.blockentity.SweeperDockBlockEntity;
+import org.lanye.fantasy_furniture.content.soap.blockentity.SoapBarBlockEntity;
+import org.lanye.fantasy_furniture.content.soap.blockentity.SoapBoxBlockEntity;
+import org.lanye.fantasy_furniture.content.soap.blockentity.SoapRackBlockEntity;
 import org.lanye.reverie_core.geolib.AnimatedBlockEntry;
 
 /**
@@ -115,16 +111,8 @@ public final class ModBlocks {
     // --- GeckoLib 家具（{@link FurnitureAnimatedBlocks}）---
 
     public static final AnimatedBlockEntry<BanquetteBlockEntity> BANQUETTE = FurnitureAnimatedBlocks.BANQUETTE;
-    public static final AnimatedBlockEntry<MixingBowlBlockEntity> MIXING_BOWL = FurnitureAnimatedBlocks.MIXING_BOWL;
-    public static final AnimatedBlockEntry<JamPotBlockEntity> JAM_POT = FurnitureAnimatedBlocks.JAM_POT;
-    public static final AnimatedBlockEntry<OvenBlockEntity> OVEN = FurnitureAnimatedBlocks.OVEN;
-    public static final AnimatedBlockEntry<PestleBowlBlockEntity> PESTLE_BOWL = FurnitureAnimatedBlocks.PESTLE_BOWL;
     public static final AnimatedBlockEntry<LotteryMachineBlockEntity> LOTTERY_MACHINE = FurnitureAnimatedBlocks.LOTTERY_MACHINE;
-    public static final AnimatedBlockEntry<HalfHalfPotBlockEntity> HALF_HALF_POT = FurnitureAnimatedBlocks.HALF_HALF_POT;
     public static final AnimatedBlockEntry<GreenSofaBlockEntity> GREEN_SOFA = FurnitureAnimatedBlocks.GREEN_SOFA;
-    public static final AnimatedBlockEntry<KitchenCounterCabinetBlockEntity> KITCHEN_COUNTER_CABINET =
-            FurnitureAnimatedBlocks.KITCHEN_COUNTER_CABINET;
-    public static final AnimatedBlockEntry<KitchenCounterBlockEntity> KITCHEN_COUNTER = FurnitureAnimatedBlocks.KITCHEN_COUNTER;
     public static final AnimatedBlockEntry<CombinedOrnamentBlockEntity> COMBINED_ORNAMENT =
             FurnitureAnimatedBlocks.COMBINED_ORNAMENT;
     public static final AnimatedBlockEntry<SweeperDockBlockEntity> SWEEPER_DOCK =
@@ -133,6 +121,12 @@ public final class ModBlocks {
 
     public static final AnimatedBlockEntry<PlainGlassWindowBlockEntity> PLAIN_GLASS_WINDOW =
             FurnitureAnimatedBlocks.PLAIN_GLASS_WINDOW;
+
+    public static final AnimatedBlockEntry<SoapBarBlockEntity> SOAP_BAR = FurnitureAnimatedBlocks.SOAP_BAR;
+
+    public static final AnimatedBlockEntry<SoapBoxBlockEntity> SOAP_BOX = FurnitureAnimatedBlocks.SOAP_BOX;
+
+    public static final AnimatedBlockEntry<SoapRackBlockEntity> SOAP_RACK = FurnitureAnimatedBlocks.SOAP_RACK;
 
     public static void register(IEventBus modEventBus) {
         BLOCKS.register(modEventBus);

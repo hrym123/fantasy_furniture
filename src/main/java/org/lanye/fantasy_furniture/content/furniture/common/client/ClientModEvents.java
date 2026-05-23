@@ -14,6 +14,9 @@ import org.lanye.fantasy_furniture.content.furniture.livingroom.client.model.Ban
 import org.lanye.fantasy_furniture.content.furniture.livingroom.client.renderer.BanquetteGeoBlockRenderer;
 import org.lanye.fantasy_furniture.content.furniture.decor.client.renderer.CombinedOrnamentGeoBlockRenderer;
 import org.lanye.fantasy_furniture.content.furniture.decor.client.renderer.PlainGlassWindowGeoBlockRenderer;
+import org.lanye.fantasy_furniture.content.soap.client.SoapBarClient;
+import org.lanye.fantasy_furniture.content.soap.client.renderer.SoapBoxGeoBlockRenderer;
+import org.lanye.fantasy_furniture.content.soap.client.renderer.SoapRackGeoBlockRenderer;
 import org.lanye.fantasy_furniture.content.furniture.common.client.renderer.FurnitureSeatRenderer;
 import org.lanye.fantasy_furniture.content.sweeper.client.renderer.SweeperRobotRenderer;
 import org.lanye.fantasy_furniture.bootstrap.entity.ModEntities;
@@ -29,34 +32,12 @@ public final class ClientModEvents {
 
     static {
         AnimatedBlockClientRegistration.registerBlockEntityRenderer(
-                ModBlocks.MIXING_BOWL,
-                GeolibAnimatedBlockRenderers.defaultGeoRendererProvider(FantasyFurniture.MODID, "mixing_bowl"));
-        AnimatedBlockClientRegistration.registerBlockEntityRenderer(
-                ModBlocks.JAM_POT,
-                GeolibAnimatedBlockRenderers.defaultGeoRendererProvider(FantasyFurniture.MODID, "jam_pot"));
-        AnimatedBlockClientRegistration.registerBlockEntityRenderer(
-                ModBlocks.OVEN,
-                GeolibAnimatedBlockRenderers.defaultGeoRendererProvider(FantasyFurniture.MODID, "oven"));
-        AnimatedBlockClientRegistration.registerBlockEntityRenderer(
-                ModBlocks.PESTLE_BOWL,
-                GeolibAnimatedBlockRenderers.defaultGeoRendererProvider(FantasyFurniture.MODID, "pestle_bowl"));
-        AnimatedBlockClientRegistration.registerBlockEntityRenderer(
-                ModBlocks.HALF_HALF_POT,
-                GeolibAnimatedBlockRenderers.defaultGeoRendererProvider(FantasyFurniture.MODID, "half_half_pot"));
-        AnimatedBlockClientRegistration.registerBlockEntityRenderer(
                 ModBlocks.LOTTERY_MACHINE,
                 GeolibAnimatedBlockRenderers.defaultGeoRendererProvider(FantasyFurniture.MODID, "lottery_machine"));
         AnimatedBlockClientRegistration.registerBlockEntityRenderer(
                 ModBlocks.GREEN_SOFA,
                 GeolibAnimatedBlockRenderers.defaultGeoRendererProvider(FantasyFurniture.MODID, "green_sofa"));
         BedPlate6Registration.registerClientRenderer();
-        AnimatedBlockClientRegistration.registerBlockEntityRenderer(
-                ModBlocks.KITCHEN_COUNTER_CABINET,
-                GeolibAnimatedBlockRenderers.defaultGeoRendererProvider(
-                        FantasyFurniture.MODID, "kitchen_counter_cabinet"));
-        AnimatedBlockClientRegistration.registerBlockEntityRenderer(
-                ModBlocks.KITCHEN_COUNTER,
-                GeolibAnimatedBlockRenderers.defaultGeoRendererProvider(FantasyFurniture.MODID, "kitchen_counter"));
         AnimatedBlockClientRegistration.registerBlockEntityRenderer(
                 ModBlocks.COMBINED_ORNAMENT, ctx -> new CombinedOrnamentGeoBlockRenderer());
         AnimatedBlockClientRegistration.registerBlockEntityRenderer(
@@ -67,6 +48,12 @@ public final class ClientModEvents {
                         FantasyFurniture.MODID, "sweeper_dock", SweeperDockBlockEntity::getTextureLocation));
         AnimatedBlockClientRegistration.registerBlockEntityRenderer(
                 ModBlocks.PLAIN_GLASS_WINDOW, ctx -> new PlainGlassWindowGeoBlockRenderer());
+        AnimatedBlockClientRegistration.registerBlockEntityRenderer(
+                ModBlocks.SOAP_BAR, SoapBarClient.blockRendererProvider());
+        AnimatedBlockClientRegistration.registerBlockEntityRenderer(
+                ModBlocks.SOAP_BOX, ctx -> new SoapBoxGeoBlockRenderer());
+        AnimatedBlockClientRegistration.registerBlockEntityRenderer(
+                ModBlocks.SOAP_RACK, ctx -> new SoapRackGeoBlockRenderer());
     }
 
     @SubscribeEvent

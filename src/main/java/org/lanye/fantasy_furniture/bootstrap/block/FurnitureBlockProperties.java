@@ -12,18 +12,13 @@ public final class FurnitureBlockProperties {
     private FurnitureBlockProperties() {}
 
     /**
-     * 釉面陶瓷体：与厨房动画方块、彩色瓷砖共用强度与音效；实心整格方块勿加 {@code noOcclusion()}。
+     * 釉面陶瓷体：与彩色瓷砖共用强度与音效；实心整格方块勿加 {@code noOcclusion()}。
      */
     public static BlockBehaviour.Properties ceramicBody(MapColor mapColor) {
         return BlockBehaviour.Properties.of()
                 .mapColor(mapColor)
                 .strength(1.2f, 6.0f)
                 .sound(SoundType.DEEPSLATE_TILES);
-    }
-
-    /** 厨房陶瓷系家具（透明 / 非整格碰撞模型）。 */
-    public static BlockBehaviour.Properties kitchenCeramic(MapColor mapColor) {
-        return ceramicBody(mapColor).noOcclusion();
     }
 
     /** 金属外壳 / 电器感：金属色、金属声，非整格模型。 */
@@ -35,7 +30,7 @@ public final class FurnitureBlockProperties {
                 .noOcclusion();
     }
 
-    /** 木质柜体、台面（与厨房成套柜一致）。 */
+    /** 木质柜体（组合摆件等）。 */
     public static BlockBehaviour.Properties woodCabinetNoOcclusion() {
         return BlockBehaviour.Properties.of()
                 .mapColor(MapColor.WOOD)
@@ -73,6 +68,16 @@ public final class FurnitureBlockProperties {
                 .mapColor(MapColor.COLOR_LIGHT_BLUE)
                 .strength(0.3f, 0.3f)
                 .sound(SoundType.GLASS)
+                .noOcclusion()
+                .dynamicShape();
+    }
+
+    /** 卫生间小物件（肥皂等）：轻、非整格碰撞。 */
+    public static BlockBehaviour.Properties bathroomSmallDecor(MapColor mapColor) {
+        return BlockBehaviour.Properties.of()
+                .mapColor(mapColor)
+                .strength(0.3f, 0.3f)
+                .sound(SoundType.WET_GRASS)
                 .noOcclusion()
                 .dynamicShape();
     }
