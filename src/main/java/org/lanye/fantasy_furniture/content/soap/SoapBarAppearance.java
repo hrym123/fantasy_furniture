@@ -36,6 +36,11 @@ public record SoapBarAppearance(int wear, int materialId) {
         return SoapBarWear.fromIndex(wear);
     }
 
+    /** 未入水磨损、可放入肥皂盒 / 肥皂架。 */
+    public boolean isFull() {
+        return wear == DEFAULT_WEAR;
+    }
+
     public String geoBasename() {
         return wearEnum().geoBasename();
     }

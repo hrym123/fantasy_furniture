@@ -11,6 +11,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
 import org.lanye.fantasy_furniture.content.debug.ModVariantCycler;
+import org.lanye.fantasy_furniture.content.debug.DevelopmentMode;
 
 /**
  * 开发用：右键方块循环本模组模型变体；右键空气循环副手物品模型变体（主手持棒）。不切换材质/颜料。
@@ -28,6 +29,9 @@ public final class DebugVariantStickItem extends Item {
 
     @Override
     public InteractionResult useOn(UseOnContext context) {
+        if (!DevelopmentMode.enabled()) {
+            return InteractionResult.FAIL;
+        }
         Level level = context.getLevel();
         if (level.isClientSide) {
             return InteractionResult.SUCCESS;
@@ -48,6 +52,9 @@ public final class DebugVariantStickItem extends Item {
 
     @Override
     public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
+        if (!DevelopmentMode.enabled()) {
+            return InteractionResultHolder.fail(player.getItemInHand(hand));
+        }
         if (level.isClientSide) {
             return InteractionResultHolder.success(player.getItemInHand(hand));
         }

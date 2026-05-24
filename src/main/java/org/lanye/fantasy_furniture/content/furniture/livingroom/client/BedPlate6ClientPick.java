@@ -1,6 +1,5 @@
 package org.lanye.fantasy_furniture.content.furniture.livingroom.client;
 
-import java.util.Optional;
 import javax.annotation.Nullable;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
@@ -10,7 +9,6 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.BedBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BedPart;
-import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
@@ -33,8 +31,8 @@ public final class BedPlate6ClientPick {
     private BedPlate6ClientPick() {}
 
     /**
-     * 将射线与床品并集体素求交，得到用于 {@link org.lanye.fantasy_furniture.content.furniture.livingroom.item.BedPlate6ComponentPick}
-     * 的命中点。描边仍仅用当前子件薄盒（T007 #6）；并集仅用于解析，使命中体素与 geo 盒一致（T008 H5）。
+     * 将射线与当前 tier 解析出的子件 3D 盒求交，供 {@link org.lanye.fantasy_furniture.content.furniture.livingroom.item.BedPlate6ComponentPick}
+     * 与准心选中方块时的黑框轮廓共用同一 geo 体素（{@link BedPlate6PickShapesNorth#northOutlinePieceNorth}）。
      */
     public static Vec3 clipHitToDecorUnion(
             Level level, BlockState state, BlockPos partPos, BlockHitResult bhr) {
@@ -43,12 +41,7 @@ public final class BedPlate6ClientPick {
         if (!(be instanceof BedPlate6BlockEntity plate) || !plate.hasDuvet()) {
             return bhr.getLocation();
         }
-        VoxelShape north = BedPlate6PickShapesNorth.unionNorthForPick(plate);
-        if (north.isEmpty()) {
-            return bhr.getLocation();
-        }
         Direction facing = state.getValue(BedBlock.FACING);
-        VoxelShape oriented = BedPlate6PickShapesNorth.orientForBedFacing(north, facing);
         Minecraft mc = Minecraft.getInstance();
         if (mc.player == null) {
             return bhr.getLocation();
@@ -63,26 +56,9 @@ public final class BedPlate6ClientPick {
         Vec3 extended = eye.add(delta.normalize().scale(delta.length() + 0.5));
         Vec3 localStart = eye.subtract(footOrigin);
         Vec3 localEnd = extended.subtract(footOrigin);
-        if (plate.getMediumPillowCount() == 2) {
-            Vec3 dual =
-                    BedPlate6PickShapesNorth.clipLocalDualMediumPreferFront(
-                            facing, localStart, localEnd);
-            if (dual != null) {
-                return dual.add(footOrigin);
-            }
-        }
-        Vec3 bestLocal = null;
-        double bestDist2 = Double.MAX_VALUE;
-        for (AABB box : oriented.toAabbs()) {
-            Optional<Vec3> hit = box.clip(localStart, localEnd);
-            if (hit.isPresent()) {
-                double d2 = localStart.distanceToSqr(hit.get());
-                if (d2 < bestDist2) {
-                    bestDist2 = d2;
-                    bestLocal = hit.get();
-                }
-            }
-        }
+        Vec3 bestLocal =
+                BedPlate6PickShapesNorth.clipFootLocalPreferDecorTier(
+                        plate, facing, localStart, localEnd);
         if (bestLocal == null) {
             return bhr.getLocation();
         }
@@ -115,24 +91,17 @@ public final class BedPlate6ClientPick {
     }
 
     /**
-     * 客户端玩家描边：每帧按当前准心即时解析单子件；不回退整床并集（避免多组件同亮）。
+     * 准心黑框用：按命中点解析当前子件 3D 体素（与 {@link #resolveDecorLayer} 同源）。
      */
-    public static VoxelShape clientPlayerOutlineShape(
+    public static VoxelShape crosshairOutlinePieceShape(
             Level level,
             BlockState state,
             BlockPos pos,
-            VoxelShape base,
+            VoxelShape mattressBase,
             BedPlate6BlockEntity plate,
-            Direction facing) {
-        HitResult hit = currentCrosshairHit();
-        PickedDecorLayer layer = PickedDecorLayer.NONE;
-        if (hit instanceof BlockHitResult bhr && hit.getType() == HitResult.Type.BLOCK) {
-            BlockPos foot = BedPlate6Block.bedFootWorldPos(state, pos);
-            Vec3 hitLoc = bhr.getLocation();
-            hitLoc = clipHitToDecorUnion(level, state, pos, bhr);
-            layer = BedPlate6PickShapesNorth.pickLayerByVoxelHit(plate, hitLoc, foot, facing);
-        }
-
+            Direction facing,
+            BlockHitResult bhr) {
+        PickedDecorLayer layer = resolveDecorLayer(level, state, pos, plate, facing, bhr);
         VoxelShape pieceLocal;
         if (layer == PickedDecorLayer.NONE) {
             pieceLocal = Shapes.empty();
@@ -150,8 +119,20 @@ public final class BedPlate6ClientPick {
             double ty = -facing.getStepY();
             double tz = -facing.getStepZ();
             VoxelShape inHead = VoxelShapeTranslation.translate(pieceLocal, tx, ty, tz);
-            return pieceLocal.isEmpty() ? base : inHead;
+            return pieceLocal.isEmpty() ? mattressBase : inHead;
         }
-        return pieceLocal.isEmpty() ? base : pieceLocal;
+        return pieceLocal.isEmpty() ? mattressBase : pieceLocal;
+    }
+
+    static PickedDecorLayer resolveDecorLayer(
+            Level level,
+            BlockState state,
+            BlockPos pos,
+            BedPlate6BlockEntity plate,
+            Direction facing,
+            BlockHitResult bhr) {
+        BlockPos foot = BedPlate6Block.bedFootWorldPos(state, pos);
+        Vec3 hitLoc = clipHitToDecorUnion(level, state, pos, bhr);
+        return BedPlate6PickShapesNorth.pickLayerByVoxelHit(plate, hitLoc, foot, facing);
     }
 }

@@ -1,0 +1,5 @@
+# 首次生成 run/config 时的默认值（已存在的 toml 不会被覆盖）。
+# 开发环境请保持 development.enabled = true；发行包可在打包前改回 false 或删本节。
+
+[development]
+	enabled = true

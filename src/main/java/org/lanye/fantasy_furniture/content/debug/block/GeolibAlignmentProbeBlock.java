@@ -15,6 +15,7 @@ import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import org.lanye.reverie_core.geolib.GeolibFacingEntityBlockWithFactory;
 import org.lanye.reverie_core.util.VoxelShapeRotation;
+import org.lanye.fantasy_furniture.content.debug.DevelopmentMode;
 import org.lanye.fantasy_furniture.content.debug.blockentity.GeolibAlignmentProbeBlockEntity;
 
 /**
@@ -51,6 +52,9 @@ public class GeolibAlignmentProbeBlock extends GeolibFacingEntityBlockWithFactor
             Player player,
             InteractionHand hand,
             BlockHitResult hit) {
+        if (!DevelopmentMode.enabled()) {
+            return InteractionResult.PASS;
+        }
         if (hand == InteractionHand.MAIN_HAND && player.isShiftKeyDown()) {
             player.displayClientMessage(
                     Component.translatable("debug.fantasy_furniture.geolib_alignment_probe.hint", state.getValue(FACING)),

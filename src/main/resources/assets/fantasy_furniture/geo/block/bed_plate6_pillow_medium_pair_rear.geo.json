@@ -4,95 +4,178 @@
 		{
 			"description": {
 				"identifier": "geometry.bed_plate6_pillow_medium_pair_rear",
-				"texture_width": 64,
-				"texture_height": 64,
-				"visible_bounds_width": 4,
-				"visible_bounds_height": 2.5,
+				"texture_width": 16,
+				"texture_height": 16,
+				"visible_bounds_width": 1,
+				"visible_bounds_height": 1,
 				"visible_bounds_offset": [
 					0,
-					0.75,
+					0,
 					0
 				]
 			},
 			"bones": [
 				{
-					"name": "bed_plate6_pillow_medium_pair_rear",
+					"name": "bb_main",
 					"pivot": [
-						0,
-						8,
-						0
+						-0.0,
+						0.0,
+						-0.0
+					],
+					"cubes": []
+				},
+				{
+					"name": "group",
+					"pivot": [
+						0.0,
+						8.0,
+						-0.0
 					],
 					"cubes": [
 						{
 							"origin": [
-								-3,
-								7.06,
-								20.7
+								-7.0,
+								7.0,
+								-22.7
 							],
 							"size": [
-								10,
-								7,
-								2
+								10.0,
+								7.0,
+								2.0
 							],
 							"uv": {
 								"north": {
 									"uv": [
-										24.0,
+										6.0,
 										0.0
 									],
 									"uv_size": [
-										20.0,
-										14.0
+										5.0,
+										3.5
+									]
+								},
+								"south": {
+									"uv": [
+										6.0,
+										3.5
+									],
+									"uv_size": [
+										5.0,
+										3.5
 									]
 								},
 								"east": {
 									"uv": [
 										0.0,
-										32.0
+										8.0
 									],
 									"uv_size": [
-										4.0,
-										14.0
-									]
-								},
-								"south": {
-									"uv": [
-										24.0,
-										14.0
-									],
-									"uv_size": [
-										20.0,
-										14.0
+										1.0,
+										3.5
 									]
 								},
 								"west": {
 									"uv": [
-										4.0,
-										32.0
+										1.0,
+										8.0
 									],
 									"uv_size": [
-										4.0,
-										14.0
+										1.0,
+										3.5
 									]
 								},
 								"up": {
 									"uv": [
 										0.0,
-										28.0
+										7.0
 									],
 									"uv_size": [
-										20.0,
-										4.0
+										5.0,
+										1.0
 									]
 								},
 								"down": {
 									"uv": [
-										20.0,
-										28.0
+										5.0,
+										8.0
 									],
 									"uv_size": [
-										20.0,
-										4.0
+										5.0,
+										-1.0
+									]
+								}
+							}
+						},
+						{
+							"origin": [
+								-8.0,
+								7.0,
+								-21.8
+							],
+							"size": [
+								12.0,
+								7.0,
+								0.1999999999999993
+							],
+							"uv": {
+								"north": {
+									"uv": [
+										0.0,
+										0.0
+									],
+									"uv_size": [
+										6.0,
+										3.5
+									]
+								},
+								"south": {
+									"uv": [
+										0.0,
+										3.5
+									],
+									"uv_size": [
+										6.0,
+										3.5
+									]
+								},
+								"east": {
+									"uv": [
+										2.0,
+										8.5
+									],
+									"uv_size": [
+										0.25,
+										3.5
+									]
+								},
+								"west": {
+									"uv": [
+										2.5,
+										8.5
+									],
+									"uv_size": [
+										0.25,
+										3.5
+									]
+								},
+								"up": {
+									"uv": [
+										2.0,
+										8.0
+									],
+									"uv_size": [
+										6.0,
+										0.25
+									]
+								},
+								"down": {
+									"uv": [
+										8.0,
+										8.25
+									],
+									"uv_size": [
+										6.0,
+										-0.25
 									]
 								}
 							}

@@ -21,7 +21,6 @@ import net.minecraft.world.level.storage.loot.LootParams;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.shapes.CollisionContext;
-import net.minecraft.world.phys.shapes.EntityCollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import org.lanye.fantasy_furniture.Config;
@@ -60,7 +59,7 @@ public final class BedPlate6Block extends BedPlateBlock {
      * 被单薄层外接盒（整格 16×16、床垫顶 y=5 起高约 2/16）：用于床头格 {@link #getShape} 回退、以及 {@link #getCollisionShape}（配置开启时）。
      * 床尾格选取以 {@link BedPlate6PickShapesNorth} 的 geo 并集为主。被套无碰撞。
      */
-    private static final VoxelShape DUVET_OUTER_BOX = Block.box(0, 5, 0, 16, 7, 16);
+    private static final VoxelShape DUVET_OUTER_BOX = Block.box(0, 5, 0, 16, 7, 31);
 
     private static BlockPos footPos(BlockState state, BlockPos pos) {
         if (state.getValue(BedBlock.PART) == BedPart.FOOT) {
@@ -184,7 +183,8 @@ public final class BedPlate6Block extends BedPlateBlock {
      * 床尾格：床垫 + 由 geo 导出的被单/被套/枕头北向并集，再按朝向旋转（{@link VoxelShapeRotation#rotateYFromNorth}）。
      * 床头格：与床尾<strong>同一套</strong>选取并集，沿 {@link BedBlock#FACING} 平移 −1 格到床头局部原点，使轮廓 / 射线命中与仅床尾绘制的 Geo 一致（不再仅用 {@link #DUVET_OUTER_BOX} 近似）。
      *
-     * <p>客户端且 {@link CollisionContext} 含玩家时：若准心与本床同一锚点，则用 {@link BedPlate6PickShapesNorth#northOutlinePieceNorth} 仅合并当前解析子件体素，避免多枕同亮（T007 #6）。
+     * <p>{@link #getShape} 始终返回寝具<strong>并集</strong>，供原版射线 {@code Level.clip} 命中最近子件表面；准心黑框单子件由
+     * {@link org.lanye.fantasy_furniture.content.furniture.livingroom.client.BedPlate6CrosshairOutlineEvents} 绘制。
      */
     private static VoxelShape pickShapeForBedPlate6(
             BlockState state, BlockGetter level, BlockPos pos, VoxelShape base, CollisionContext context) {
@@ -198,12 +198,12 @@ public final class BedPlate6Block extends BedPlateBlock {
         }
         Direction facing = state.getValue(BedBlock.FACING);
         VoxelShape orientedFull = applyBedPlateFacingToNorthPick(north, facing);
-        if (level instanceof Level lvl
-                && lvl.isClientSide()
-                && context instanceof EntityCollisionContext ecc
-                && ecc.getEntity() instanceof Player) {
-            return BedPlate6ClientPick.clientPlayerOutlineShape(lvl, state, pos, base, plate, facing);
-        }
+        return pickShapeUnionWithBase(state, base, orientedFull, facing);
+    }
+
+    /** 床垫基座 + 寝具并集（床尾/床头局部），与 {@link BedPlateBlock} 床头板规则一致。 */
+    static VoxelShape pickShapeUnionWithBase(
+            BlockState state, VoxelShape base, VoxelShape orientedFull, Direction facing) {
         if (state.getValue(BedBlock.PART) != BedPart.FOOT) {
             double tx = -facing.getStepX();
             double ty = -facing.getStepY();
@@ -211,6 +211,24 @@ public final class BedPlate6Block extends BedPlateBlock {
             return Shapes.or(base, VoxelShapeTranslation.translate(orientedFull, tx, ty, tz));
         }
         return Shapes.or(base, orientedFull);
+    }
+
+    /** 床垫 + 床头板，不含寝具（与 {@link org.lanye.reverie_core.geolib.bed.BedPlateBlock} 基类一致）。 */
+    public static VoxelShape mattressBaseShape(BlockState state) {
+        VoxelShape mattress = Block.box(0, 0, 0, 16, 5, 16);
+        if (state.getValue(BedBlock.PART) == BedPart.FOOT) {
+            return mattress;
+        }
+        Direction facing = state.getValue(BedBlock.FACING);
+        VoxelShape headboard =
+                switch (facing) {
+                    case NORTH -> Block.box(0, 0, 0, 16, 16, 1);
+                    case SOUTH -> Block.box(0, 0, 15, 16, 16, 16);
+                    case WEST -> Block.box(0, 0, 0, 1, 16, 16);
+                    case EAST -> Block.box(15, 0, 0, 16, 16, 16);
+                    default -> Shapes.empty();
+                };
+        return Shapes.or(mattress, headboard);
     }
 
     private static VoxelShape applyBedPlateFacingToNorthPick(VoxelShape northShape, Direction facing) {

@@ -19,6 +19,7 @@ import org.lanye.fantasy_furniture.bootstrap.block.ModBlocks;
 import org.lanye.fantasy_furniture.bootstrap.block.PlainGlassWindowRegistration;
 import org.lanye.fantasy_furniture.content.soap.SoapBarCreativeTab;
 import org.lanye.fantasy_furniture.content.soap.SoapBoxCreativeTab;
+import org.lanye.fantasy_furniture.content.debug.DevelopmentMode;
 
 /**
  * 本模组创造模式物品栏（CreativeModeTab）注册。
@@ -52,8 +53,10 @@ public final class ModCreativeTabs {
         list.add(out -> out.accept(ModBlocks.GREEN_WALLPAPER_ITEM.get()));
         list.add(out -> out.accept(ModBlocks.PURPLE_WALLPAPER_ITEM.get()));
         list.add(out -> out.accept(ModItems.PAINT_BRUSH.get()));
-        list.add(out -> out.accept(ModItems.DEBUG_VARIANT_STICK.get()));
-        list.add(out -> out.accept(ModBlocks.GEOLIB_ALIGNMENT_PROBE.item().get()));
+        if (DevelopmentMode.enabled()) {
+            list.add(out -> out.accept(ModItems.DEBUG_VARIANT_STICK.get()));
+            list.add(out -> out.accept(ModBlocks.GEOLIB_ALIGNMENT_PROBE.item().get()));
+        }
         list.add(out -> out.accept(ModItems.TANGHULU.get()));
         list.add(out -> out.accept(ModItems.ARCANE_WAND.get()));
         list.add(out -> out.accept(ModItems.DECORATIVE_HELMET_BLUE_TOP_HAT.get()));

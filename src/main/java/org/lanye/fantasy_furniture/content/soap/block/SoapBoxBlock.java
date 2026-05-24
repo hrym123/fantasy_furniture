@@ -139,11 +139,15 @@ public class SoapBoxBlock extends GeolibFacingEntityBlockWithFactory<SoapBoxBloc
                 return InteractionResult.CONSUME;
             }
             if (held.is(ModBlocks.SOAP_BAR.item().get())) {
+                SoapBarAppearance soap = SoapBarAppearance.fromStack(held);
+                if (!soap.isFull()) {
+                    return InteractionResult.FAIL;
+                }
                 SoapBoxBlockEntity be = blockEntity(level, pos);
                 if (be == null) {
                     return InteractionResult.FAIL;
                 }
-                be.setContainedSoap(SoapBarAppearance.fromStack(held));
+                be.setContainedSoap(soap);
                 level.setBlock(pos, state.setValue(HAS_SOAP, true), Block.UPDATE_ALL);
                 if (!player.getAbilities().instabuild) {
                     held.shrink(1);

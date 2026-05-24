@@ -31,6 +31,7 @@ import org.lanye.fantasy_furniture.content.soap.blockentity.SoapBoxBlockEntity;
 import org.lanye.fantasy_furniture.content.soap.blockentity.SoapRackBlockEntity;
 import org.lanye.fantasy_furniture.content.debug.block.GeolibAlignmentProbeBlock;
 import org.lanye.fantasy_furniture.content.debug.blockentity.GeolibAlignmentProbeBlockEntity;
+import org.lanye.fantasy_furniture.content.debug.item.GeolibAlignmentProbeBlockItem;
 import org.lanye.fantasy_furniture.content.soap.item.SoapBarBlockItem;
 import org.lanye.fantasy_furniture.content.soap.item.SoapBoxBlockItem;
 import org.lanye.fantasy_furniture.bootstrap.block.PlainGlassWindowRegistration;
@@ -147,11 +148,17 @@ public final class FurnitureAnimatedBlocks {
                                     FurnitureBlockProperties::metalNoOcclusion,
                                     SweeperDockBlock::new,
                                     SweeperDockBlockEntity::new),
-                            defaultAnimatedSpec(
+                            AnimatedBlockRegistration.spec(
                                     "geolib_alignment_probe",
                                     FurnitureBlockProperties::woodCabinetNoOcclusion,
                                     GeolibAlignmentProbeBlock::new,
-                                    GeolibAlignmentProbeBlockEntity::new)));
+                                    GeolibAlignmentProbeBlockEntity::new,
+                                    (block, props) ->
+                                            new GeolibAlignmentProbeBlockItem(
+                                                    block,
+                                                    props,
+                                                    GeolibItemAssets.blockAsset(
+                                                            FantasyFurniture.MODID, "geolib_alignment_probe")))));
 
     private static final int I_BANQUETTE = 0;
     private static final int I_LOTTERY_MACHINE = 1;

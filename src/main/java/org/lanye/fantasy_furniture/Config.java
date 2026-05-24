@@ -27,6 +27,7 @@ public final class Config {
     private static final ForgeConfigSpec.BooleanValue SWEEPER_ENABLE_WALL_CLIMB;
     private static final ForgeConfigSpec.IntValue SWEEPER_RETURN_DOCK_INSURANCE_TICKS;
     private static final ForgeConfigSpec.BooleanValue BED_PLATE6_DUVET_COLLISION;
+    private static final ForgeConfigSpec.BooleanValue DEVELOPMENT_MODE_ENABLED;
 
     static {
         ForgeConfigSpec.Builder b = new ForgeConfigSpec.Builder();
@@ -97,6 +98,14 @@ public final class Config {
                 b.comment(
                                 "床板 6 已铺被单时，是否将被单薄层并入方块碰撞盒；false 时实体可穿过该层（默认关闭，仅保留床垫等基座碰撞）。")
                         .define("duvetCollision", false);
+        b.pop();
+
+        b.push("development");
+        DEVELOPMENT_MODE_ENABLED =
+                b.comment(
+                                "开发模式：开启后主创造栏显示「变体调试棒」「Gecko 对齐探针」，并允许其放置与交互。"
+                                        + "正式游玩请保持 false。")
+                        .define("enabled", false);
         b.pop();
         SPEC = b.build();
     }
@@ -191,6 +200,11 @@ public final class Config {
     /** 床板 6 被单是否参与碰撞（默认 false）。 */
     public static boolean bedPlate6DuvetCollision() {
         return BED_PLATE6_DUVET_COLLISION.get();
+    }
+
+    /** 开发模式：调试棒、对齐探针等（默认 false）。 */
+    public static boolean developmentModeEnabled() {
+        return DEVELOPMENT_MODE_ENABLED.get();
     }
 
 }

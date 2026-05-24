@@ -88,11 +88,15 @@ public class SoapRackBlock extends GeolibFacingEntityBlockWithFactory<SoapRackBl
         boolean sneaking = player.isShiftKeyDown();
 
         if (!hasSoap && held.is(ModBlocks.SOAP_BAR.item().get())) {
+            SoapBarAppearance soap = SoapBarAppearance.fromStack(held);
+            if (!soap.isFull()) {
+                return InteractionResult.FAIL;
+            }
             SoapRackBlockEntity be = blockEntity(level, pos);
             if (be == null) {
                 return InteractionResult.FAIL;
             }
-            be.setContainedSoap(SoapBarAppearance.fromStack(held));
+            be.setContainedSoap(soap);
             level.setBlock(pos, state.setValue(HAS_SOAP, true), Block.UPDATE_ALL);
             if (!player.getAbilities().instabuild) {
                 held.shrink(1);

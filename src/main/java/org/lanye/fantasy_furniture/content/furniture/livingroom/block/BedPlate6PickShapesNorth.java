@@ -6,6 +6,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.shapes.Shapes;
@@ -23,7 +24,7 @@ import org.lanye.fantasy_furniture.content.furniture.livingroom.item.BedPlate6Sm
 /**
  * 床板 6 床品/枕头在「北向基准 geo」下的选取用 {@link VoxelShape}（与 {@link BedPlate6Block#getShape} 合并）。
  *
- * <p>体素由 {@code tools/bed6/bed_plate6_voxel_pick_from_geo.py} 导出（每 geo 文件对应床上一只枕/叠放，勿对单枕 geo 做 mirror 双盒）。
+ * <p>体素由 {@code tools/collision/voxel_pick_from_geo.py --manifest bed_plate6} 导出（每 geo 文件对应床上一只枕/叠放）。
  * <p>枕类用列向+3D；被套/被单仅用 3D，避免列向与传单薄层重叠时在边界闪烁。
  *
  * @see VoxelShapeRotation#rotateYFromNorth
@@ -44,12 +45,6 @@ public final class BedPlate6PickShapesNorth {
 
   /** 仅用于浮点边界上的命中稳定，不改变 geo 盒尺寸。 */
   private static final double PICK_BOUNDARY_EPS = 1.0 / 256.0;
-
-  /**
-   * 列向选取竖直下限（<b>方块内 0～1 坐标</b>，与 {@link AABB} / {@code toAabbs()} 一致）：
-   * 脚本被单 {@code y=5} → {@code 5/16}；勿与 {@link org.lanye.fantasy_furniture.content.furniture.livingroom.item.BedPlate6ComponentPick} 的 {@code ly}（1/16 格）混用。
-   */
-  private static final double PICK_COLUMN_MIN_Y_BLOCKS = 5.0 / 16.0;
 
   private static final int TIER_SMALL = 0;
   private static final int TIER_LARGE = 1;
@@ -83,43 +78,16 @@ public final class BedPlate6PickShapesNorth {
 
   private BedPlate6PickShapesNorth() {}
 
-  /** 与 {@link BedPlate6Block} 中床品体素朝向一致（MC {@link VoxelShapeRotation#rotateYFromNorth}）。 */
-  public static VoxelShape orientForBedFacing(VoxelShape northShape, Direction facing) {
-    return VoxelShapeRotation.rotateYFromNorth(northShape, facing);
-  }
-
   /**
-   * 列向命中：准心射线常先打在薄被单顶面（{@code py≈6~7}），高于枕头盒 {@code minY} 但仍落在其 (x,z) 投影内时，
-   * 仍应选中该枕/被套（tier 优先于被单），避免与大枕/被单在边界上来回切换。
+   * 与 {@link BedPlate6Block} / 床尾 Geo 渲染链一致：北向体素（z∈[0,32]、脚→头）先按 {@link BedBlock#FACING}
+   * 旋转，再绕 Y 补 180°，映射到床尾格 MC 局部（+Z 为南）；与 export Y180 + manifest z-flip 成对，勿删第二步。
    */
-  public static boolean columnMatchesFootLocal(VoxelShape orientedShape, Vec3 hitWorld, BlockPos foot) {
-    Vec3 corner = Vec3.atLowerCornerOf(foot);
-    double px = hitWorld.x - corner.x;
-    double py = hitWorld.y - corner.y;
-    double pz = hitWorld.z - corner.z;
-    for (AABB box : orientedShape.toAabbs()) {
-      if (columnMatchesAabb(box, px, py, pz)) {
-        return true;
-      }
-    }
-    return false;
+  public static VoxelShape orientForBedFacing(VoxelShape northShape, Direction facing) {
+    VoxelShape byFacing = VoxelShapeRotation.rotateYFromNorth(northShape, facing);
+    return VoxelShapeRotation.rotate(byFacing, Rotation.CLOCKWISE_180);
   }
 
-  private static boolean columnMatchesAabb(AABB box, double px, double py, double pz) {
-    double eps = PICK_BOUNDARY_EPS;
-    if (px < box.minX - eps || px > box.maxX + eps) {
-      return false;
-    }
-    if (pz < box.minZ - eps || pz > box.maxZ + eps) {
-      return false;
-    }
-    if (py > box.maxY + eps) {
-      return false;
-    }
-    return py >= PICK_COLUMN_MIN_Y_BLOCKS - eps;
-  }
-
-  /** 严格 3D 体内命中（方块内 0～1 坐标），与列向选取互补。 */
+  /** 严格 3D 体内命中（床尾格局部 0～1 坐标）；与准心黑框 {@link #northOutlinePieceNorth} 同源。 */
   private static boolean containsFootLocal(VoxelShape orientedShape, Vec3 hitWorld, BlockPos foot) {
     Vec3 corner = Vec3.atLowerCornerOf(foot);
     double px = hitWorld.x - corner.x;
@@ -144,32 +112,31 @@ public final class BedPlate6PickShapesNorth {
     PillowPickTiers tiers = PillowPickTiers.forPlate(plate);
     VoxelPickState pick = new VoxelPickState(hitWorld, foot, facing);
     if (plate.hasSmallPillow()) {
-      pick.tryTier(tiers.small(), pillowSmallStackNorth(), PickedDecorLayer.SMALL_PILLOW, false);
+      pick.tryTier(tiers.small(), pillowSmallStackNorth(), PickedDecorLayer.SMALL_PILLOW);
     }
     if (plate.hasLargePillow()) {
       pick.tryTier(
           tiers.large(),
           largePillowNorth(plate.getLargePillowStyleId()),
-          PickedDecorLayer.LARGE_PILLOW,
-          false);
+          PickedDecorLayer.LARGE_PILLOW);
     }
     int n = plate.getMediumPillowCount();
     boolean large = plate.hasLargePillow();
     if (n == 2) {
       pick.tryTier(
-          tiers.mediumRear(), pillowMediumPairRearNorth(), PickedDecorLayer.MEDIUM_REAR, false);
+          tiers.mediumRear(), pillowMediumPairRearNorth(), PickedDecorLayer.MEDIUM_REAR);
       pick.tryTier(
-          tiers.mediumFront(), pillowMediumPairFrontNorth(), PickedDecorLayer.MEDIUM_FRONT, false);
+          tiers.mediumFront(), pillowMediumPairFrontNorth(), PickedDecorLayer.MEDIUM_FRONT);
     } else if (n == 1 && large) {
       pick.tryTier(
-          tiers.mediumFront(), pillowMediumPairFrontNorth(), PickedDecorLayer.MEDIUM_FRONT, false);
+          tiers.mediumFront(), pillowMediumPairFrontNorth(), PickedDecorLayer.MEDIUM_FRONT);
     } else if (n == 1) {
-      pick.tryTier(tiers.mediumSolo(), pillowMediumSoloNorth(), PickedDecorLayer.MEDIUM_SOLO, false);
+      pick.tryTier(tiers.mediumSolo(), pillowMediumSoloNorth(), PickedDecorLayer.MEDIUM_SOLO);
     }
     if (plate.hasCover()) {
-      pick.tryTier(tiers.cover(), duvetCoverNorth(), PickedDecorLayer.DUVET_COVER, true);
+      pick.tryTier(tiers.cover(), duvetCoverNorth(), PickedDecorLayer.DUVET_COVER);
     }
-    pick.tryTier(tiers.duvet(), duvetNorth(), PickedDecorLayer.DUVET, true);
+    pick.tryTier(tiers.duvet(), duvetNorth(), PickedDecorLayer.DUVET);
     return pick.bestLayer != null ? pick.bestLayer : PickedDecorLayer.NONE;
   }
 
@@ -217,11 +184,11 @@ public final class BedPlate6PickShapesNorth {
       this.facing = facing;
     }
 
-    private void tryTier(int tier, VoxelShape north, PickedDecorLayer layer, boolean beddingLayer) {
+    private void tryTier(int tier, VoxelShape north, PickedDecorLayer layer) {
       if (tier >= bestTier) {
         return;
       }
-      if (matchesPickShape(north, hitWorld, foot, facing, beddingLayer)) {
+      if (matchesPickShape(north, hitWorld, foot, facing)) {
         bestTier = tier;
         bestLayer = layer;
       }
@@ -229,13 +196,73 @@ public final class BedPlate6PickShapesNorth {
   }
 
   private static boolean matchesPickShape(
-      VoxelShape north, Vec3 hitWorld, BlockPos foot, Direction facing, boolean beddingLayer) {
-    VoxelShape oriented = orientForBedFacing(north, facing);
-    if (beddingLayer) {
-      return containsFootLocal(oriented, hitWorld, foot);
+      VoxelShape north, Vec3 hitWorld, BlockPos foot, Direction facing) {
+    return containsFootLocal(orientForBedFacing(north, facing), hitWorld, foot);
+  }
+
+  /**
+   * 射线与床品子件 3D 盒求交：沿射线取<strong>距眼最近</strong>的交点，同距时 tier 更小者优先（与 {@link #pickLayerByVoxelHit} 一致）。
+   */
+  @Nullable
+  public static Vec3 clipFootLocalPreferDecorTier(
+      BedPlate6BlockEntity plate, Direction facing, Vec3 localStart, Vec3 localEnd) {
+    if (!plate.hasDuvet()) {
+      return null;
     }
-    return columnMatchesFootLocal(oriented, hitWorld, foot)
-        || containsFootLocal(oriented, hitWorld, foot);
+    PillowPickTiers tiers = PillowPickTiers.forPlate(plate);
+    DecorClipState clip = new DecorClipState(facing, localStart, localEnd);
+    if (plate.hasSmallPillow()) {
+      clip.tryTier(tiers.small(), pillowSmallStackNorth());
+    }
+    if (plate.hasLargePillow()) {
+      clip.tryTier(tiers.large(), largePillowNorth(plate.getLargePillowStyleId()));
+    }
+    int n = plate.getMediumPillowCount();
+    boolean large = plate.hasLargePillow();
+    if (n == 2) {
+      clip.tryTier(tiers.mediumRear(), pillowMediumPairRearNorth());
+      clip.tryTier(tiers.mediumFront(), pillowMediumPairFrontNorth());
+    } else if (n == 1 && large) {
+      clip.tryTier(tiers.mediumFront(), pillowMediumPairFrontNorth());
+    } else if (n == 1) {
+      clip.tryTier(tiers.mediumSolo(), pillowMediumSoloNorth());
+    }
+    if (plate.hasCover()) {
+      clip.tryTier(tiers.cover(), duvetCoverNorth());
+    }
+    clip.tryTier(tiers.duvet(), duvetNorth());
+    return clip.bestLocal;
+  }
+
+  private static final class DecorClipState {
+    private static final double CLIP_TIER_TIE_EPS = 1.0E-6;
+
+    private final Direction facing;
+    private final Vec3 localStart;
+    private final Vec3 localEnd;
+    private int bestTier = Integer.MAX_VALUE;
+    private double bestDist2 = Double.MAX_VALUE;
+    @Nullable private Vec3 bestLocal;
+
+    private DecorClipState(Direction facing, Vec3 localStart, Vec3 localEnd) {
+      this.facing = facing;
+      this.localStart = localStart;
+      this.localEnd = localEnd;
+    }
+
+    private void tryTier(int tier, VoxelShape north) {
+      Vec3 hit = closestClipOnNorthShape(north, facing, localStart, localEnd);
+      if (hit == null) {
+        return;
+      }
+      double d2 = localStart.distanceToSqr(hit);
+      if (d2 < bestDist2 - CLIP_TIER_TIE_EPS
+          || (d2 <= bestDist2 + CLIP_TIER_TIE_EPS && tier < bestTier)) {
+        bestDist2 = d2;
+        bestTier = tier;
+        bestLocal = hit;
+      }
+    }
   }
 
   /**
@@ -332,21 +359,21 @@ public final class BedPlate6PickShapesNorth {
     };
   }
 
-  // bed_plate6_voxel_pick_from_geo: sha256[:12]=6de1eece2265 bed_plate6_duvet.geo.json
+  // voxel_pick_from_geo: sha256[:12]=ade50fbdd891 bed_plate6_duvet.geo.json
   private static VoxelShape duvetNorth() {
     VoxelShape s = Shapes.empty();
-    s = Shapes.or(s, Block.box(0.0, 5.0, 1.0, 16.0, 7.0, 31.0));
+    s = Shapes.or(s, Block.box(0.0, 5.0, 0.0, 16.0, 7.0, 31.0));
     return s;
   }
 
-  // bed_plate6_voxel_pick_from_geo: sha256[:12]=e4fa448485f0 bed_plate6_duvet_cover.geo.json
+  // voxel_pick_from_geo: sha256[:12]=811cc52d1691 bed_plate6_duvet_cover.geo.json
   private static VoxelShape duvetCoverNorth() {
     VoxelShape s = Shapes.empty();
     s = Shapes.or(s, Block.box(0.0, 3.5522, 0.0, 16.0, 9.4, 24.0));
     return s;
   }
 
-  // bed_plate6_voxel_pick_from_geo: sha256[:12]=8a9a8b6a3cdb bed_plate6_pillow_large_striped.geo.json
+  // voxel_pick_from_geo: sha256[:12]=900315c514d5 bed_plate6_pillow_large_striped.geo.json
   private static VoxelShape pillowLargeStripedNorth() {
     VoxelShape s = Shapes.empty();
     s = Shapes.or(s, Block.box(1.5, 7.0, 29.75, 14.5, 14.0, 30.25));
@@ -354,7 +381,7 @@ public final class BedPlate6PickShapesNorth {
     return s;
   }
 
-  // bed_plate6_voxel_pick_from_geo: sha256[:12]=576bab387250 bed_plate6_pillow_large_plain.geo.json
+  // voxel_pick_from_geo: sha256[:12]=ff701ee47813 bed_plate6_pillow_large_plain.geo.json
   private static VoxelShape pillowLargePlainNorth() {
     VoxelShape s = Shapes.empty();
     s = Shapes.or(s, Block.box(1.5, 7.0, 29.75, 14.5, 14.0, 30.25));
@@ -362,7 +389,7 @@ public final class BedPlate6PickShapesNorth {
     return s;
   }
 
-  // bed_plate6_voxel_pick_from_geo: sha256[:12]=7dc26a739cda bed_plate6_pillow_large_plaid.geo.json
+  // voxel_pick_from_geo: sha256[:12]=daebd9c1f5b0 bed_plate6_pillow_large_plaid.geo.json
   private static VoxelShape pillowLargePlaidNorth() {
     VoxelShape s = Shapes.empty();
     s = Shapes.or(s, Block.box(1.5, 7.0, 29.75, 14.5, 14.0, 30.25));
@@ -370,24 +397,31 @@ public final class BedPlate6PickShapesNorth {
     return s;
   }
 
-  // bed_plate6_voxel_pick_from_geo: sha256[:12]=522ae4609dda bed_plate6_pillow_medium_solo.geo.json
+  // voxel_pick_from_geo: sha256[:12]=be33a8cd1183 bed_plate6_pillow_medium_solo.geo.json
   private static VoxelShape pillowMediumSoloNorth() {
     VoxelShape s = Shapes.empty();
     s = Shapes.or(s, Block.box(3.0, 7.0, 24.0, 13.0, 9.0, 31.0));
+    s = Shapes.or(s, Block.box(2.0, 7.75, 24.0, 14.0, 8.25, 31.0));
     return s;
   }
 
-  // bed_plate6_voxel_pick_from_geo: sha256[:12]=eb7dc3507626 bed_plate6_pillow_medium_pair_front.geo.json
+  // voxel_pick_from_geo: sha256[:12]=43dd3e5fcd65 bed_plate6_pillow_medium_pair_front.geo.json
   private static VoxelShape pillowMediumPairFrontNorth() {
-    return Block.box(5.0, 6.2284, 24.7042, 15.0, 13.4609, 29.2307);
+    VoxelShape s = Shapes.empty();
+    s = Shapes.or(s, Block.box(5.0, 6.2284, 24.7042, 15.0, 13.4609, 29.2307));
+    s = Shapes.or(s, Block.box(4.0, 6.5728, 25.5357, 16.0, 13.1165, 28.3992));
+    return s;
   }
 
-  // bed_plate6_voxel_pick_from_geo: sha256[:12]=285c9348ed54 bed_plate6_pillow_medium_pair_rear.geo.json
+  // voxel_pick_from_geo: sha256[:12]=2db0c84353ad bed_plate6_pillow_medium_pair_rear.geo.json
   private static VoxelShape pillowMediumPairRearNorth() {
-    return Block.box(1.0, 7.06, 28.7, 11.0, 14.06, 30.7);
+    VoxelShape s = Shapes.empty();
+    s = Shapes.or(s, Block.box(1.0, 7.0, 28.7, 11.0, 14.0, 30.7));
+    s = Shapes.or(s, Block.box(0.0, 7.0, 29.45, 12.0, 14.0, 29.95));
+    return s;
   }
 
-  // bed_plate6_voxel_pick_from_geo: sha256[:12]=9a35b8057aa9 bed_plate6_pillow_small_stack.geo.json
+  // voxel_pick_from_geo: sha256[:12]=1a75624e4909 bed_plate6_pillow_small_stack.geo.json
   private static VoxelShape pillowSmallStackNorth() {
     VoxelShape s = Shapes.empty();
     s = Shapes.or(s, Block.box(0.4, 7.3085, 27.2706, 4.4, 11.0422, 28.8937));
