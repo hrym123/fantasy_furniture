@@ -11,6 +11,7 @@ import net.minecraftforge.registries.RegistryObject;
 import org.lanye.fantasy_furniture.FantasyFurniture;
 import org.lanye.fantasy_furniture.bootstrap.block.BedPlate6Registration;
 import org.lanye.fantasy_furniture.content.debug.item.DebugVariantStickItem;
+import org.lanye.fantasy_furniture.content.tool.item.PaintBrushItem;
 import org.lanye.fantasy_furniture.content.furniture.common.item.ArcaneWandItem;
 import org.lanye.reverie_core.geolib.GeolibItemAssets;
 import org.lanye.reverie_core.item.DecorativeHelmetRegistration;
@@ -28,7 +29,7 @@ public final class ModItems {
             DeferredRegister.create(ForgeRegistries.ITEMS, FantasyFurniture.MODID);
 
     public static final RegistryObject<Item> PAINT_BRUSH =
-            ITEMS.register("paint_brush", () -> new Item(new Item.Properties()));
+            ITEMS.register("paint_brush", () -> new PaintBrushItem(new Item.Properties()));
 
     /** 开发：循环本模组方块 / 物品变体；木棍外观 + 附魔光效。 */
     public static final RegistryObject<Item> DEBUG_VARIANT_STICK =
