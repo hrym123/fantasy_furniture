@@ -24,4 +24,16 @@ public final class ModTags {
                     Registries.ITEM,
                     ResourceLocation.fromNamespaceAndPath(FantasyFurniture.MODID, "brush_recolorable"));
 
+    /** 可被线圈循环换色的方块（床板 6 等布衣陈列面）。 */
+    public static final TagKey<Block> COIL_RECOLORABLE_BLOCKS =
+            TagKey.create(
+                    Registries.BLOCK,
+                    ResourceLocation.fromNamespaceAndPath(FantasyFurniture.MODID, "coil_recolorable"));
+
+    /** 可被线圈循环换色的物品（床板 6 被单/被套/枕头等）。 */
+    public static final TagKey<Item> COIL_RECOLORABLE_ITEMS =
+            TagKey.create(
+                    Registries.ITEM,
+                    ResourceLocation.fromNamespaceAndPath(FantasyFurniture.MODID, "coil_recolorable"));
+
 }
