@@ -11,7 +11,7 @@ import org.lanye.fantasy_furniture.content.soap.client.model.SoapRackBodyGeoMode
 import org.lanye.fantasy_furniture.content.soap.client.model.SoapRackInnerSoapGeoModel;
 import software.bernie.geckolib.renderer.GeoBlockRenderer;
 
-/** 架体 Geo + 可选架上 {@code soap_bar} 叠层。 */
+/** 架体 Geo + 可选架上 {@code soap_rack_inner_soap} 叠层。 */
 @OnlyIn(Dist.CLIENT)
 public final class SoapRackGeoBlockRenderer implements BlockEntityRenderer<SoapRackBlockEntity> {
 

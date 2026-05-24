@@ -5,7 +5,7 @@ import org.lanye.fantasy_furniture.content.soap.SoapBarAppearance;
 import org.lanye.fantasy_furniture.content.soap.blockentity.SoapBoxBlockEntity;
 import software.bernie.geckolib.model.GeoModel;
 
-/** 盒内皂叠层：复用 {@code soap_bar} 磨损 geo 与颜料贴图。 */
+/** 盒内皂叠层：{@code soap_box_inner_soap.geo.json} + 肥皂颜料贴图。 */
 public final class SoapBoxInnerSoapGeoModel extends GeoModel<SoapBoxBlockEntity> {
 
     private SoapBarAppearance soap(SoapBoxBlockEntity animatable) {
@@ -14,7 +14,7 @@ public final class SoapBoxInnerSoapGeoModel extends GeoModel<SoapBoxBlockEntity>
 
     @Override
     public ResourceLocation getModelResource(SoapBoxBlockEntity animatable) {
-        return soap(animatable).modelLocation();
+        return soap(animatable).soapBoxInnerModelLocation();
     }
 
     @Override

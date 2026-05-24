@@ -55,6 +55,24 @@ public record SoapBarAppearance(int wear, int materialId) {
                 FantasyFurniture.MODID, "geo/block/" + geoBasename() + ".geo.json");
     }
 
+    /**
+     * 肥皂盒内叠层 geo（源自 {@code 肥皂盒_肥皂.bbmodel} 的 {@code soap_bar} 组）。
+     * 贴图仍用 {@link #textureLocation()}；与地上 {@link #modelLocation()} 分离。
+     */
+    public ResourceLocation soapBoxInnerModelLocation() {
+        return ResourceLocation.fromNamespaceAndPath(
+                FantasyFurniture.MODID, "geo/block/soap_box_inner_soap.geo.json");
+    }
+
+    /**
+     * 肥皂架上叠层 geo（源自 {@code 肥皂架_肥皂.bbmodel} 的 {@code soap_bar} 组）。
+     * 贴图仍用 {@link #textureLocation()}；与地上 {@link #modelLocation()} 分离。
+     */
+    public ResourceLocation soapRackInnerModelLocation() {
+        return ResourceLocation.fromNamespaceAndPath(
+                FantasyFurniture.MODID, "geo/block/soap_rack_inner_soap.geo.json");
+    }
+
     public ResourceLocation textureLocation() {
         return ResourceLocation.fromNamespaceAndPath(
                 FantasyFurniture.MODID, "textures/block/" + textureBasename() + ".png");

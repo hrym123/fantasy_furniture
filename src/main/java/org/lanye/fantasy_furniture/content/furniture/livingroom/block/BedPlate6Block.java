@@ -52,8 +52,11 @@ import org.lanye.reverie_core.util.VoxelShapeTranslation;
  */
 public final class BedPlate6Block extends BedPlateBlock {
 
-    /** 供 {@link #onRemove} 判断是否为创造模式破坏（与 {@link PlainGlassWindowBlock} 同思路）。 */
-    private static final ThreadLocal<Player> BREAKING_PLAYER = new ThreadLocal<>();
+    /**
+     * 玩家破坏时 {@link BedBlock#playerWillDestroy} 会连锁拆掉另一半；{@link #onRemove} 会被调用两次。
+     * 掉落已在 {@link #playerWillDestroy} 处理，用计数跳过连锁 {@link #onRemove} 的重复掉落。
+     */
+    private static final ThreadLocal<Integer> PENDING_PLAYER_ON_REMOVE = new ThreadLocal<>();
 
     /**
      * 被单薄层外接盒（整格 16×16、床垫顶 y=5 起高约 2/16）：用于床头格 {@link #getShape} 回退、以及 {@link #getCollisionShape}（配置开启时）。
@@ -116,36 +119,51 @@ public final class BedPlate6Block extends BedPlateBlock {
 
     @Override
     public void playerWillDestroy(Level level, BlockPos pos, BlockState state, Player player) {
-        BREAKING_PLAYER.set(player);
-        try {
-            super.playerWillDestroy(level, pos, state, player);
-        } finally {
-            BREAKING_PLAYER.remove();
+        if (!level.isClientSide) {
+            PENDING_PLAYER_ON_REMOVE.set(2);
+            breakDropsForPlate(level, state, pos, player.getAbilities().instabuild, false);
         }
+        super.playerWillDestroy(level, pos, state, player);
     }
 
     @Override
     public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean isMoving) {
         if (!level.isClientSide && !state.is(newState.getBlock())) {
-            Player breaker = BREAKING_PLAYER.get();
-            boolean creative = breaker != null && breaker.getAbilities().instabuild;
-            BlockPos foot = bedFootWorldPos(state, pos);
-            BlockEntity be = level.getBlockEntity(foot);
-            if (be instanceof BedPlate6BlockEntity plate && BedPlate6DecorStorage.hasStoredDecor(plate)) {
-                if (creative) {
-                    BedPlate6DecorStorage.clearAllStoredDecor(plate);
+            Integer pending = PENDING_PLAYER_ON_REMOVE.get();
+            if (pending != null) {
+                if (pending <= 1) {
+                    PENDING_PLAYER_ON_REMOVE.remove();
                 } else {
-                    BedPlate6DecorStorage.spillAllAsWorldDrops(level, foot, plate);
+                    PENDING_PLAYER_ON_REMOVE.set(pending - 1);
                 }
-            }
-            if (!creative && state.getValue(BedBlock.PART) == BedPart.FOOT) {
-                Block.popResource(level, foot, new ItemStack(ModBlocks.BED_PLATE6.item().get()));
+            } else {
+                breakDropsForPlate(level, state, pos, false, true);
             }
         }
         super.onRemove(state, level, pos, newState, isMoving);
     }
 
-    /** 床板掉落改由 {@link #onRemove} 在床尾格手动处理，避免战利品表在创造模式等路径仍掉落。 */
+    /** 床尾格散落寝具；生存模式掉落床板物品（玩家破坏任意一格只掉一次，非玩家破坏仅 foot 格掉落）。 */
+    private static void breakDropsForPlate(
+            Level level, BlockState state, BlockPos anyPartPos, boolean creative, boolean onlyDropBedOnFootPart) {
+        BlockPos foot = bedFootWorldPos(state, anyPartPos);
+        BlockEntity be = level.getBlockEntity(foot);
+        if (!(be instanceof BedPlate6BlockEntity plate)) {
+            return;
+        }
+        if (BedPlate6DecorStorage.hasStoredDecor(plate)) {
+            if (creative) {
+                BedPlate6DecorStorage.clearAllStoredDecor(plate);
+            } else {
+                BedPlate6DecorStorage.spillAllAsWorldDrops(level, foot, plate);
+            }
+        }
+        if (!creative && (!onlyDropBedOnFootPart || state.getValue(BedBlock.PART) == BedPart.FOOT)) {
+            Block.popResource(level, foot, new ItemStack(ModBlocks.BED_PLATE6.item().get()));
+        }
+    }
+
+    /** 床板掉落改由 {@link #playerWillDestroy} / {@link #onRemove} 手动处理，避免战利品表在创造模式等路径仍掉落。 */
     @Override
     public List<ItemStack> getDrops(BlockState state, LootParams.Builder builder) {
         return List.of();

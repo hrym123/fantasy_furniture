@@ -12,7 +12,7 @@ import org.lanye.fantasy_furniture.content.soap.client.model.SoapBoxInnerSoapGeo
 import software.bernie.geckolib.renderer.GeoBlockRenderer;
 
 /**
- * 盒体 Geo + 可选盒内 {@code soap_bar} 叠层（同帧两次渲染）。
+ * 盒体 Geo + 可选盒内 {@code soap_box_inner_soap} 叠层（同帧两次渲染）。
  *
  * <p>肥皂盒 geo 与默认 {@link GeoBlockRenderer#rotateBlock} 已对齐，勿套用床板 +180° Y。
  * 碰撞：{@link SoapBoxBlock#getShape} 用 {@code geo_collision_box.py} 北向外接盒 +
