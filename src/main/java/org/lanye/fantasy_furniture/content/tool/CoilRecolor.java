@@ -2,6 +2,8 @@ package org.lanye.fantasy_furniture.content.tool;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.BedBlock;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -9,6 +11,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BedPart;
 import net.minecraft.world.phys.Vec3;
 import org.lanye.fantasy_furniture.bootstrap.block.ModBlocks;
+import org.lanye.fantasy_furniture.bootstrap.item.ModItems;
 import org.lanye.fantasy_furniture.bootstrap.tag.ModTags;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.BedPlate6DuvetCoverMaterials;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.BedPlate6DuvetMaterials;
@@ -23,6 +26,15 @@ import org.lanye.fantasy_furniture.content.furniture.livingroom.item.BedPlate6La
 public final class CoilRecolor {
 
     private CoilRecolor() {}
+
+    /**
+     * 主手线圈对 {@link ModTags#COIL_RECOLORABLE_BLOCKS} 目标右击时，方块自身 {@code use}（含床的重生点）应让出。
+     */
+    public static boolean defersBlockUse(Player player, InteractionHand hand, BlockState state) {
+        return hand == InteractionHand.MAIN_HAND
+                && state.is(ModTags.COIL_RECOLORABLE_BLOCKS)
+                && player.getItemInHand(hand).is(ModItems.FABRIC_COIL.get());
+    }
 
     public static boolean apply(Level level, BlockState state, BlockPos pos, Vec3 hitLocation) {
         if (!state.is(ModTags.COIL_RECOLORABLE_BLOCKS)) {

@@ -33,6 +33,9 @@ public final class PaintBrushRecolorHudOverlay implements IGuiOverlay {
     private static final int ICON_SIZE = 16;
     private static final int INNER_PAD_X = 3;
     private static final int GAP_ABOVE_STATUS = 6;
+    private static final float HINT_SCALE = 0.85f;
+    private static final int HINT_COLOR = 0xC8C8C8;
+    private static final int HINT_GAP = 2;
 
     private static final PaintBrushRecolorHudOverlay INSTANCE = new PaintBrushRecolorHudOverlay();
 
@@ -75,9 +78,13 @@ public final class PaintBrushRecolorHudOverlay implements IGuiOverlay {
             ItemStack stack,
             Component name) {
         Font font = Minecraft.getInstance().font;
+        String hint = Component.translatable("hud.fantasy_furniture.paint_brush_recolor_preview").getString();
         String display = BrushRecolorPreview.truncateDisplayName(name.getString());
+        int hintWidth = (int) (font.width(hint) * HINT_SCALE);
+        int hintHeight = (int) (font.lineHeight * HINT_SCALE);
         int textWidth = font.width(display);
-        int innerWidth = INNER_PAD_X + ICON_SIZE + INNER_PAD_X + textWidth + INNER_PAD_X;
+        int contentTextWidth = Math.max(hintWidth, textWidth);
+        int innerWidth = INNER_PAD_X + ICON_SIZE + INNER_PAD_X + contentTextWidth + INNER_PAD_X;
         int panelWidth = innerWidth + FRAME_BORDER * 2;
         int panelHeight = FRAME_TEX_HEIGHT;
 
@@ -95,12 +102,24 @@ public final class PaintBrushRecolorHudOverlay implements IGuiOverlay {
         graphics.renderItemDecorations(font, stack, iconX, iconY);
 
         int textX = iconX + ICON_SIZE + INNER_PAD_X;
-        int textY = y + FRAME_BORDER + (innerHeight - font.lineHeight) / 2 + 1;
+        int blockHeight = hintHeight + HINT_GAP + font.lineHeight;
+        int blockTop = y + FRAME_BORDER + (innerHeight - blockHeight) / 2;
+        int hintY = blockTop;
+        int textY = blockTop + hintHeight + HINT_GAP;
+
+        var pose = graphics.pose();
+        pose.pushPose();
+        pose.translate(textX, hintY, 0);
+        pose.scale(HINT_SCALE, HINT_SCALE, 1f);
+        graphics.drawString(font, hint, 0, 0, HINT_COLOR, true);
+        pose.popPose();
+
         graphics.drawString(font, display, textX, textY, 0xFFFFFF, true);
     }
 
     /**
-     * 横向三切片边框。不用 {@link GuiGraphics#blitNineSliced}：其内部 {@code blit(u,v,w,h)} 固定按 256×256 算 UV，
+     * 横向三切片边框：左右固定，中间段按纹理宽度平铺（不拉伸 UV）。
+     * 不用 {@link GuiGraphics#blitNineSliced}：其内部 {@code blit(u,v,w,h)} 固定按 256×256 算 UV，
      * 非 256 图集贴图只会采到顶部窄条。
      */
     private static void drawFrameBorder(GuiGraphics graphics, int x, int y, int panelWidth, int panelHeight) {
@@ -121,18 +140,25 @@ public final class PaintBrushRecolorHudOverlay implements IGuiOverlay {
                 tw,
                 th);
         if (centerDstW > 0) {
-            graphics.blit(
-                    FRAME_TEXTURE,
-                    x + FRAME_BORDER,
-                    y,
-                    centerDstW,
-                    panelHeight,
-                    FRAME_BORDER,
-                    0,
-                    FRAME_CENTER_W,
-                    th,
-                    tw,
-                    th);
+            int dstX = x + FRAME_BORDER;
+            int remaining = centerDstW;
+            while (remaining > 0) {
+                int tileW = Math.min(remaining, FRAME_CENTER_W);
+                graphics.blit(
+                        FRAME_TEXTURE,
+                        dstX,
+                        y,
+                        tileW,
+                        panelHeight,
+                        FRAME_BORDER,
+                        0,
+                        tileW,
+                        th,
+                        tw,
+                        th);
+                dstX += tileW;
+                remaining -= tileW;
+            }
         }
         graphics.blit(
                 FRAME_TEXTURE,

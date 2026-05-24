@@ -25,6 +25,7 @@ import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import org.lanye.fantasy_furniture.Config;
 import org.lanye.fantasy_furniture.bootstrap.block.ModBlocks;
+import org.lanye.fantasy_furniture.content.tool.CoilRecolor;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.BedPlate6DecorStorage;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.blockentity.BedPlate6BlockEntity;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.client.BedPlate6ClientPick;
@@ -278,6 +279,9 @@ public final class BedPlate6Block extends BedPlateBlock {
                 BedPlate6BedDecorRemoval.tryRemoveSelectedWithMainHandGlove(level, state, pos, player, hand, hit);
         if (glove != InteractionResult.PASS) {
             return glove;
+        }
+        if (CoilRecolor.defersBlockUse(player, hand, state)) {
+            return InteractionResult.PASS;
         }
         if (player.getItemInHand(hand).getItem() instanceof BedPlate6DuvetCoverItem) {
             InteractionResult cover = BedPlate6DuvetCoverItem.applyToBed(level, pos, state, player, hand);

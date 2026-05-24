@@ -23,6 +23,7 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import org.lanye.fantasy_furniture.bootstrap.block.ModBlocks;
+import org.lanye.fantasy_furniture.content.tool.BrushRecolor;
 import org.lanye.fantasy_furniture.content.soap.SoapBarAppearance;
 import org.lanye.fantasy_furniture.content.soap.SoapBarMaterials;
 import org.lanye.fantasy_furniture.content.soap.SoapBoxAppearance;
@@ -113,6 +114,20 @@ public class SoapBoxBlock extends GeolibFacingEntityBlockWithFactory<SoapBoxBloc
     }
 
     @Override
+    protected InteractionResult onUseClient(
+            BlockState state,
+            Level level,
+            BlockPos pos,
+            Player player,
+            InteractionHand hand,
+            BlockHitResult hit) {
+        if (BrushRecolor.defersBlockUse(player, hand, state)) {
+            return InteractionResult.PASS;
+        }
+        return InteractionResult.SUCCESS;
+    }
+
+    @Override
     protected InteractionResult onUseServer(
             BlockState state,
             Level level,
@@ -120,6 +135,9 @@ public class SoapBoxBlock extends GeolibFacingEntityBlockWithFactory<SoapBoxBloc
             Player player,
             InteractionHand hand,
             BlockHitResult hit) {
+        if (BrushRecolor.defersBlockUse(player, hand, state)) {
+            return InteractionResult.PASS;
+        }
         if (hand != InteractionHand.MAIN_HAND) {
             return InteractionResult.PASS;
         }
