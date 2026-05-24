@@ -29,6 +29,8 @@ import org.lanye.fantasy_furniture.content.soap.block.SoapRackBlock;
 import org.lanye.fantasy_furniture.content.soap.blockentity.SoapBarBlockEntity;
 import org.lanye.fantasy_furniture.content.soap.blockentity.SoapBoxBlockEntity;
 import org.lanye.fantasy_furniture.content.soap.blockentity.SoapRackBlockEntity;
+import org.lanye.fantasy_furniture.content.debug.block.GeolibAlignmentProbeBlock;
+import org.lanye.fantasy_furniture.content.debug.blockentity.GeolibAlignmentProbeBlockEntity;
 import org.lanye.fantasy_furniture.content.soap.item.SoapBarBlockItem;
 import org.lanye.fantasy_furniture.content.soap.item.SoapBoxBlockItem;
 import org.lanye.fantasy_furniture.bootstrap.block.PlainGlassWindowRegistration;
@@ -144,7 +146,12 @@ public final class FurnitureAnimatedBlocks {
                                     "sweeper_dock",
                                     FurnitureBlockProperties::metalNoOcclusion,
                                     SweeperDockBlock::new,
-                                    SweeperDockBlockEntity::new)));
+                                    SweeperDockBlockEntity::new),
+                            defaultAnimatedSpec(
+                                    "geolib_alignment_probe",
+                                    FurnitureBlockProperties::woodCabinetNoOcclusion,
+                                    GeolibAlignmentProbeBlock::new,
+                                    GeolibAlignmentProbeBlockEntity::new)));
 
     private static final int I_BANQUETTE = 0;
     private static final int I_LOTTERY_MACHINE = 1;
@@ -154,6 +161,7 @@ public final class FurnitureAnimatedBlocks {
     private static final int I_GREEN_SOFA = 5;
     private static final int I_COMBINED_ORNAMENT = 6;
     private static final int I_SWEEPER_DOCK = 7;
+    private static final int I_GEOLIB_ALIGNMENT_PROBE = 8;
 
     @SuppressWarnings("unchecked")
     private static <BE extends BlockEntity> AnimatedBlockEntry<BE> animatedEntry(int index) {
@@ -177,6 +185,9 @@ public final class FurnitureAnimatedBlocks {
             animatedEntry(I_COMBINED_ORNAMENT);
 
     public static final AnimatedBlockEntry<SweeperDockBlockEntity> SWEEPER_DOCK = animatedEntry(I_SWEEPER_DOCK);
+
+    public static final AnimatedBlockEntry<GeolibAlignmentProbeBlockEntity> GEOLIB_ALIGNMENT_PROBE =
+            animatedEntry(I_GEOLIB_ALIGNMENT_PROBE);
 
     public static final AnimatedBlockEntry<BedPlateBaseBlockEntity> BED_PLATE6 = BedPlate6Registration.mainEntry();
 

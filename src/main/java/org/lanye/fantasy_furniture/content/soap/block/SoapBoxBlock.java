@@ -41,8 +41,11 @@ public class SoapBoxBlock extends GeolibFacingEntityBlockWithFactory<SoapBoxBloc
     public static final IntegerProperty MATERIAL =
             IntegerProperty.create("material", 1, SoapBarMaterials.COUNT);
 
-    private static final VoxelShape SHAPE_CLOSED_NORTH = Block.box(3.5, 0.0, 5.0, 12.5, 5.0, 11.0);
-    private static final VoxelShape SHAPE_OPEN_NORTH = Block.box(3.5, 0.0, 5.0, 14.04, 7.97, 11.0);
+    /** 关盖：{@code geo_collision_box.py} 外接盒（{@code soap_box.geo.json}）。 */
+    private static final VoxelShape SHAPE_CLOSED_NORTH = Block.box(3.5, 0.0, 5.0, 12.5, 4.0, 11.0);
+
+    /** 开盖：{@code geo_collision_box.py} 外接盒 X 镜像（盖在 −X），与 Gecko FACING=NORTH 渲染一致。 */
+    private static final VoxelShape SHAPE_OPEN_NORTH = Block.box(1.96, 0.0, 5.0, 12.5, 7.97, 11.0);
 
     public SoapBoxBlock(BlockBehaviour.Properties properties) {
         super(properties, SoapBoxBlockEntity::new);
@@ -64,7 +67,7 @@ public class SoapBoxBlock extends GeolibFacingEntityBlockWithFactory<SoapBoxBloc
     @Override
     public VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
         VoxelShape north = state.getValue(OPEN) ? SHAPE_OPEN_NORTH : SHAPE_CLOSED_NORTH;
-        return VoxelShapeRotation.rotateYFromNorth(north, state.getValue(FACING));
+        return VoxelShapeRotation.rotateYFromNorthLikeGeckoBlockRenderer(north, state.getValue(FACING));
     }
 
     @Override

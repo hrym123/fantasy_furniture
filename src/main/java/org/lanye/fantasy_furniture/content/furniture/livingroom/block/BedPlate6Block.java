@@ -181,7 +181,7 @@ public final class BedPlate6Block extends BedPlateBlock {
     }
 
     /**
-     * 床尾格：床垫 + 由 geo 导出的被单/被套/枕头北向并集，再按朝向旋转（与 {@link org.lanye.reverie_core.geolib.client.BedPlateGeoBlockRenderer} 一致补 180° Y）。
+     * 床尾格：床垫 + 由 geo 导出的被单/被套/枕头北向并集，再按朝向旋转（{@link VoxelShapeRotation#rotateYFromNorth}）。
      * 床头格：与床尾<strong>同一套</strong>选取并集，沿 {@link BedBlock#FACING} 平移 −1 格到床头局部原点，使轮廓 / 射线命中与仅床尾绘制的 Geo 一致（不再仅用 {@link #DUVET_OUTER_BOX} 近似）。
      *
      * <p>客户端且 {@link CollisionContext} 含玩家时：若准心与本床同一锚点，则用 {@link BedPlate6PickShapesNorth#northOutlinePieceNorth} 仅合并当前解析子件体素，避免多枕同亮（T007 #6）。

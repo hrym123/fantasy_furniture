@@ -5,11 +5,13 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import net.minecraft.core.Direction;
 import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import org.junit.jupiter.api.Test;
+import org.lanye.fantasy_furniture.content.debug.block.GeolibAlignmentProbeBlock;
 import org.lanye.reverie_core.util.VoxelShapeRotation;
 
 /**
@@ -35,8 +37,76 @@ class VoxelShapeRotationTest {
     @Test
     void rotateYFromNorth_north_isIdentity() {
         VoxelShape shape = Shapes.box(1 / 16.0, 2 / 16.0, 3 / 16.0, 10 / 16.0, 11 / 16.0, 12 / 16.0);
-        VoxelShape out = VoxelShapeRotation.rotateYFromNorth(shape, net.minecraft.core.Direction.NORTH);
+        VoxelShape out = VoxelShapeRotation.rotateYFromNorth(shape, Direction.NORTH);
         assertAabbListsEqual(shape.toAabbs(), out.toAabbs());
+    }
+
+    /** 非对称开盖盒（−X 延伸，肥皂盒 X 镜像北向基准）四向延伸轴。 */
+    @Test
+    void rotateYFromNorthLikeGeckoBlockRenderer_asymmetricOpenLidExtents() {
+        VoxelShape north = Shapes.box(1.96 / 16.0, 0, 5 / 16.0, 12.5 / 16.0, 7.97 / 16.0, 11 / 16.0);
+        double eps = 1e-6;
+
+        assertExtent(
+                VoxelShapeRotation.rotateYFromNorthLikeGeckoBlockRenderer(north, Direction.NORTH),
+                "minX",
+                1.96 / 16.0,
+                eps);
+        assertExtent(
+                VoxelShapeRotation.rotateYFromNorthLikeGeckoBlockRenderer(north, Direction.SOUTH),
+                "maxX",
+                14.04 / 16.0,
+                eps);
+        assertExtent(
+                VoxelShapeRotation.rotateYFromNorthLikeGeckoBlockRenderer(north, Direction.WEST),
+                "maxZ",
+                14.04 / 16.0,
+                eps);
+        assertExtent(
+                VoxelShapeRotation.rotateYFromNorthLikeGeckoBlockRenderer(north, Direction.EAST),
+                "minZ",
+                1.96 / 16.0,
+                eps);
+    }
+
+    @Test
+    void rotateYFromNorthLikeGeckoBlockRenderer_geolibAlignmentProbeExtents() {
+        VoxelShape north = GeolibAlignmentProbeBlock.SHAPE_NORTH;
+        double eps = 1e-6;
+
+        assertExtent(
+                VoxelShapeRotation.rotateYFromNorthLikeGeckoBlockRenderer(north, Direction.NORTH),
+                "minX",
+                0.0,
+                eps);
+        assertExtent(
+                VoxelShapeRotation.rotateYFromNorthLikeGeckoBlockRenderer(north, Direction.SOUTH),
+                "maxX",
+                16.0 / 16.0,
+                eps);
+        assertExtent(
+                VoxelShapeRotation.rotateYFromNorthLikeGeckoBlockRenderer(north, Direction.WEST),
+                "maxZ",
+                16.0 / 16.0,
+                eps);
+        assertExtent(
+                VoxelShapeRotation.rotateYFromNorthLikeGeckoBlockRenderer(north, Direction.EAST),
+                "minZ",
+                0.0,
+                eps);
+    }
+
+    private static void assertExtent(VoxelShape shape, String axis, double expected, double eps) {
+        AABB box = shape.toAabbs().get(0);
+        double actual =
+                switch (axis) {
+                    case "minX" -> box.minX;
+                    case "maxX" -> box.maxX;
+                    case "minZ" -> box.minZ;
+                    case "maxZ" -> box.maxZ;
+                    default -> throw new IllegalArgumentException(axis);
+                };
+        assertEquals(expected, actual, eps, axis);
     }
 
     private static void assertAabbListsEqual(List<AABB> a, List<AABB> b) {

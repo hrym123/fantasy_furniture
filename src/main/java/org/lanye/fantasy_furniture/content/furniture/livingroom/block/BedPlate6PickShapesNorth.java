@@ -6,7 +6,6 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.shapes.Shapes;
@@ -27,7 +26,7 @@ import org.lanye.fantasy_furniture.content.furniture.livingroom.item.BedPlate6Sm
  * <p>体素由 {@code tools/bed6/bed_plate6_voxel_pick_from_geo.py} 导出（每 geo 文件对应床上一只枕/叠放，勿对单枕 geo 做 mirror 双盒）。
  * <p>枕类用列向+3D；被套/被单仅用 3D，避免列向与传单薄层重叠时在边界闪烁。
  *
- * @see org.lanye.reverie_core.geolib.client.BedPlateGeoBlockRenderer#rotateBlock
+ * @see VoxelShapeRotation#rotateYFromNorth
  */
 public final class BedPlate6PickShapesNorth {
 
@@ -84,13 +83,9 @@ public final class BedPlate6PickShapesNorth {
 
   private BedPlate6PickShapesNorth() {}
 
-  /** 与 {@link BedPlate6Block} 中床品体素朝向一致。 */
+  /** 与 {@link BedPlate6Block} 中床品体素朝向一致（MC {@link VoxelShapeRotation#rotateYFromNorth}）。 */
   public static VoxelShape orientForBedFacing(VoxelShape northShape, Direction facing) {
-    VoxelShape r = VoxelShapeRotation.rotateYFromNorth(northShape, facing);
-    if (facing.getAxis() != Direction.Axis.Y) {
-      r = VoxelShapeRotation.rotate(r, Rotation.CLOCKWISE_180);
-    }
-    return r;
+    return VoxelShapeRotation.rotateYFromNorth(northShape, facing);
   }
 
   /**

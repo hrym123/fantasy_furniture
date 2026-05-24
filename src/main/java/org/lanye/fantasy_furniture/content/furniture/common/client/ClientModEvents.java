@@ -54,6 +54,10 @@ public final class ClientModEvents {
                 ModBlocks.SOAP_BOX, ctx -> new SoapBoxGeoBlockRenderer());
         AnimatedBlockClientRegistration.registerBlockEntityRenderer(
                 ModBlocks.SOAP_RACK, ctx -> new SoapRackGeoBlockRenderer());
+        AnimatedBlockClientRegistration.registerBlockEntityRenderer(
+                ModBlocks.GEOLIB_ALIGNMENT_PROBE,
+                GeolibAnimatedBlockRenderers.defaultGeoRendererProvider(
+                        FantasyFurniture.MODID, "geolib_alignment_probe"));
     }
 
     @SubscribeEvent

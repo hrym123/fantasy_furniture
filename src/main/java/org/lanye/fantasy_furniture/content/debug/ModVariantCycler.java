@@ -146,10 +146,11 @@ public final class ModVariantCycler {
             if (!open) {
                 open = true;
             } else if (boxBe != null) {
-                boxBe.setContainedSoap(SoapBarAppearance.defaults());
+                SoapBarAppearance inserted = debugPlaceholderSoap(mat);
+                boxBe.setContainedSoap(inserted);
                 hasSoap = true;
                 open = false;
-                soap = boxBe.containedSoap();
+                soap = inserted;
             } else {
                 return Optional.empty();
             }
@@ -183,7 +184,7 @@ public final class ModVariantCycler {
             if (rack == null) {
                 return Optional.empty();
             }
-            SoapBarAppearance inserted = SoapBarAppearance.defaults();
+            SoapBarAppearance inserted = debugPlaceholderSoap(SoapBarAppearance.DEFAULT_MATERIAL);
             rack.setContainedSoap(inserted);
             level.setBlock(pos, state.setValue(SoapRackBlock.HAS_SOAP, true), Block.UPDATE_ALL);
             return Optional.of(
@@ -296,6 +297,11 @@ public final class ModVariantCycler {
 
     private static SoapBarAppearance withWear(SoapBarAppearance appearance, int wear) {
         return new SoapBarAppearance(wear, appearance.materialId());
+    }
+
+    /** 调试棒入皂占位：默认磨损 + 指定 pigment（盒体同色），循环中不切换 pigment。 */
+    private static SoapBarAppearance debugPlaceholderSoap(int materialId) {
+        return new SoapBarAppearance(SoapBarAppearance.DEFAULT_WEAR, materialId);
     }
 
     private static Component describeSoapWear(SoapBarAppearance appearance) {

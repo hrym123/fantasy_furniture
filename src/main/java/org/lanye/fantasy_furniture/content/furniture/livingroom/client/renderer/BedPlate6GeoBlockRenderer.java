@@ -2,11 +2,9 @@ package org.lanye.fantasy_furniture.content.furniture.livingroom.client.renderer
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
-import com.mojang.math.Axis;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
-import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.block.BedBlock;
 import net.minecraft.world.level.block.state.properties.BedPart;
@@ -115,14 +113,6 @@ public final class BedPlate6GeoBlockRenderer implements BlockEntityRenderer<BedP
                             blue,
                             alpha);
                 }
-
-                @Override
-                protected void rotateBlock(Direction facing, PoseStack poseStack) {
-                    super.rotateBlock(facing, poseStack);
-                    if (facing.getAxis() != Direction.Axis.Y) {
-                        poseStack.mulPose(Axis.YP.rotationDegrees(180));
-                    }
-                }
             };
 
     private final GeoBlockRenderer<BedPlateBaseBlockEntity> pillowLargeStriped =
@@ -201,14 +191,6 @@ public final class BedPlate6GeoBlockRenderer implements BlockEntityRenderer<BedP
                             green,
                             blue,
                             alpha);
-                }
-
-                @Override
-                protected void rotateBlock(Direction facing, PoseStack poseStack) {
-                    super.rotateBlock(facing, poseStack);
-                    if (facing.getAxis() != Direction.Axis.Y) {
-                        poseStack.mulPose(Axis.YP.rotationDegrees(180));
-                    }
                 }
             };
 
@@ -340,14 +322,6 @@ public final class BedPlate6GeoBlockRenderer implements BlockEntityRenderer<BedP
                         blue,
                         alpha);
             }
-
-            @Override
-            protected void rotateBlock(Direction facing, PoseStack poseStack) {
-                super.rotateBlock(facing, poseStack);
-                if (facing.getAxis() != Direction.Axis.Y) {
-                    poseStack.mulPose(Axis.YP.rotationDegrees(180));
-                }
-            }
         };
     }
 
@@ -423,14 +397,6 @@ public final class BedPlate6GeoBlockRenderer implements BlockEntityRenderer<BedP
                         blue,
                         alpha);
             }
-
-            @Override
-            protected void rotateBlock(Direction facing, PoseStack poseStack) {
-                super.rotateBlock(facing, poseStack);
-                if (facing.getAxis() != Direction.Axis.Y) {
-                    poseStack.mulPose(Axis.YP.rotationDegrees(180));
-                }
-            }
         };
     }
 
@@ -503,14 +469,6 @@ public final class BedPlate6GeoBlockRenderer implements BlockEntityRenderer<BedP
                         green,
                         blue,
                         alpha);
-            }
-
-            @Override
-            protected void rotateBlock(Direction facing, PoseStack poseStack) {
-                super.rotateBlock(facing, poseStack);
-                if (facing.getAxis() != Direction.Axis.Y) {
-                    poseStack.mulPose(Axis.YP.rotationDegrees(180));
-                }
             }
         };
     }

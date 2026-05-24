@@ -1,0 +1,8 @@
+{
+  "variants": {
+    "facing=east": { "model": "fantasy_furniture:block/geolib_alignment_probe" },
+    "facing=north": { "model": "fantasy_furniture:block/geolib_alignment_probe" },
+    "facing=south": { "model": "fantasy_furniture:block/geolib_alignment_probe" },
+    "facing=west": { "model": "fantasy_furniture:block/geolib_alignment_probe" }
+  }
+}
