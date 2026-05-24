@@ -2,19 +2,34 @@ package org.lanye.fantasy_furniture.content.tool;
 
 import java.util.Optional;
 import net.minecraft.core.BlockPos;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import org.lanye.fantasy_furniture.bootstrap.block.CeramicTileBlocks;
 import org.lanye.fantasy_furniture.bootstrap.block.WallpaperBlocks;
+import org.lanye.fantasy_furniture.bootstrap.item.ModItems;
 import org.lanye.fantasy_furniture.bootstrap.tag.ModTags;
 import org.lanye.fantasy_furniture.content.furniture.common.state.PlainGlassWindowMaterialVariant;
 import org.lanye.fantasy_furniture.content.furniture.decor.block.PlainGlassWindowBlock;
+import org.lanye.fantasy_furniture.content.soap.SoapBarMaterials;
+import org.lanye.fantasy_furniture.content.soap.block.SoapBoxBlock;
 
 /** 刷子对 {@link ModTags#BRUSH_RECOLORABLE_BLOCKS} 成员循环换色的服务端逻辑。 */
 public final class BrushRecolor {
 
     private BrushRecolor() {}
+
+    /**
+     * 主手刷子对 {@link ModTags#BRUSH_RECOLORABLE_BLOCKS} 目标右击时，方块自身 {@code use} 应让出（由 {@link
+     * org.lanye.fantasy_furniture.content.tool.item.PaintBrushItem} 换色）。
+     */
+    public static boolean defersBlockUse(Player player, InteractionHand hand, BlockState state) {
+        return hand == InteractionHand.MAIN_HAND
+                && state.is(ModTags.BRUSH_RECOLORABLE_BLOCKS)
+                && player.getItemInHand(hand).is(ModItems.PAINT_BRUSH.get());
+    }
 
     /**
      * 将目标方块换至同族下一档颜色；顺序为各变种枚举 {@code values()} 声明序。
@@ -42,7 +57,19 @@ public final class BrushRecolor {
                 return Optional.of(next.entry().block().get().defaultBlockState());
             }
         }
+        if (state.getBlock() instanceof SoapBoxBlock) {
+            int current = state.getValue(SoapBoxBlock.MATERIAL);
+            int next = nextMaterialId(current, SoapBarMaterials.COUNT);
+            return Optional.of(state.setValue(SoapBoxBlock.MATERIAL, next));
+        }
         return Optional.empty();
+    }
+
+    private static int nextMaterialId(int current, int count) {
+        if (current < 1 || current > count) {
+            return 1;
+        }
+        return current % count + 1;
     }
 
     /** 服务端：写入下一档颜色。 */

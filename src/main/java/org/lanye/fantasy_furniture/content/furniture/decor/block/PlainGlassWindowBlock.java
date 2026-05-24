@@ -30,6 +30,7 @@ import org.lanye.fantasy_furniture.content.furniture.decor.PlainGlassWindowMater
 import org.lanye.fantasy_furniture.content.furniture.decor.PlainGlassWindowShapes;
 import org.lanye.fantasy_furniture.content.furniture.decor.blockentity.PlainGlassWindowBlockEntity;
 import org.lanye.fantasy_furniture.content.furniture.decor.item.PlainGlassWindowBlockItem;
+import org.lanye.fantasy_furniture.content.tool.BrushRecolor;
 import org.lanye.reverie_core.geolib.GeolibFacingEntityBlockWithFactory;
 import org.lanye.reverie_core.util.VoxelShapeRotation;
 import org.jetbrains.annotations.Nullable;
@@ -213,8 +214,20 @@ public class PlainGlassWindowBlock extends GeolibFacingEntityBlockWithFactory<Pl
     }
 
     @Override
+    protected InteractionResult onUseClient(
+            BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+        if (BrushRecolor.defersBlockUse(player, hand, state)) {
+            return InteractionResult.PASS;
+        }
+        return InteractionResult.SUCCESS;
+    }
+
+    @Override
     protected InteractionResult onUseServer(
             BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+        if (BrushRecolor.defersBlockUse(player, hand, state)) {
+            return InteractionResult.PASS;
+        }
         int s = PlainGlassWindowShapes.nextShapeInCycle(state.getValue(SHAPE));
         level.setBlock(pos, state.setValue(SHAPE, s), Block.UPDATE_ALL_IMMEDIATE);
         return InteractionResult.sidedSuccess(level.isClientSide);

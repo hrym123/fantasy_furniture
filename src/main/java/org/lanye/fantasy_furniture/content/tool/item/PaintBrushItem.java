@@ -27,7 +27,7 @@ public final class PaintBrushItem extends Item {
             return InteractionResult.PASS;
         }
         if (level.isClientSide) {
-            return InteractionResult.SUCCESS;
+            return InteractionResult.sidedSuccess(true);
         }
         return BrushRecolor.apply(level, context.getClickedPos(), state)
                 ? InteractionResult.CONSUME
