@@ -1,0 +1,15 @@
+{
+  "parent": "minecraft:item/generated",
+  "textures": {
+    "layer0": "fantasy_furniture:item/soap_paper_bag_ui_2"
+  },
+  "overrides": [
+    { "predicate": { "fantasy_furniture:bag_material": 0.01 }, "model": "fantasy_furniture:item/soap_paper_bag_ui_1" },
+    { "predicate": { "fantasy_furniture:bag_material": 0.02 }, "model": "fantasy_furniture:item/soap_paper_bag_ui_2" },
+    { "predicate": { "fantasy_furniture:bag_material": 0.03 }, "model": "fantasy_furniture:item/soap_paper_bag_ui_3" },
+    { "predicate": { "fantasy_furniture:bag_material": 0.04 }, "model": "fantasy_furniture:item/soap_paper_bag_ui_4" },
+    { "predicate": { "fantasy_furniture:bag_material": 0.05 }, "model": "fantasy_furniture:item/soap_paper_bag_ui_5" },
+    { "predicate": { "fantasy_furniture:bag_material": 0.06 }, "model": "fantasy_furniture:item/soap_paper_bag_ui_6" },
+    { "predicate": { "fantasy_furniture:bag_material": 0.07 }, "model": "fantasy_furniture:item/soap_paper_bag_ui_7" }
+  ]
+}

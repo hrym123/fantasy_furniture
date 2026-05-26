@@ -25,15 +25,18 @@ import org.lanye.fantasy_furniture.content.furniture.decor.block.LotteryMachineB
 import org.lanye.fantasy_furniture.content.sweeper.block.SweeperDockBlock;
 import org.lanye.fantasy_furniture.content.soap.block.SoapBarBlock;
 import org.lanye.fantasy_furniture.content.soap.block.SoapBoxBlock;
+import org.lanye.fantasy_furniture.content.soap.block.SoapPaperBagBlock;
 import org.lanye.fantasy_furniture.content.soap.block.SoapRackBlock;
 import org.lanye.fantasy_furniture.content.soap.blockentity.SoapBarBlockEntity;
 import org.lanye.fantasy_furniture.content.soap.blockentity.SoapBoxBlockEntity;
+import org.lanye.fantasy_furniture.content.soap.blockentity.SoapPaperBagBlockEntity;
 import org.lanye.fantasy_furniture.content.soap.blockentity.SoapRackBlockEntity;
 import org.lanye.fantasy_furniture.content.debug.block.GeolibAlignmentProbeBlock;
 import org.lanye.fantasy_furniture.content.debug.blockentity.GeolibAlignmentProbeBlockEntity;
 import org.lanye.fantasy_furniture.content.debug.item.GeolibAlignmentProbeBlockItem;
 import org.lanye.fantasy_furniture.content.soap.item.SoapBarBlockItem;
 import org.lanye.fantasy_furniture.content.soap.item.SoapBoxBlockItem;
+import org.lanye.fantasy_furniture.content.soap.item.SoapPaperBagBlockItem;
 import org.lanye.fantasy_furniture.bootstrap.block.PlainGlassWindowRegistration;
 import org.lanye.fantasy_furniture.bootstrap.blockentity.ModBlockEntities;
 import org.lanye.reverie_core.geolib.AnimatedBlockEntry;
@@ -129,6 +132,19 @@ public final class FurnitureAnimatedBlocks {
                                                     props,
                                                     GeolibItemAssets.blockAssetWithTexture(
                                                             FantasyFurniture.MODID, "soap_rack", "soap_rack_1"))),
+                            AnimatedBlockRegistration.spec(
+                                    "soap_paper_bag",
+                                    () -> FurnitureBlockProperties.bathroomSmallDecor(MapColor.SNOW),
+                                    SoapPaperBagBlock::new,
+                                    SoapPaperBagBlockEntity::new,
+                                    (block, props) ->
+                                            new SoapPaperBagBlockItem(
+                                                    block,
+                                                    props,
+                                                    GeolibItemAssets.blockAssetWithTexture(
+                                                            FantasyFurniture.MODID,
+                                                            "soap_paper_bag",
+                                                            "soap_paper_bag_2"))),
                             defaultAnimatedSpec(
                                     "green_sofa",
                                     () ->
@@ -165,10 +181,11 @@ public final class FurnitureAnimatedBlocks {
     private static final int I_SOAP_BAR = 2;
     private static final int I_SOAP_BOX = 3;
     private static final int I_SOAP_RACK = 4;
-    private static final int I_GREEN_SOFA = 5;
-    private static final int I_COMBINED_ORNAMENT = 6;
-    private static final int I_SWEEPER_DOCK = 7;
-    private static final int I_GEOLIB_ALIGNMENT_PROBE = 8;
+    private static final int I_SOAP_PAPER_BAG = 5;
+    private static final int I_GREEN_SOFA = 6;
+    private static final int I_COMBINED_ORNAMENT = 7;
+    private static final int I_SWEEPER_DOCK = 8;
+    private static final int I_GEOLIB_ALIGNMENT_PROBE = 9;
 
     @SuppressWarnings("unchecked")
     private static <BE extends BlockEntity> AnimatedBlockEntry<BE> animatedEntry(int index) {
@@ -185,6 +202,9 @@ public final class FurnitureAnimatedBlocks {
     public static final AnimatedBlockEntry<SoapBoxBlockEntity> SOAP_BOX = animatedEntry(I_SOAP_BOX);
 
     public static final AnimatedBlockEntry<SoapRackBlockEntity> SOAP_RACK = animatedEntry(I_SOAP_RACK);
+
+    public static final AnimatedBlockEntry<SoapPaperBagBlockEntity> SOAP_PAPER_BAG =
+            animatedEntry(I_SOAP_PAPER_BAG);
 
     public static final AnimatedBlockEntry<GreenSofaBlockEntity> GREEN_SOFA = animatedEntry(I_GREEN_SOFA);
 

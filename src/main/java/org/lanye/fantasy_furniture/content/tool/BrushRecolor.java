@@ -6,7 +6,9 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
+import org.lanye.fantasy_furniture.content.soap.blockentity.SoapPaperBagBlockEntity;
 import org.lanye.fantasy_furniture.bootstrap.block.CeramicTileBlocks;
 import org.lanye.fantasy_furniture.bootstrap.block.WallpaperBlocks;
 import org.lanye.fantasy_furniture.bootstrap.item.ModItems;
@@ -14,7 +16,9 @@ import org.lanye.fantasy_furniture.bootstrap.tag.ModTags;
 import org.lanye.fantasy_furniture.content.furniture.common.state.PlainGlassWindowMaterialVariant;
 import org.lanye.fantasy_furniture.content.furniture.decor.block.PlainGlassWindowBlock;
 import org.lanye.fantasy_furniture.content.soap.SoapBarMaterials;
+import org.lanye.fantasy_furniture.content.soap.SoapPaperBagMaterials;
 import org.lanye.fantasy_furniture.content.soap.block.SoapBoxBlock;
+import org.lanye.fantasy_furniture.content.soap.block.SoapPaperBagBlock;
 
 /** 刷子对 {@link ModTags#BRUSH_RECOLORABLE_BLOCKS} 成员循环换色的服务端逻辑。 */
 public final class BrushRecolor {
@@ -62,6 +66,14 @@ public final class BrushRecolor {
             int next = nextMaterialId(current, SoapBarMaterials.COUNT);
             return Optional.of(state.setValue(SoapBoxBlock.MATERIAL, next));
         }
+        if (state.getBlock() instanceof SoapPaperBagBlock) {
+            int current = state.getValue(SoapPaperBagBlock.MATERIAL);
+            int next = nextMaterialId(current, SoapPaperBagMaterials.COUNT);
+            if (next == SoapPaperBagMaterials.RAINBOW) {
+                next = 1;
+            }
+            return Optional.of(state.setValue(SoapPaperBagBlock.MATERIAL, next));
+        }
         return Optional.empty();
     }
 
@@ -79,6 +91,10 @@ public final class BrushRecolor {
             return false;
         }
         level.setBlock(pos, next.get(), Block.UPDATE_ALL_IMMEDIATE);
+        BlockEntity be = level.getBlockEntity(pos);
+        if (be instanceof SoapPaperBagBlockEntity stack) {
+            stack.replaceTopMaterial(next.get().getValue(SoapPaperBagBlock.MATERIAL));
+        }
         return true;
     }
 

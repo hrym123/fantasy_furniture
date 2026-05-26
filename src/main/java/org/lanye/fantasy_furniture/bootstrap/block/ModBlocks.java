@@ -17,6 +17,7 @@ import org.lanye.fantasy_furniture.content.furniture.decor.blockentity.LotteryMa
 import org.lanye.fantasy_furniture.content.sweeper.blockentity.SweeperDockBlockEntity;
 import org.lanye.fantasy_furniture.content.soap.blockentity.SoapBarBlockEntity;
 import org.lanye.fantasy_furniture.content.soap.blockentity.SoapBoxBlockEntity;
+import org.lanye.fantasy_furniture.content.soap.blockentity.SoapPaperBagBlockEntity;
 import org.lanye.fantasy_furniture.content.soap.blockentity.SoapRackBlockEntity;
 import org.lanye.fantasy_furniture.content.debug.blockentity.GeolibAlignmentProbeBlockEntity;
 import org.lanye.reverie_core.geolib.AnimatedBlockEntry;
@@ -128,6 +129,9 @@ public final class ModBlocks {
     public static final AnimatedBlockEntry<SoapBoxBlockEntity> SOAP_BOX = FurnitureAnimatedBlocks.SOAP_BOX;
 
     public static final AnimatedBlockEntry<SoapRackBlockEntity> SOAP_RACK = FurnitureAnimatedBlocks.SOAP_RACK;
+
+    public static final AnimatedBlockEntry<SoapPaperBagBlockEntity> SOAP_PAPER_BAG =
+            FurnitureAnimatedBlocks.SOAP_PAPER_BAG;
 
     public static final AnimatedBlockEntry<GeolibAlignmentProbeBlockEntity> GEOLIB_ALIGNMENT_PROBE =
             FurnitureAnimatedBlocks.GEOLIB_ALIGNMENT_PROBE;

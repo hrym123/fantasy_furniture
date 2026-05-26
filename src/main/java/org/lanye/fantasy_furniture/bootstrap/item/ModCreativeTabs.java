@@ -18,6 +18,7 @@ import org.lanye.fantasy_furniture.bootstrap.block.BedPlate6Registration;
 import org.lanye.fantasy_furniture.bootstrap.block.ModBlocks;
 import org.lanye.fantasy_furniture.bootstrap.block.PlainGlassWindowRegistration;
 import org.lanye.fantasy_furniture.content.soap.SoapBarCreativeTab;
+import org.lanye.fantasy_furniture.content.soap.SoapPaperBagCreativeTab;
 import org.lanye.fantasy_furniture.content.soap.SoapBoxCreativeTab;
 import org.lanye.fantasy_furniture.content.debug.DevelopmentMode;
 
@@ -67,6 +68,7 @@ public final class ModCreativeTabs {
         SoapBarCreativeTab.appendDefaultWearEntries(list);
         SoapBoxCreativeTab.appendClosedEmptyBoxEntries(list);
         list.add(out -> out.accept(ModBlocks.SOAP_RACK.item().get()));
+        SoapPaperBagCreativeTab.appendEntries(list);
         list.add(out -> out.accept(ModBlocks.LOTTERY_MACHINE.item().get()));
         list.add(out -> out.accept(ModBlocks.SWEEPER_DOCK.item().get()));
         list.add(out -> out.accept(ModBlocks.GREEN_SOFA.item().get()));

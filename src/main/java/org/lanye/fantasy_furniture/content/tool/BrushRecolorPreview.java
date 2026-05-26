@@ -11,7 +11,9 @@ import org.lanye.fantasy_furniture.bootstrap.block.WallpaperBlocks;
 import org.lanye.fantasy_furniture.content.furniture.common.state.PlainGlassWindowMaterialVariant;
 import org.lanye.fantasy_furniture.content.furniture.decor.block.PlainGlassWindowBlock;
 import org.lanye.fantasy_furniture.content.soap.block.SoapBoxBlock;
+import org.lanye.fantasy_furniture.content.soap.block.SoapPaperBagBlock;
 import org.lanye.fantasy_furniture.content.soap.item.SoapBoxBlockItem;
+import org.lanye.fantasy_furniture.content.soap.item.SoapPaperBagBlockItem;
 
 /** 刷子换色 HUD：由当前方块解析「下一档」预览物品与展示名。 */
 public final class BrushRecolorPreview {
@@ -55,6 +57,12 @@ public final class BrushRecolorPreview {
             int material = state.getValue(SoapBoxBlock.MATERIAL);
             return Optional.of(
                     SoapBoxBlockItem.stackWithBoxMaterial(ModBlocks.SOAP_BOX.item().get(), material));
+        }
+        if (state.getBlock() instanceof SoapPaperBagBlock) {
+            int material = state.getValue(SoapPaperBagBlock.MATERIAL);
+            return Optional.of(
+                    SoapPaperBagBlockItem.stackWithBagMaterial(
+                            ModBlocks.SOAP_PAPER_BAG.item().get(), material));
         }
         return Optional.empty();
     }

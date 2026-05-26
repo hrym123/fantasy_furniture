@@ -16,6 +16,7 @@ import org.lanye.fantasy_furniture.content.furniture.decor.client.renderer.Combi
 import org.lanye.fantasy_furniture.content.furniture.decor.client.renderer.PlainGlassWindowGeoBlockRenderer;
 import org.lanye.fantasy_furniture.content.soap.client.SoapBarClient;
 import org.lanye.fantasy_furniture.content.soap.client.renderer.SoapBoxGeoBlockRenderer;
+import org.lanye.fantasy_furniture.content.soap.client.renderer.SoapPaperBagGeoBlockRenderer;
 import org.lanye.fantasy_furniture.content.soap.client.renderer.SoapRackGeoBlockRenderer;
 import org.lanye.fantasy_furniture.content.furniture.common.client.renderer.FurnitureSeatRenderer;
 import org.lanye.fantasy_furniture.content.sweeper.client.renderer.SweeperRobotRenderer;
@@ -54,6 +55,8 @@ public final class ClientModEvents {
                 ModBlocks.SOAP_BOX, ctx -> new SoapBoxGeoBlockRenderer());
         AnimatedBlockClientRegistration.registerBlockEntityRenderer(
                 ModBlocks.SOAP_RACK, ctx -> new SoapRackGeoBlockRenderer());
+        AnimatedBlockClientRegistration.registerBlockEntityRenderer(
+                ModBlocks.SOAP_PAPER_BAG, ctx -> new SoapPaperBagGeoBlockRenderer());
         AnimatedBlockClientRegistration.registerBlockEntityRenderer(
                 ModBlocks.GEOLIB_ALIGNMENT_PROBE,
                 GeolibAnimatedBlockRenderers.defaultGeoRendererProvider(

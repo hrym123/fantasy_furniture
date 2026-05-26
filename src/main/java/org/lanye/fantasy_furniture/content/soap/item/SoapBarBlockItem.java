@@ -27,6 +27,11 @@ public final class SoapBarBlockItem extends GeolibBlockItem {
     @Override
     public Component getName(ItemStack stack) {
         SoapBarAppearance appearance = SoapBarAppearance.fromStack(stack);
+        if (appearance.isPackaged()) {
+            return Component.translatable(
+                    "item.fantasy_furniture.soap_bar.packaged",
+                    Component.translatable(SoapBarMaterials.colorTranslationKey(appearance.bagMaterialId())));
+        }
         if (appearance.wear() == SoapBarAppearance.DEFAULT_WEAR) {
             return Component.translatable(
                     "item.fantasy_furniture.soap_bar.named_full",
