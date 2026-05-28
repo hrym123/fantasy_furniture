@@ -8,7 +8,6 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 import org.lanye.fantasy_furniture.content.soap.block.SoapBoxBlock;
 import org.lanye.fantasy_furniture.content.soap.blockentity.SoapBoxBlockEntity;
 import org.lanye.fantasy_furniture.content.soap.client.model.SoapBoxBodyGeoModel;
-import org.lanye.fantasy_furniture.content.soap.client.model.SoapBoxInnerSoapGeoModel;
 import software.bernie.geckolib.renderer.GeoBlockRenderer;
 
 /**
@@ -24,7 +23,7 @@ public final class SoapBoxGeoBlockRenderer implements BlockEntityRenderer<SoapBo
     private final GeoBlockRenderer<SoapBoxBlockEntity> bodyRenderer =
             new GeoBlockRenderer<>(new SoapBoxBodyGeoModel());
     private final GeoBlockRenderer<SoapBoxBlockEntity> innerSoapRenderer =
-            new GeoBlockRenderer<>(new SoapBoxInnerSoapGeoModel());
+            new SoapBoxInnerSoapLayerRenderer();
 
     @Override
     public void render(
@@ -35,7 +34,7 @@ public final class SoapBoxGeoBlockRenderer implements BlockEntityRenderer<SoapBo
             int packedLight,
             int packedOverlay) {
         this.bodyRenderer.render(blockEntity, partialTick, poseStack, bufferSource, packedLight, packedOverlay);
-        if (blockEntity.getBlockState().getValue(SoapBoxBlock.HAS_SOAP)) {
+        if (blockEntity.hasContainedSoap(blockEntity.getBlockState())) {
             this.innerSoapRenderer.render(
                     blockEntity, partialTick, poseStack, bufferSource, packedLight, packedOverlay);
         }

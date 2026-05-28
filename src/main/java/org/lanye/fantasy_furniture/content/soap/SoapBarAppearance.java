@@ -10,8 +10,7 @@ import org.lanye.fantasy_furniture.content.soap.block.SoapBarBlock;
 /**
  * 肥皂外观 = 磨损档 geo × 颜料贴图（见设计书 {@code 01-组件一览 · 肥皂本体外观}）。
  *
- * <p>贴图当前仅按颜料档 {@code soap_bar_{1..6}.png}；磨损只换 geo。磨损档专用贴图待素材重绘后再扩展
- * {@link #textureBasename()}。
+ * <p>贴图仅按颜料档 {@code soap_bar_{1..6}.png}；磨损只换 geo，三档共用同一套贴图（见 DEC-301）。
  *
  * <p>套袋态：{@link #bagMaterialId()} {@code > 0} 表示已套包装袋，袋色与皂颜料无关。
  */
