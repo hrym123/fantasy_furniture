@@ -30,7 +30,7 @@ public record SoapPaperBagAppearance(int bagMaterialId) {
         return "soap_paper_bag_" + bagMaterialId;
     }
 
-    /** 物品栏 UI 图（源自 {@code 包装袋/ui/*.png}）。 */
+    /** 物品栏 UI 图（源自 {@code 包装袋/物品材质/*.png}）。 */
     public String itemUiTextureBasename() {
         return "soap_paper_bag_ui_" + bagMaterialId;
     }
