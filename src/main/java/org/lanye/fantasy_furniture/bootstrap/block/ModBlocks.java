@@ -17,7 +17,12 @@ import org.lanye.fantasy_furniture.content.furniture.decor.blockentity.LotteryMa
 import org.lanye.fantasy_furniture.content.sweeper.blockentity.SweeperDockBlockEntity;
 import org.lanye.fantasy_furniture.content.soap.blockentity.SoapBarBlockEntity;
 import org.lanye.fantasy_furniture.content.soap.blockentity.SoapBoxBlockEntity;
+import org.lanye.fantasy_furniture.content.soap.blockentity.BodyCreamBlockEntity;
+import org.lanye.fantasy_furniture.content.soap.blockentity.BodyWashBlockEntity;
+import org.lanye.fantasy_furniture.content.soap.blockentity.ShampooBlockEntity;
+import org.lanye.fantasy_furniture.content.soap.blockentity.SoapMoldBlockEntity;
 import org.lanye.fantasy_furniture.content.soap.blockentity.SoapPaperBagBlockEntity;
+import org.lanye.fantasy_furniture.content.soap.blockentity.SoapPaperBoxBlockEntity;
 import org.lanye.fantasy_furniture.content.soap.blockentity.SoapRackBlockEntity;
 import org.lanye.fantasy_furniture.content.debug.blockentity.GeolibAlignmentProbeBlockEntity;
 import org.lanye.reverie_core.geolib.AnimatedBlockEntry;
@@ -132,6 +137,17 @@ public final class ModBlocks {
 
     public static final AnimatedBlockEntry<SoapPaperBagBlockEntity> SOAP_PAPER_BAG =
             FurnitureAnimatedBlocks.SOAP_PAPER_BAG;
+
+    public static final AnimatedBlockEntry<BodyWashBlockEntity> BODY_WASH = FurnitureAnimatedBlocks.BODY_WASH;
+
+    public static final AnimatedBlockEntry<ShampooBlockEntity> SHAMPOO = FurnitureAnimatedBlocks.SHAMPOO;
+
+    public static final AnimatedBlockEntry<BodyCreamBlockEntity> BODY_CREAM = FurnitureAnimatedBlocks.BODY_CREAM;
+
+    public static final AnimatedBlockEntry<SoapPaperBoxBlockEntity> SOAP_PAPER_BOX =
+            FurnitureAnimatedBlocks.SOAP_PAPER_BOX;
+
+    public static final AnimatedBlockEntry<SoapMoldBlockEntity> SOAP_MOLD = FurnitureAnimatedBlocks.SOAP_MOLD;
 
     public static final AnimatedBlockEntry<GeolibAlignmentProbeBlockEntity> GEOLIB_ALIGNMENT_PROBE =
             FurnitureAnimatedBlocks.GEOLIB_ALIGNMENT_PROBE;

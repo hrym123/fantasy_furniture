@@ -58,6 +58,21 @@ public final class ClientModEvents {
         AnimatedBlockClientRegistration.registerBlockEntityRenderer(
                 ModBlocks.SOAP_PAPER_BAG, ctx -> new SoapPaperBagGeoBlockRenderer());
         AnimatedBlockClientRegistration.registerBlockEntityRenderer(
+                ModBlocks.BODY_WASH,
+                GeolibAnimatedBlockRenderers.defaultGeoRendererProvider(FantasyFurniture.MODID, "body_wash"));
+        AnimatedBlockClientRegistration.registerBlockEntityRenderer(
+                ModBlocks.SHAMPOO,
+                GeolibAnimatedBlockRenderers.defaultGeoRendererProvider(FantasyFurniture.MODID, "shampoo"));
+        AnimatedBlockClientRegistration.registerBlockEntityRenderer(
+                ModBlocks.BODY_CREAM,
+                GeolibAnimatedBlockRenderers.defaultGeoRendererProvider(FantasyFurniture.MODID, "body_cream"));
+        AnimatedBlockClientRegistration.registerBlockEntityRenderer(
+                ModBlocks.SOAP_PAPER_BOX,
+                GeolibAnimatedBlockRenderers.defaultGeoRendererProvider(FantasyFurniture.MODID, "soap_paper_box"));
+        AnimatedBlockClientRegistration.registerBlockEntityRenderer(
+                ModBlocks.SOAP_MOLD,
+                GeolibAnimatedBlockRenderers.defaultGeoRendererProvider(FantasyFurniture.MODID, "soap_mold"));
+        AnimatedBlockClientRegistration.registerBlockEntityRenderer(
                 ModBlocks.GEOLIB_ALIGNMENT_PROBE,
                 GeolibAnimatedBlockRenderers.defaultGeoRendererProvider(
                         FantasyFurniture.MODID, "geolib_alignment_probe"));

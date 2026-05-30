@@ -5,6 +5,7 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -25,12 +26,21 @@ import org.lanye.fantasy_furniture.content.furniture.decor.block.LotteryMachineB
 import org.lanye.fantasy_furniture.content.sweeper.block.SweeperDockBlock;
 import org.lanye.fantasy_furniture.content.soap.block.SoapBarBlock;
 import org.lanye.fantasy_furniture.content.soap.block.SoapBoxBlock;
+import org.lanye.fantasy_furniture.content.soap.SoapSeriesBlockAssets;
+import org.lanye.fantasy_furniture.content.soap.block.SoapMoldBlock;
 import org.lanye.fantasy_furniture.content.soap.block.SoapPaperBagBlock;
+import org.lanye.fantasy_furniture.content.soap.block.SoapPaperBoxBlock;
 import org.lanye.fantasy_furniture.content.soap.block.SoapRackBlock;
+import org.lanye.fantasy_furniture.content.soap.blockentity.BodyCreamBlockEntity;
+import org.lanye.fantasy_furniture.content.soap.blockentity.BodyWashBlockEntity;
+import org.lanye.fantasy_furniture.content.soap.blockentity.ShampooBlockEntity;
 import org.lanye.fantasy_furniture.content.soap.blockentity.SoapBarBlockEntity;
 import org.lanye.fantasy_furniture.content.soap.blockentity.SoapBoxBlockEntity;
+import org.lanye.fantasy_furniture.content.soap.blockentity.SoapMoldBlockEntity;
 import org.lanye.fantasy_furniture.content.soap.blockentity.SoapPaperBagBlockEntity;
+import org.lanye.fantasy_furniture.content.soap.blockentity.SoapPaperBoxBlockEntity;
 import org.lanye.fantasy_furniture.content.soap.blockentity.SoapRackBlockEntity;
+import org.lanye.fantasy_furniture.content.soap.item.SoapSeriesBlockItem;
 import org.lanye.fantasy_furniture.content.debug.block.GeolibAlignmentProbeBlock;
 import org.lanye.fantasy_furniture.content.debug.blockentity.GeolibAlignmentProbeBlockEntity;
 import org.lanye.fantasy_furniture.content.debug.item.GeolibAlignmentProbeBlockItem;
@@ -45,6 +55,7 @@ import org.lanye.reverie_core.geolib.AnimatedBlockSpec;
 import org.lanye.reverie_core.geolib.bed.BedPlateBaseBlockEntity;
 import org.lanye.reverie_core.geolib.GeolibBlockItem;
 import org.lanye.reverie_core.geolib.GeolibItemAssets;
+import org.lanye.reverie_core.geolib.SimpleGeolibEntityBlock;
 
 /**
  * GeckoLib 动画 / 带方块实体渲染的家具方块注册与属性。
@@ -145,6 +156,71 @@ public final class FurnitureAnimatedBlocks {
                                                             FantasyFurniture.MODID,
                                                             "soap_paper_bag",
                                                             "soap_paper_bag_2"))),
+                            AnimatedBlockRegistration.spec(
+                                    "body_wash",
+                                    () -> FurnitureBlockProperties.bathroomSmallDecor(MapColor.COLOR_BLUE),
+                                    props ->
+                                            new SimpleGeolibEntityBlock<>(
+                                                    props,
+                                                    BodyWashBlockEntity::new,
+                                                    Block.box(5.0, 0.0, 5.0, 11.0, 13.2, 11.0),
+                                                    InteractionResult.PASS),
+                                    BodyWashBlockEntity::new,
+                                    (block, props) ->
+                                            new SoapSeriesBlockItem(
+                                                    block,
+                                                    props.stacksTo(64),
+                                                    SoapSeriesBlockAssets.blockPrimaryTexture("body_wash"))),
+                            AnimatedBlockRegistration.spec(
+                                    "shampoo",
+                                    () -> FurnitureBlockProperties.bathroomSmallDecor(MapColor.COLOR_CYAN),
+                                    props ->
+                                            new SimpleGeolibEntityBlock<>(
+                                                    props,
+                                                    ShampooBlockEntity::new,
+                                                    Block.box(5.0, 0.0, 4.0, 11.0, 11.2, 10.0),
+                                                    InteractionResult.PASS),
+                                    ShampooBlockEntity::new,
+                                    (block, props) ->
+                                            new SoapSeriesBlockItem(
+                                                    block,
+                                                    props.stacksTo(64),
+                                                    SoapSeriesBlockAssets.blockPrimaryTexture("shampoo"))),
+                            AnimatedBlockRegistration.spec(
+                                    "body_cream",
+                                    () -> FurnitureBlockProperties.bathroomSmallDecor(MapColor.QUARTZ),
+                                    props ->
+                                            new SimpleGeolibEntityBlock<>(
+                                                    props,
+                                                    BodyCreamBlockEntity::new,
+                                                    Block.box(5.5, 0.0, 5.5, 10.5, 3.75, 10.5),
+                                                    InteractionResult.PASS),
+                                    BodyCreamBlockEntity::new,
+                                    (block, props) ->
+                                            new SoapSeriesBlockItem(
+                                                    block,
+                                                    props.stacksTo(64),
+                                                    SoapSeriesBlockAssets.blockPrimaryTexture("body_cream"))),
+                            AnimatedBlockRegistration.spec(
+                                    "soap_paper_box",
+                                    () -> FurnitureBlockProperties.bathroomSmallDecor(MapColor.COLOR_LIGHT_GRAY),
+                                    SoapPaperBoxBlock::new,
+                                    SoapPaperBoxBlockEntity::new,
+                                    (block, props) ->
+                                            new SoapSeriesBlockItem(
+                                                    block,
+                                                    props.stacksTo(64),
+                                                    SoapSeriesBlockAssets.blockPrimaryTexture("soap_paper_box"))),
+                            AnimatedBlockRegistration.spec(
+                                    "soap_mold",
+                                    () -> FurnitureBlockProperties.bathroomSmallDecor(MapColor.STONE),
+                                    SoapMoldBlock::new,
+                                    SoapMoldBlockEntity::new,
+                                    (block, props) ->
+                                            new SoapSeriesBlockItem(
+                                                    block,
+                                                    props,
+                                                    SoapSeriesBlockAssets.blockPrimaryTexture("soap_mold"))),
                             defaultAnimatedSpec(
                                     "green_sofa",
                                     () ->
@@ -182,10 +258,15 @@ public final class FurnitureAnimatedBlocks {
     private static final int I_SOAP_BOX = 3;
     private static final int I_SOAP_RACK = 4;
     private static final int I_SOAP_PAPER_BAG = 5;
-    private static final int I_GREEN_SOFA = 6;
-    private static final int I_COMBINED_ORNAMENT = 7;
-    private static final int I_SWEEPER_DOCK = 8;
-    private static final int I_GEOLIB_ALIGNMENT_PROBE = 9;
+    private static final int I_BODY_WASH = 6;
+    private static final int I_SHAMPOO = 7;
+    private static final int I_BODY_CREAM = 8;
+    private static final int I_SOAP_PAPER_BOX = 9;
+    private static final int I_SOAP_MOLD = 10;
+    private static final int I_GREEN_SOFA = 11;
+    private static final int I_COMBINED_ORNAMENT = 12;
+    private static final int I_SWEEPER_DOCK = 13;
+    private static final int I_GEOLIB_ALIGNMENT_PROBE = 14;
 
     @SuppressWarnings("unchecked")
     private static <BE extends BlockEntity> AnimatedBlockEntry<BE> animatedEntry(int index) {
@@ -205,6 +286,17 @@ public final class FurnitureAnimatedBlocks {
 
     public static final AnimatedBlockEntry<SoapPaperBagBlockEntity> SOAP_PAPER_BAG =
             animatedEntry(I_SOAP_PAPER_BAG);
+
+    public static final AnimatedBlockEntry<BodyWashBlockEntity> BODY_WASH = animatedEntry(I_BODY_WASH);
+
+    public static final AnimatedBlockEntry<ShampooBlockEntity> SHAMPOO = animatedEntry(I_SHAMPOO);
+
+    public static final AnimatedBlockEntry<BodyCreamBlockEntity> BODY_CREAM = animatedEntry(I_BODY_CREAM);
+
+    public static final AnimatedBlockEntry<SoapPaperBoxBlockEntity> SOAP_PAPER_BOX =
+            animatedEntry(I_SOAP_PAPER_BOX);
+
+    public static final AnimatedBlockEntry<SoapMoldBlockEntity> SOAP_MOLD = animatedEntry(I_SOAP_MOLD);
 
     public static final AnimatedBlockEntry<GreenSofaBlockEntity> GREEN_SOFA = animatedEntry(I_GREEN_SOFA);
 

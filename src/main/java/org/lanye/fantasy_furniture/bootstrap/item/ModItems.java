@@ -61,6 +61,10 @@ public final class ModItems {
     public static final RegistryObject<Item> TANGHULU =
             ITEMS.register("tanghulu", () -> new SwordItem(Tiers.WOOD, 1, -2.4F, new Item.Properties()));
 
+    /** 肥皂套系调试棒：2D 手持，不参与泡泡头饰池。 */
+    public static final RegistryObject<Item> SOAP_DEBUG_STICK =
+            ITEMS.register("soap_debug_stick", () -> new Item(new Item.Properties().stacksTo(1)));
+
     /** GeckoLib 手持魔杖；长按施法动画见 {@link ArcaneWandItem}。 */
     public static final RegistryObject<Item> ARCANE_WAND = ITEMS.register(
             "arcane_wand",

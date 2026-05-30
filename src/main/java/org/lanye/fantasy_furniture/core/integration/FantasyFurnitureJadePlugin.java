@@ -29,6 +29,11 @@ public final class FantasyFurnitureJadePlugin implements IWailaPlugin {
         registration.usePickedResult(ModBlocks.SOAP_BOX.block().get());
         registration.usePickedResult(ModBlocks.SOAP_RACK.block().get());
         registration.usePickedResult(ModBlocks.SOAP_PAPER_BAG.block().get());
+        registration.usePickedResult(ModBlocks.BODY_WASH.block().get());
+        registration.usePickedResult(ModBlocks.SHAMPOO.block().get());
+        registration.usePickedResult(ModBlocks.BODY_CREAM.block().get());
+        registration.usePickedResult(ModBlocks.SOAP_PAPER_BOX.block().get());
+        registration.usePickedResult(ModBlocks.SOAP_MOLD.block().get());
         registration.registerEntityComponent(SweeperRobotJadeProvider.INSTANCE, SweeperRobotEntity.class);
     }
 }
