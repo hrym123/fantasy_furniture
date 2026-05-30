@@ -1,6 +1,14 @@
 {
-  "parent": "minecraft:builtin/entity",
+  "parent": "minecraft:item/generated",
   "textures": {
-    "particle": "fantasy_furniture:block/body_wash_1"
-  }
+    "layer0": "fantasy_furniture:item/body_wash_1"
+  },
+  "overrides": [
+    { "predicate": { "fantasy_furniture:wash_material": 0.01 }, "model": "fantasy_furniture:item/body_wash_ui_1" },
+    { "predicate": { "fantasy_furniture:wash_material": 0.02 }, "model": "fantasy_furniture:item/body_wash_ui_2" },
+    { "predicate": { "fantasy_furniture:wash_material": 0.03 }, "model": "fantasy_furniture:item/body_wash_ui_3" },
+    { "predicate": { "fantasy_furniture:wash_material": 0.04 }, "model": "fantasy_furniture:item/body_wash_ui_4" },
+    { "predicate": { "fantasy_furniture:wash_material": 0.05 }, "model": "fantasy_furniture:item/body_wash_ui_5" },
+    { "predicate": { "fantasy_furniture:wash_material": 0.06 }, "model": "fantasy_furniture:item/body_wash_ui_6" }
+  ]
 }

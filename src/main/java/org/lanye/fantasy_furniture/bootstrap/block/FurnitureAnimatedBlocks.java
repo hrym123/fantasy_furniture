@@ -24,6 +24,8 @@ import org.lanye.fantasy_furniture.content.furniture.livingroom.block.BanquetteB
 import org.lanye.fantasy_furniture.content.furniture.decor.block.CombinedOrnamentBlock;
 import org.lanye.fantasy_furniture.content.furniture.decor.block.LotteryMachineBlock;
 import org.lanye.fantasy_furniture.content.sweeper.block.SweeperDockBlock;
+import org.lanye.fantasy_furniture.content.soap.block.BodyCreamBlock;
+import org.lanye.fantasy_furniture.content.soap.block.BodyWashBlock;
 import org.lanye.fantasy_furniture.content.soap.block.SoapBarBlock;
 import org.lanye.fantasy_furniture.content.soap.block.SoapBoxBlock;
 import org.lanye.fantasy_furniture.content.soap.SoapSeriesBlockAssets;
@@ -40,12 +42,15 @@ import org.lanye.fantasy_furniture.content.soap.blockentity.SoapMoldBlockEntity;
 import org.lanye.fantasy_furniture.content.soap.blockentity.SoapPaperBagBlockEntity;
 import org.lanye.fantasy_furniture.content.soap.blockentity.SoapPaperBoxBlockEntity;
 import org.lanye.fantasy_furniture.content.soap.blockentity.SoapRackBlockEntity;
+import org.lanye.fantasy_furniture.content.soap.item.SoapPaperBoxBlockItem;
 import org.lanye.fantasy_furniture.content.soap.item.SoapSeriesBlockItem;
 import org.lanye.fantasy_furniture.content.debug.block.GeolibAlignmentProbeBlock;
 import org.lanye.fantasy_furniture.content.debug.blockentity.GeolibAlignmentProbeBlockEntity;
 import org.lanye.fantasy_furniture.content.debug.item.GeolibAlignmentProbeBlockItem;
 import org.lanye.fantasy_furniture.content.soap.item.SoapBarBlockItem;
 import org.lanye.fantasy_furniture.content.soap.item.SoapBoxBlockItem;
+import org.lanye.fantasy_furniture.content.soap.item.BodyCreamBlockItem;
+import org.lanye.fantasy_furniture.content.soap.item.BodyWashBlockItem;
 import org.lanye.fantasy_furniture.content.soap.item.SoapPaperBagBlockItem;
 import org.lanye.fantasy_furniture.bootstrap.block.PlainGlassWindowRegistration;
 import org.lanye.fantasy_furniture.bootstrap.blockentity.ModBlockEntities;
@@ -159,15 +164,10 @@ public final class FurnitureAnimatedBlocks {
                             AnimatedBlockRegistration.spec(
                                     "body_wash",
                                     () -> FurnitureBlockProperties.bathroomSmallDecor(MapColor.COLOR_BLUE),
-                                    props ->
-                                            new SimpleGeolibEntityBlock<>(
-                                                    props,
-                                                    BodyWashBlockEntity::new,
-                                                    Block.box(5.0, 0.0, 5.0, 11.0, 13.2, 11.0),
-                                                    InteractionResult.PASS),
+                                    BodyWashBlock::new,
                                     BodyWashBlockEntity::new,
                                     (block, props) ->
-                                            new SoapSeriesBlockItem(
+                                            new BodyWashBlockItem(
                                                     block,
                                                     props.stacksTo(64),
                                                     SoapSeriesBlockAssets.blockPrimaryTexture("body_wash"))),
@@ -189,15 +189,10 @@ public final class FurnitureAnimatedBlocks {
                             AnimatedBlockRegistration.spec(
                                     "body_cream",
                                     () -> FurnitureBlockProperties.bathroomSmallDecor(MapColor.QUARTZ),
-                                    props ->
-                                            new SimpleGeolibEntityBlock<>(
-                                                    props,
-                                                    BodyCreamBlockEntity::new,
-                                                    Block.box(5.5, 0.0, 5.5, 10.5, 3.75, 10.5),
-                                                    InteractionResult.PASS),
+                                    BodyCreamBlock::new,
                                     BodyCreamBlockEntity::new,
                                     (block, props) ->
-                                            new SoapSeriesBlockItem(
+                                            new BodyCreamBlockItem(
                                                     block,
                                                     props.stacksTo(64),
                                                     SoapSeriesBlockAssets.blockPrimaryTexture("body_cream"))),
@@ -207,7 +202,7 @@ public final class FurnitureAnimatedBlocks {
                                     SoapPaperBoxBlock::new,
                                     SoapPaperBoxBlockEntity::new,
                                     (block, props) ->
-                                            new SoapSeriesBlockItem(
+                                            new SoapPaperBoxBlockItem(
                                                     block,
                                                     props.stacksTo(64),
                                                     SoapSeriesBlockAssets.blockPrimaryTexture("soap_paper_box"))),

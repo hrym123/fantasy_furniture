@@ -17,6 +17,7 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
+import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.level.block.state.properties.IntegerProperty;
 import net.minecraft.world.level.storage.loot.LootParams;
 import net.minecraft.world.level.storage.loot.parameters.LootContextParams;
@@ -27,6 +28,8 @@ import org.lanye.fantasy_furniture.bootstrap.block.ModBlocks;
 import org.lanye.fantasy_furniture.content.tool.BrushRecolor;
 import org.lanye.fantasy_furniture.content.soap.SoapPaperBagAppearance;
 import org.lanye.fantasy_furniture.content.soap.SoapPaperBagMaterials;
+import org.lanye.fantasy_furniture.content.soap.SoapPackagingTear;
+import org.lanye.fantasy_furniture.content.soap.SoapStackCollisionShapes;
 import org.lanye.fantasy_furniture.content.soap.blockentity.SoapPaperBagBlockEntity;
 import org.lanye.fantasy_furniture.content.soap.item.SoapPaperBagBlockItem;
 import org.lanye.reverie_core.geolib.GeolibFacingEntityBlockWithFactory;
@@ -40,9 +43,7 @@ public class SoapPaperBagBlock extends GeolibFacingEntityBlockWithFactory<SoapPa
     public static final IntegerProperty LAYERS = IntegerProperty.create("layers", 1, MAX_LAYERS);
     public static final IntegerProperty MATERIAL =
             IntegerProperty.create("material", 1, SoapPaperBagMaterials.COUNT);
-
-    private static final VoxelShape SHAPE_ONE_NORTH = Block.box(3.0, 0.0, 4.0, 13.0, 2.5, 12.0);
-    private static final VoxelShape SHAPE_STACK_NORTH = Block.box(2.0, 0.0, 2.0, 14.0, 3.5, 14.0);
+    public static final BooleanProperty TORN = BooleanProperty.create("torn");
 
     public SoapPaperBagBlock(BlockBehaviour.Properties properties) {
         super(properties, SoapPaperBagBlockEntity::new);
@@ -51,18 +52,19 @@ public class SoapPaperBagBlock extends GeolibFacingEntityBlockWithFactory<SoapPa
                         .any()
                         .setValue(FACING, Direction.NORTH)
                         .setValue(LAYERS, 1)
-                        .setValue(MATERIAL, SoapPaperBagAppearance.defaults().bagMaterialId()));
+                        .setValue(MATERIAL, SoapPaperBagAppearance.defaults().bagMaterialId())
+                        .setValue(TORN, false));
     }
 
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
         super.createBlockStateDefinition(builder);
-        builder.add(LAYERS, MATERIAL);
+        builder.add(LAYERS, MATERIAL, TORN);
     }
 
     @Override
     public VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
-        VoxelShape north = state.getValue(LAYERS) <= 1 ? SHAPE_ONE_NORTH : SHAPE_STACK_NORTH;
+        VoxelShape north = SoapStackCollisionShapes.soapPaperBagNorth(state.getValue(LAYERS));
         return VoxelShapeRotation.rotateYFromNorthLikeGeckoBlockRenderer(north, state.getValue(FACING));
     }
 
@@ -75,7 +77,7 @@ public class SoapPaperBagBlock extends GeolibFacingEntityBlockWithFactory<SoapPa
             ItemStack stack) {
         SoapPaperBagAppearance appearance = SoapPaperBagAppearance.fromStack(stack);
         BlockState placed =
-                state.setValue(MATERIAL, appearance.bagMaterialId()).setValue(LAYERS, 1);
+                state.setValue(MATERIAL, appearance.bagMaterialId()).setValue(LAYERS, 1).setValue(TORN, false);
         level.setBlock(pos, placed, Block.UPDATE_ALL);
         super.setPlacedBy(level, pos, placed, placer, stack);
         SoapPaperBagBlockEntity be = blockEntity(level, pos);
@@ -162,6 +164,15 @@ public class SoapPaperBagBlock extends GeolibFacingEntityBlockWithFactory<SoapPa
             return InteractionResult.CONSUME;
         }
 
+        if (held.isEmpty() && be.layerCount() == 1) {
+            if (state.getValue(TORN)) {
+                SoapPackagingTear.restoreTornSingleLayerStack(level, pos, state, TORN);
+            } else {
+                SoapPackagingTear.beginTearSingleLayerStack(level, pos, state, TORN);
+            }
+            return InteractionResult.CONSUME;
+        }
+
         if (held.is(asItem())) {
             SoapPaperBagAppearance bag = SoapPaperBagAppearance.fromStack(held);
             if (!SoapPaperBagMaterials.isPlayable(bag.bagMaterialId())) {
@@ -185,10 +196,11 @@ public class SoapPaperBagBlock extends GeolibFacingEntityBlockWithFactory<SoapPa
 
     static void syncStateFromEntity(Level level, BlockPos pos, BlockState state, SoapPaperBagBlockEntity be) {
         int layers = Math.max(1, be.layerCount());
-        level.setBlock(
-                pos,
-                state.setValue(LAYERS, layers).setValue(MATERIAL, be.topMaterial()),
-                Block.UPDATE_ALL);
+        BlockState next = state.setValue(LAYERS, layers).setValue(MATERIAL, be.topMaterial());
+        if (layers != 1) {
+            next = next.setValue(TORN, false);
+        }
+        level.setBlock(pos, next, Block.UPDATE_ALL);
     }
 
     @Nullable

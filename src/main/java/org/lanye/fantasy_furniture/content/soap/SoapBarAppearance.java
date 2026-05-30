@@ -13,8 +13,9 @@ import org.lanye.fantasy_furniture.content.soap.block.SoapBarBlock;
  * <p>贴图仅按颜料档 {@code soap_bar_{1..6}.png}；磨损只换 geo，三档共用同一套贴图（见 DEC-301）。
  *
  * <p>套袋态：{@link #bagMaterialId()} {@code > 0} 表示已套包装袋，袋色与皂颜料无关。
+ * 撕开态：{@link #packagingTorn()} 为真时袋体 geo 换为 {@code soap_paper_bag_torn}。
  */
-public record SoapBarAppearance(int wear, int materialId, int bagMaterialId) {
+public record SoapBarAppearance(int wear, int materialId, int bagMaterialId, boolean packagingTorn) {
 
     public static final int DEFAULT_WEAR = 0;
     public static final int DEFAULT_MATERIAL = 1;
@@ -22,13 +23,18 @@ public record SoapBarAppearance(int wear, int materialId, int bagMaterialId) {
     private static final String NBT_WEAR = "SoapWear";
     private static final String NBT_MAT = "SoapMat";
     private static final String NBT_BAG_MAT = "BagMat";
+    private static final String NBT_BAG_TORN = "BagTorn";
 
     private static final ResourceLocation STATIC_ANIMATION =
             ResourceLocation.fromNamespaceAndPath(
                     FantasyFurniture.MODID, "animations/block/geolib_static.animation.json");
 
     public SoapBarAppearance(int wear, int materialId) {
-        this(wear, materialId, 0);
+        this(wear, materialId, 0, false);
+    }
+
+    public SoapBarAppearance(int wear, int materialId, int bagMaterialId) {
+        this(wear, materialId, bagMaterialId, false);
     }
 
     public SoapBarAppearance {
@@ -39,6 +45,13 @@ public record SoapBarAppearance(int wear, int materialId, int bagMaterialId) {
         if (bagMaterialId < 0 || bagMaterialId > SoapBarMaterials.COUNT) {
             bagMaterialId = 0;
         }
+        if (!isPackaged(bagMaterialId)) {
+            packagingTorn = false;
+        }
+    }
+
+    private static boolean isPackaged(int bagMaterialId) {
+        return bagMaterialId > 0;
     }
 
     public SoapBarWear wearEnum() {
@@ -46,7 +59,7 @@ public record SoapBarAppearance(int wear, int materialId, int bagMaterialId) {
     }
 
     public boolean isPackaged() {
-        return bagMaterialId > 0;
+        return isPackaged(bagMaterialId);
     }
 
     /** 未入水磨损、可放入肥皂盒 / 肥皂架。 */
@@ -63,6 +76,16 @@ public record SoapBarAppearance(int wear, int materialId, int bagMaterialId) {
         return "soap_bar_" + materialId;
     }
 
+    /** 物品栏 UI 图（源自 {@code 肥皂/物品材质/肥皂_物品材质_{色名}.png}）。 */
+    public String itemUiTextureBasename() {
+        return "soap_bar_ui_" + materialId;
+    }
+
+    public ResourceLocation itemUiTextureLocation() {
+        return ResourceLocation.fromNamespaceAndPath(
+                FantasyFurniture.MODID, "textures/item/" + itemUiTextureBasename() + ".png");
+    }
+
     public String bagTextureBasename() {
         return "soap_paper_bag_" + bagMaterialId;
     }
@@ -73,8 +96,9 @@ public record SoapBarAppearance(int wear, int materialId, int bagMaterialId) {
     }
 
     public ResourceLocation bagModelLocation() {
-        return ResourceLocation.fromNamespaceAndPath(
-                FantasyFurniture.MODID, "geo/block/soap_paper_bag.geo.json");
+        return packagingTorn
+                ? SoapPackagingAssets.bagTornModelLocation()
+                : SoapPackagingAssets.bagIntactModelLocation();
     }
 
     public ResourceLocation bagTextureLocation() {
@@ -116,8 +140,9 @@ public record SoapBarAppearance(int wear, int materialId, int bagMaterialId) {
     public static SoapBarAppearance fromState(BlockState state) {
         if (state.getBlock() instanceof SoapBarBlock block) {
             int bagMat = state.getValue(block.PACKAGED) ? state.getValue(block.BAG_MATERIAL) : 0;
+            boolean torn = state.getValue(block.PACKAGED) && state.getValue(block.PACKAGING_TORN);
             return new SoapBarAppearance(
-                    state.getValue(SoapBarBlock.WEAR), state.getValue(SoapBarBlock.MATERIAL), bagMat);
+                    state.getValue(SoapBarBlock.WEAR), state.getValue(SoapBarBlock.MATERIAL), bagMat, torn);
         }
         return defaults();
     }
@@ -130,7 +155,8 @@ public record SoapBarAppearance(int wear, int materialId, int bagMaterialId) {
         int w = tag.contains(NBT_WEAR) ? tag.getInt(NBT_WEAR) : DEFAULT_WEAR;
         int m = tag.contains(NBT_MAT) ? tag.getInt(NBT_MAT) : DEFAULT_MATERIAL;
         int bag = tag.contains(NBT_BAG_MAT) ? tag.getInt(NBT_BAG_MAT) : 0;
-        return new SoapBarAppearance(w, m, bag);
+        boolean torn = bag > 0 && tag.getBoolean(NBT_BAG_TORN);
+        return new SoapBarAppearance(w, m, bag, torn);
     }
 
     public static void writeToStack(ItemStack stack, SoapBarAppearance appearance) {
@@ -139,8 +165,14 @@ public record SoapBarAppearance(int wear, int materialId, int bagMaterialId) {
         tag.putInt(NBT_MAT, appearance.materialId());
         if (appearance.isPackaged()) {
             tag.putInt(NBT_BAG_MAT, appearance.bagMaterialId());
+            if (appearance.packagingTorn()) {
+                tag.putBoolean(NBT_BAG_TORN, true);
+            } else {
+                tag.remove(NBT_BAG_TORN);
+            }
         } else {
             tag.remove(NBT_BAG_MAT);
+            tag.remove(NBT_BAG_TORN);
         }
     }
 

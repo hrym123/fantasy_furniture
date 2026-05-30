@@ -10,10 +10,16 @@ import org.lanye.fantasy_furniture.bootstrap.block.PlainGlassWindowRegistration;
 import org.lanye.fantasy_furniture.bootstrap.block.WallpaperBlocks;
 import org.lanye.fantasy_furniture.content.furniture.common.state.PlainGlassWindowMaterialVariant;
 import org.lanye.fantasy_furniture.content.furniture.decor.block.PlainGlassWindowBlock;
+import org.lanye.fantasy_furniture.content.soap.block.BodyCreamBlock;
+import org.lanye.fantasy_furniture.content.soap.block.BodyWashBlock;
 import org.lanye.fantasy_furniture.content.soap.block.SoapBoxBlock;
 import org.lanye.fantasy_furniture.content.soap.block.SoapPaperBagBlock;
+import org.lanye.fantasy_furniture.content.soap.block.SoapPaperBoxBlock;
+import org.lanye.fantasy_furniture.content.soap.item.BodyCreamBlockItem;
+import org.lanye.fantasy_furniture.content.soap.item.BodyWashBlockItem;
 import org.lanye.fantasy_furniture.content.soap.item.SoapBoxBlockItem;
 import org.lanye.fantasy_furniture.content.soap.item.SoapPaperBagBlockItem;
+import org.lanye.fantasy_furniture.content.soap.item.SoapPaperBoxBlockItem;
 
 /** 刷子换色 HUD：由当前方块解析「下一档」预览物品与展示名。 */
 public final class BrushRecolorPreview {
@@ -63,6 +69,22 @@ public final class BrushRecolorPreview {
             return Optional.of(
                     SoapPaperBagBlockItem.stackWithBagMaterial(
                             ModBlocks.SOAP_PAPER_BAG.item().get(), material));
+        }
+        if (state.getBlock() instanceof SoapPaperBoxBlock) {
+            int material = state.getValue(SoapPaperBoxBlock.MATERIAL);
+            return Optional.of(
+                    SoapPaperBoxBlockItem.stackWithMaterial(
+                            ModBlocks.SOAP_PAPER_BOX.item().get(), material));
+        }
+        if (state.getBlock() instanceof BodyCreamBlock) {
+            int material = state.getValue(BodyCreamBlock.MATERIAL);
+            return Optional.of(
+                    BodyCreamBlockItem.stackWithMaterial(ModBlocks.BODY_CREAM.item().get(), material));
+        }
+        if (state.getBlock() instanceof BodyWashBlock) {
+            int material = state.getValue(BodyWashBlock.MATERIAL);
+            return Optional.of(
+                    BodyWashBlockItem.stackWithMaterial(ModBlocks.BODY_WASH.item().get(), material));
         }
         return Optional.empty();
     }

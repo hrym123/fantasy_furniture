@@ -16,7 +16,7 @@ import org.lanye.reverie_core.geolib.GeolibBlockItem;
 import org.lanye.reverie_core.geolib.GeolibItemAssets;
 
 /**
- * 肥皂物品：单 id，磨损与颜料存于 NBT（{@link SoapBarAppearance}）；手持 / GUI 用 GeckoLib 预览。
+ * 肥皂物品：单 id，磨损与颜料存于 NBT（{@link SoapBarAppearance}）；物品栏 2D 物品材质，手持 Geo。
  */
 public final class SoapBarBlockItem extends GeolibBlockItem {
 

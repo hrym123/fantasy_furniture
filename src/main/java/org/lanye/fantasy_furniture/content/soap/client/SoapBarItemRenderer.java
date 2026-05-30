@@ -12,6 +12,7 @@ import org.lanye.fantasy_furniture.content.soap.item.SoapBarBlockItem;
 import software.bernie.geckolib.model.GeoModel;
 import software.bernie.geckolib.renderer.GeoItemRenderer;
 
+/** 物品栏用 2D 物品材质；手持 / 掉落等仍用 Geo。 */
 @OnlyIn(Dist.CLIENT)
 public final class SoapBarItemRenderer extends GeoItemRenderer<SoapBarBlockItem> {
 
@@ -56,6 +57,9 @@ public final class SoapBarItemRenderer extends GeoItemRenderer<SoapBarBlockItem>
             MultiBufferSource bufferSource,
             int packedLight,
             int packedOverlay) {
+        if (displayContext == ItemDisplayContext.GUI) {
+            return;
+        }
         SoapBarAppearance appearance = SoapBarAppearance.fromStack(stack);
         RENDER_APPEARANCE.set(appearance);
         try {

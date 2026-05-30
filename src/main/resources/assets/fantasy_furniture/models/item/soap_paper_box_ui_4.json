@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:item/generated",
+  "textures": {
+    "layer0": "fantasy_furniture:item/soap_paper_box_ui_4"
+  }
+}

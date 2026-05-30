@@ -8,7 +8,6 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
-import org.lanye.fantasy_furniture.content.soap.blockentity.SoapPaperBagBlockEntity;
 import org.lanye.fantasy_furniture.bootstrap.block.CeramicTileBlocks;
 import org.lanye.fantasy_furniture.bootstrap.block.WallpaperBlocks;
 import org.lanye.fantasy_furniture.bootstrap.item.ModItems;
@@ -17,8 +16,18 @@ import org.lanye.fantasy_furniture.content.furniture.common.state.PlainGlassWind
 import org.lanye.fantasy_furniture.content.furniture.decor.block.PlainGlassWindowBlock;
 import org.lanye.fantasy_furniture.content.soap.SoapBarMaterials;
 import org.lanye.fantasy_furniture.content.soap.SoapPaperBagMaterials;
+import org.lanye.fantasy_furniture.content.soap.BodyCreamMaterials;
+import org.lanye.fantasy_furniture.content.soap.BodyWashMaterials;
+import org.lanye.fantasy_furniture.content.soap.block.BodyCreamBlock;
+import org.lanye.fantasy_furniture.content.soap.block.BodyWashBlock;
 import org.lanye.fantasy_furniture.content.soap.block.SoapBoxBlock;
 import org.lanye.fantasy_furniture.content.soap.block.SoapPaperBagBlock;
+import org.lanye.fantasy_furniture.content.soap.block.SoapPaperBoxBlock;
+import org.lanye.fantasy_furniture.content.soap.blockentity.BodyCreamBlockEntity;
+import org.lanye.fantasy_furniture.content.soap.blockentity.BodyWashBlockEntity;
+import org.lanye.fantasy_furniture.content.soap.blockentity.SoapPaperBagBlockEntity;
+import org.lanye.fantasy_furniture.content.soap.blockentity.SoapPaperBoxBlockEntity;
+import org.lanye.fantasy_furniture.content.soap.SoapPaperBoxMaterials;
 
 /** 刷子对 {@link ModTags#BRUSH_RECOLORABLE_BLOCKS} 成员循环换色的服务端逻辑。 */
 public final class BrushRecolor {
@@ -74,6 +83,21 @@ public final class BrushRecolor {
             }
             return Optional.of(state.setValue(SoapPaperBagBlock.MATERIAL, next));
         }
+        if (state.getBlock() instanceof SoapPaperBoxBlock) {
+            int current = state.getValue(SoapPaperBoxBlock.MATERIAL);
+            int next = nextMaterialId(current, SoapPaperBoxMaterials.COUNT);
+            return Optional.of(state.setValue(SoapPaperBoxBlock.MATERIAL, next));
+        }
+        if (state.getBlock() instanceof BodyCreamBlock) {
+            int current = state.getValue(BodyCreamBlock.MATERIAL);
+            int next = nextMaterialId(current, BodyCreamMaterials.COUNT);
+            return Optional.of(state.setValue(BodyCreamBlock.MATERIAL, next));
+        }
+        if (state.getBlock() instanceof BodyWashBlock) {
+            int current = state.getValue(BodyWashBlock.MATERIAL);
+            int next = nextMaterialId(current, BodyWashMaterials.COUNT);
+            return Optional.of(state.setValue(BodyWashBlock.MATERIAL, next));
+        }
         return Optional.empty();
     }
 
@@ -94,6 +118,15 @@ public final class BrushRecolor {
         BlockEntity be = level.getBlockEntity(pos);
         if (be instanceof SoapPaperBagBlockEntity stack) {
             stack.replaceTopMaterial(next.get().getValue(SoapPaperBagBlock.MATERIAL));
+        }
+        if (be instanceof SoapPaperBoxBlockEntity box) {
+            box.replaceTopMaterial(next.get().getValue(SoapPaperBoxBlock.MATERIAL));
+        }
+        if (be instanceof BodyCreamBlockEntity cream) {
+            cream.replaceTopMaterial(next.get().getValue(BodyCreamBlock.MATERIAL));
+        }
+        if (be instanceof BodyWashBlockEntity wash) {
+            wash.replaceTopMaterial(next.get().getValue(BodyWashBlock.MATERIAL));
         }
         return true;
     }

@@ -11,6 +11,7 @@ import net.minecraftforge.registries.RegistryObject;
 import org.lanye.fantasy_furniture.FantasyFurniture;
 import org.lanye.fantasy_furniture.bootstrap.block.BedPlate6Registration;
 import org.lanye.fantasy_furniture.content.debug.item.DebugVariantStickItem;
+import org.lanye.fantasy_furniture.content.soap.item.SoapDebugStickItem;
 import org.lanye.fantasy_furniture.content.tool.item.FabricCoilItem;
 import org.lanye.fantasy_furniture.content.tool.item.PaintBrushItem;
 import org.lanye.fantasy_furniture.content.furniture.common.item.ArcaneWandItem;
@@ -63,7 +64,7 @@ public final class ModItems {
 
     /** 肥皂套系调试棒：2D 手持，不参与泡泡头饰池。 */
     public static final RegistryObject<Item> SOAP_DEBUG_STICK =
-            ITEMS.register("soap_debug_stick", () -> new Item(new Item.Properties().stacksTo(1)));
+            ITEMS.register("soap_debug_stick", () -> new SoapDebugStickItem(new Item.Properties().stacksTo(1)));
 
     /** GeckoLib 手持魔杖；长按施法动画见 {@link ArcaneWandItem}。 */
     public static final RegistryObject<Item> ARCANE_WAND = ITEMS.register(

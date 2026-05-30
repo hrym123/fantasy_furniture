@@ -15,8 +15,11 @@ import org.lanye.fantasy_furniture.content.furniture.livingroom.client.renderer.
 import org.lanye.fantasy_furniture.content.furniture.decor.client.renderer.CombinedOrnamentGeoBlockRenderer;
 import org.lanye.fantasy_furniture.content.furniture.decor.client.renderer.PlainGlassWindowGeoBlockRenderer;
 import org.lanye.fantasy_furniture.content.soap.client.SoapBarClient;
+import org.lanye.fantasy_furniture.content.soap.client.renderer.BodyCreamGeoBlockRenderer;
+import org.lanye.fantasy_furniture.content.soap.client.renderer.BodyWashGeoBlockRenderer;
 import org.lanye.fantasy_furniture.content.soap.client.renderer.SoapBoxGeoBlockRenderer;
 import org.lanye.fantasy_furniture.content.soap.client.renderer.SoapPaperBagGeoBlockRenderer;
+import org.lanye.fantasy_furniture.content.soap.client.renderer.SoapPaperBoxGeoBlockRenderer;
 import org.lanye.fantasy_furniture.content.soap.client.renderer.SoapRackGeoBlockRenderer;
 import org.lanye.fantasy_furniture.content.furniture.common.client.renderer.FurnitureSeatRenderer;
 import org.lanye.fantasy_furniture.content.sweeper.client.renderer.SweeperRobotRenderer;
@@ -58,17 +61,14 @@ public final class ClientModEvents {
         AnimatedBlockClientRegistration.registerBlockEntityRenderer(
                 ModBlocks.SOAP_PAPER_BAG, ctx -> new SoapPaperBagGeoBlockRenderer());
         AnimatedBlockClientRegistration.registerBlockEntityRenderer(
-                ModBlocks.BODY_WASH,
-                GeolibAnimatedBlockRenderers.defaultGeoRendererProvider(FantasyFurniture.MODID, "body_wash"));
+                ModBlocks.BODY_WASH, ctx -> new BodyWashGeoBlockRenderer());
         AnimatedBlockClientRegistration.registerBlockEntityRenderer(
                 ModBlocks.SHAMPOO,
                 GeolibAnimatedBlockRenderers.defaultGeoRendererProvider(FantasyFurniture.MODID, "shampoo"));
         AnimatedBlockClientRegistration.registerBlockEntityRenderer(
-                ModBlocks.BODY_CREAM,
-                GeolibAnimatedBlockRenderers.defaultGeoRendererProvider(FantasyFurniture.MODID, "body_cream"));
+                ModBlocks.BODY_CREAM, ctx -> new BodyCreamGeoBlockRenderer());
         AnimatedBlockClientRegistration.registerBlockEntityRenderer(
-                ModBlocks.SOAP_PAPER_BOX,
-                GeolibAnimatedBlockRenderers.defaultGeoRendererProvider(FantasyFurniture.MODID, "soap_paper_box"));
+                ModBlocks.SOAP_PAPER_BOX, ctx -> new SoapPaperBoxGeoBlockRenderer());
         AnimatedBlockClientRegistration.registerBlockEntityRenderer(
                 ModBlocks.SOAP_MOLD,
                 GeolibAnimatedBlockRenderers.defaultGeoRendererProvider(FantasyFurniture.MODID, "soap_mold"));

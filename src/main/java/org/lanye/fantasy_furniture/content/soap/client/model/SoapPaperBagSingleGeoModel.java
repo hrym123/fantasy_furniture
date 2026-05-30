@@ -1,11 +1,14 @@
 package org.lanye.fantasy_furniture.content.soap.client.model;
 
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.level.block.state.BlockState;
+import org.lanye.fantasy_furniture.content.soap.SoapPackagingAssets;
 import org.lanye.fantasy_furniture.content.soap.SoapPaperBagAppearance;
+import org.lanye.fantasy_furniture.content.soap.block.SoapPaperBagBlock;
 import org.lanye.fantasy_furniture.content.soap.blockentity.SoapPaperBagBlockEntity;
 import software.bernie.geckolib.model.GeoModel;
 
-/** 地上单只空袋 geo（源自 {@code 包装袋_肥皂.bbmodel} 袋体）。 */
+/** 地上单只空袋 geo（完整态 / 撕开态）。 */
 public final class SoapPaperBagSingleGeoModel extends GeoModel<SoapPaperBagBlockEntity> {
 
     private static SoapPaperBagAppearance appearance(SoapPaperBagBlockEntity entity) {
@@ -14,6 +17,10 @@ public final class SoapPaperBagSingleGeoModel extends GeoModel<SoapPaperBagBlock
 
     @Override
     public ResourceLocation getModelResource(SoapPaperBagBlockEntity animatable) {
+        BlockState state = animatable.getBlockState();
+        if (state.getBlock() instanceof SoapPaperBagBlock block && state.getValue(block.TORN)) {
+            return SoapPackagingAssets.bagTornModelLocation();
+        }
         return appearance(animatable).placedSingleModelLocation();
     }
 

@@ -25,6 +25,7 @@ import org.lanye.fantasy_furniture.bootstrap.block.ModBlocks;
 import org.lanye.fantasy_furniture.content.soap.SoapBarAppearance;
 import org.lanye.fantasy_furniture.content.soap.SoapBarMaterials;
 import org.lanye.fantasy_furniture.content.soap.SoapBarWear;
+import org.lanye.fantasy_furniture.content.soap.SoapPackagingTear;
 import org.lanye.fantasy_furniture.content.soap.SoapPaperBagAppearance;
 import org.lanye.fantasy_furniture.content.soap.SoapPaperBagMaterials;
 import org.lanye.fantasy_furniture.content.soap.blockentity.SoapBarBlockEntity;
@@ -42,6 +43,7 @@ public class SoapBarBlock extends GeolibFacingEntityBlockWithFactory<SoapBarBloc
     public static final BooleanProperty PACKAGED = BooleanProperty.create("packaged");
     public static final IntegerProperty BAG_MATERIAL =
             IntegerProperty.create("bag_material", 0, SoapBarMaterials.COUNT);
+    public static final BooleanProperty PACKAGING_TORN = BooleanProperty.create("packaging_torn");
 
     private static final VoxelShape SHAPE_FULL_NORTH = Block.box(5.0, 0.0, 6.3, 11.0, 2.0, 9.7);
     private static final VoxelShape SHAPE_USED_ONCE_NORTH = Block.box(6.0, 0.0, 6.8, 10.0, 1.4, 9.2);
@@ -56,13 +58,14 @@ public class SoapBarBlock extends GeolibFacingEntityBlockWithFactory<SoapBarBloc
                         .setValue(WEAR, SoapBarAppearance.DEFAULT_WEAR)
                         .setValue(MATERIAL, SoapBarAppearance.DEFAULT_MATERIAL)
                         .setValue(PACKAGED, false)
-                        .setValue(BAG_MATERIAL, 0));
+                        .setValue(BAG_MATERIAL, 0)
+                        .setValue(PACKAGING_TORN, false));
     }
 
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
         super.createBlockStateDefinition(builder);
-        builder.add(WEAR, MATERIAL, PACKAGED, BAG_MATERIAL);
+        builder.add(WEAR, MATERIAL, PACKAGED, BAG_MATERIAL, PACKAGING_TORN);
     }
 
     @Override
@@ -88,7 +91,8 @@ public class SoapBarBlock extends GeolibFacingEntityBlockWithFactory<SoapBarBloc
                 state.setValue(WEAR, appearance.wear())
                         .setValue(MATERIAL, appearance.materialId())
                         .setValue(PACKAGED, appearance.isPackaged())
-                        .setValue(BAG_MATERIAL, appearance.bagMaterialId());
+                        .setValue(BAG_MATERIAL, appearance.bagMaterialId())
+                        .setValue(PACKAGING_TORN, appearance.packagingTorn());
         level.setBlock(pos, placed, Block.UPDATE_ALL);
         super.setPlacedBy(level, pos, placed, placer, stack);
     }
@@ -138,7 +142,9 @@ public class SoapBarBlock extends GeolibFacingEntityBlockWithFactory<SoapBarBloc
                 return InteractionResult.FAIL;
             }
             BlockState wrapped =
-                    state.setValue(PACKAGED, true).setValue(BAG_MATERIAL, bag.bagMaterialId());
+                    state.setValue(PACKAGED, true)
+                            .setValue(BAG_MATERIAL, bag.bagMaterialId())
+                            .setValue(PACKAGING_TORN, false);
             level.setBlock(pos, wrapped, Block.UPDATE_ALL);
             if (!player.getAbilities().instabuild) {
                 held.shrink(1);
@@ -147,13 +153,21 @@ public class SoapBarBlock extends GeolibFacingEntityBlockWithFactory<SoapBarBloc
         }
 
         if (packaged && held.isEmpty()) {
-            ItemStack soap =
-                    SoapBarBlockItem.stackWithAppearance(
-                            ModBlocks.SOAP_BAR.item().get(), SoapBarAppearance.fromState(state));
-            if (!player.getInventory().add(soap)) {
-                player.drop(soap, false);
+            if (player.isShiftKeyDown()) {
+                ItemStack soap =
+                        SoapBarBlockItem.stackWithAppearance(
+                                ModBlocks.SOAP_BAR.item().get(), SoapBarAppearance.fromState(state));
+                if (!player.getInventory().add(soap)) {
+                    player.drop(soap, false);
+                }
+                level.removeBlock(pos, false);
+                return InteractionResult.CONSUME;
             }
-            level.removeBlock(pos, false);
+            if (state.getValue(PACKAGING_TORN)) {
+                SoapPackagingTear.finishTearSoapBar(level, pos, state);
+            } else {
+                SoapPackagingTear.beginTearSoapBar(level, pos, state);
+            }
             return InteractionResult.CONSUME;
         }
 

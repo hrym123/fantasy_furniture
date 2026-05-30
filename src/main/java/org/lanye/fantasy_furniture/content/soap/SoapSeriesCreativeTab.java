@@ -12,10 +12,10 @@ public final class SoapSeriesCreativeTab {
     private SoapSeriesCreativeTab() {}
 
     public static void appendEntries(List<Consumer<CreativeModeTab.Output>> list) {
-        list.add(out -> out.accept(ModBlocks.BODY_WASH.item().get()));
+        BodyWashCreativeTab.appendEntries(list);
         list.add(out -> out.accept(ModBlocks.SHAMPOO.item().get()));
-        list.add(out -> out.accept(ModBlocks.BODY_CREAM.item().get()));
-        list.add(out -> out.accept(ModBlocks.SOAP_PAPER_BOX.item().get()));
+        BodyCreamCreativeTab.appendEntries(list);
+        SoapPaperBoxCreativeTab.appendEntries(list);
         list.add(out -> out.accept(ModBlocks.SOAP_MOLD.item().get()));
     }
 }
