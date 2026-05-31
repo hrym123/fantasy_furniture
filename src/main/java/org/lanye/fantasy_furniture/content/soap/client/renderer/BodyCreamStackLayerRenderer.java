@@ -7,6 +7,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import net.minecraft.client.renderer.MultiBufferSource;
+import java.util.Arrays;
+import org.lanye.fantasy_furniture.content.soap.BodyCreamAssets;
 import org.lanye.fantasy_furniture.content.soap.blockentity.BodyCreamBlockEntity;
 import org.lanye.fantasy_furniture.content.soap.client.BodyCreamStackRenderState;
 import org.lanye.fantasy_furniture.content.soap.client.model.BodyCreamStackGeoModel;
@@ -17,7 +19,8 @@ import software.bernie.geckolib.renderer.GeoBlockRenderer;
 /** 摞体单层 Pass：按 {@link BodyCreamStackRenderState} 仅显示目标 {@code blockN} 骨骼。 */
 final class BodyCreamStackLayerRenderer extends GeoBlockRenderer<BodyCreamBlockEntity> {
 
-    private static final Set<String> LAYER_BONES = Set.of("block2", "block3", "block4", "block5", "block6");
+    private static final Set<String> LAYER_BONES =
+            Set.copyOf(Arrays.asList(BodyCreamAssets.STACK_LAYER_BONES));
 
     BodyCreamStackLayerRenderer() {
         super(new BodyCreamStackGeoModel());

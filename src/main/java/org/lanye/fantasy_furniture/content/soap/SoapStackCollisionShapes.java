@@ -36,13 +36,13 @@ public final class SoapStackCollisionShapes {
                         Block.box(3.16, 0.00, 0.60, 12.84, 4.53, 16.00),
     };
 
-    /** body_cream.geo.json 北向 */
+    /** body_cream.geo.json 北向 + gecko X 镜像 */
     static final VoxelShape BODY_CREAM_SINGLE_NORTH =
             StackLayerCollisions.orParts(
                     Block.box(5.50, 0.00, 5.50, 10.50, 3.00, 10.50),
                     Block.box(5.75, 3.00, 5.75, 10.25, 3.75, 10.25));
 
-    /** 层数 1…5 预合并北向碰撞；下标 layers-1 */
+    /** 层数 1…5 预合并北向碰撞 + gecko X 镜像；下标 layers-1 */
     private static final VoxelShape[] BODY_CREAM_NORTH_BY_COUNT = {
             // 1 层
                         StackLayerCollisions.orParts(
@@ -52,36 +52,36 @@ public final class SoapStackCollisionShapes {
                         StackLayerCollisions.orParts(
                     Block.box(2.00, 0.00, 9.00, 7.00, 3.00, 14.00),
                     Block.box(2.25, 3.00, 9.25, 6.75, 3.75, 13.75),
-                    Block.box(9.00, 0.00, 2.00, 14.00, 3.00, 7.00),
-                    Block.box(9.25, 3.00, 2.25, 13.75, 3.75, 6.75)),
+                    Block.box(9.00, 0.00, 9.00, 14.00, 3.00, 14.00),
+                    Block.box(9.25, 3.00, 9.25, 13.75, 3.75, 13.75)),
             // 3 层
                         StackLayerCollisions.orParts(
                     Block.box(2.00, 0.00, 9.00, 7.00, 3.00, 14.00),
                     Block.box(2.25, 3.00, 9.25, 6.75, 3.75, 13.75),
-                    Block.box(9.00, 0.00, 2.00, 14.00, 3.00, 7.00),
-                    Block.box(9.25, 3.00, 2.25, 13.75, 3.75, 6.75),
+                    Block.box(9.00, 0.00, 9.00, 14.00, 3.00, 14.00),
+                    Block.box(9.25, 3.00, 9.25, 13.75, 3.75, 13.75),
                     Block.box(2.00, 0.00, 2.00, 7.00, 3.00, 7.00),
                     Block.box(2.25, 3.00, 2.25, 6.75, 3.75, 6.75)),
             // 4 层
                         StackLayerCollisions.orParts(
                     Block.box(2.00, 0.00, 9.00, 7.00, 3.00, 14.00),
                     Block.box(2.25, 3.00, 9.25, 6.75, 3.75, 13.75),
-                    Block.box(9.00, 0.00, 2.00, 14.00, 3.00, 7.00),
-                    Block.box(9.25, 3.00, 2.25, 13.75, 3.75, 6.75),
+                    Block.box(9.00, 0.00, 9.00, 14.00, 3.00, 14.00),
+                    Block.box(9.25, 3.00, 9.25, 13.75, 3.75, 13.75),
                     Block.box(2.00, 0.00, 2.00, 7.00, 3.00, 7.00),
                     Block.box(2.25, 3.00, 2.25, 6.75, 3.75, 6.75),
-                    Block.box(9.00, 0.00, 9.00, 14.00, 3.00, 14.00),
-                    Block.box(9.25, 3.00, 9.25, 13.75, 3.75, 13.75)),
+                    Block.box(9.00, 0.00, 2.00, 14.00, 3.00, 7.00),
+                    Block.box(9.25, 3.00, 2.25, 13.75, 3.75, 6.75)),
             // 5 层
                         StackLayerCollisions.orParts(
                     Block.box(2.00, 0.00, 9.00, 7.00, 3.00, 14.00),
                     Block.box(2.25, 3.00, 9.25, 6.75, 3.75, 13.75),
-                    Block.box(9.00, 0.00, 2.00, 14.00, 3.00, 7.00),
-                    Block.box(9.25, 3.00, 2.25, 13.75, 3.75, 6.75),
-                    Block.box(2.00, 0.00, 2.00, 7.00, 3.00, 7.00),
-                    Block.box(2.25, 3.00, 2.25, 6.75, 3.75, 6.75),
                     Block.box(9.00, 0.00, 9.00, 14.00, 3.00, 14.00),
                     Block.box(9.25, 3.00, 9.25, 13.75, 3.75, 13.75),
+                    Block.box(2.00, 0.00, 2.00, 7.00, 3.00, 7.00),
+                    Block.box(2.25, 3.00, 2.25, 6.75, 3.75, 6.75),
+                    Block.box(9.00, 0.00, 2.00, 14.00, 3.00, 7.00),
+                    Block.box(9.25, 3.00, 2.25, 13.75, 3.75, 6.75),
                     Block.box(5.50, 3.70, 5.50, 10.50, 6.70, 10.50),
                     Block.box(5.75, 6.70, 5.75, 10.25, 7.45, 10.25)),
     };
