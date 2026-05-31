@@ -30,24 +30,14 @@ final class SoapMoldBasinItemRenderer {
             int light,
             ItemStack stack,
             String anchorBone,
-            SoapMoldDisplaySnapshot snapshot,
-            float partialTick) {
+            SoapMoldDisplaySnapshot snapshot) {
         if (stack.isEmpty()) {
             return;
         }
-        boolean curing = snapshot.contents().phase() == SoapMoldPhase.CURING;
-        float time =
-                Minecraft.getInstance().level != null
-                        ? Minecraft.getInstance().level.getGameTime() + partialTick
-                        : partialTick;
-        float spin = curing ? Mth.sin(time * 0.08f) * 8f : 0f;
-        float bob = curing ? Mth.sin(time * 0.12f) * 0.04f : 0f;
 
         poseStack.scale(ITEM_SCALE, ITEM_SCALE, ITEM_SCALE);
         poseStack.translate(0.0, 0.5f, 0.0);
         applyIngredientLeanBack(poseStack, anchorBone);
-        poseStack.translate(0.0, bob, 0.0);
-        poseStack.mulPose(Axis.YP.rotationDegrees(spin));
 
         Minecraft.getInstance()
                 .getItemRenderer()

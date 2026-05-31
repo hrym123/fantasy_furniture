@@ -13,12 +13,14 @@ import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import org.lanye.fantasy_furniture.bootstrap.block.ModBlocks;
+import org.lanye.fantasy_furniture.content.soap.item.SoapBarBlockItem;
 import org.lanye.fantasy_furniture.content.soap.SoapBarAppearance;
 import org.lanye.fantasy_furniture.content.soap.block.SoapMoldBlock;
 import org.lanye.fantasy_furniture.content.soap.mold.SoapMoldContents;
@@ -29,14 +31,24 @@ import org.lanye.fantasy_furniture.content.soap.mold.SoapMoldPhase;
 import software.bernie.geckolib.animatable.GeoBlockEntity;
 import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
 import software.bernie.geckolib.core.animation.AnimatableManager;
+import software.bernie.geckolib.core.animation.Animation;
 import software.bernie.geckolib.core.animation.AnimationController;
+import software.bernie.geckolib.core.animation.RawAnimation;
 import software.bernie.geckolib.core.object.PlayState;
 import software.bernie.geckolib.util.GeckoLibUtil;
 
 /** 肥皂模具：装料、混合、凝固与取皂（见 {@code soap_mold.gameplay.md}）。 */
 public class SoapMoldBlockEntity extends BlockEntity implements GeoBlockEntity {
 
-    public static final int CURE_TICKS = 20 * 60;
+    /** 与 {@code animation.soap_mold.animation} 的 {@code animation_length}（约 4.71s）一致。 */
+    public static final int CURE_TICKS = 94;
+
+    public static final String MAIN_CONTROLLER = "main";
+
+    private static final String TRIGGER_CURE = "cure";
+
+    private static final RawAnimation CURING =
+            RawAnimation.begin().then("animation.soap_mold.animation", Animation.LoopType.PLAY_ONCE);
 
     private static final String TAG_PHASE = "Phase";
     private static final String TAG_LIQ_KIND = "LiqKind";
@@ -177,8 +189,34 @@ public class SoapMoldBlockEntity extends BlockEntity implements GeoBlockEntity {
                         contents.hasWater(),
                         contents.pigmentMatId(),
                         gameTime + CURE_TICKS);
+        syncFillLevel();
         setChanged();
+        triggerCureAnimation();
+        syncToClients();
         return true;
+    }
+
+    private void triggerCureAnimation() {
+        if (level != null && !level.isClientSide) {
+            triggerAnim(MAIN_CONTROLLER, TRIGGER_CURE);
+        }
+    }
+
+    public SoapBarAppearance pendingSoapAppearance() {
+        return new SoapBarAppearance(
+                SoapBarAppearance.DEFAULT_WEAR,
+                contents.pigmentMatId(),
+                0,
+                false,
+                contents.liquidMatId());
+    }
+
+    public ItemStack createSoapStack() {
+        if (contents.phase() != SoapMoldPhase.READY) {
+            return ItemStack.EMPTY;
+        }
+        return SoapBarBlockItem.stackWithAppearance(
+                ModBlocks.SOAP_BAR.item().get(), pendingSoapAppearance());
     }
 
     @Nullable
@@ -186,14 +224,9 @@ public class SoapMoldBlockEntity extends BlockEntity implements GeoBlockEntity {
         if (contents.phase() != SoapMoldPhase.READY) {
             return null;
         }
-        SoapBarAppearance soap =
-                new SoapBarAppearance(
-                        SoapBarAppearance.DEFAULT_WEAR,
-                        contents.pigmentMatId(),
-                        0,
-                        false,
-                        contents.liquidMatId());
+        SoapBarAppearance soap = pendingSoapAppearance();
         resetAfterCraft();
+        syncToClients();
         return soap;
     }
 
@@ -203,7 +236,9 @@ public class SoapMoldBlockEntity extends BlockEntity implements GeoBlockEntity {
         }
         if (level.getGameTime() >= contents.cureFinishGameTime()) {
             contents = contents.withPhase(SoapMoldPhase.READY);
+            syncFillLevel();
             setChanged();
+            syncToClients();
         }
     }
 
@@ -227,6 +262,26 @@ public class SoapMoldBlockEntity extends BlockEntity implements GeoBlockEntity {
         contents = SoapMoldContents.empty();
         syncFillLevel();
         setChanged();
+    }
+
+    private void syncToClients() {
+        if (level == null || level.isClientSide) {
+            return;
+        }
+        level.blockEntityChanged(worldPosition);
+        BlockState current = level.getBlockState(worldPosition);
+        level.sendBlockUpdated(worldPosition, current, current, Block.UPDATE_ALL);
+        if (level instanceof ServerLevel server) {
+            ClientboundBlockEntityDataPacket packet = ClientboundBlockEntityDataPacket.create(this);
+            double x = worldPosition.getX() + 0.5;
+            double y = worldPosition.getY() + 0.5;
+            double z = worldPosition.getZ() + 0.5;
+            for (ServerPlayer player : server.players()) {
+                if (player.distanceToSqr(x, y, z) <= 4096.0) {
+                    player.connection.send(packet);
+                }
+            }
+        }
     }
 
     private void clearSlot(SoapMoldIngredientSlot slot) {
@@ -342,7 +397,14 @@ public class SoapMoldBlockEntity extends BlockEntity implements GeoBlockEntity {
 
     @Override
     public void handleUpdateTag(CompoundTag tag) {
+        SoapMoldPhase before = contents.phase();
         load(tag);
+        if (level != null
+                && level.isClientSide
+                && before != SoapMoldPhase.CURING
+                && contents.phase() == SoapMoldPhase.CURING) {
+            triggerAnim(MAIN_CONTROLLER, TRIGGER_CURE);
+        }
     }
 
     @Override
@@ -358,7 +420,13 @@ public class SoapMoldBlockEntity extends BlockEntity implements GeoBlockEntity {
 
     @Override
     public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
-        controllers.add(new AnimationController<>(this, "main", 0, state -> PlayState.STOP));
+        controllers.add(
+                new AnimationController<>(this, MAIN_CONTROLLER, 0, state -> {
+                    if (contents.phase() == SoapMoldPhase.CURING) {
+                        return state.setAndContinue(CURING);
+                    }
+                    return PlayState.STOP;
+                }).triggerableAnim(TRIGGER_CURE, CURING));
     }
 
     @Override

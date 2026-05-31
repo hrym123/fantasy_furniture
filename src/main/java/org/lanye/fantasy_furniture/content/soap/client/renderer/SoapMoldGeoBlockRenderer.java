@@ -17,14 +17,13 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.joml.Matrix3f;
 import org.joml.Matrix4f;
-import org.lanye.fantasy_furniture.FantasyFurniture;
 import org.lanye.fantasy_furniture.content.soap.blockentity.SoapMoldBlockEntity;
 import org.lanye.fantasy_furniture.content.soap.client.SoapMoldDisplaySnapshot;
+import org.lanye.fantasy_furniture.content.soap.client.model.SoapMoldBlockGeoModel;
 import org.lanye.fantasy_furniture.content.soap.mold.SoapMoldPhase;
 import org.lanye.reverie_core.client.renderer.container.ContainerFluidSurfacePass;
 import org.lanye.reverie_core.client.renderer.container.ContainerFluidSurfaceSpec;
 import software.bernie.geckolib.cache.object.GeoBone;
-import software.bernie.geckolib.model.DefaultedBlockGeoModel;
 import software.bernie.geckolib.renderer.GeoBlockRenderer;
 import software.bernie.geckolib.util.RenderUtils;
 
@@ -60,12 +59,12 @@ public final class SoapMoldGeoBlockRenderer implements BlockEntityRenderer<SoapM
 
         private SoapMoldDisplaySnapshot snapshot = SoapMoldDisplaySnapshot.from(null);
         private final List<CapturedAnchor> capturedAnchors = new ArrayList<>();
-        private final Set<String> capturedBonesThisFrame = new HashSet<>();
+        /** 仅 dedupe 盆内 Item / 水面锚点；勿与 {@code soap_product} 共用。 */
+        private final Set<String> basinLayerBonesThisFrame = new HashSet<>();
+        private boolean soapAnchorCapturedThisFrame;
 
         BodyRenderer() {
-            super(
-                    new DefaultedBlockGeoModel<>(
-                            ResourceLocation.fromNamespaceAndPath(FantasyFurniture.MODID, "soap_mold")));
+            super(new SoapMoldBlockGeoModel());
         }
 
         void renderWithOverlays(
@@ -78,13 +77,16 @@ public final class SoapMoldGeoBlockRenderer implements BlockEntityRenderer<SoapM
             BlockPos blockPos = blockEntity.getBlockPos();
             this.snapshot = SoapMoldDisplaySnapshot.from(blockEntity);
             this.capturedAnchors.clear();
-            this.capturedBonesThisFrame.clear();
+            this.basinLayerBonesThisFrame.clear();
+            this.soapAnchorCapturedThisFrame = false;
 
             super.render(blockEntity, partialTick, poseStack, bufferSource, packedLight, packedOverlay);
 
             for (CapturedAnchor anchor : capturedAnchors) {
                 if (anchor.kind() == AnchorKind.ITEM) {
-                    anchor.drawItem(poseStack, bufferSource, packedLight, snapshot, partialTick);
+                    anchor.drawItem(poseStack, bufferSource, packedLight, snapshot);
+                } else if (anchor.kind() == AnchorKind.SOAP) {
+                    anchor.drawSoap(poseStack, bufferSource, packedLight, blockEntity);
                 }
             }
             for (CapturedAnchor anchor : capturedAnchors) {
@@ -123,15 +125,23 @@ public final class SoapMoldGeoBlockRenderer implements BlockEntityRenderer<SoapM
 
             SoapMoldDisplaySnapshot live = SoapMoldDisplaySnapshot.from(blockEntity);
             String boneName = bone.getName();
-            if (!capturedBonesThisFrame.add(boneName)) {
+            if (basinLayerBonesThisFrame.contains(boneName)) {
                 return;
             }
 
             if ("fluid_surface".equals(boneName) && live.showWater()) {
+                basinLayerBonesThisFrame.add(boneName);
                 capturedAnchors.add(CapturedAnchor.fluid(copyPoseAtPivot(poseStack, bone)));
+            }
+            if ("soap_product".equals(boneName)
+                    && live.contents().phase() == SoapMoldPhase.READY
+                    && !soapAnchorCapturedThisFrame) {
+                soapAnchorCapturedThisFrame = true;
+                capturedAnchors.add(CapturedAnchor.soap(copyPoseAtPivot(poseStack, bone)));
             }
             for (SoapMoldDisplaySnapshot.DisplayItem entry : live.basinItems()) {
                 if (entry.anchorBone().equals(boneName)) {
+                    basinLayerBonesThisFrame.add(boneName);
                     capturedAnchors.add(
                             CapturedAnchor.item(copyPoseAtPivot(poseStack, bone), entry.stack(), boneName));
                 }
@@ -155,7 +165,8 @@ public final class SoapMoldGeoBlockRenderer implements BlockEntityRenderer<SoapM
 
         private enum AnchorKind {
             ITEM,
-            FLUID
+            FLUID,
+            SOAP
         }
 
         private record CapturedAnchor(
@@ -169,18 +180,34 @@ public final class SoapMoldGeoBlockRenderer implements BlockEntityRenderer<SoapM
                 return new CapturedAnchor(AnchorKind.FLUID, transform, ItemStack.EMPTY, "fluid_surface");
             }
 
+            static CapturedAnchor soap(PoseSnapshot transform) {
+                return new CapturedAnchor(AnchorKind.SOAP, transform, ItemStack.EMPTY, "soap_product");
+            }
+
             void drawItem(
                     PoseStack poseStack,
                     MultiBufferSource bufferSource,
                     int light,
-                    SoapMoldDisplaySnapshot snapshot,
-                    float partialTick) {
+                    SoapMoldDisplaySnapshot snapshot) {
                 poseStack.pushPose();
                 PoseStack.Pose pose = poseStack.last();
                 pose.pose().set(transform.pose());
                 pose.normal().set(transform.normal());
                 SoapMoldBasinItemRenderer.draw(
-                        poseStack, bufferSource, light, stack, anchorBone, snapshot, partialTick);
+                        poseStack, bufferSource, light, stack, anchorBone, snapshot);
+                poseStack.popPose();
+            }
+
+            void drawSoap(
+                    PoseStack poseStack,
+                    MultiBufferSource bufferSource,
+                    int light,
+                    SoapMoldBlockEntity blockEntity) {
+                poseStack.pushPose();
+                PoseStack.Pose pose = poseStack.last();
+                pose.pose().set(transform.pose());
+                pose.normal().set(transform.normal());
+                SoapMoldSoapProductRenderer.draw(poseStack, bufferSource, light, blockEntity);
                 poseStack.popPose();
             }
 
@@ -190,14 +217,6 @@ public final class SoapMoldGeoBlockRenderer implements BlockEntityRenderer<SoapM
                     SoapMoldDisplaySnapshot snapshot,
                     float partialTick,
                     BlockPos blockPos) {
-                float wobble =
-                        snapshot.contents().phase() == SoapMoldPhase.CURING
-                                ? (float)
-                                        Math.sin(
-                                                        (snapshot.contents().cureFinishGameTime() + partialTick)
-                                                                * 0.05)
-                                                * 0.015f
-                                : 0f;
                 poseStack.pushPose();
                 PoseStack.Pose pose = poseStack.last();
                 pose.pose().set(transform.pose());
@@ -207,7 +226,7 @@ public final class SoapMoldGeoBlockRenderer implements BlockEntityRenderer<SoapM
                         new Matrix4f(pose.pose()),
                         new Matrix3f(pose.normal()),
                         light,
-                        BASIN_WATER_SPEC.withSurfaceYOffset(wobble));
+                        BASIN_WATER_SPEC);
                 poseStack.popPose();
             }
         }

@@ -39,7 +39,8 @@ public class SoapMoldBlock extends GeolibFacingEntityBlockWithFactory<SoapMoldBl
 
     public static final IntegerProperty FILL_LEVEL = IntegerProperty.create("fill_level", 0, 4);
 
-    public static final VoxelShape SHAPE_NORTH = Block.box(1.86, 0.0, 7.0, 11.8, 4.0, 12.0);
+    /** geo/block/soap_mold.geo.json --gecko-block --exclude-bones group3（盆体 group2，不含动画压杆） */
+    public static final VoxelShape SHAPE_NORTH = Block.box(4.2, 0.0, 7.0, 11.8, 4.0, 12.0);
 
     public SoapMoldBlock(BlockBehaviour.Properties properties) {
         super(properties, SoapMoldBlockEntity::new);
@@ -77,8 +78,15 @@ public class SoapMoldBlock extends GeolibFacingEntityBlockWithFactory<SoapMoldBl
         if (!state.is(newState.getBlock()) && !level.isClientSide) {
             SoapMoldBlockEntity be = blockEntity(level, pos);
             if (be != null) {
-                for (ItemStack drop : be.buildIngredientDrops()) {
-                    Block.popResource(level, pos, drop);
+                if (be.contents().phase() == SoapMoldPhase.READY) {
+                    ItemStack soap = be.createSoapStack();
+                    if (!soap.isEmpty()) {
+                        Block.popResource(level, pos, soap);
+                    }
+                } else {
+                    for (ItemStack drop : be.buildIngredientDrops()) {
+                        Block.popResource(level, pos, drop);
+                    }
                 }
             }
         }
@@ -166,6 +174,10 @@ public class SoapMoldBlock extends GeolibFacingEntityBlockWithFactory<SoapMoldBl
                 return InteractionResult.CONSUME;
             }
             return InteractionResult.FAIL;
+        }
+
+        if (phase == SoapMoldPhase.CURING) {
+            return InteractionResult.PASS;
         }
 
         if (phase == SoapMoldPhase.EMPTY || phase == SoapMoldPhase.FILLING) {
