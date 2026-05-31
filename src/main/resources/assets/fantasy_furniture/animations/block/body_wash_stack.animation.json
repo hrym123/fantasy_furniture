@@ -5,6 +5,63 @@
       "loop": true,
       "animation_length": 0.05,
       "bones": {}
+    },
+    "animation.body_wash_stack.use2": {
+      "loop": false,
+      "animation_length": 0.5,
+      "bones": {
+        "bone2": {
+          "position": {
+            "0.0": {
+              "vector": [0, 0, 0]
+            },
+            "0.25": {
+              "vector": [0, -1, 0]
+            },
+            "0.5": {
+              "vector": [0, 0, 0]
+            }
+          }
+        }
+      }
+    },
+    "animation.body_wash_stack.use3": {
+      "loop": false,
+      "animation_length": 0.5,
+      "bones": {
+        "bone3": {
+          "position": {
+            "0.0": {
+              "vector": [0, 0, 0]
+            },
+            "0.25": {
+              "vector": [0, -1, 0]
+            },
+            "0.5": {
+              "vector": [0, 0, 0]
+            }
+          }
+        }
+      }
+    },
+    "animation.body_wash_stack.use4": {
+      "loop": false,
+      "animation_length": 0.5,
+      "bones": {
+        "bone4": {
+          "position": {
+            "0.0": {
+              "vector": [0, 0, 0]
+            },
+            "0.25": {
+              "vector": [0, -1, 0]
+            },
+            "0.5": {
+              "vector": [0, 0, 0]
+            }
+          }
+        }
+      }
     }
   }
 }

@@ -19,12 +19,33 @@ import org.lanye.fantasy_furniture.content.soap.BodyWashMaterials;
 import software.bernie.geckolib.animatable.GeoBlockEntity;
 import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
 import software.bernie.geckolib.core.animation.AnimatableManager;
+import software.bernie.geckolib.core.animation.Animation;
 import software.bernie.geckolib.core.animation.AnimationController;
+import software.bernie.geckolib.core.animation.RawAnimation;
 import software.bernie.geckolib.core.object.PlayState;
 import software.bernie.geckolib.util.GeckoLibUtil;
 
 /** 沐浴露摞：最多 {@link BodyWashAssets#MAX_STACK} 瓶，LIFO；每层独立颜料。 */
 public final class BodyWashBlockEntity extends BlockEntity implements GeoBlockEntity {
+
+    public static final String MAIN_CONTROLLER = "main";
+
+    private static final String TRIGGER_USE = "use";
+    private static final String TRIGGER_USE2 = "use2";
+    private static final String TRIGGER_USE3 = "use3";
+    private static final String TRIGGER_USE4 = "use4";
+
+    /** 源自 {@code 沐浴露_默认.bbmodel} · {@code animation}（泵头 {@code bone}）。 */
+    private static final RawAnimation USE_SINGLE =
+            RawAnimation.begin().then("animation.body_wash.use", Animation.LoopType.PLAY_ONCE);
+
+    /** 源自 {@code 沐浴露_堆叠_x4.bbmodel} · {@code animation2}…{@code animation4}。 */
+    private static final RawAnimation USE_STACK2 =
+            RawAnimation.begin().then("animation.body_wash_stack.use2", Animation.LoopType.PLAY_ONCE);
+    private static final RawAnimation USE_STACK3 =
+            RawAnimation.begin().then("animation.body_wash_stack.use3", Animation.LoopType.PLAY_ONCE);
+    private static final RawAnimation USE_STACK4 =
+            RawAnimation.begin().then("animation.body_wash_stack.use4", Animation.LoopType.PLAY_ONCE);
 
     private static final String TAG_LAYER_MATS = "LayerMats";
     private static final String TAG_LAYERS_LEGACY = "Layers";
@@ -139,9 +160,30 @@ public final class BodyWashBlockEntity extends BlockEntity implements GeoBlockEn
         return ClientboundBlockEntityDataPacket.create(this);
     }
 
+    /** 空手右键：按压泵头动画（顶层瓶；单瓶用默认 geo，多瓶用堆叠 geo 对应 {@code boneN}）。 */
+    public void onServerUseAnim() {
+        if (!(level instanceof net.minecraft.server.level.ServerLevel)) {
+            return;
+        }
+        int layers = Math.max(1, layerCount());
+        String trigger =
+                switch (layers) {
+                    case 1 -> TRIGGER_USE;
+                    case 2 -> TRIGGER_USE2;
+                    case 3 -> TRIGGER_USE3;
+                    default -> TRIGGER_USE4;
+                };
+        triggerAnim(MAIN_CONTROLLER, trigger);
+    }
+
     @Override
     public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
-        controllers.add(new AnimationController<>(this, "main", 0, state -> PlayState.STOP));
+        controllers.add(
+                new AnimationController<>(this, MAIN_CONTROLLER, 0, state -> PlayState.STOP)
+                        .triggerableAnim(TRIGGER_USE, USE_SINGLE)
+                        .triggerableAnim(TRIGGER_USE2, USE_STACK2)
+                        .triggerableAnim(TRIGGER_USE3, USE_STACK3)
+                        .triggerableAnim(TRIGGER_USE4, USE_STACK4));
     }
 
     @Override

@@ -86,7 +86,7 @@ public final class SoapStackCollisionShapes {
                     Block.box(5.75, 6.70, 5.75, 10.25, 7.45, 10.25)),
     };
 
-    /** body_wash.geo.json 北向 */
+    /** body_wash.geo.json 北向 + gecko X 镜像 */
     static final VoxelShape BODY_WASH_SINGLE_NORTH =
             StackLayerCollisions.orParts(
                     Block.box(5.00, 0.00, 5.00, 11.00, 10.00, 11.00),
@@ -95,7 +95,7 @@ public final class SoapStackCollisionShapes {
                     Block.box(7.30, 10.50, 7.30, 8.70, 12.00, 8.70),
                     Block.box(6.70, 12.00, 6.70, 9.30, 13.20, 9.30));
 
-    /** 层数 1…4 预合并北向碰撞；下标 layers-1 */
+    /** 层数 1…4 预合并北向碰撞 + gecko X 镜像；下标 layers-1 */
     private static final VoxelShape[] BODY_WASH_NORTH_BY_COUNT = {
             // 1 层
                         StackLayerCollisions.orParts(

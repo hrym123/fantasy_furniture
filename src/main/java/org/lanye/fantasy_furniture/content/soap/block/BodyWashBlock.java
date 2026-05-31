@@ -174,6 +174,11 @@ public final class BodyWashBlock extends GeolibFacingEntityBlockWithFactory<Body
             return InteractionResult.CONSUME;
         }
 
+        if (held.isEmpty() && !sneaking) {
+            be.onServerUseAnim();
+            return InteractionResult.CONSUME;
+        }
+
         return InteractionResult.PASS;
     }
 

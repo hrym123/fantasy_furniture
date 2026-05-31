@@ -26,9 +26,6 @@ public final class BodyWashItemRenderer extends GeoItemRenderer<BodyWashBlockIte
             MultiBufferSource bufferSource,
             int packedLight,
             int packedOverlay) {
-        if (displayContext == ItemDisplayContext.GUI) {
-            return;
-        }
         BodyWashItemRenderState.set(BodyWashAppearance.fromStack(stack));
         try {
             super.renderByItem(stack, displayContext, poseStack, bufferSource, packedLight, packedOverlay);
