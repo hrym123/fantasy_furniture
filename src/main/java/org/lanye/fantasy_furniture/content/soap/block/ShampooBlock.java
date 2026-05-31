@@ -115,6 +115,14 @@ public final class ShampooBlock extends GeolibFacingEntityBlockWithFactory<Shamp
         if (BrushRecolor.defersBlockUse(player, hand, state)) {
             return InteractionResult.PASS;
         }
+        if (hand == InteractionHand.MAIN_HAND
+                && player.getItemInHand(hand).isEmpty()
+                && !player.isShiftKeyDown()) {
+            ShampooBlockEntity be = blockEntity(level, pos);
+            if (be != null) {
+                be.triggerUseAnim();
+            }
+        }
         return InteractionResult.SUCCESS;
     }
 
@@ -175,7 +183,7 @@ public final class ShampooBlock extends GeolibFacingEntityBlockWithFactory<Shamp
         }
 
         if (held.isEmpty() && !sneaking) {
-            be.onServerUseAnim();
+            be.triggerUseAnim();
             return InteractionResult.CONSUME;
         }
 

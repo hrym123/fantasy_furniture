@@ -16,6 +16,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import org.lanye.fantasy_furniture.bootstrap.block.ModBlocks;
 import org.lanye.fantasy_furniture.content.soap.ShampooAssets;
 import org.lanye.fantasy_furniture.content.soap.ShampooMaterials;
+import org.lanye.fantasy_furniture.content.soap.block.ShampooBlock;
 import software.bernie.geckolib.animatable.GeoBlockEntity;
 import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
 import software.bernie.geckolib.core.animation.AnimatableManager;
@@ -35,7 +36,7 @@ public final class ShampooBlockEntity extends BlockEntity implements GeoBlockEnt
     private static final String TRIGGER_USE3 = "use3";
     private static final String TRIGGER_USE4 = "use4";
 
-    /** 源自 {@code 洗发露_默认.bbmodel} · {@code animation}（泵头 {@code bone}）。 */
+    /** 源自 {@code 洗发露_默认.bbmodel} · {@code animation}（泵头 {@code bone}，与堆叠 geo {@code block1/bone} 一致）。 */
     private static final RawAnimation USE_SINGLE =
             RawAnimation.begin().then("animation.shampoo.use", Animation.LoopType.PLAY_ONCE);
 
@@ -59,6 +60,18 @@ public final class ShampooBlockEntity extends BlockEntity implements GeoBlockEnt
 
     public int layerCount() {
         return layerMaterials.size();
+    }
+
+    /** 渲染与泵头动画层数：BE 未同步时回退 blockstate {@link ShampooBlock#LAYERS}。 */
+    public int visibleLayerCount() {
+        if (!layerMaterials.isEmpty()) {
+            return layerMaterials.size();
+        }
+        BlockState state = getBlockState();
+        if (state.hasProperty(ShampooBlock.LAYERS)) {
+            return Math.max(1, state.getValue(ShampooBlock.LAYERS));
+        }
+        return 1;
     }
 
     public int materialAtLayer(int indexFromBottom) {
@@ -160,12 +173,31 @@ public final class ShampooBlockEntity extends BlockEntity implements GeoBlockEnt
         return ClientboundBlockEntityDataPacket.create(this);
     }
 
-    /** 空手右键：按压泵头动画（顶层瓶；单瓶用默认 geo，多瓶用堆叠 geo 对应 {@code boneN}）。 */
-    public void onServerUseAnim() {
-        if (!(level instanceof net.minecraft.server.level.ServerLevel)) {
+    @Override
+    public void onLoad() {
+        super.onLoad();
+        reconcileLayersFromBlockState();
+    }
+
+    /** blockstate 已有层数但 BE 列表为空时（旧存档 / 同步间隙）按 state 补一层。 */
+    private void reconcileLayersFromBlockState() {
+        if (!layerMaterials.isEmpty()) {
             return;
         }
-        int layers = Math.max(1, layerCount());
+        BlockState state = getBlockState();
+        if (!state.hasProperty(ShampooBlock.LAYERS) || !state.hasProperty(ShampooBlock.MATERIAL)) {
+            return;
+        }
+        int count = Math.max(1, state.getValue(ShampooBlock.LAYERS));
+        int mat = state.getValue(ShampooBlock.MATERIAL);
+        for (int i = 0; i < count; i++) {
+            layerMaterials.add(mat);
+        }
+    }
+
+    /** 空手右键：按压泵头动画（顶层瓶；单瓶用默认 geo，多瓶用堆叠 geo 对应 {@code boneN}）。 */
+    public void triggerUseAnim() {
+        int layers = visibleLayerCount();
         String trigger =
                 switch (layers) {
                     case 1 -> TRIGGER_USE;

@@ -16,7 +16,7 @@ public final class ShampooGeoBlockRenderer implements BlockEntityRenderer<Shampo
 
     private final GeoBlockRenderer<ShampooBlockEntity> singleRenderer =
             new GeoBlockRenderer<>(new ShampooSingleGeoModel());
-    private final ShampooStackLayerRenderer layerRenderer = new ShampooStackLayerRenderer();
+    private final ShampooStackLayerRenderer stackRenderer = new ShampooStackLayerRenderer();
 
     @Override
     public void render(
@@ -26,7 +26,7 @@ public final class ShampooGeoBlockRenderer implements BlockEntityRenderer<Shampo
             MultiBufferSource bufferSource,
             int packedLight,
             int packedOverlay) {
-        int layers = blockEntity.layerCount();
+        int layers = blockEntity.visibleLayerCount();
         if (layers <= 1) {
             singleRenderer.render(
                     blockEntity, partialTick, poseStack, bufferSource, packedLight, packedOverlay);
@@ -35,7 +35,7 @@ public final class ShampooGeoBlockRenderer implements BlockEntityRenderer<Shampo
         for (int i = 0; i < layers; i++) {
             ShampooStackRenderState.set("block" + (i + 1), blockEntity.materialAtLayer(i));
             try {
-                layerRenderer.render(
+                stackRenderer.render(
                         blockEntity, partialTick, poseStack, bufferSource, packedLight, packedOverlay);
             } finally {
                 ShampooStackRenderState.clear();
