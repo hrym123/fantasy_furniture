@@ -12,6 +12,7 @@ import org.lanye.fantasy_furniture.FantasyFurniture;
 import org.lanye.fantasy_furniture.bootstrap.block.BedPlate6Registration;
 import org.lanye.fantasy_furniture.content.debug.item.DebugVariantStickItem;
 import org.lanye.fantasy_furniture.content.soap.item.SoapDebugStickItem;
+import org.lanye.fantasy_furniture.content.soap.item.SoapFlatLiquidItem;
 import org.lanye.fantasy_furniture.content.tool.item.FabricCoilItem;
 import org.lanye.fantasy_furniture.content.tool.item.PaintBrushItem;
 import org.lanye.fantasy_furniture.content.furniture.common.item.ArcaneWandItem;
@@ -55,6 +56,26 @@ public final class ModItems {
     public static final List<RegistryObject<Item>> BED_PLATE6_PILLOW_MEDIUM_ITEMS = BedPlate6Registration.pillowMediumItems();
 
     public static final List<RegistryObject<Item>> BED_PLATE6_PILLOW_SMALL_ITEMS = BedPlate6Registration.pillowSmallItems();
+
+    /** 沐浴液：单材质图原料，六色；不可放置。 */
+    public static final RegistryObject<Item> BODY_WASH_LIQUID =
+            ITEMS.register(
+                    "body_wash_liquid",
+                    () ->
+                            new SoapFlatLiquidItem(
+                                    new Item.Properties().stacksTo(64),
+                                    "body_wash_liquid",
+                                    "item.fantasy_furniture.body_wash_liquid.named"));
+
+    /** 洗发液：单材质图原料，六色；不可放置。 */
+    public static final RegistryObject<Item> SHAMPOO_LIQUID =
+            ITEMS.register(
+                    "shampoo_liquid",
+                    () ->
+                            new SoapFlatLiquidItem(
+                                    new Item.Properties().stacksTo(64),
+                                    "shampoo_liquid",
+                                    "item.fantasy_furniture.shampoo_liquid.named"));
 
     /**
      * 糖葫芦：木级剑属性基底，额外攻击伤害 +1（与木剑的 +3 不同，作低伤玩具武器）。

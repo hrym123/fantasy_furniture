@@ -1,6 +1,6 @@
 {
-  "parent": "fantasy_furniture:item/bed_plate6_geolib_decor",
+  "parent": "minecraft:item/generated",
   "textures": {
-    "particle": "fantasy_furniture:block/bed_plate6_pillow_large_plain_cream"
+    "layer0": "fantasy_furniture:item/bed_plate6_pillow_large_plain_cream_ui"
   }
 }

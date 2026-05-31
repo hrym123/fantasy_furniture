@@ -43,6 +43,8 @@ import org.lanye.fantasy_furniture.content.soap.blockentity.SoapPaperBagBlockEnt
 import org.lanye.fantasy_furniture.content.soap.blockentity.SoapPaperBoxBlockEntity;
 import org.lanye.fantasy_furniture.content.soap.blockentity.SoapRackBlockEntity;
 import org.lanye.fantasy_furniture.content.soap.item.SoapPaperBoxBlockItem;
+import org.lanye.fantasy_furniture.content.soap.block.ShampooBlock;
+import org.lanye.fantasy_furniture.content.soap.item.ShampooBlockItem;
 import org.lanye.fantasy_furniture.content.soap.item.SoapSeriesBlockItem;
 import org.lanye.fantasy_furniture.content.debug.block.GeolibAlignmentProbeBlock;
 import org.lanye.fantasy_furniture.content.debug.blockentity.GeolibAlignmentProbeBlockEntity;
@@ -174,15 +176,10 @@ public final class FurnitureAnimatedBlocks {
                             AnimatedBlockRegistration.spec(
                                     "shampoo",
                                     () -> FurnitureBlockProperties.bathroomSmallDecor(MapColor.COLOR_CYAN),
-                                    props ->
-                                            new SimpleGeolibEntityBlock<>(
-                                                    props,
-                                                    ShampooBlockEntity::new,
-                                                    Block.box(5.0, 0.0, 4.0, 11.0, 11.2, 10.0),
-                                                    InteractionResult.PASS),
+                                    ShampooBlock::new,
                                     ShampooBlockEntity::new,
                                     (block, props) ->
-                                            new SoapSeriesBlockItem(
+                                            new ShampooBlockItem(
                                                     block,
                                                     props.stacksTo(64),
                                                     SoapSeriesBlockAssets.blockPrimaryTexture("shampoo"))),

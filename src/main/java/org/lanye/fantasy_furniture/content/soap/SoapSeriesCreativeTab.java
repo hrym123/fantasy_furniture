@@ -5,6 +5,7 @@ import java.util.function.Consumer;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.ItemStack;
 import org.lanye.fantasy_furniture.bootstrap.block.ModBlocks;
+import org.lanye.fantasy_furniture.bootstrap.item.ModItems;
 
 /** 创造栏：肥皂套系瓶罐 / 包装盒 / 模具（设计书主序未收录项，便于验收）。 */
 public final class SoapSeriesCreativeTab {
@@ -13,9 +14,10 @@ public final class SoapSeriesCreativeTab {
 
     public static void appendEntries(List<Consumer<CreativeModeTab.Output>> list) {
         BodyWashCreativeTab.appendEntries(list);
-        list.add(out -> out.accept(ModBlocks.SHAMPOO.item().get()));
+        ShampooCreativeTab.appendEntries(list);
         BodyCreamCreativeTab.appendEntries(list);
         SoapPaperBoxCreativeTab.appendEntries(list);
+        SoapFlatLiquidCreativeTab.appendEntries(list);
         list.add(out -> out.accept(ModBlocks.SOAP_MOLD.item().get()));
     }
 }

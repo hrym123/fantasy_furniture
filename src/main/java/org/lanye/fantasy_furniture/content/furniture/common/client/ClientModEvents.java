@@ -21,6 +21,7 @@ import org.lanye.fantasy_furniture.content.soap.client.renderer.SoapBoxGeoBlockR
 import org.lanye.fantasy_furniture.content.soap.client.renderer.SoapPaperBagGeoBlockRenderer;
 import org.lanye.fantasy_furniture.content.soap.client.renderer.SoapPaperBoxGeoBlockRenderer;
 import org.lanye.fantasy_furniture.content.soap.client.renderer.SoapRackGeoBlockRenderer;
+import org.lanye.fantasy_furniture.content.soap.client.renderer.ShampooGeoBlockRenderer;
 import org.lanye.fantasy_furniture.content.furniture.common.client.renderer.FurnitureSeatRenderer;
 import org.lanye.fantasy_furniture.content.sweeper.client.renderer.SweeperRobotRenderer;
 import org.lanye.fantasy_furniture.bootstrap.entity.ModEntities;
@@ -63,8 +64,7 @@ public final class ClientModEvents {
         AnimatedBlockClientRegistration.registerBlockEntityRenderer(
                 ModBlocks.BODY_WASH, ctx -> new BodyWashGeoBlockRenderer());
         AnimatedBlockClientRegistration.registerBlockEntityRenderer(
-                ModBlocks.SHAMPOO,
-                GeolibAnimatedBlockRenderers.defaultGeoRendererProvider(FantasyFurniture.MODID, "shampoo"));
+                ModBlocks.SHAMPOO, ctx -> new ShampooGeoBlockRenderer());
         AnimatedBlockClientRegistration.registerBlockEntityRenderer(
                 ModBlocks.BODY_CREAM, ctx -> new BodyCreamGeoBlockRenderer());
         AnimatedBlockClientRegistration.registerBlockEntityRenderer(

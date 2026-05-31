@@ -26,8 +26,11 @@ import org.lanye.fantasy_furniture.content.soap.block.SoapPaperBoxBlock;
 import org.lanye.fantasy_furniture.content.soap.blockentity.BodyCreamBlockEntity;
 import org.lanye.fantasy_furniture.content.soap.blockentity.BodyWashBlockEntity;
 import org.lanye.fantasy_furniture.content.soap.blockentity.SoapPaperBagBlockEntity;
-import org.lanye.fantasy_furniture.content.soap.blockentity.SoapPaperBoxBlockEntity;
 import org.lanye.fantasy_furniture.content.soap.SoapPaperBoxMaterials;
+import org.lanye.fantasy_furniture.content.soap.ShampooMaterials;
+import org.lanye.fantasy_furniture.content.soap.block.ShampooBlock;
+import org.lanye.fantasy_furniture.content.soap.blockentity.ShampooBlockEntity;
+import org.lanye.fantasy_furniture.content.soap.blockentity.SoapPaperBoxBlockEntity;
 
 /** 刷子对 {@link ModTags#BRUSH_RECOLORABLE_BLOCKS} 成员循环换色的服务端逻辑。 */
 public final class BrushRecolor {
@@ -98,6 +101,11 @@ public final class BrushRecolor {
             int next = nextMaterialId(current, BodyWashMaterials.COUNT);
             return Optional.of(state.setValue(BodyWashBlock.MATERIAL, next));
         }
+        if (state.getBlock() instanceof ShampooBlock) {
+            int current = state.getValue(ShampooBlock.MATERIAL);
+            int next = nextMaterialId(current, ShampooMaterials.COUNT);
+            return Optional.of(state.setValue(ShampooBlock.MATERIAL, next));
+        }
         return Optional.empty();
     }
 
@@ -127,6 +135,9 @@ public final class BrushRecolor {
         }
         if (be instanceof BodyWashBlockEntity wash) {
             wash.replaceTopMaterial(next.get().getValue(BodyWashBlock.MATERIAL));
+        }
+        if (be instanceof ShampooBlockEntity shampoo) {
+            shampoo.replaceTopMaterial(next.get().getValue(ShampooBlock.MATERIAL));
         }
         return true;
     }

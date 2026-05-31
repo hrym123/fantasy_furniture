@@ -157,6 +157,77 @@ public final class SoapStackCollisionShapes {
                     Block.box(10.70, 12.00, 2.70, 13.30, 13.20, 5.30)),
     };
 
+    /** shampoo.geo.json 北向 + gecko X 镜像 */
+    static final VoxelShape SHAMPOO_SINGLE_NORTH =
+            StackLayerCollisions.orParts(
+                    Block.box(5.00, 0.00, 4.00, 11.00, 8.00, 10.00),
+                    Block.box(5.50, 8.00, 4.50, 10.50, 8.50, 9.50),
+                    Block.box(7.30, 8.50, 6.30, 8.70, 10.00, 7.70),
+                    Block.box(6.70, 10.00, 5.70, 9.30, 11.20, 8.30),
+                    Block.box(7.50, 10.40, 4.70, 8.50, 11.00, 6.00));
+
+    /** 层数 1…4 预合并北向碰撞 + gecko X 镜像；下标 layers-1 */
+    private static final VoxelShape[] SHAMPOO_NORTH_BY_COUNT = {
+            // 1 层
+                        StackLayerCollisions.orParts(
+                    Block.box(5.00, 0.00, 4.00, 11.00, 8.00, 10.00),
+                    Block.box(5.50, 8.00, 4.50, 10.50, 8.50, 9.50),
+                    Block.box(7.30, 8.50, 6.30, 8.70, 10.00, 7.70),
+                    Block.box(6.70, 10.00, 5.70, 9.30, 11.20, 8.30),
+                    Block.box(7.50, 10.40, 4.70, 8.50, 11.00, 6.00)),
+            // 2 层
+                        StackLayerCollisions.orParts(
+                    Block.box(9.00, 0.00, 9.00, 15.00, 8.00, 15.00),
+                    Block.box(9.50, 8.00, 9.50, 14.50, 8.50, 14.50),
+                    Block.box(11.30, 8.50, 11.30, 12.70, 10.00, 12.70),
+                    Block.box(11.50, 10.40, 9.70, 12.50, 11.00, 11.00),
+                    Block.box(10.70, 10.00, 10.70, 13.30, 11.20, 13.30),
+                    Block.box(1.00, 0.00, 9.00, 7.00, 8.00, 15.00),
+                    Block.box(1.50, 8.00, 9.50, 6.50, 8.50, 14.50),
+                    Block.box(3.30, 8.50, 11.30, 4.70, 10.00, 12.70),
+                    Block.box(3.50, 10.40, 9.70, 4.50, 11.00, 11.00),
+                    Block.box(2.70, 10.00, 10.70, 5.30, 11.20, 13.30)),
+            // 3 层
+                        StackLayerCollisions.orParts(
+                    Block.box(9.00, 0.00, 9.00, 15.00, 8.00, 15.00),
+                    Block.box(9.50, 8.00, 9.50, 14.50, 8.50, 14.50),
+                    Block.box(11.30, 8.50, 11.30, 12.70, 10.00, 12.70),
+                    Block.box(11.50, 10.40, 9.70, 12.50, 11.00, 11.00),
+                    Block.box(10.70, 10.00, 10.70, 13.30, 11.20, 13.30),
+                    Block.box(1.00, 0.00, 9.00, 7.00, 8.00, 15.00),
+                    Block.box(1.50, 8.00, 9.50, 6.50, 8.50, 14.50),
+                    Block.box(3.30, 8.50, 11.30, 4.70, 10.00, 12.70),
+                    Block.box(3.50, 10.40, 9.70, 4.50, 11.00, 11.00),
+                    Block.box(2.70, 10.00, 10.70, 5.30, 11.20, 13.30),
+                    Block.box(9.00, 0.00, 1.00, 15.00, 8.00, 7.00),
+                    Block.box(9.50, 8.00, 1.50, 14.50, 8.50, 6.50),
+                    Block.box(11.30, 8.50, 3.30, 12.70, 10.00, 4.70),
+                    Block.box(11.50, 10.40, 1.70, 12.50, 11.00, 3.00),
+                    Block.box(10.70, 10.00, 2.70, 13.30, 11.20, 5.30)),
+            // 4 层
+                        StackLayerCollisions.orParts(
+                    Block.box(9.00, 0.00, 9.00, 15.00, 8.00, 15.00),
+                    Block.box(9.50, 8.00, 9.50, 14.50, 8.50, 14.50),
+                    Block.box(11.30, 8.50, 11.30, 12.70, 10.00, 12.70),
+                    Block.box(11.50, 10.40, 9.70, 12.50, 11.00, 11.00),
+                    Block.box(10.70, 10.00, 10.70, 13.30, 11.20, 13.30),
+                    Block.box(1.00, 0.00, 9.00, 7.00, 8.00, 15.00),
+                    Block.box(1.50, 8.00, 9.50, 6.50, 8.50, 14.50),
+                    Block.box(3.30, 8.50, 11.30, 4.70, 10.00, 12.70),
+                    Block.box(3.50, 10.40, 9.70, 4.50, 11.00, 11.00),
+                    Block.box(2.70, 10.00, 10.70, 5.30, 11.20, 13.30),
+                    Block.box(9.00, 0.00, 1.00, 15.00, 8.00, 7.00),
+                    Block.box(9.50, 8.00, 1.50, 14.50, 8.50, 6.50),
+                    Block.box(11.30, 8.50, 3.30, 12.70, 10.00, 4.70),
+                    Block.box(11.50, 10.40, 1.70, 12.50, 11.00, 3.00),
+                    Block.box(10.70, 10.00, 2.70, 13.30, 11.20, 5.30),
+                    Block.box(1.00, 0.00, 1.00, 7.00, 8.00, 7.00),
+                    Block.box(1.50, 8.00, 1.50, 6.50, 8.50, 6.50),
+                    Block.box(3.30, 8.50, 3.30, 4.70, 10.00, 4.70),
+                    Block.box(3.50, 10.40, 1.70, 4.50, 11.00, 3.00),
+                    Block.box(2.70, 10.00, 2.70, 5.30, 11.20, 5.30)),
+    };
+
     /** soap_paper_box.geo.json 北向 + gecko X 镜像 */
     static final VoxelShape SOAP_PAPER_BOX_SINGLE_NORTH =
             StackLayerCollisions.orParts(
@@ -321,6 +392,10 @@ public final class SoapStackCollisionShapes {
 
     public static VoxelShape bodyWashNorth(int layers) {
         return northByCount(BODY_WASH_NORTH_BY_COUNT, layers);
+    }
+
+    public static VoxelShape shampooNorth(int layers) {
+        return northByCount(SHAMPOO_NORTH_BY_COUNT, layers);
     }
 
     public static VoxelShape soapPaperBoxNorth(int layers, int stackStyle) {

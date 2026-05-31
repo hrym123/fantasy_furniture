@@ -5,6 +5,25 @@
       "loop": true,
       "animation_length": 0.05,
       "bones": {}
+    },
+    "animation.shampoo.use": {
+      "loop": false,
+      "animation_length": 0.5,
+      "bones": {
+        "group": {
+          "position": {
+            "0.0": {
+              "vector": [0, 0, 0]
+            },
+            "0.25": {
+              "vector": [0, -1, 0]
+            },
+            "0.5": {
+              "vector": [0, 0, 0]
+            }
+          }
+        }
+      }
     }
   }
 }
