@@ -20,13 +20,16 @@ import org.joml.Matrix4f;
 import org.lanye.fantasy_furniture.FantasyFurniture;
 import org.lanye.fantasy_furniture.content.soap.blockentity.SoapMoldBlockEntity;
 import org.lanye.fantasy_furniture.content.soap.client.SoapMoldDisplaySnapshot;
+import org.lanye.fantasy_furniture.content.soap.mold.SoapMoldPhase;
+import org.lanye.reverie_core.client.renderer.container.ContainerFluidSurfacePass;
+import org.lanye.reverie_core.client.renderer.container.ContainerFluidSurfaceSpec;
 import software.bernie.geckolib.cache.object.GeoBone;
 import software.bernie.geckolib.model.DefaultedBlockGeoModel;
 import software.bernie.geckolib.renderer.GeoBlockRenderer;
 import software.bernie.geckolib.util.RenderUtils;
 
 /**
- * 肥皂模具 BER：Geo 本体 + 盆内原料 Item；水面延迟至 {@link SoapMoldWaterOverlayPass}（C013 §5.4）。
+ * 肥皂模具 BER：Geo 本体 + 盆内原料 Item；水面延迟至 {@link ContainerFluidSurfacePass}（C013 §5.4）。
  */
 @OnlyIn(Dist.CLIENT)
 public final class SoapMoldGeoBlockRenderer implements BlockEntityRenderer<SoapMoldBlockEntity> {
@@ -50,6 +53,10 @@ public final class SoapMoldGeoBlockRenderer implements BlockEntityRenderer<SoapM
     }
 
     private static final class BodyRenderer extends GeoBlockRenderer<SoapMoldBlockEntity> {
+
+        /** 内腔半宽（geo 6×3.4 → ±3.0 / ±1.7 geo 单位） */
+        private static final ContainerFluidSurfaceSpec BASIN_WATER_SPEC =
+                new ContainerFluidSurfaceSpec(3.0f / 16f, 1.7f / 16f);
 
         private SoapMoldDisplaySnapshot snapshot = SoapMoldDisplaySnapshot.from(null);
         private final List<CapturedAnchor> capturedAnchors = new ArrayList<>();
@@ -183,12 +190,24 @@ public final class SoapMoldGeoBlockRenderer implements BlockEntityRenderer<SoapM
                     SoapMoldDisplaySnapshot snapshot,
                     float partialTick,
                     BlockPos blockPos) {
+                float wobble =
+                        snapshot.contents().phase() == SoapMoldPhase.CURING
+                                ? (float)
+                                        Math.sin(
+                                                        (snapshot.contents().cureFinishGameTime() + partialTick)
+                                                                * 0.05)
+                                                * 0.015f
+                                : 0f;
                 poseStack.pushPose();
                 PoseStack.Pose pose = poseStack.last();
                 pose.pose().set(transform.pose());
                 pose.normal().set(transform.normal());
-                SoapMoldWaterOverlayPass.enqueue(
-                        blockPos, new Matrix4f(pose.pose()), new Matrix3f(pose.normal()), light, snapshot, partialTick);
+                ContainerFluidSurfacePass.enqueue(
+                        blockPos,
+                        new Matrix4f(pose.pose()),
+                        new Matrix3f(pose.normal()),
+                        light,
+                        BASIN_WATER_SPEC.withSurfaceYOffset(wobble));
                 poseStack.popPose();
             }
         }
