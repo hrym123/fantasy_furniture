@@ -415,6 +415,46 @@
 					]
 				},
 				{
+					"name": "fluid_surface",
+					"pivot": [
+						-0.0,
+						3.6,
+						1.5
+					],
+					"parent": "group2",
+					"cubes": []
+				},
+				{
+					"name": "ingredient_liquid",
+					"pivot": [
+						2.0,
+						1.0,
+						0.4
+					],
+					"parent": "group2",
+					"cubes": []
+				},
+				{
+					"name": "ingredient_honey",
+					"pivot": [
+						-2.0,
+						1.0,
+						0.4
+					],
+					"parent": "group2",
+					"cubes": []
+				},
+				{
+					"name": "ingredient_pigment",
+					"pivot": [
+						-0.0,
+						1.0,
+						2.6
+					],
+					"parent": "group2",
+					"cubes": []
+				},
+				{
 					"name": "group3",
 					"pivot": [
 						3.0,

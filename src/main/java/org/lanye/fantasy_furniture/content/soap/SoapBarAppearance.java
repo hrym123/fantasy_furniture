@@ -14,27 +14,36 @@ import org.lanye.fantasy_furniture.content.soap.block.SoapBarBlock;
  *
  * <p>套袋态：{@link #bagMaterialId()} {@code > 0} 表示已套包装袋，袋色与皂颜料无关。
  * 撕开态：{@link #packagingTorn()} 为真时袋体 geo 换为 {@code soap_paper_bag_torn}。
+ *
+ * <p>{@link #particleMatId()}：制皂液体决定的入水粒子色（与 {@link #materialId()} 颜料无关）。
  */
-public record SoapBarAppearance(int wear, int materialId, int bagMaterialId, boolean packagingTorn) {
+public record SoapBarAppearance(
+        int wear, int materialId, int bagMaterialId, boolean packagingTorn, int particleMatId) {
 
     public static final int DEFAULT_WEAR = 0;
     public static final int DEFAULT_MATERIAL = 1;
+    public static final int DEFAULT_PARTICLE_MAT = 1;
 
     private static final String NBT_WEAR = "SoapWear";
     private static final String NBT_MAT = "SoapMat";
     private static final String NBT_BAG_MAT = "BagMat";
     private static final String NBT_BAG_TORN = "BagTorn";
+    private static final String NBT_PART_MAT = "PartMat";
 
     private static final ResourceLocation STATIC_ANIMATION =
             ResourceLocation.fromNamespaceAndPath(
                     FantasyFurniture.MODID, "animations/block/geolib_static.animation.json");
 
     public SoapBarAppearance(int wear, int materialId) {
-        this(wear, materialId, 0, false);
+        this(wear, materialId, 0, false, DEFAULT_PARTICLE_MAT);
     }
 
     public SoapBarAppearance(int wear, int materialId, int bagMaterialId) {
-        this(wear, materialId, bagMaterialId, false);
+        this(wear, materialId, bagMaterialId, false, DEFAULT_PARTICLE_MAT);
+    }
+
+    public SoapBarAppearance(int wear, int materialId, int bagMaterialId, boolean packagingTorn) {
+        this(wear, materialId, bagMaterialId, packagingTorn, DEFAULT_PARTICLE_MAT);
     }
 
     public SoapBarAppearance {
@@ -44,6 +53,9 @@ public record SoapBarAppearance(int wear, int materialId, int bagMaterialId, boo
         }
         if (bagMaterialId < 0 || bagMaterialId > SoapBarMaterials.COUNT) {
             bagMaterialId = 0;
+        }
+        if (!SoapFlatLiquidMaterials.isValid(particleMatId)) {
+            particleMatId = DEFAULT_PARTICLE_MAT;
         }
         if (!isPackaged(bagMaterialId)) {
             packagingTorn = false;
@@ -142,7 +154,11 @@ public record SoapBarAppearance(int wear, int materialId, int bagMaterialId, boo
             int bagMat = state.getValue(block.PACKAGED) ? state.getValue(block.BAG_MATERIAL) : 0;
             boolean torn = state.getValue(block.PACKAGED) && state.getValue(block.PACKAGING_TORN);
             return new SoapBarAppearance(
-                    state.getValue(SoapBarBlock.WEAR), state.getValue(SoapBarBlock.MATERIAL), bagMat, torn);
+                    state.getValue(SoapBarBlock.WEAR),
+                    state.getValue(SoapBarBlock.MATERIAL),
+                    bagMat,
+                    torn,
+                    DEFAULT_PARTICLE_MAT);
         }
         return defaults();
     }
@@ -156,13 +172,20 @@ public record SoapBarAppearance(int wear, int materialId, int bagMaterialId, boo
         int m = tag.contains(NBT_MAT) ? tag.getInt(NBT_MAT) : DEFAULT_MATERIAL;
         int bag = tag.contains(NBT_BAG_MAT) ? tag.getInt(NBT_BAG_MAT) : 0;
         boolean torn = bag > 0 && tag.getBoolean(NBT_BAG_TORN);
-        return new SoapBarAppearance(w, m, bag, torn);
+        int part =
+                tag.contains(NBT_PART_MAT) ? tag.getInt(NBT_PART_MAT) : DEFAULT_PARTICLE_MAT;
+        return new SoapBarAppearance(w, m, bag, torn, part);
     }
 
     public static void writeToStack(ItemStack stack, SoapBarAppearance appearance) {
         CompoundTag tag = stack.getOrCreateTag();
         tag.putInt(NBT_WEAR, appearance.wear());
         tag.putInt(NBT_MAT, appearance.materialId());
+        if (appearance.particleMatId() != DEFAULT_PARTICLE_MAT) {
+            tag.putInt(NBT_PART_MAT, appearance.particleMatId());
+        } else {
+            tag.remove(NBT_PART_MAT);
+        }
         if (appearance.isPackaged()) {
             tag.putInt(NBT_BAG_MAT, appearance.bagMaterialId());
             if (appearance.packagingTorn()) {

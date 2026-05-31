@@ -36,4 +36,10 @@ public final class ModTags {
                     Registries.ITEM,
                     ResourceLocation.fromNamespaceAndPath(FantasyFurniture.MODID, "coil_recolorable"));
 
+    /** 肥皂模具：主手右击可取「液体原料」的容器（默认含空桶；其它 mod 可 datapack 追加）。 */
+    public static final TagKey<Item> SOAP_MOLD_LIQUID_VESSELS =
+            TagKey.create(
+                    Registries.ITEM,
+                    ResourceLocation.fromNamespaceAndPath(FantasyFurniture.MODID, "soap_mold_liquid_vessels"));
+
 }

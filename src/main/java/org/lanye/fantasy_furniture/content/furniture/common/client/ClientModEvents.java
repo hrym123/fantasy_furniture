@@ -18,6 +18,7 @@ import org.lanye.fantasy_furniture.content.soap.client.SoapBarClient;
 import org.lanye.fantasy_furniture.content.soap.client.renderer.BodyCreamGeoBlockRenderer;
 import org.lanye.fantasy_furniture.content.soap.client.renderer.BodyWashGeoBlockRenderer;
 import org.lanye.fantasy_furniture.content.soap.client.renderer.SoapBoxGeoBlockRenderer;
+import org.lanye.fantasy_furniture.content.soap.client.renderer.SoapMoldGeoBlockRenderer;
 import org.lanye.fantasy_furniture.content.soap.client.renderer.SoapPaperBagGeoBlockRenderer;
 import org.lanye.fantasy_furniture.content.soap.client.renderer.SoapPaperBoxGeoBlockRenderer;
 import org.lanye.fantasy_furniture.content.soap.client.renderer.SoapRackGeoBlockRenderer;
@@ -70,8 +71,7 @@ public final class ClientModEvents {
         AnimatedBlockClientRegistration.registerBlockEntityRenderer(
                 ModBlocks.SOAP_PAPER_BOX, ctx -> new SoapPaperBoxGeoBlockRenderer());
         AnimatedBlockClientRegistration.registerBlockEntityRenderer(
-                ModBlocks.SOAP_MOLD,
-                GeolibAnimatedBlockRenderers.defaultGeoRendererProvider(FantasyFurniture.MODID, "soap_mold"));
+                ModBlocks.SOAP_MOLD, ctx -> new SoapMoldGeoBlockRenderer(ctx));
         AnimatedBlockClientRegistration.registerBlockEntityRenderer(
                 ModBlocks.GEOLIB_ALIGNMENT_PROBE,
                 GeolibAnimatedBlockRenderers.defaultGeoRendererProvider(
