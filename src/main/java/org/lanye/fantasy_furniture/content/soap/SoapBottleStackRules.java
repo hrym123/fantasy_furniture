@@ -45,6 +45,19 @@ public final class SoapBottleStackRules {
         return false;
     }
 
+    /**
+     * 混合摞或单层非宿主种类：须按层合并各陈列位体素，不可整摞用宿主 {@link SoapStackCollisionShapes} 层数查表。
+     */
+    public static boolean needsPerLayerStackCollision(List<SoapBottleLayer> layers, SoapBottleKind hostKind) {
+        if (layers.isEmpty()) {
+            return false;
+        }
+        if (isMixed(layers)) {
+            return true;
+        }
+        return layers.get(0).kind() != hostKind;
+    }
+
     public static boolean isHomogeneousCream(List<SoapBottleLayer> layers) {
         if (layers.isEmpty()) {
             return false;

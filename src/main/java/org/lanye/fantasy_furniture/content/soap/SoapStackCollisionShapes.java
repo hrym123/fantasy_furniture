@@ -20,6 +20,13 @@ public final class SoapStackCollisionShapes {
         return table[Math.min(layers, table.length) - 1];
     }
 
+    private static VoxelShape slotByIndex(VoxelShape[] table, int slotOneBased) {
+        if (slotOneBased <= 0 || slotOneBased > table.length) {
+            return Shapes.empty();
+        }
+        return table[slotOneBased - 1];
+    }
+
     /** soap_paper_bag.geo.json 北向 · 外接盒 */
     static final VoxelShape SOAP_PAPER_BAG_SINGLE_NORTH =
             Block.box(3.16, 0.00, 6.00, 12.84, 2.50, 10.00);
@@ -82,6 +89,30 @@ public final class SoapStackCollisionShapes {
                     Block.box(9.25, 3.00, 2.25, 13.75, 3.75, 6.75),
                     Block.box(2.00, 0.00, 2.00, 7.00, 3.00, 7.00),
                     Block.box(2.25, 3.00, 2.25, 6.75, 3.75, 6.75),
+                    Block.box(5.50, 3.70, 5.50, 10.50, 6.70, 10.50),
+                    Block.box(5.75, 6.70, 5.75, 10.25, 7.45, 10.25)),
+    };
+
+    /** body_cream_stack.geo.json 陈列位 1…5 北向 + gecko X 镜像；混合摞按层 OR；下标 slot-1 */
+    private static final VoxelShape[] BODY_CREAM_SLOT_NORTH = {
+            // 位 1
+                        StackLayerCollisions.orParts(
+                    Block.box(9.00, 0.00, 9.00, 14.00, 3.00, 14.00),
+                    Block.box(9.25, 3.00, 9.25, 13.75, 3.75, 13.75)),
+            // 位 2
+                        StackLayerCollisions.orParts(
+                    Block.box(2.00, 0.00, 9.00, 7.00, 3.00, 14.00),
+                    Block.box(2.25, 3.00, 9.25, 6.75, 3.75, 13.75)),
+            // 位 3
+                        StackLayerCollisions.orParts(
+                    Block.box(9.00, 0.00, 2.00, 14.00, 3.00, 7.00),
+                    Block.box(9.25, 3.00, 2.25, 13.75, 3.75, 6.75)),
+            // 位 4
+                        StackLayerCollisions.orParts(
+                    Block.box(2.00, 0.00, 2.00, 7.00, 3.00, 7.00),
+                    Block.box(2.25, 3.00, 2.25, 6.75, 3.75, 6.75)),
+            // 位 5
+                        StackLayerCollisions.orParts(
                     Block.box(5.50, 3.70, 5.50, 10.50, 6.70, 10.50),
                     Block.box(5.75, 6.70, 5.75, 10.25, 7.45, 10.25)),
     };
@@ -157,6 +188,38 @@ public final class SoapStackCollisionShapes {
                     Block.box(2.70, 12.00, 2.70, 5.30, 13.20, 5.30)),
     };
 
+    /** body_wash_stack.geo.json 陈列位 1…4 北向 + gecko X 镜像；混合摞按层 OR；下标 slot-1 */
+    private static final VoxelShape[] BODY_WASH_SLOT_NORTH = {
+            // 位 1
+                        StackLayerCollisions.orParts(
+                    Block.box(9.00, 0.00, 9.00, 15.00, 10.00, 15.00),
+                    Block.box(9.50, 10.00, 9.50, 14.50, 10.50, 14.50),
+                    Block.box(11.30, 10.50, 11.30, 12.70, 12.00, 12.70),
+                    Block.box(11.50, 12.40, 9.70, 12.50, 13.00, 11.00),
+                    Block.box(10.70, 12.00, 10.70, 13.30, 13.20, 13.30)),
+            // 位 2
+                        StackLayerCollisions.orParts(
+                    Block.box(1.00, 0.00, 9.00, 7.00, 10.00, 15.00),
+                    Block.box(1.50, 10.00, 9.50, 6.50, 10.50, 14.50),
+                    Block.box(3.30, 10.50, 11.30, 4.70, 12.00, 12.70),
+                    Block.box(3.50, 12.40, 9.70, 4.50, 13.00, 11.00),
+                    Block.box(2.70, 12.00, 10.70, 5.30, 13.20, 13.30)),
+            // 位 3
+                        StackLayerCollisions.orParts(
+                    Block.box(9.00, 0.00, 1.00, 15.00, 10.00, 7.00),
+                    Block.box(9.50, 10.00, 1.50, 14.50, 10.50, 6.50),
+                    Block.box(11.30, 10.50, 3.30, 12.70, 12.00, 4.70),
+                    Block.box(11.50, 12.40, 1.70, 12.50, 13.00, 3.00),
+                    Block.box(10.70, 12.00, 2.70, 13.30, 13.20, 5.30)),
+            // 位 4
+                        StackLayerCollisions.orParts(
+                    Block.box(1.00, 0.00, 1.00, 7.00, 10.00, 7.00),
+                    Block.box(1.50, 10.00, 1.50, 6.50, 10.50, 6.50),
+                    Block.box(3.30, 10.50, 3.30, 4.70, 12.00, 4.70),
+                    Block.box(3.50, 12.40, 1.70, 4.50, 13.00, 3.00),
+                    Block.box(2.70, 12.00, 2.70, 5.30, 13.20, 5.30)),
+    };
+
     /** shampoo.geo.json 北向 + gecko X 镜像 */
     static final VoxelShape SHAMPOO_SINGLE_NORTH =
             StackLayerCollisions.orParts(
@@ -221,6 +284,38 @@ public final class SoapStackCollisionShapes {
                     Block.box(11.30, 8.50, 3.30, 12.70, 10.00, 4.70),
                     Block.box(11.50, 10.40, 1.70, 12.50, 11.00, 3.00),
                     Block.box(10.70, 10.00, 2.70, 13.30, 11.20, 5.30),
+                    Block.box(1.00, 0.00, 1.00, 7.00, 8.00, 7.00),
+                    Block.box(1.50, 8.00, 1.50, 6.50, 8.50, 6.50),
+                    Block.box(3.30, 8.50, 3.30, 4.70, 10.00, 4.70),
+                    Block.box(3.50, 10.40, 1.70, 4.50, 11.00, 3.00),
+                    Block.box(2.70, 10.00, 2.70, 5.30, 11.20, 5.30)),
+    };
+
+    /** shampoo_stack.geo.json 陈列位 1…4 北向 + gecko X 镜像；混合摞按层 OR；下标 slot-1 */
+    private static final VoxelShape[] SHAMPOO_SLOT_NORTH = {
+            // 位 1
+                        StackLayerCollisions.orParts(
+                    Block.box(9.00, 0.00, 9.00, 15.00, 8.00, 15.00),
+                    Block.box(9.50, 8.00, 9.50, 14.50, 8.50, 14.50),
+                    Block.box(11.30, 8.50, 11.30, 12.70, 10.00, 12.70),
+                    Block.box(11.50, 10.40, 9.70, 12.50, 11.00, 11.00),
+                    Block.box(10.70, 10.00, 10.70, 13.30, 11.20, 13.30)),
+            // 位 2
+                        StackLayerCollisions.orParts(
+                    Block.box(1.00, 0.00, 9.00, 7.00, 8.00, 15.00),
+                    Block.box(1.50, 8.00, 9.50, 6.50, 8.50, 14.50),
+                    Block.box(3.30, 8.50, 11.30, 4.70, 10.00, 12.70),
+                    Block.box(3.50, 10.40, 9.70, 4.50, 11.00, 11.00),
+                    Block.box(2.70, 10.00, 10.70, 5.30, 11.20, 13.30)),
+            // 位 3
+                        StackLayerCollisions.orParts(
+                    Block.box(9.00, 0.00, 1.00, 15.00, 8.00, 7.00),
+                    Block.box(9.50, 8.00, 1.50, 14.50, 8.50, 6.50),
+                    Block.box(11.30, 8.50, 3.30, 12.70, 10.00, 4.70),
+                    Block.box(11.50, 10.40, 1.70, 12.50, 11.00, 3.00),
+                    Block.box(10.70, 10.00, 2.70, 13.30, 11.20, 5.30)),
+            // 位 4
+                        StackLayerCollisions.orParts(
                     Block.box(1.00, 0.00, 1.00, 7.00, 8.00, 7.00),
                     Block.box(1.50, 8.00, 1.50, 6.50, 8.50, 6.50),
                     Block.box(3.30, 8.50, 3.30, 4.70, 10.00, 4.70),
@@ -396,6 +491,18 @@ public final class SoapStackCollisionShapes {
 
     public static VoxelShape shampooNorth(int layers) {
         return northByCount(SHAMPOO_NORTH_BY_COUNT, layers);
+    }
+
+    public static VoxelShape bodyCreamSlotNorth(int slotOneBased) {
+        return slotByIndex(BODY_CREAM_SLOT_NORTH, slotOneBased);
+    }
+
+    public static VoxelShape bodyWashSlotNorth(int slotOneBased) {
+        return slotByIndex(BODY_WASH_SLOT_NORTH, slotOneBased);
+    }
+
+    public static VoxelShape shampooSlotNorth(int slotOneBased) {
+        return slotByIndex(SHAMPOO_SLOT_NORTH, slotOneBased);
     }
 
     public static VoxelShape soapPaperBoxNorth(int layers, int stackStyle) {

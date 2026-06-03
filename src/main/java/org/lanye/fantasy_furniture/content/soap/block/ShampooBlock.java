@@ -24,6 +24,8 @@ import net.minecraft.world.phys.shapes.VoxelShape;
 import org.lanye.fantasy_furniture.content.soap.ShampooAppearance;
 import org.lanye.fantasy_furniture.content.soap.ShampooAssets;
 import org.lanye.fantasy_furniture.content.soap.ShampooMaterials;
+import org.lanye.fantasy_furniture.content.soap.SoapBottleKind;
+import org.lanye.fantasy_furniture.content.soap.SoapBottleMixedCollisionShapes;
 import org.lanye.fantasy_furniture.content.soap.SoapBottleStackRules;
 import org.lanye.fantasy_furniture.content.soap.SoapBottleStackUse;
 import org.lanye.fantasy_furniture.content.soap.SoapStackCollisionShapes;
@@ -63,8 +65,9 @@ public final class ShampooBlock extends GeolibFacingEntityBlockWithFactory<Shamp
         BlockEntity raw = level.getBlockEntity(pos);
         if (raw instanceof ShampooBlockEntity be
                 && be.layerCount() > 0
-                && SoapBottleStackRules.isMixed(be.layersView())) {
-            north = SoapStackCollisionShapes.bodyWashNorth(layers);
+                && SoapBottleStackRules.needsPerLayerStackCollision(
+                        be.layersView(), SoapBottleKind.SHAMPOO)) {
+            north = SoapBottleMixedCollisionShapes.north(be.layersView());
         } else {
             north = SoapStackCollisionShapes.shampooNorth(layers);
         }

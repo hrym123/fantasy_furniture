@@ -25,6 +25,7 @@ import org.lanye.fantasy_furniture.content.soap.BodyCreamAppearance;
 import org.lanye.fantasy_furniture.content.soap.BodyCreamAssets;
 import org.lanye.fantasy_furniture.content.soap.BodyCreamMaterials;
 import org.lanye.fantasy_furniture.content.soap.SoapBottleKind;
+import org.lanye.fantasy_furniture.content.soap.SoapBottleMixedCollisionShapes;
 import org.lanye.fantasy_furniture.content.soap.SoapBottleStackRules;
 import org.lanye.fantasy_furniture.content.soap.SoapBottleStackUse;
 import org.lanye.fantasy_furniture.content.soap.SoapStackCollisionShapes;
@@ -60,13 +61,18 @@ public final class BodyCreamBlock extends GeolibFacingEntityBlockWithFactory<Bod
     @Override
     public VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
         int layers = state.getValue(LAYERS);
+        VoxelShape north;
         BlockEntity raw = level.getBlockEntity(pos);
-        if (raw instanceof BodyCreamBlockEntity be
-                && be.layerCount() > 0
-                && !SoapBottleStackRules.usesCreamFiveSlotStack(be.layersView())) {
-            layers = Math.min(SoapBottleKind.MIXED_MAX_STACK, be.layerCount());
+        if (raw instanceof BodyCreamBlockEntity be && be.layerCount() > 0) {
+            if (SoapBottleStackRules.needsPerLayerStackCollision(
+                    be.layersView(), SoapBottleKind.BODY_CREAM)) {
+                north = SoapBottleMixedCollisionShapes.north(be.layersView());
+            } else {
+                north = SoapStackCollisionShapes.bodyCreamNorth(be.layerCount());
+            }
+        } else {
+            north = SoapStackCollisionShapes.bodyCreamNorth(layers);
         }
-        VoxelShape north = SoapStackCollisionShapes.bodyCreamNorth(layers);
         return VoxelShapeRotation.rotateYFromNorthLikeGeckoBlockRenderer(north, state.getValue(FACING));
     }
 

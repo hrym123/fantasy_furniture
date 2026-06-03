@@ -20,16 +20,7 @@ public final class SoapBottleMixedStackRenderer {
     private final BodyCreamStackLayerRenderer creamStack = new BodyCreamStackLayerRenderer();
 
     public static boolean needsMixedPath(List<SoapBottleLayer> layers, SoapBottleKind hostKind) {
-        if (layers.isEmpty()) {
-            return false;
-        }
-        if (SoapBottleStackRules.isMixed(layers)) {
-            return true;
-        }
-        if (layers.size() == 1) {
-            return layers.get(0).kind() != hostKind;
-        }
-        return layers.get(0).kind() != hostKind;
+        return SoapBottleStackRules.needsPerLayerStackCollision(layers, hostKind);
     }
 
     public void render(

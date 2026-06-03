@@ -24,6 +24,9 @@ import net.minecraft.world.phys.shapes.VoxelShape;
 import org.lanye.fantasy_furniture.content.soap.BodyWashAppearance;
 import org.lanye.fantasy_furniture.content.soap.BodyWashAssets;
 import org.lanye.fantasy_furniture.content.soap.BodyWashMaterials;
+import org.lanye.fantasy_furniture.content.soap.SoapBottleKind;
+import org.lanye.fantasy_furniture.content.soap.SoapBottleMixedCollisionShapes;
+import org.lanye.fantasy_furniture.content.soap.SoapBottleStackRules;
 import org.lanye.fantasy_furniture.content.soap.SoapBottleStackUse;
 import org.lanye.fantasy_furniture.content.soap.SoapStackCollisionShapes;
 import org.lanye.fantasy_furniture.content.soap.blockentity.BodyWashBlockEntity;
@@ -58,7 +61,16 @@ public final class BodyWashBlock extends GeolibFacingEntityBlockWithFactory<Body
     @Override
     public VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
         int layers = state.getValue(LAYERS);
-        VoxelShape north = SoapStackCollisionShapes.bodyWashNorth(layers);
+        VoxelShape north;
+        BlockEntity raw = level.getBlockEntity(pos);
+        if (raw instanceof BodyWashBlockEntity be
+                && be.layerCount() > 0
+                && SoapBottleStackRules.needsPerLayerStackCollision(
+                        be.layersView(), SoapBottleKind.BODY_WASH)) {
+            north = SoapBottleMixedCollisionShapes.north(be.layersView());
+        } else {
+            north = SoapStackCollisionShapes.bodyWashNorth(layers);
+        }
         return VoxelShapeRotation.rotateYFromNorthLikeGeckoBlockRenderer(north, state.getValue(FACING));
     }
 
