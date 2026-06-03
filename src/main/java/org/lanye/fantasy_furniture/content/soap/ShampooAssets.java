@@ -8,6 +8,9 @@ public final class ShampooAssets {
 
     public static final int MAX_STACK = 4;
 
+    /** 自底向上层 0…3 对应 {@link SoapBottleStackSlots#BLOCK_LAYER_BONES}。 */
+    public static final String[] STACK_LAYER_BONES = SoapBottleStackSlots.BLOCK_LAYER_BONES;
+
     private static final String BONE_PREFIX = "block";
 
     private ShampooAssets() {}
@@ -54,5 +57,9 @@ public final class ShampooAssets {
     /** 堆叠模型中，陈列位 {@code slot}（1…{@link #MAX_STACK}）是否应显示。 */
     public static boolean isStackSlotVisible(int slot, int visibleCount) {
         return slot >= 1 && slot <= visibleCount;
+    }
+
+    public static String stackBoneForLayerIndex(int indexFromBottom) {
+        return SoapBottleStackSlots.stackBoneForLayerIndex(SoapBottleKind.SHAMPOO, indexFromBottom);
     }
 }

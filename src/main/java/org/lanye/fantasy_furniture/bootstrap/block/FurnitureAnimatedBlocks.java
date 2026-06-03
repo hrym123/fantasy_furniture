@@ -31,6 +31,7 @@ import org.lanye.fantasy_furniture.content.soap.block.SoapBoxBlock;
 import org.lanye.fantasy_furniture.content.soap.SoapSeriesBlockAssets;
 import org.lanye.fantasy_furniture.content.soap.block.SoapMoldBlock;
 import org.lanye.fantasy_furniture.content.soap.block.SoapPaperBagBlock;
+import org.lanye.fantasy_furniture.content.soap.block.DisplayCabinetBlock;
 import org.lanye.fantasy_furniture.content.soap.block.SoapPaperBoxBlock;
 import org.lanye.fantasy_furniture.content.soap.block.SoapRackBlock;
 import org.lanye.fantasy_furniture.content.soap.blockentity.BodyCreamBlockEntity;
@@ -40,11 +41,13 @@ import org.lanye.fantasy_furniture.content.soap.blockentity.SoapBarBlockEntity;
 import org.lanye.fantasy_furniture.content.soap.blockentity.SoapBoxBlockEntity;
 import org.lanye.fantasy_furniture.content.soap.blockentity.SoapMoldBlockEntity;
 import org.lanye.fantasy_furniture.content.soap.blockentity.SoapPaperBagBlockEntity;
+import org.lanye.fantasy_furniture.content.soap.blockentity.DisplayCabinetBlockEntity;
 import org.lanye.fantasy_furniture.content.soap.blockentity.SoapPaperBoxBlockEntity;
 import org.lanye.fantasy_furniture.content.soap.blockentity.SoapRackBlockEntity;
 import org.lanye.fantasy_furniture.content.soap.item.SoapPaperBoxBlockItem;
 import org.lanye.fantasy_furniture.content.soap.block.ShampooBlock;
 import org.lanye.fantasy_furniture.content.soap.item.ShampooBlockItem;
+import org.lanye.fantasy_furniture.content.soap.item.DisplayCabinetBlockItem;
 import org.lanye.fantasy_furniture.content.soap.item.SoapSeriesBlockItem;
 import org.lanye.fantasy_furniture.content.debug.block.GeolibAlignmentProbeBlock;
 import org.lanye.fantasy_furniture.content.debug.blockentity.GeolibAlignmentProbeBlockEntity;
@@ -242,7 +245,18 @@ public final class FurnitureAnimatedBlocks {
                                                     block,
                                                     props,
                                                     GeolibItemAssets.blockAsset(
-                                                            FantasyFurniture.MODID, "geolib_alignment_probe")))));
+                                                            FantasyFurniture.MODID, "geolib_alignment_probe"))),
+                            AnimatedBlockRegistration.spec(
+                                    "display_cabinet",
+                                    () -> FurnitureBlockProperties.bathroomSmallDecor(MapColor.COLOR_LIGHT_GRAY),
+                                    DisplayCabinetBlock::new,
+                                    DisplayCabinetBlockEntity::new,
+                                    (block, props) ->
+                                            new DisplayCabinetBlockItem(
+                                                    block,
+                                                    props.stacksTo(64),
+                                                    SoapSeriesBlockAssets.blockPrimaryTexture(
+                                                            "display_cabinet")))));
 
     private static final int I_BANQUETTE = 0;
     private static final int I_LOTTERY_MACHINE = 1;
@@ -259,6 +273,7 @@ public final class FurnitureAnimatedBlocks {
     private static final int I_COMBINED_ORNAMENT = 12;
     private static final int I_SWEEPER_DOCK = 13;
     private static final int I_GEOLIB_ALIGNMENT_PROBE = 14;
+    private static final int I_DISPLAY_CABINET = 15;
 
     @SuppressWarnings("unchecked")
     private static <BE extends BlockEntity> AnimatedBlockEntry<BE> animatedEntry(int index) {
@@ -299,6 +314,9 @@ public final class FurnitureAnimatedBlocks {
 
     public static final AnimatedBlockEntry<GeolibAlignmentProbeBlockEntity> GEOLIB_ALIGNMENT_PROBE =
             animatedEntry(I_GEOLIB_ALIGNMENT_PROBE);
+
+    public static final AnimatedBlockEntry<DisplayCabinetBlockEntity> DISPLAY_CABINET =
+            animatedEntry(I_DISPLAY_CABINET);
 
     public static final AnimatedBlockEntry<BedPlateBaseBlockEntity> BED_PLATE6 = BedPlate6Registration.mainEntry();
 

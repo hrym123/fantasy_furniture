@@ -1,6 +1,7 @@
 package org.lanye.fantasy_furniture.content.soap.block;
 
 import java.util.List;
+import java.util.function.Consumer;
 import javax.annotation.Nullable;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -29,6 +30,8 @@ import org.lanye.fantasy_furniture.content.soap.SoapBarMaterials;
 import org.lanye.fantasy_furniture.content.soap.SoapBoxAppearance;
 import org.lanye.fantasy_furniture.content.soap.blockentity.SoapBoxBlockEntity;
 import org.lanye.fantasy_furniture.content.soap.item.SoapBarBlockItem;
+import net.minecraftforge.client.extensions.common.IClientBlockExtensions;
+import org.lanye.fantasy_furniture.content.soap.client.SoapBoxBlockClientExtensions;
 import org.lanye.reverie_core.geolib.GeolibFacingEntityBlockWithFactory;
 import org.lanye.reverie_core.util.VoxelShapeRotation;
 
@@ -57,6 +60,11 @@ public class SoapBoxBlock extends GeolibFacingEntityBlockWithFactory<SoapBoxBloc
                         .setValue(OPEN, false)
                         .setValue(HAS_SOAP, false)
                         .setValue(MATERIAL, SoapBoxAppearance.DEFAULT_MATERIAL));
+    }
+
+    @Override
+    public void initializeClient(Consumer<IClientBlockExtensions> consumer) {
+        SoapBoxBlockClientExtensions.register(consumer);
     }
 
     @Override

@@ -17,6 +17,7 @@ public final class SoapSeriesCreativeTab {
         ShampooCreativeTab.appendEntries(list);
         BodyCreamCreativeTab.appendEntries(list);
         SoapPaperBoxCreativeTab.appendEntries(list);
+        DisplayCabinetCreativeTab.appendEntries(list);
         SoapFlatLiquidCreativeTab.appendEntries(list);
         list.add(out -> out.accept(ModBlocks.SOAP_MOLD.item().get()));
     }

@@ -1,22 +1,28 @@
 package org.lanye.fantasy_furniture.content.soap.client.renderer;
 
 import com.mojang.blaze3d.vertex.PoseStack;
+import java.util.List;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+import org.lanye.fantasy_furniture.content.soap.BodyWashAssets;
+import org.lanye.fantasy_furniture.content.soap.SoapBottleKind;
+import org.lanye.fantasy_furniture.content.soap.SoapBottleLayer;
+import org.lanye.fantasy_furniture.content.soap.SoapBottleStackSlots;
 import org.lanye.fantasy_furniture.content.soap.blockentity.BodyWashBlockEntity;
 import org.lanye.fantasy_furniture.content.soap.client.BodyWashStackRenderState;
 import org.lanye.fantasy_furniture.content.soap.client.model.BodyWashSingleGeoModel;
 import software.bernie.geckolib.renderer.GeoBlockRenderer;
 
-/** 单瓶用 {@code body_wash} geo；2 瓶及以上按层 Pass 绘制 {@code body_wash1}…{@code body_wash4}。 */
+/** 单瓶用 {@code body_wash} geo；纯沐浴露多瓶用 {@code body_wash1}…{@code body_wash4}；混合摞按层种类分 Pass 绘制。 */
 @OnlyIn(Dist.CLIENT)
 public final class BodyWashGeoBlockRenderer implements BlockEntityRenderer<BodyWashBlockEntity> {
 
     private final GeoBlockRenderer<BodyWashBlockEntity> singleRenderer =
             new GeoBlockRenderer<>(new BodyWashSingleGeoModel());
-    private final BodyWashStackLayerRenderer layerRenderer = new BodyWashStackLayerRenderer();
+    private final BodyWashStackLayerRenderer stackRenderer = new BodyWashStackLayerRenderer();
+    private final SoapBottleMixedStackRenderer mixedRenderer = new SoapBottleMixedStackRenderer();
 
     @Override
     public void render(
@@ -26,16 +32,28 @@ public final class BodyWashGeoBlockRenderer implements BlockEntityRenderer<BodyW
             MultiBufferSource bufferSource,
             int packedLight,
             int packedOverlay) {
-        int layers = blockEntity.layerCount();
-        if (layers <= 1) {
+        List<SoapBottleLayer> layers = blockEntity.layersView();
+        int count = blockEntity.layerCount();
+        if (count <= 1) {
+            if (SoapBottleMixedStackRenderer.needsMixedPath(layers, SoapBottleKind.BODY_WASH)) {
+                mixedRenderer.render(
+                        blockEntity, layers, partialTick, poseStack, bufferSource, packedLight, packedOverlay);
+                return;
+            }
             singleRenderer.render(
                     blockEntity, partialTick, poseStack, bufferSource, packedLight, packedOverlay);
             return;
         }
-        for (int i = 0; i < layers; i++) {
-            BodyWashStackRenderState.set("body_wash" + (i + 1), blockEntity.materialAtLayer(i));
+        if (SoapBottleMixedStackRenderer.needsMixedPath(layers, SoapBottleKind.BODY_WASH)) {
+            mixedRenderer.render(
+                    blockEntity, layers, partialTick, poseStack, bufferSource, packedLight, packedOverlay);
+            return;
+        }
+        for (int i = 0; i < count; i++) {
+            BodyWashStackRenderState.set(
+                    BodyWashAssets.stackBoneForLayerIndex(i), blockEntity.materialAtLayer(i));
             try {
-                layerRenderer.render(
+                stackRenderer.render(
                         blockEntity, partialTick, poseStack, bufferSource, packedLight, packedOverlay);
             } finally {
                 BodyWashStackRenderState.clear();

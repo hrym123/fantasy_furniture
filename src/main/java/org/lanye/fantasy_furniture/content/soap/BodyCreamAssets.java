@@ -10,8 +10,7 @@ public final class BodyCreamAssets {
     public static final int MAX_STACK = 5;
 
     /** 自底向上层 0…4 对应骨骼 {@code block1}…{@code block5}。 */
-    public static final String[] STACK_LAYER_BONES =
-            {"block1", "block2", "block3", "block4", "block5"};
+    public static final String[] STACK_LAYER_BONES = SoapBottleStackSlots.BODY_CREAM_STACK_LAYER_BONES;
 
     private static final String BONE_PREFIX = "block";
 

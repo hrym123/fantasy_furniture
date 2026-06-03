@@ -2,6 +2,7 @@ package org.lanye.fantasy_furniture.content.soap.block;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Consumer;
 import javax.annotation.Nullable;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -32,6 +33,8 @@ import org.lanye.fantasy_furniture.content.soap.SoapStackCollisionShapes;
 import org.lanye.fantasy_furniture.content.soap.blockentity.SoapPaperBoxBlockEntity;
 import org.lanye.fantasy_furniture.content.soap.item.SoapPaperBoxBlockItem;
 import org.lanye.fantasy_furniture.content.tool.BrushRecolor;
+import net.minecraftforge.client.extensions.common.IClientBlockExtensions;
+import org.lanye.fantasy_furniture.content.soap.client.SoapPaperBoxBlockClientExtensions;
 import org.lanye.reverie_core.geolib.GeolibFacingEntityBlockWithFactory;
 import org.lanye.reverie_core.util.VoxelShapeRotation;
 
@@ -56,6 +59,11 @@ public final class SoapPaperBoxBlock extends GeolibFacingEntityBlockWithFactory<
                         .setValue(MATERIAL, SoapPaperBoxMaterials.DEFAULT)
                         .setValue(STACK_STYLE, SoapPaperBoxAssets.DEFAULT_STACK_STYLE)
                         .setValue(TORN, false));
+    }
+
+    @Override
+    public void initializeClient(Consumer<IClientBlockExtensions> consumer) {
+        SoapPaperBoxBlockClientExtensions.register(consumer);
     }
 
     @Override

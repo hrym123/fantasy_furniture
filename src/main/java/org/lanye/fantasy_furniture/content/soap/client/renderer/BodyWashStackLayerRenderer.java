@@ -7,7 +7,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import net.minecraft.client.renderer.MultiBufferSource;
-import org.lanye.fantasy_furniture.content.soap.blockentity.BodyWashBlockEntity;
+import org.lanye.fantasy_furniture.content.soap.blockentity.SoapBottleBlockEntity;
+import org.lanye.fantasy_furniture.content.soap.SoapBottleKind;
+import org.lanye.fantasy_furniture.content.soap.SoapBottleStackSlots;
 import org.lanye.fantasy_furniture.content.soap.client.BodyWashStackRenderState;
 import org.lanye.fantasy_furniture.content.soap.client.model.BodyWashStackGeoModel;
 import software.bernie.geckolib.cache.object.BakedGeoModel;
@@ -15,9 +17,10 @@ import software.bernie.geckolib.cache.object.GeoBone;
 import software.bernie.geckolib.renderer.GeoBlockRenderer;
 
 /** 摞体单层 Pass：按 {@link BodyWashStackRenderState} 仅显示目标 {@code body_washN} 骨骼。 */
-final class BodyWashStackLayerRenderer extends GeoBlockRenderer<BodyWashBlockEntity> {
+final class BodyWashStackLayerRenderer extends GeoBlockRenderer<SoapBottleBlockEntity> {
 
-    private static final Set<String> LAYER_BONES = Set.of("body_wash1", "body_wash2", "body_wash3", "body_wash4");
+    private static final Set<String> LAYER_BONES =
+            SoapBottleStackSlots.layerBoneSet(SoapBottleKind.BODY_WASH);
 
     BodyWashStackLayerRenderer() {
         super(new BodyWashStackGeoModel());
@@ -26,7 +29,7 @@ final class BodyWashStackLayerRenderer extends GeoBlockRenderer<BodyWashBlockEnt
     @Override
     public void actuallyRender(
             PoseStack poseStack,
-            BodyWashBlockEntity animatable,
+            SoapBottleBlockEntity animatable,
             BakedGeoModel model,
             net.minecraft.client.renderer.RenderType renderType,
             MultiBufferSource bufferSource,

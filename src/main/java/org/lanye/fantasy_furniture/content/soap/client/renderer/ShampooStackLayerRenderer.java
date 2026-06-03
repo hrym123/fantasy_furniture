@@ -7,7 +7,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import net.minecraft.client.renderer.MultiBufferSource;
-import org.lanye.fantasy_furniture.content.soap.blockentity.ShampooBlockEntity;
+import org.lanye.fantasy_furniture.content.soap.blockentity.SoapBottleBlockEntity;
+import org.lanye.fantasy_furniture.content.soap.SoapBottleKind;
+import org.lanye.fantasy_furniture.content.soap.SoapBottleStackSlots;
 import org.lanye.fantasy_furniture.content.soap.client.ShampooStackRenderState;
 import org.lanye.fantasy_furniture.content.soap.client.model.ShampooStackGeoModel;
 import software.bernie.geckolib.cache.object.BakedGeoModel;
@@ -15,9 +17,10 @@ import software.bernie.geckolib.cache.object.GeoBone;
 import software.bernie.geckolib.renderer.GeoBlockRenderer;
 
 /** 摞体单层 Pass：按 {@link ShampooStackRenderState} 仅显示目标 {@code blockN} 骨骼。 */
-final class ShampooStackLayerRenderer extends GeoBlockRenderer<ShampooBlockEntity> {
+final class ShampooStackLayerRenderer extends GeoBlockRenderer<SoapBottleBlockEntity> {
 
-    private static final Set<String> LAYER_BONES = Set.of("block1", "block2", "block3", "block4");
+    private static final Set<String> LAYER_BONES =
+            SoapBottleStackSlots.layerBoneSet(SoapBottleKind.SHAMPOO);
 
     ShampooStackLayerRenderer() {
         super(new ShampooStackGeoModel());
@@ -26,7 +29,7 @@ final class ShampooStackLayerRenderer extends GeoBlockRenderer<ShampooBlockEntit
     @Override
     public void actuallyRender(
             PoseStack poseStack,
-            ShampooBlockEntity animatable,
+            SoapBottleBlockEntity animatable,
             BakedGeoModel model,
             net.minecraft.client.renderer.RenderType renderType,
             MultiBufferSource bufferSource,

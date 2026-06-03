@@ -2,8 +2,10 @@ package org.lanye.fantasy_furniture.content.furniture.common.client;
 
 import net.minecraft.client.gui.screens.MenuScreens;
 import net.minecraft.client.gui.screens.inventory.ContainerScreen;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.EntityRenderersEvent;
+import net.minecraftforge.client.event.ModelEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
@@ -21,6 +23,7 @@ import org.lanye.fantasy_furniture.content.soap.client.renderer.SoapBoxGeoBlockR
 import org.lanye.fantasy_furniture.content.soap.client.renderer.SoapMoldGeoBlockRenderer;
 import org.lanye.fantasy_furniture.content.soap.client.renderer.SoapPaperBagGeoBlockRenderer;
 import org.lanye.fantasy_furniture.content.soap.client.renderer.SoapPaperBoxGeoBlockRenderer;
+import org.lanye.fantasy_furniture.content.soap.client.renderer.DisplayCabinetGeoBlockRenderer;
 import org.lanye.fantasy_furniture.content.soap.client.renderer.SoapRackGeoBlockRenderer;
 import org.lanye.fantasy_furniture.content.soap.client.renderer.ShampooGeoBlockRenderer;
 import org.lanye.fantasy_furniture.content.furniture.common.client.renderer.FurnitureSeatRenderer;
@@ -73,9 +76,18 @@ public final class ClientModEvents {
         AnimatedBlockClientRegistration.registerBlockEntityRenderer(
                 ModBlocks.SOAP_MOLD, ctx -> new SoapMoldGeoBlockRenderer(ctx));
         AnimatedBlockClientRegistration.registerBlockEntityRenderer(
+                ModBlocks.DISPLAY_CABINET, ctx -> new DisplayCabinetGeoBlockRenderer());
+        AnimatedBlockClientRegistration.registerBlockEntityRenderer(
                 ModBlocks.GEOLIB_ALIGNMENT_PROBE,
                 GeolibAnimatedBlockRenderers.defaultGeoRendererProvider(
                         FantasyFurniture.MODID, "geolib_alignment_probe"));
+    }
+
+    @SubscribeEvent
+    public static void registerAdditionalModels(ModelEvent.RegisterAdditional event) {
+        event.register(
+                ResourceLocation.fromNamespaceAndPath(
+                        FantasyFurniture.MODID, "block/internal/soap_packaging_particle_stitch"));
     }
 
     @SubscribeEvent

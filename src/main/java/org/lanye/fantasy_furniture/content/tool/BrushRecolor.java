@@ -28,6 +28,7 @@ import org.lanye.fantasy_furniture.content.soap.blockentity.BodyWashBlockEntity;
 import org.lanye.fantasy_furniture.content.soap.blockentity.SoapPaperBagBlockEntity;
 import org.lanye.fantasy_furniture.content.soap.SoapPaperBoxMaterials;
 import org.lanye.fantasy_furniture.content.soap.ShampooMaterials;
+import org.lanye.fantasy_furniture.content.soap.block.DisplayCabinetBlock;
 import org.lanye.fantasy_furniture.content.soap.block.ShampooBlock;
 import org.lanye.fantasy_furniture.content.soap.blockentity.ShampooBlockEntity;
 import org.lanye.fantasy_furniture.content.soap.blockentity.SoapPaperBoxBlockEntity;
@@ -105,6 +106,11 @@ public final class BrushRecolor {
             int current = state.getValue(ShampooBlock.MATERIAL);
             int next = nextMaterialId(current, ShampooMaterials.COUNT);
             return Optional.of(state.setValue(ShampooBlock.MATERIAL, next));
+        }
+        if (state.getBlock() instanceof DisplayCabinetBlock) {
+            int current = state.getValue(DisplayCabinetBlock.MATERIAL);
+            int next = nextMaterialId(current, SoapPaperBoxMaterials.COUNT);
+            return Optional.of(state.setValue(DisplayCabinetBlock.MATERIAL, next));
         }
         return Optional.empty();
     }

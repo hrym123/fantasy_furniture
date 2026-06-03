@@ -17,7 +17,6 @@ import org.lanye.fantasy_furniture.content.tool.item.FabricCoilItem;
 import org.lanye.fantasy_furniture.content.tool.item.PaintBrushItem;
 import org.lanye.fantasy_furniture.content.furniture.common.item.ArcaneWandItem;
 import org.lanye.reverie_core.geolib.GeolibItemAssets;
-import org.lanye.reverie_core.item.DecorativeHelmetRegistration;
 
 /**
  * 无对应方块的独立物品注册。
@@ -94,33 +93,6 @@ public final class ModItems {
                     new Item.Properties().stacksTo(1),
                     GeolibItemAssets.itemAsset(FantasyFurniture.MODID, "arcane_wand"),
                     "animation.arcane_wand.idle"));
-
-    /** 蓝色小礼帽（Geo atlas 与物品图标分离）。 */
-    public static final RegistryObject<Item> DECORATIVE_HELMET_BLUE_TOP_HAT =
-            DecorativeHelmetRegistration.register(
-                    ITEMS,
-                    new Item.Properties().stacksTo(1),
-                    FantasyFurniture.MODID,
-                    "decorative_helmet_blue_top_hat",
-                    "decorative_helmet_blue_top_hat_atlas");
-
-    /** 粉色小礼帽。 */
-    public static final RegistryObject<Item> DECORATIVE_HELMET_PINK_TOP_HAT =
-            DecorativeHelmetRegistration.register(
-                    ITEMS,
-                    new Item.Properties().stacksTo(1),
-                    FantasyFurniture.MODID,
-                    "decorative_helmet_pink_top_hat",
-                    "decorative_helmet_pink_top_hat");
-
-    /** 垂耳兔头饰。 */
-    public static final RegistryObject<Item> DECORATIVE_HELMET_LOP_EARED_RABBIT =
-            DecorativeHelmetRegistration.register(
-                    ITEMS,
-                    new Item.Properties().stacksTo(1),
-                    FantasyFurniture.MODID,
-                    "decorative_helmet_lop_eared_rabbit",
-                    "decorative_helmet_lop_eared_rabbit");
 
     public static void register(IEventBus modEventBus) {
         ITEMS.register(modEventBus);

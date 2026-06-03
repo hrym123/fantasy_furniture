@@ -3,11 +3,14 @@ package org.lanye.fantasy_furniture.content.soap.item;
 import java.util.function.Consumer;
 import net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer;
 import net.minecraft.network.chat.Component;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.block.Block;
 import net.minecraftforge.client.extensions.common.IClientItemExtensions;
 import org.jetbrains.annotations.NotNull;
+import org.lanye.fantasy_furniture.content.soap.DisplayCabinetBottleInsert;
 import org.lanye.fantasy_furniture.content.soap.ShampooAppearance;
 import org.lanye.fantasy_furniture.content.soap.ShampooMaterials;
 import org.lanye.fantasy_furniture.content.soap.client.ShampooItemRenderer;
@@ -19,6 +22,15 @@ public final class ShampooBlockItem extends GeolibBlockItem {
 
     public ShampooBlockItem(Block block, Item.Properties properties, GeolibItemAssets assets) {
         super(block, properties, assets);
+    }
+
+    @Override
+    public InteractionResult useOn(UseOnContext context) {
+        InteractionResult cabinet = DisplayCabinetBottleInsert.useOnOpenCabinet(context);
+        if (cabinet != null) {
+            return cabinet;
+        }
+        return super.useOn(context);
     }
 
     @Override

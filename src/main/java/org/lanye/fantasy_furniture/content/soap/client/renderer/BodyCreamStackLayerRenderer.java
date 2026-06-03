@@ -7,9 +7,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import net.minecraft.client.renderer.MultiBufferSource;
-import java.util.Arrays;
-import org.lanye.fantasy_furniture.content.soap.BodyCreamAssets;
-import org.lanye.fantasy_furniture.content.soap.blockentity.BodyCreamBlockEntity;
+import org.lanye.fantasy_furniture.content.soap.SoapBottleStackSlots;
+import org.lanye.fantasy_furniture.content.soap.blockentity.SoapBottleBlockEntity;
 import org.lanye.fantasy_furniture.content.soap.client.BodyCreamStackRenderState;
 import org.lanye.fantasy_furniture.content.soap.client.model.BodyCreamStackGeoModel;
 import software.bernie.geckolib.cache.object.BakedGeoModel;
@@ -17,10 +16,9 @@ import software.bernie.geckolib.cache.object.GeoBone;
 import software.bernie.geckolib.renderer.GeoBlockRenderer;
 
 /** 摞体单层 Pass：按 {@link BodyCreamStackRenderState} 仅显示目标 {@code blockN} 骨骼。 */
-final class BodyCreamStackLayerRenderer extends GeoBlockRenderer<BodyCreamBlockEntity> {
+final class BodyCreamStackLayerRenderer extends GeoBlockRenderer<SoapBottleBlockEntity> {
 
-    private static final Set<String> LAYER_BONES =
-            Set.copyOf(Arrays.asList(BodyCreamAssets.STACK_LAYER_BONES));
+    private static final Set<String> LAYER_BONES = SoapBottleStackSlots.bodyCreamStackBoneSet();
 
     BodyCreamStackLayerRenderer() {
         super(new BodyCreamStackGeoModel());
@@ -29,7 +27,7 @@ final class BodyCreamStackLayerRenderer extends GeoBlockRenderer<BodyCreamBlockE
     @Override
     public void actuallyRender(
             PoseStack poseStack,
-            BodyCreamBlockEntity animatable,
+            SoapBottleBlockEntity animatable,
             BakedGeoModel model,
             net.minecraft.client.renderer.RenderType renderType,
             MultiBufferSource bufferSource,
