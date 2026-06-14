@@ -10,6 +10,7 @@ import org.lanye.fantasy_furniture.content.soap.block.SoapBarBlock;
 import org.lanye.fantasy_furniture.content.soap.blockentity.SoapBarBlockEntity;
 import org.lanye.fantasy_furniture.content.soap.client.model.SoapBarBagBodyGeoModel;
 import org.lanye.fantasy_furniture.content.soap.client.model.SoapBarBodyGeoModel;
+import org.lanye.reverie_core.util.ReveriePerfRender;
 import software.bernie.geckolib.renderer.GeoBlockRenderer;
 
 /** 地上肥皂：未套袋仅皂体；套袋后袋体 + 皂体双 Pass。 */
@@ -31,8 +32,14 @@ public final class SoapBarGeoBlockRenderer implements BlockEntityRenderer<SoapBa
             int packedOverlay) {
         SoapBarAppearance appearance = SoapBarAppearance.fromState(blockEntity.getBlockState());
         if (appearance.isPackaged()) {
-            bagRenderer.render(blockEntity, partialTick, poseStack, bufferSource, packedLight, packedOverlay);
+            ReveriePerfRender.geoBlock(
+                    "soap_bar_bag",
+                    () -> bagRenderer.render(
+                            blockEntity, partialTick, poseStack, bufferSource, packedLight, packedOverlay));
         }
-        bodyRenderer.render(blockEntity, partialTick, poseStack, bufferSource, packedLight, packedOverlay);
+        ReveriePerfRender.geoBlock(
+                "soap_bar",
+                () -> bodyRenderer.render(
+                        blockEntity, partialTick, poseStack, bufferSource, packedLight, packedOverlay));
     }
 }

@@ -8,6 +8,7 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 import org.lanye.fantasy_furniture.content.furniture.decor.blockentity.CombinedOrnamentBlockEntity;
 import org.lanye.fantasy_furniture.content.furniture.decor.client.model.CombinedOrnamentBaseGeoModel;
 import org.lanye.fantasy_furniture.content.furniture.decor.client.model.CombinedOrnamentFigurineGeoModel;
+import org.lanye.reverie_core.util.ReveriePerfRender;
 import software.bernie.geckolib.renderer.GeoBlockRenderer;
 
 /**
@@ -29,7 +30,13 @@ public final class CombinedOrnamentGeoBlockRenderer implements BlockEntityRender
             MultiBufferSource bufferSource,
             int packedLight,
             int packedOverlay) {
-        this.baseRenderer.render(blockEntity, partialTick, poseStack, bufferSource, packedLight, packedOverlay);
-        this.figurineRenderer.render(blockEntity, partialTick, poseStack, bufferSource, packedLight, packedOverlay);
+        ReveriePerfRender.geoBlock(
+                "combined_ornament_base",
+                () -> this.baseRenderer.render(
+                        blockEntity, partialTick, poseStack, bufferSource, packedLight, packedOverlay));
+        ReveriePerfRender.geoBlock(
+                "combined_ornament_figurine",
+                () -> this.figurineRenderer.render(
+                        blockEntity, partialTick, poseStack, bufferSource, packedLight, packedOverlay));
     }
 }

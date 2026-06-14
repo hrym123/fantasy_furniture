@@ -10,6 +10,7 @@ import org.lanye.fantasy_furniture.content.soap.block.SoapPaperBoxBlock;
 import org.lanye.fantasy_furniture.content.soap.blockentity.SoapPaperBoxBlockEntity;
 import org.lanye.fantasy_furniture.content.soap.client.SoapPaperBoxStackRenderState;
 import org.lanye.fantasy_furniture.content.soap.client.model.SoapPaperBoxSingleGeoModel;
+import org.lanye.reverie_core.util.ReveriePerfRender;
 import software.bernie.geckolib.renderer.GeoBlockRenderer;
 
 /** 单盒用 {@code soap_paper_box} geo；2 盒及以上按层 Pass 绘制 {@code block1}…{@code block7}。 */
@@ -30,8 +31,10 @@ public final class SoapPaperBoxGeoBlockRenderer implements BlockEntityRenderer<S
             int packedOverlay) {
         int layers = blockEntity.layerCount();
         if (layers <= 1) {
-            singleRenderer.render(
-                    blockEntity, partialTick, poseStack, bufferSource, packedLight, packedOverlay);
+            ReveriePerfRender.geoBlock(
+                    "soap_paper_box",
+                    () -> singleRenderer.render(
+                            blockEntity, partialTick, poseStack, bufferSource, packedLight, packedOverlay));
             return;
         }
         BlockState state = blockEntity.getBlockState();
@@ -42,8 +45,15 @@ public final class SoapPaperBoxGeoBlockRenderer implements BlockEntityRenderer<S
         for (int i = 0; i < layers; i++) {
             SoapPaperBoxStackRenderState.set("block" + (i + 1), blockEntity.materialAtLayer(i), stackStyle);
             try {
-                layerRenderer.render(
-                        blockEntity, partialTick, poseStack, bufferSource, packedLight, packedOverlay);
+                ReveriePerfRender.geoBlock(
+                        "soap_paper_box_stack",
+                        () -> layerRenderer.render(
+                                blockEntity,
+                                partialTick,
+                                poseStack,
+                                bufferSource,
+                                packedLight,
+                                packedOverlay));
             } finally {
                 SoapPaperBoxStackRenderState.clear();
             }

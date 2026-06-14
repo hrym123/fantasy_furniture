@@ -8,6 +8,7 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 import org.lanye.fantasy_furniture.content.soap.block.SoapBoxBlock;
 import org.lanye.fantasy_furniture.content.soap.blockentity.SoapBoxBlockEntity;
 import org.lanye.fantasy_furniture.content.soap.client.model.SoapBoxBodyGeoModel;
+import org.lanye.reverie_core.util.ReveriePerfRender;
 import software.bernie.geckolib.renderer.GeoBlockRenderer;
 
 /**
@@ -33,10 +34,15 @@ public final class SoapBoxGeoBlockRenderer implements BlockEntityRenderer<SoapBo
             MultiBufferSource bufferSource,
             int packedLight,
             int packedOverlay) {
-        this.bodyRenderer.render(blockEntity, partialTick, poseStack, bufferSource, packedLight, packedOverlay);
+        ReveriePerfRender.geoBlock(
+                "soap_box",
+                () -> this.bodyRenderer.render(
+                        blockEntity, partialTick, poseStack, bufferSource, packedLight, packedOverlay));
         if (blockEntity.hasContainedSoap(blockEntity.getBlockState())) {
-            this.innerSoapRenderer.render(
-                    blockEntity, partialTick, poseStack, bufferSource, packedLight, packedOverlay);
+            ReveriePerfRender.geoBlock(
+                    "soap_box_inner_soap",
+                    () -> this.innerSoapRenderer.render(
+                            blockEntity, partialTick, poseStack, bufferSource, packedLight, packedOverlay));
         }
     }
 }

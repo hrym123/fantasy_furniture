@@ -1,7 +1,10 @@
 package org.lanye.fantasy_furniture.content.furniture.livingroom.client.renderer;
 
 import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
+import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.RenderType;
 import net.minecraft.core.Direction;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
@@ -9,6 +12,8 @@ import org.lanye.fantasy_furniture.content.furniture.common.client.config.Client
 import org.lanye.fantasy_furniture.content.furniture.livingroom.block.BanquetteBlock;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.blockentity.BanquetteBlockEntity;
 import org.lanye.fantasy_furniture.content.furniture.common.state.BanquetteShape;
+import org.lanye.reverie_core.util.ReveriePerfLog;
+import software.bernie.geckolib.cache.object.BakedGeoModel;
 import software.bernie.geckolib.model.GeoModel;
 import software.bernie.geckolib.renderer.GeoBlockRenderer;
 
@@ -22,6 +27,44 @@ public final class BanquetteGeoBlockRenderer extends GeoBlockRenderer<BanquetteB
 
     public BanquetteGeoBlockRenderer(GeoModel<BanquetteBlockEntity> model) {
         super(model);
+    }
+
+    @Override
+    public void actuallyRender(
+            PoseStack poseStack,
+            BanquetteBlockEntity animatable,
+            BakedGeoModel model,
+            RenderType renderType,
+            MultiBufferSource bufferSource,
+            VertexConsumer buffer,
+            boolean isReRender,
+            float partialTick,
+            int packedLight,
+            int packedOverlay,
+            float red,
+            float green,
+            float blue,
+            float alpha) {
+        long t0 = ReveriePerfLog.start();
+        try {
+            super.actuallyRender(
+                    poseStack,
+                    animatable,
+                    model,
+                    renderType,
+                    bufferSource,
+                    buffer,
+                    isReRender,
+                    partialTick,
+                    packedLight,
+                    packedOverlay,
+                    red,
+                    green,
+                    blue,
+                    alpha);
+        } finally {
+            ReveriePerfLog.finish("render.geo.block.banquette", t0);
+        }
     }
 
     @Override

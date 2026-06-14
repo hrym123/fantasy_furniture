@@ -13,6 +13,7 @@ import org.lanye.fantasy_furniture.content.soap.SoapBottleStackSlots;
 import org.lanye.fantasy_furniture.content.soap.blockentity.BodyWashBlockEntity;
 import org.lanye.fantasy_furniture.content.soap.client.BodyWashStackRenderState;
 import org.lanye.fantasy_furniture.content.soap.client.model.BodyWashSingleGeoModel;
+import org.lanye.reverie_core.util.ReveriePerfRender;
 import software.bernie.geckolib.renderer.GeoBlockRenderer;
 
 /** 单瓶用 {@code body_wash} geo；纯沐浴露多瓶用 {@code body_wash1}…{@code body_wash4}；混合摞按层种类分 Pass 绘制。 */
@@ -34,27 +35,60 @@ public final class BodyWashGeoBlockRenderer implements BlockEntityRenderer<BodyW
             int packedOverlay) {
         List<SoapBottleLayer> layers = blockEntity.layersView();
         int count = blockEntity.layerCount();
+        renderLayers(
+                blockEntity, layers, count, partialTick, poseStack, bufferSource, packedLight, packedOverlay);
+    }
+
+    private void renderLayers(
+            BodyWashBlockEntity blockEntity,
+            List<SoapBottleLayer> layers,
+            int count,
+            float partialTick,
+            PoseStack poseStack,
+            MultiBufferSource bufferSource,
+            int packedLight,
+            int packedOverlay) {
         if (count <= 1) {
             if (SoapBottleMixedStackRenderer.needsMixedPath(layers, SoapBottleKind.BODY_WASH)) {
-                mixedRenderer.render(
-                        blockEntity, layers, partialTick, poseStack, bufferSource, packedLight, packedOverlay);
+                ReveriePerfRender.geoBlock(
+                        "body_wash_mixed_stack",
+                        () -> mixedRenderer.render(
+                                blockEntity,
+                                layers,
+                                partialTick,
+                                poseStack,
+                                bufferSource,
+                                packedLight,
+                                packedOverlay));
                 return;
             }
-            singleRenderer.render(
-                    blockEntity, partialTick, poseStack, bufferSource, packedLight, packedOverlay);
+            ReveriePerfRender.geoBlock(
+                    "body_wash",
+                    () -> singleRenderer.render(
+                            blockEntity, partialTick, poseStack, bufferSource, packedLight, packedOverlay));
             return;
         }
         if (SoapBottleMixedStackRenderer.needsMixedPath(layers, SoapBottleKind.BODY_WASH)) {
-            mixedRenderer.render(
-                    blockEntity, layers, partialTick, poseStack, bufferSource, packedLight, packedOverlay);
+            ReveriePerfRender.geoBlock(
+                    "body_wash_mixed_stack",
+                    () -> mixedRenderer.render(
+                            blockEntity,
+                            layers,
+                            partialTick,
+                            poseStack,
+                            bufferSource,
+                            packedLight,
+                            packedOverlay));
             return;
         }
         for (int i = 0; i < count; i++) {
             BodyWashStackRenderState.set(
                     BodyWashAssets.stackBoneForLayerIndex(i), blockEntity.materialAtLayer(i));
             try {
-                stackRenderer.render(
-                        blockEntity, partialTick, poseStack, bufferSource, packedLight, packedOverlay);
+                ReveriePerfRender.geoBlock(
+                        "body_wash_stack",
+                        () -> stackRenderer.render(
+                                blockEntity, partialTick, poseStack, bufferSource, packedLight, packedOverlay));
             } finally {
                 BodyWashStackRenderState.clear();
             }

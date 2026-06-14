@@ -20,6 +20,7 @@ import org.lanye.fantasy_furniture.content.furniture.livingroom.BedPlate6SmallPi
 import org.lanye.fantasy_furniture.content.furniture.livingroom.blockentity.BedPlate6BlockEntity;
 import org.lanye.reverie_core.geolib.bed.BedPlateBaseBlockEntity;
 import org.lanye.reverie_core.geolib.client.BedPlateGeoBlockRenderer;
+import org.lanye.reverie_core.util.ReveriePerfRender;
 import software.bernie.geckolib.cache.object.BakedGeoModel;
 import software.bernie.geckolib.model.GeoModel;
 import software.bernie.geckolib.renderer.GeoBlockRenderer;
@@ -202,20 +203,60 @@ public final class BedPlate6GeoBlockRenderer implements BlockEntityRenderer<BedP
             MultiBufferSource bufferSource,
             int packedLight,
             int packedOverlay) {
+        renderLayers(blockEntity, partialTick, poseStack, bufferSource, packedLight, packedOverlay);
+    }
+
+    private void renderLayers(
+            BedPlateBaseBlockEntity blockEntity,
+            float partialTick,
+            PoseStack poseStack,
+            MultiBufferSource bufferSource,
+            int packedLight,
+            int packedOverlay) {
         bed.render(blockEntity, partialTick, poseStack, bufferSource, packedLight, packedOverlay);
         if (blockEntity instanceof BedPlate6BlockEntity b6 && b6.hasDuvet()) {
-            duvet.render(blockEntity, partialTick, poseStack, bufferSource, packedLight, packedOverlay);
+            ReveriePerfRender.geoBlock(
+                    "bed_plate6_duvet",
+                    () -> duvet.render(
+                            blockEntity, partialTick, poseStack, bufferSource, packedLight, packedOverlay));
             if (b6.hasCover()) {
-                duvetCover.render(blockEntity, partialTick, poseStack, bufferSource, packedLight, packedOverlay);
+                ReveriePerfRender.geoBlock(
+                        "bed_plate6_duvet_cover",
+                        () -> duvetCover.render(
+                                blockEntity, partialTick, poseStack, bufferSource, packedLight, packedOverlay));
             }
             if (b6.hasLargePillow()) {
                 switch (b6.getLargePillowStyleId()) {
-                    case 1 -> pillowLargeStriped.render(
-                            blockEntity, partialTick, poseStack, bufferSource, packedLight, packedOverlay);
-                    case 2 -> pillowLargePlain.render(
-                            blockEntity, partialTick, poseStack, bufferSource, packedLight, packedOverlay);
-                    case 3 -> pillowLargePlaid.render(
-                            blockEntity, partialTick, poseStack, bufferSource, packedLight, packedOverlay);
+                    case 1 ->
+                            ReveriePerfRender.geoBlock(
+                                    "bed_plate6_pillow_large_striped",
+                                    () -> pillowLargeStriped.render(
+                                            blockEntity,
+                                            partialTick,
+                                            poseStack,
+                                            bufferSource,
+                                            packedLight,
+                                            packedOverlay));
+                    case 2 ->
+                            ReveriePerfRender.geoBlock(
+                                    "bed_plate6_pillow_large_plain",
+                                    () -> pillowLargePlain.render(
+                                            blockEntity,
+                                            partialTick,
+                                            poseStack,
+                                            bufferSource,
+                                            packedLight,
+                                            packedOverlay));
+                    case 3 ->
+                            ReveriePerfRender.geoBlock(
+                                    "bed_plate6_pillow_large_plaid",
+                                    () -> pillowLargePlaid.render(
+                                            blockEntity,
+                                            partialTick,
+                                            poseStack,
+                                            bufferSource,
+                                            packedLight,
+                                            packedOverlay));
                     default -> {
                         /* unreachable when hasLargePillow */
                     }
@@ -223,7 +264,10 @@ public final class BedPlate6GeoBlockRenderer implements BlockEntityRenderer<BedP
             }
             renderMediumPillows(b6, blockEntity, partialTick, poseStack, bufferSource, packedLight, packedOverlay);
             if (b6.hasSmallPillow()) {
-                pillowSmallStack.render(blockEntity, partialTick, poseStack, bufferSource, packedLight, packedOverlay);
+                ReveriePerfRender.geoBlock(
+                        "bed_plate6_pillow_small_stack",
+                        () -> pillowSmallStack.render(
+                                blockEntity, partialTick, poseStack, bufferSource, packedLight, packedOverlay));
             }
         }
     }
@@ -242,12 +286,24 @@ public final class BedPlate6GeoBlockRenderer implements BlockEntityRenderer<BedP
         }
         boolean large = b6.hasLargePillow();
         if (n == 2) {
-            pillowMediumPairRear.render(blockEntity, partialTick, poseStack, bufferSource, packedLight, packedOverlay);
-            pillowMediumPairFront.render(blockEntity, partialTick, poseStack, bufferSource, packedLight, packedOverlay);
+            ReveriePerfRender.geoBlock(
+                    "bed_plate6_pillow_medium_pair_rear",
+                    () -> pillowMediumPairRear.render(
+                            blockEntity, partialTick, poseStack, bufferSource, packedLight, packedOverlay));
+            ReveriePerfRender.geoBlock(
+                    "bed_plate6_pillow_medium_pair_front",
+                    () -> pillowMediumPairFront.render(
+                            blockEntity, partialTick, poseStack, bufferSource, packedLight, packedOverlay));
         } else if (large) {
-            pillowMediumPairFront.render(blockEntity, partialTick, poseStack, bufferSource, packedLight, packedOverlay);
+            ReveriePerfRender.geoBlock(
+                    "bed_plate6_pillow_medium_pair_front",
+                    () -> pillowMediumPairFront.render(
+                            blockEntity, partialTick, poseStack, bufferSource, packedLight, packedOverlay));
         } else {
-            pillowMediumSolo.render(blockEntity, partialTick, poseStack, bufferSource, packedLight, packedOverlay);
+            ReveriePerfRender.geoBlock(
+                    "bed_plate6_pillow_medium_solo",
+                    () -> pillowMediumSolo.render(
+                            blockEntity, partialTick, poseStack, bufferSource, packedLight, packedOverlay));
         }
     }
 

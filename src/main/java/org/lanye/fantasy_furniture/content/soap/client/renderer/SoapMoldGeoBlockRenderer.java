@@ -23,6 +23,7 @@ import org.lanye.fantasy_furniture.content.soap.client.model.SoapMoldBlockGeoMod
 import org.lanye.fantasy_furniture.content.soap.mold.SoapMoldPhase;
 import org.lanye.reverie_core.client.renderer.container.ContainerFluidSurfacePass;
 import org.lanye.reverie_core.client.renderer.container.ContainerFluidSurfaceSpec;
+import org.lanye.reverie_core.util.ReveriePerfRender;
 import software.bernie.geckolib.cache.object.GeoBone;
 import software.bernie.geckolib.renderer.GeoBlockRenderer;
 import software.bernie.geckolib.util.RenderUtils;
@@ -47,8 +48,10 @@ public final class SoapMoldGeoBlockRenderer implements BlockEntityRenderer<SoapM
             MultiBufferSource bufferSource,
             int packedLight,
             int packedOverlay) {
-        this.bodyRenderer.renderWithOverlays(
-                blockEntity, partialTick, poseStack, bufferSource, packedLight, packedOverlay);
+        ReveriePerfRender.geoBlock(
+                "soap_mold",
+                () -> this.bodyRenderer.renderWithOverlays(
+                        blockEntity, partialTick, poseStack, bufferSource, packedLight, packedOverlay));
     }
 
     private static final class BodyRenderer extends GeoBlockRenderer<SoapMoldBlockEntity> {

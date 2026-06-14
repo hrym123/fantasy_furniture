@@ -1,0 +1,4 @@
+# 首次生成 run/config/fml.toml 时的默认值（已存在文件不会被覆盖）。
+# 开发 runClient / runAllModsClient：启动时最大化游戏窗口（非全屏）。
+
+earlyWindowMaximized = true

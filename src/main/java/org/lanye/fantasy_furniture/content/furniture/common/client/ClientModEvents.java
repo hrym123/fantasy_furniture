@@ -33,6 +33,7 @@ import org.lanye.fantasy_furniture.content.sweeper.menu.ModMenuTypes;
 import org.lanye.fantasy_furniture.bootstrap.block.BedPlate6Registration;
 import org.lanye.reverie_core.geolib.client.AnimatedBlockClientRegistration;
 import org.lanye.reverie_core.geolib.client.GeolibAnimatedBlockRenderers;
+import org.lanye.reverie_core.util.ReveriePerfRender;
 
 @Mod.EventBusSubscriber(modid = FantasyFurniture.MODID, bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
 public final class ClientModEvents {
@@ -48,35 +49,38 @@ public final class ClientModEvents {
                 GeolibAnimatedBlockRenderers.defaultGeoRendererProvider(FantasyFurniture.MODID, "green_sofa"));
         BedPlate6Registration.registerClientRenderer();
         AnimatedBlockClientRegistration.registerBlockEntityRenderer(
-                ModBlocks.COMBINED_ORNAMENT, ctx -> new CombinedOrnamentGeoBlockRenderer());
+                ModBlocks.COMBINED_ORNAMENT,
+                ReveriePerfRender.wrapBer(ctx -> new CombinedOrnamentGeoBlockRenderer()));
         AnimatedBlockClientRegistration.registerBlockEntityRenderer(
-                ModBlocks.BANQUETTE, ctx -> new BanquetteGeoBlockRenderer(new BanquetteBlockGeoModel()));
+                ModBlocks.BANQUETTE,
+                ReveriePerfRender.wrapBer(ctx -> new BanquetteGeoBlockRenderer(new BanquetteBlockGeoModel())));
         AnimatedBlockClientRegistration.registerBlockEntityRenderer(
                 ModBlocks.SWEEPER_DOCK,
                 GeolibAnimatedBlockRenderers.variableTextureGeoRendererProvider(
                         FantasyFurniture.MODID, "sweeper_dock", SweeperDockBlockEntity::getTextureLocation));
         AnimatedBlockClientRegistration.registerBlockEntityRenderer(
-                ModBlocks.PLAIN_GLASS_WINDOW, ctx -> new PlainGlassWindowGeoBlockRenderer());
+                ModBlocks.PLAIN_GLASS_WINDOW,
+                ReveriePerfRender.wrapBer(ctx -> new PlainGlassWindowGeoBlockRenderer()));
         AnimatedBlockClientRegistration.registerBlockEntityRenderer(
-                ModBlocks.SOAP_BAR, SoapBarClient.blockRendererProvider());
+                ModBlocks.SOAP_BAR, ReveriePerfRender.wrapBer(SoapBarClient.blockRendererProvider()));
         AnimatedBlockClientRegistration.registerBlockEntityRenderer(
-                ModBlocks.SOAP_BOX, ctx -> new SoapBoxGeoBlockRenderer());
+                ModBlocks.SOAP_BOX, ReveriePerfRender.wrapBer(ctx -> new SoapBoxGeoBlockRenderer()));
         AnimatedBlockClientRegistration.registerBlockEntityRenderer(
-                ModBlocks.SOAP_RACK, ctx -> new SoapRackGeoBlockRenderer());
+                ModBlocks.SOAP_RACK, ReveriePerfRender.wrapBer(ctx -> new SoapRackGeoBlockRenderer()));
         AnimatedBlockClientRegistration.registerBlockEntityRenderer(
-                ModBlocks.SOAP_PAPER_BAG, ctx -> new SoapPaperBagGeoBlockRenderer());
+                ModBlocks.SOAP_PAPER_BAG, ReveriePerfRender.wrapBer(ctx -> new SoapPaperBagGeoBlockRenderer()));
         AnimatedBlockClientRegistration.registerBlockEntityRenderer(
-                ModBlocks.BODY_WASH, ctx -> new BodyWashGeoBlockRenderer());
+                ModBlocks.BODY_WASH, ReveriePerfRender.wrapBer(ctx -> new BodyWashGeoBlockRenderer()));
         AnimatedBlockClientRegistration.registerBlockEntityRenderer(
-                ModBlocks.SHAMPOO, ctx -> new ShampooGeoBlockRenderer());
+                ModBlocks.SHAMPOO, ReveriePerfRender.wrapBer(ctx -> new ShampooGeoBlockRenderer()));
         AnimatedBlockClientRegistration.registerBlockEntityRenderer(
-                ModBlocks.BODY_CREAM, ctx -> new BodyCreamGeoBlockRenderer());
+                ModBlocks.BODY_CREAM, ReveriePerfRender.wrapBer(ctx -> new BodyCreamGeoBlockRenderer()));
         AnimatedBlockClientRegistration.registerBlockEntityRenderer(
-                ModBlocks.SOAP_PAPER_BOX, ctx -> new SoapPaperBoxGeoBlockRenderer());
+                ModBlocks.SOAP_PAPER_BOX, ReveriePerfRender.wrapBer(ctx -> new SoapPaperBoxGeoBlockRenderer()));
         AnimatedBlockClientRegistration.registerBlockEntityRenderer(
-                ModBlocks.SOAP_MOLD, ctx -> new SoapMoldGeoBlockRenderer(ctx));
+                ModBlocks.SOAP_MOLD, ReveriePerfRender.wrapBer(SoapMoldGeoBlockRenderer::new));
         AnimatedBlockClientRegistration.registerBlockEntityRenderer(
-                ModBlocks.DISPLAY_CABINET, ctx -> new DisplayCabinetGeoBlockRenderer());
+                ModBlocks.DISPLAY_CABINET, ReveriePerfRender.wrapBer(ctx -> new DisplayCabinetGeoBlockRenderer()));
         AnimatedBlockClientRegistration.registerBlockEntityRenderer(
                 ModBlocks.GEOLIB_ALIGNMENT_PROBE,
                 GeolibAnimatedBlockRenderers.defaultGeoRendererProvider(

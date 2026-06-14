@@ -13,6 +13,7 @@ import org.lanye.fantasy_furniture.content.soap.client.DisplayCabinetBottleRende
 import org.lanye.fantasy_furniture.content.soap.client.model.DisplayCabinetBodyWashOverlayModel;
 import org.lanye.fantasy_furniture.content.soap.client.model.DisplayCabinetGeoModel;
 import org.lanye.fantasy_furniture.content.soap.client.model.DisplayCabinetShampooOverlayModel;
+import org.lanye.reverie_core.util.ReveriePerfRender;
 
 @OnlyIn(Dist.CLIENT)
 public final class DisplayCabinetGeoBlockRenderer implements BlockEntityRenderer<DisplayCabinetBlockEntity> {
@@ -32,17 +33,21 @@ public final class DisplayCabinetGeoBlockRenderer implements BlockEntityRenderer
             MultiBufferSource bufferSource,
             int packedLight,
             int packedOverlay) {
-        cabinetRenderer.render(
-                blockEntity, partialTick, poseStack, bufferSource, packedLight, packedOverlay);
-        renderStoredBottleOverlays(
-                blockEntity,
-                washOverlayRenderer,
-                shampooOverlayRenderer,
-                partialTick,
-                poseStack,
-                bufferSource,
-                packedLight,
-                packedOverlay);
+        ReveriePerfRender.geoBlock(
+                "display_cabinet",
+                () -> cabinetRenderer.render(
+                        blockEntity, partialTick, poseStack, bufferSource, packedLight, packedOverlay));
+        ReveriePerfRender.geoBlock(
+                "display_cabinet_bottle_overlay",
+                () -> renderStoredBottleOverlays(
+                        blockEntity,
+                        washOverlayRenderer,
+                        shampooOverlayRenderer,
+                        partialTick,
+                        poseStack,
+                        bufferSource,
+                        packedLight,
+                        packedOverlay));
     }
 
     private static void renderStoredBottleOverlays(

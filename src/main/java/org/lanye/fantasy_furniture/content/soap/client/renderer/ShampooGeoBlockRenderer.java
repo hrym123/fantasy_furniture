@@ -13,6 +13,7 @@ import org.lanye.fantasy_furniture.content.soap.SoapBottleStackSlots;
 import org.lanye.fantasy_furniture.content.soap.blockentity.ShampooBlockEntity;
 import org.lanye.fantasy_furniture.content.soap.client.ShampooStackRenderState;
 import org.lanye.fantasy_furniture.content.soap.client.model.ShampooSingleGeoModel;
+import org.lanye.reverie_core.util.ReveriePerfRender;
 import software.bernie.geckolib.renderer.GeoBlockRenderer;
 
 /** 单瓶用 {@code shampoo} geo；纯洗发露多瓶用 {@code block1}…{@code block4}；混合摞按层种类分 Pass 绘制。 */
@@ -34,27 +35,60 @@ public final class ShampooGeoBlockRenderer implements BlockEntityRenderer<Shampo
             int packedOverlay) {
         List<SoapBottleLayer> layers = blockEntity.layersView();
         int count = blockEntity.visibleLayerCount();
+        renderLayers(
+                blockEntity, layers, count, partialTick, poseStack, bufferSource, packedLight, packedOverlay);
+    }
+
+    private void renderLayers(
+            ShampooBlockEntity blockEntity,
+            List<SoapBottleLayer> layers,
+            int count,
+            float partialTick,
+            PoseStack poseStack,
+            MultiBufferSource bufferSource,
+            int packedLight,
+            int packedOverlay) {
         if (count <= 1) {
             if (SoapBottleMixedStackRenderer.needsMixedPath(layers, SoapBottleKind.SHAMPOO)) {
-                mixedRenderer.render(
-                        blockEntity, layers, partialTick, poseStack, bufferSource, packedLight, packedOverlay);
+                ReveriePerfRender.geoBlock(
+                        "shampoo_mixed_stack",
+                        () -> mixedRenderer.render(
+                                blockEntity,
+                                layers,
+                                partialTick,
+                                poseStack,
+                                bufferSource,
+                                packedLight,
+                                packedOverlay));
                 return;
             }
-            singleRenderer.render(
-                    blockEntity, partialTick, poseStack, bufferSource, packedLight, packedOverlay);
+            ReveriePerfRender.geoBlock(
+                    "shampoo",
+                    () -> singleRenderer.render(
+                            blockEntity, partialTick, poseStack, bufferSource, packedLight, packedOverlay));
             return;
         }
         if (SoapBottleMixedStackRenderer.needsMixedPath(layers, SoapBottleKind.SHAMPOO)) {
-            mixedRenderer.render(
-                    blockEntity, layers, partialTick, poseStack, bufferSource, packedLight, packedOverlay);
+            ReveriePerfRender.geoBlock(
+                    "shampoo_mixed_stack",
+                    () -> mixedRenderer.render(
+                            blockEntity,
+                            layers,
+                            partialTick,
+                            poseStack,
+                            bufferSource,
+                            packedLight,
+                            packedOverlay));
             return;
         }
         for (int i = 0; i < count; i++) {
             ShampooStackRenderState.set(
                     ShampooAssets.stackBoneForLayerIndex(i), blockEntity.materialAtLayer(i));
             try {
-                stackRenderer.render(
-                        blockEntity, partialTick, poseStack, bufferSource, packedLight, packedOverlay);
+                ReveriePerfRender.geoBlock(
+                        "shampoo_stack",
+                        () -> stackRenderer.render(
+                                blockEntity, partialTick, poseStack, bufferSource, packedLight, packedOverlay));
             } finally {
                 ShampooStackRenderState.clear();
             }

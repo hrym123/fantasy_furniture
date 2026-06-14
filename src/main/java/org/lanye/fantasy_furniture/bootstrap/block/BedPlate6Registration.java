@@ -196,6 +196,7 @@ public final class BedPlate6Registration {
 
     public static void registerClientRenderer() {
         AnimatedBlockClientRegistration.registerBlockEntityRenderer(
-                BUNDLE.main(), ctx -> new BedPlate6GeoBlockRenderer());
+                BUNDLE.main(),
+                org.lanye.reverie_core.util.ReveriePerfRender.wrapBer(ctx -> new BedPlate6GeoBlockRenderer()));
     }
 }

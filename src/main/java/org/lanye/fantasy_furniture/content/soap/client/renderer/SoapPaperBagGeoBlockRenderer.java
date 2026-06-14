@@ -8,6 +8,7 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 import org.lanye.fantasy_furniture.content.soap.blockentity.SoapPaperBagBlockEntity;
 import org.lanye.fantasy_furniture.content.soap.client.SoapPaperBagStackRenderState;
 import org.lanye.fantasy_furniture.content.soap.client.model.SoapPaperBagSingleGeoModel;
+import org.lanye.reverie_core.util.ReveriePerfRender;
 import software.bernie.geckolib.renderer.GeoBlockRenderer;
 
 /** 单只空袋用 {@code 包装袋_肥皂} geo；多层摞用 {@code blockN} 叠层 geo。 */
@@ -28,15 +29,24 @@ public final class SoapPaperBagGeoBlockRenderer implements BlockEntityRenderer<S
             int packedOverlay) {
         int layers = blockEntity.layerCount();
         if (layers <= 1) {
-            singleRenderer.render(
-                    blockEntity, partialTick, poseStack, bufferSource, packedLight, packedOverlay);
+            ReveriePerfRender.geoBlock(
+                    "soap_paper_bag",
+                    () -> singleRenderer.render(
+                            blockEntity, partialTick, poseStack, bufferSource, packedLight, packedOverlay));
             return;
         }
         for (int i = 0; i < layers; i++) {
             SoapPaperBagStackRenderState.set("block" + (i + 1), blockEntity.materialAtLayer(i));
             try {
-                layerRenderer.render(
-                        blockEntity, partialTick, poseStack, bufferSource, packedLight, packedOverlay);
+                ReveriePerfRender.geoBlock(
+                        "soap_paper_bag_stack",
+                        () -> layerRenderer.render(
+                                blockEntity,
+                                partialTick,
+                                poseStack,
+                                bufferSource,
+                                packedLight,
+                                packedOverlay));
             } finally {
                 SoapPaperBagStackRenderState.clear();
             }
