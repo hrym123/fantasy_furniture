@@ -12,21 +12,22 @@ import org.lanye.fantasy_furniture.content.furniture.common.client.config.Client
 import org.lanye.fantasy_furniture.content.furniture.livingroom.block.BanquetteBlock;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.blockentity.BanquetteBlockEntity;
 import org.lanye.fantasy_furniture.content.furniture.common.state.BanquetteShape;
+import org.lanye.reverie_core.geolib.client.GeoRenderTier;
+import org.lanye.reverie_core.geolib.client.ReverieGeoBlockRenderer;
 import org.lanye.reverie_core.util.ReveriePerfLog;
 import software.bernie.geckolib.cache.object.BakedGeoModel;
 import software.bernie.geckolib.model.GeoModel;
-import software.bernie.geckolib.renderer.GeoBlockRenderer;
 
 /**
- * 卡座拐角：在 {@link GeoBlockRenderer#rotateBlock} 之后对拐角 geo 追加 Y 旋转；角度见
+ * 卡座拐角：在 {@link ReverieGeoBlockRenderer#rotateBlock} 之后对拐角 geo 追加 Y 旋转；角度见
  * {@link org.lanye.fantasy_furniture.content.furniture.common.client.config.ClientRenderTuning.Banquette}。碰撞箱在
  * {@link org.lanye.fantasy_furniture.content.furniture.livingroom.block.BanquetteBlock} 中单独旋转以对齐模型，此处不改动。
  */
 @OnlyIn(Dist.CLIENT)
-public final class BanquetteGeoBlockRenderer extends GeoBlockRenderer<BanquetteBlockEntity> {
+public final class BanquetteGeoBlockRenderer extends ReverieGeoBlockRenderer<BanquetteBlockEntity> {
 
     public BanquetteGeoBlockRenderer(GeoModel<BanquetteBlockEntity> model) {
-        super(model);
+        super(model, GeoRenderTier.STATIC);
     }
 
     @Override

@@ -8,15 +8,16 @@ import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import org.lanye.fantasy_furniture.content.soap.blockentity.SoapBoxBlockEntity;
 import org.lanye.fantasy_furniture.content.soap.client.model.SoapBoxInnerSoapGeoModel;
+import org.lanye.reverie_core.geolib.client.GeoRenderTier;
+import org.lanye.reverie_core.geolib.client.ReverieGeoBlockRenderer;
 import software.bernie.geckolib.cache.object.BakedGeoModel;
 import software.bernie.geckolib.cache.object.GeoBone;
-import software.bernie.geckolib.renderer.GeoBlockRenderer;
 
 /** 肥皂盒内皂叠层；渲染后复位骨骼 hidden，避免与盒体 Pass 互相污染。 */
-final class SoapBoxInnerSoapLayerRenderer extends GeoBlockRenderer<SoapBoxBlockEntity> {
+final class SoapBoxInnerSoapLayerRenderer extends ReverieGeoBlockRenderer<SoapBoxBlockEntity> {
 
     SoapBoxInnerSoapLayerRenderer() {
-        super(new SoapBoxInnerSoapGeoModel());
+        super(new SoapBoxInnerSoapGeoModel(), GeoRenderTier.STATIC);
     }
 
     @Override

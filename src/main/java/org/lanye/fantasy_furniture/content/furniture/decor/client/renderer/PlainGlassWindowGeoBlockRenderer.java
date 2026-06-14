@@ -13,17 +13,18 @@ import org.lanye.fantasy_furniture.content.furniture.decor.PlainGlassWindowShare
 import org.lanye.fantasy_furniture.content.furniture.decor.PlainGlassWindowShapes;
 import org.lanye.fantasy_furniture.content.furniture.decor.block.PlainGlassWindowBlock;
 import org.lanye.fantasy_furniture.content.furniture.decor.blockentity.PlainGlassWindowBlockEntity;
+import org.lanye.reverie_core.geolib.client.GeoRenderTier;
+import org.lanye.reverie_core.geolib.client.ReverieGeoBlockRenderer;
 import org.lanye.reverie_core.util.ReveriePerfLog;
 import software.bernie.geckolib.cache.object.BakedGeoModel;
 import software.bernie.geckolib.model.GeoModel;
-import software.bernie.geckolib.renderer.GeoBlockRenderer;
 
 /**
  * 普通玻璃窗：仅绑定 geo / 纹理 / 静态动画资源；姿态与几何完全以资源文件为准，
- * 本类<strong>不</strong>覆盖 {@link GeoBlockRenderer} 的渲染或旋转逻辑。
+ * 本类<strong>不</strong>覆盖 {@link ReverieGeoBlockRenderer} 的旋转逻辑。
  */
 @OnlyIn(Dist.CLIENT)
-public final class PlainGlassWindowGeoBlockRenderer extends GeoBlockRenderer<PlainGlassWindowBlockEntity> {
+public final class PlainGlassWindowGeoBlockRenderer extends ReverieGeoBlockRenderer<PlainGlassWindowBlockEntity> {
 
     /** 与 {@link PlainGlassWindowBlockEntity} 的 {@code PlayState.STOP} 一致；多造型共用，避免每 geo 一份空动画 JSON。 */
     private static final ResourceLocation STATIC_ANIMATION =
@@ -52,7 +53,8 @@ public final class PlainGlassWindowGeoBlockRenderer extends GeoBlockRenderer<Pla
                     public ResourceLocation getAnimationResource(PlainGlassWindowBlockEntity entity) {
                         return STATIC_ANIMATION;
                     }
-                });
+                },
+                GeoRenderTier.STATIC);
     }
 
     @Override

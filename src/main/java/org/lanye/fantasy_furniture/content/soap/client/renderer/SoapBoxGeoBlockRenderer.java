@@ -8,6 +8,8 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 import org.lanye.fantasy_furniture.content.soap.block.SoapBoxBlock;
 import org.lanye.fantasy_furniture.content.soap.blockentity.SoapBoxBlockEntity;
 import org.lanye.fantasy_furniture.content.soap.client.model.SoapBoxBodyGeoModel;
+import org.lanye.reverie_core.geolib.client.GeoRenderTier;
+import org.lanye.reverie_core.geolib.client.GeolibGeoRendererFactory;
 import org.lanye.reverie_core.util.ReveriePerfRender;
 import software.bernie.geckolib.renderer.GeoBlockRenderer;
 
@@ -21,10 +23,11 @@ import software.bernie.geckolib.renderer.GeoBlockRenderer;
 @OnlyIn(Dist.CLIENT)
 public final class SoapBoxGeoBlockRenderer implements BlockEntityRenderer<SoapBoxBlockEntity> {
 
+    private static final SoapBoxBodyGeoModel BODY_MODEL = new SoapBoxBodyGeoModel();
+
     private final GeoBlockRenderer<SoapBoxBlockEntity> bodyRenderer =
-            new GeoBlockRenderer<>(new SoapBoxBodyGeoModel());
-    private final GeoBlockRenderer<SoapBoxBlockEntity> innerSoapRenderer =
-            new SoapBoxInnerSoapLayerRenderer();
+            GeolibGeoRendererFactory.sharedStaticDelegate(BODY_MODEL);
+    private final SoapBoxInnerSoapLayerRenderer innerSoapRenderer = new SoapBoxInnerSoapLayerRenderer();
 
     @Override
     public void render(
