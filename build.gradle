@@ -69,6 +69,11 @@ repositories {
         url = 'https://cursemaven.com'
         content { includeGroup 'curse.maven' }
     }
+    maven {
+        name = 'BlameJared'
+        url = 'https://maven.blamejared.com'
+        content { includeGroup 'mezz.jei' }
+    }
 }
 
 def imblockerPatchedJar = layout.buildDirectory.file("imblocker/imblocker-483760-${imblockerCurseFileId}-parchment-patched.jar")
@@ -137,6 +142,9 @@ dependencies {
         compileOnly files(imblockerPatchedJar).builtBy(patchImblockerJar)
         runtimeOnly files(imblockerPatchedJar).builtBy(patchImblockerJar)
     }
+
+    // JEI：全模组 / 单模组 runClient 随客户端运行；@JeiPlugin 在 reverie_core（API 为 compileOnly）
+    runtimeOnly fg.deobf("mezz.jei:jei-${minecraft_version}-forge:${jei_version}")
 
     testImplementation 'org.junit.jupiter:junit-jupiter:5.10.2'
     testImplementation 'org.mockito:mockito-junit-jupiter:5.11.0'
