@@ -54,10 +54,8 @@ public final class ModCreativeTabs {
         list.add(out -> out.accept(ModBlocks.BLUE_WALLPAPER_ITEM.get()));
         list.add(out -> out.accept(ModBlocks.GREEN_WALLPAPER_ITEM.get()));
         list.add(out -> out.accept(ModBlocks.PURPLE_WALLPAPER_ITEM.get()));
-        list.add(out -> out.accept(ModItems.PAINT_BRUSH.get()));
         list.add(out -> out.accept(ModItems.FABRIC_COIL.get()));
         if (DevelopmentMode.enabled()) {
-            list.add(out -> out.accept(ModItems.DEBUG_VARIANT_STICK.get()));
             list.add(out -> out.accept(ModBlocks.GEOLIB_ALIGNMENT_PROBE.item().get()));
         }
         list.add(out -> out.accept(ModItems.TANGHULU.get()));

@@ -10,8 +10,8 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import org.lanye.fantasy_furniture.bootstrap.block.CeramicTileBlocks;
 import org.lanye.fantasy_furniture.bootstrap.block.WallpaperBlocks;
-import org.lanye.fantasy_furniture.bootstrap.item.ModItems;
 import org.lanye.fantasy_furniture.bootstrap.tag.ModTags;
+import org.lanye.reverie_core.tool.PaintBrushRecolorHandlers;
 import org.lanye.fantasy_furniture.content.furniture.common.state.PlainGlassWindowMaterialVariant;
 import org.lanye.fantasy_furniture.content.furniture.decor.block.PlainGlassWindowBlock;
 import org.lanye.fantasy_furniture.content.soap.SoapBarMaterials;
@@ -39,13 +39,10 @@ public final class BrushRecolor {
     private BrushRecolor() {}
 
     /**
-     * 主手刷子对 {@link ModTags#BRUSH_RECOLORABLE_BLOCKS} 目标右击时，方块自身 {@code use} 应让出（由 {@link
-     * org.lanye.fantasy_furniture.content.tool.item.PaintBrushItem} 换色）。
+     * 主手刷子对可换色目标右击时，方块自身 {@code use} 应让出（由 reverie_core {@code paint_brush} 换色）。
      */
     public static boolean defersBlockUse(Player player, InteractionHand hand, BlockState state) {
-        return hand == InteractionHand.MAIN_HAND
-                && state.is(ModTags.BRUSH_RECOLORABLE_BLOCKS)
-                && player.getItemInHand(hand).is(ModItems.PAINT_BRUSH.get());
+        return PaintBrushRecolorHandlers.defersBlockUse(player, hand, state);
     }
 
     /**

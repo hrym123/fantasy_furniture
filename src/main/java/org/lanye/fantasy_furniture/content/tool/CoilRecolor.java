@@ -11,8 +11,8 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BedPart;
 import net.minecraft.world.phys.Vec3;
 import org.lanye.fantasy_furniture.bootstrap.block.ModBlocks;
-import org.lanye.fantasy_furniture.bootstrap.item.ModItems;
 import org.lanye.fantasy_furniture.bootstrap.tag.ModTags;
+import org.lanye.reverie_core.tool.SpoolRecolorHandlers;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.BedPlate6DuvetCoverMaterials;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.BedPlate6DuvetMaterials;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.BedPlate6MediumPillowMaterials;
@@ -22,18 +22,16 @@ import org.lanye.fantasy_furniture.content.furniture.livingroom.block.BedPlate6P
 import org.lanye.fantasy_furniture.content.furniture.livingroom.blockentity.BedPlate6BlockEntity;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.item.BedPlate6LargePillowItem;
 
-/** 线圈对 {@link ModTags#COIL_RECOLORABLE_BLOCKS} 上已铺床品循环换色（准心体素与拆卸手套同源）。 */
+/** 线轴对 {@link ModTags#COIL_RECOLORABLE_BLOCKS} 上已铺床品循环换色（准心体素与拆卸手套同源）。 */
 public final class CoilRecolor {
 
     private CoilRecolor() {}
 
     /**
-     * 主手线圈对 {@link ModTags#COIL_RECOLORABLE_BLOCKS} 目标右击时，方块自身 {@code use}（含床的重生点）应让出。
+     * 主手线轴对可换色目标右击时，方块自身 {@code use} 应让出（由 reverie_core {@code fantasy_spool} 换色）。
      */
     public static boolean defersBlockUse(Player player, InteractionHand hand, BlockState state) {
-        return hand == InteractionHand.MAIN_HAND
-                && state.is(ModTags.COIL_RECOLORABLE_BLOCKS)
-                && player.getItemInHand(hand).is(ModItems.FABRIC_COIL.get());
+        return SpoolRecolorHandlers.defersBlockUse(player, hand, state);
     }
 
     public static boolean apply(Level level, BlockState state, BlockPos pos, Vec3 hitLocation) {

@@ -14,7 +14,7 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.gui.overlay.ForgeGui;
 import net.minecraftforge.client.gui.overlay.IGuiOverlay;
 import org.lanye.fantasy_furniture.FantasyFurniture;
-import org.lanye.fantasy_furniture.bootstrap.item.ModItems;
+import org.lanye.reverie_core.bootstrap.item.ModItems;
 import org.lanye.fantasy_furniture.bootstrap.tag.ModTags;
 import org.lanye.fantasy_furniture.content.tool.BrushRecolorPreview;
 
