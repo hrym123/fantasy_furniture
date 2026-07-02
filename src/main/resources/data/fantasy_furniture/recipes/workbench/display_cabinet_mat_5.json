@@ -1,0 +1,16 @@
+{
+  "type": "reverie_core:fantasy_workbench",
+  "category": "fantasy_furniture",
+  "core_count": 2,
+  "ingredients": [
+    {
+      "item": "reverie_core:fantasy_core"
+    }
+  ],
+  "result": {
+    "item": "fantasy_furniture:display_cabinet",
+    "count": 1,
+    "nbt": "{BoxMat:5}"
+  },
+  "dye": "yellow"
+}

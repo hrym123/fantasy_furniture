@@ -1,0 +1,15 @@
+{
+  "type": "reverie_core:fantasy_workbench",
+  "category": "fantasy_furniture",
+  "core_count": 1,
+  "ingredients": [
+    {
+      "item": "reverie_core:fantasy_core"
+    }
+  ],
+  "result": {
+    "item": "fantasy_furniture:plain_glass_window_black",
+    "count": 1
+  },
+  "dye": "empty"
+}

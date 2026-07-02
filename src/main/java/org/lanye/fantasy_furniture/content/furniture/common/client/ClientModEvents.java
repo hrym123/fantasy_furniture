@@ -6,8 +6,6 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.EntityRenderersEvent;
 import net.minecraftforge.client.event.ModelEvent;
-import net.minecraftforge.client.event.RegisterGuiOverlaysEvent;
-import org.lanye.fantasy_furniture.content.tool.client.PaintBrushRecolorHudClient;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
@@ -87,11 +85,6 @@ public final class ClientModEvents {
                 ModBlocks.GEOLIB_ALIGNMENT_PROBE,
                 GeolibAnimatedBlockRenderers.defaultGeoRendererProvider(
                         FantasyFurniture.MODID, "geolib_alignment_probe"));
-    }
-
-    @SubscribeEvent
-    public static void registerGuiOverlays(RegisterGuiOverlaysEvent event) {
-        PaintBrushRecolorHudClient.registerOverlays(event);
     }
 
     @SubscribeEvent

@@ -1,0 +1,16 @@
+{
+  "type": "reverie_core:fantasy_workbench",
+  "category": "fantasy_furniture",
+  "core_count": 1,
+  "ingredients": [
+    {
+      "item": "reverie_core:fantasy_core"
+    }
+  ],
+  "result": {
+    "item": "fantasy_furniture:soap_paper_bag",
+    "count": 1,
+    "nbt": "{BagMat:3}"
+  },
+  "dye": "purple"
+}

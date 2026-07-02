@@ -1,0 +1,15 @@
+{
+  "type": "reverie_core:fantasy_workbench",
+  "category": "fantasy_furniture",
+  "core_count": 1,
+  "ingredients": [
+    {
+      "item": "reverie_core:fantasy_core"
+    }
+  ],
+  "result": {
+    "item": "fantasy_furniture:yellow_wainscot",
+    "count": 1
+  },
+  "dye": "empty"
+}

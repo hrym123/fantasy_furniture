@@ -1,0 +1,16 @@
+{
+  "type": "reverie_core:fantasy_workbench",
+  "category": "fantasy_furniture",
+  "core_count": 1,
+  "ingredients": [
+    {
+      "item": "reverie_core:fantasy_core"
+    }
+  ],
+  "result": {
+    "item": "fantasy_furniture:body_cream",
+    "count": 1,
+    "nbt": "{CreamMat:6}"
+  },
+  "dye": "red"
+}
