@@ -88,7 +88,7 @@ public record SoapBarAppearance(
         return "soap_bar_" + materialId;
     }
 
-    /** 物品栏 UI 图（源自 {@code 肥皂/物品材质/肥皂_物品材质_{色名}.png}）。 */
+    /** 物品栏 UI 图（源自 {@code 肥皂/物品材质/{色名}.png}，六色短名）。 */
     public String itemUiTextureBasename() {
         return "soap_bar_ui_" + materialId;
     }
