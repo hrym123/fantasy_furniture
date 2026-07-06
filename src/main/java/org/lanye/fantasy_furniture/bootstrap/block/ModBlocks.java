@@ -10,9 +10,8 @@ import org.lanye.fantasy_furniture.FantasyFurniture;
 import org.lanye.fantasy_furniture.bootstrap.block.BedPlate6Registration;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.blockentity.BanquetteBlockEntity;
 import org.lanye.reverie_core.geolib.bed.BedPlateBaseBlockEntity;
-import org.lanye.fantasy_furniture.content.furniture.decor.blockentity.CombinedOrnamentBlockEntity;
-import org.lanye.fantasy_furniture.content.furniture.decor.blockentity.PlainGlassWindowBlockEntity;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.blockentity.GreenSofaBlockEntity;
+import org.lanye.fantasy_furniture.content.furniture.decor.blockentity.PlainGlassWindowBlockEntity;
 import org.lanye.fantasy_furniture.content.furniture.decor.blockentity.LotteryMachineBlockEntity;
 import org.lanye.fantasy_furniture.content.sweeper.blockentity.SweeperDockBlockEntity;
 import org.lanye.fantasy_furniture.content.soap.blockentity.SoapBarBlockEntity;
@@ -25,7 +24,6 @@ import org.lanye.fantasy_furniture.content.soap.blockentity.SoapPaperBagBlockEnt
 import org.lanye.fantasy_furniture.content.soap.blockentity.SoapPaperBoxBlockEntity;
 import org.lanye.fantasy_furniture.content.soap.blockentity.DisplayCabinetBlockEntity;
 import org.lanye.fantasy_furniture.content.soap.blockentity.SoapRackBlockEntity;
-import org.lanye.fantasy_furniture.content.debug.blockentity.GeolibAlignmentProbeBlockEntity;
 import org.lanye.reverie_core.geolib.AnimatedBlockEntry;
 
 /**
@@ -121,8 +119,6 @@ public final class ModBlocks {
     public static final AnimatedBlockEntry<BanquetteBlockEntity> BANQUETTE = FurnitureAnimatedBlocks.BANQUETTE;
     public static final AnimatedBlockEntry<LotteryMachineBlockEntity> LOTTERY_MACHINE = FurnitureAnimatedBlocks.LOTTERY_MACHINE;
     public static final AnimatedBlockEntry<GreenSofaBlockEntity> GREEN_SOFA = FurnitureAnimatedBlocks.GREEN_SOFA;
-    public static final AnimatedBlockEntry<CombinedOrnamentBlockEntity> COMBINED_ORNAMENT =
-            FurnitureAnimatedBlocks.COMBINED_ORNAMENT;
     public static final AnimatedBlockEntry<SweeperDockBlockEntity> SWEEPER_DOCK =
             FurnitureAnimatedBlocks.SWEEPER_DOCK;
     public static final AnimatedBlockEntry<BedPlateBaseBlockEntity> BED_PLATE6 = BedPlate6Registration.mainEntry();
@@ -149,9 +145,6 @@ public final class ModBlocks {
             FurnitureAnimatedBlocks.SOAP_PAPER_BOX;
 
     public static final AnimatedBlockEntry<SoapMoldBlockEntity> SOAP_MOLD = FurnitureAnimatedBlocks.SOAP_MOLD;
-
-    public static final AnimatedBlockEntry<GeolibAlignmentProbeBlockEntity> GEOLIB_ALIGNMENT_PROBE =
-            FurnitureAnimatedBlocks.GEOLIB_ALIGNMENT_PROBE;
 
     public static final AnimatedBlockEntry<DisplayCabinetBlockEntity> DISPLAY_CABINET =
             FurnitureAnimatedBlocks.DISPLAY_CABINET;

@@ -16,12 +16,10 @@ import org.lanye.fantasy_furniture.FantasyFurniture;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.block.GreenSofaBlock;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.blockentity.BanquetteBlockEntity;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.blockentity.GreenSofaBlockEntity;
-import org.lanye.fantasy_furniture.content.furniture.decor.blockentity.CombinedOrnamentBlockEntity;
 import org.lanye.fantasy_furniture.content.furniture.decor.blockentity.PlainGlassWindowBlockEntity;
 import org.lanye.fantasy_furniture.content.furniture.decor.blockentity.LotteryMachineBlockEntity;
 import org.lanye.fantasy_furniture.content.sweeper.blockentity.SweeperDockBlockEntity;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.block.BanquetteBlock;
-import org.lanye.fantasy_furniture.content.furniture.decor.block.CombinedOrnamentBlock;
 import org.lanye.fantasy_furniture.content.furniture.decor.block.LotteryMachineBlock;
 import org.lanye.fantasy_furniture.content.sweeper.block.SweeperDockBlock;
 import org.lanye.fantasy_furniture.content.soap.block.BodyCreamBlock;
@@ -49,9 +47,6 @@ import org.lanye.fantasy_furniture.content.soap.block.ShampooBlock;
 import org.lanye.fantasy_furniture.content.soap.item.ShampooBlockItem;
 import org.lanye.fantasy_furniture.content.soap.item.DisplayCabinetBlockItem;
 import org.lanye.fantasy_furniture.content.soap.item.SoapSeriesBlockItem;
-import org.lanye.fantasy_furniture.content.debug.block.GeolibAlignmentProbeBlock;
-import org.lanye.fantasy_furniture.content.debug.blockentity.GeolibAlignmentProbeBlockEntity;
-import org.lanye.fantasy_furniture.content.debug.item.GeolibAlignmentProbeBlockItem;
 import org.lanye.fantasy_furniture.content.soap.item.SoapBarBlockItem;
 import org.lanye.fantasy_furniture.content.soap.item.SoapBoxBlockItem;
 import org.lanye.fantasy_furniture.content.soap.item.BodyCreamBlockItem;
@@ -90,16 +85,6 @@ public final class FurnitureAnimatedBlocks {
 
     private static GeolibItemAssets geolibBanquetteItemAssets() {
         return GeolibItemAssets.blockAssetWithTexture(FantasyFurniture.MODID, "banquette_straight", "banquette");
-    }
-
-    private static GeolibItemAssets combinedOrnamentItemAssets() {
-        return new GeolibItemAssets(
-                ResourceLocation.fromNamespaceAndPath(
-                        FantasyFurniture.MODID, "geo/block/combined_ornament_figurine_a.geo.json"),
-                ResourceLocation.fromNamespaceAndPath(
-                        FantasyFurniture.MODID, "textures/block/combined_ornament_figurine_a.png"),
-                ResourceLocation.fromNamespaceAndPath(
-                        FantasyFurniture.MODID, "animations/block/combined_ornament_figurine_a.animation.json"));
     }
 
     private static final List<AnimatedBlockEntry<?>> ENTRIES =
@@ -223,29 +208,11 @@ public final class FurnitureAnimatedBlocks {
                                                     MapColor.COLOR_GREEN),
                                     GreenSofaBlock::new,
                                     GreenSofaBlockEntity::new),
-                            AnimatedBlockRegistration.spec(
-                                    "combined_ornament",
-                                    FurnitureBlockProperties::woodCabinetNoOcclusion,
-                                    CombinedOrnamentBlock::new,
-                                    CombinedOrnamentBlockEntity::new,
-                                    (block, p) ->
-                                            new GeolibBlockItem(block, p, combinedOrnamentItemAssets())),
                             defaultAnimatedSpec(
                                     "sweeper_dock",
                                     FurnitureBlockProperties::metalNoOcclusion,
                                     SweeperDockBlock::new,
                                     SweeperDockBlockEntity::new),
-                            AnimatedBlockRegistration.spec(
-                                    "geolib_alignment_probe",
-                                    FurnitureBlockProperties::woodCabinetNoOcclusion,
-                                    GeolibAlignmentProbeBlock::new,
-                                    GeolibAlignmentProbeBlockEntity::new,
-                                    (block, props) ->
-                                            new GeolibAlignmentProbeBlockItem(
-                                                    block,
-                                                    props,
-                                                    GeolibItemAssets.blockAsset(
-                                                            FantasyFurniture.MODID, "geolib_alignment_probe"))),
                             AnimatedBlockRegistration.spec(
                                     "display_cabinet",
                                     () -> FurnitureBlockProperties.bathroomSmallDecor(MapColor.COLOR_LIGHT_GRAY),
@@ -270,10 +237,8 @@ public final class FurnitureAnimatedBlocks {
     private static final int I_SOAP_PAPER_BOX = 9;
     private static final int I_SOAP_MOLD = 10;
     private static final int I_GREEN_SOFA = 11;
-    private static final int I_COMBINED_ORNAMENT = 12;
-    private static final int I_SWEEPER_DOCK = 13;
-    private static final int I_GEOLIB_ALIGNMENT_PROBE = 14;
-    private static final int I_DISPLAY_CABINET = 15;
+    private static final int I_SWEEPER_DOCK = 12;
+    private static final int I_DISPLAY_CABINET = 13;
 
     @SuppressWarnings("unchecked")
     private static <BE extends BlockEntity> AnimatedBlockEntry<BE> animatedEntry(int index) {
@@ -307,13 +272,7 @@ public final class FurnitureAnimatedBlocks {
 
     public static final AnimatedBlockEntry<GreenSofaBlockEntity> GREEN_SOFA = animatedEntry(I_GREEN_SOFA);
 
-    public static final AnimatedBlockEntry<CombinedOrnamentBlockEntity> COMBINED_ORNAMENT =
-            animatedEntry(I_COMBINED_ORNAMENT);
-
     public static final AnimatedBlockEntry<SweeperDockBlockEntity> SWEEPER_DOCK = animatedEntry(I_SWEEPER_DOCK);
-
-    public static final AnimatedBlockEntry<GeolibAlignmentProbeBlockEntity> GEOLIB_ALIGNMENT_PROBE =
-            animatedEntry(I_GEOLIB_ALIGNMENT_PROBE);
 
     public static final AnimatedBlockEntry<DisplayCabinetBlockEntity> DISPLAY_CABINET =
             animatedEntry(I_DISPLAY_CABINET);

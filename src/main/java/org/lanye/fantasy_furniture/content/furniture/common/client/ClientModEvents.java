@@ -14,7 +14,6 @@ import org.lanye.fantasy_furniture.content.sweeper.blockentity.SweeperDockBlockE
 import org.lanye.fantasy_furniture.bootstrap.block.ModBlocks;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.client.model.BanquetteBlockGeoModel;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.client.renderer.BanquetteGeoBlockRenderer;
-import org.lanye.fantasy_furniture.content.furniture.decor.client.renderer.CombinedOrnamentGeoBlockRenderer;
 import org.lanye.fantasy_furniture.content.furniture.decor.client.renderer.PlainGlassWindowGeoBlockRenderer;
 import org.lanye.fantasy_furniture.content.soap.client.SoapBarClient;
 import org.lanye.fantasy_furniture.content.soap.client.renderer.BodyCreamGeoBlockRenderer;
@@ -49,9 +48,6 @@ public final class ClientModEvents {
                 GeolibAnimatedBlockRenderers.defaultGeoRendererProvider(FantasyFurniture.MODID, "green_sofa"));
         BedPlate6Registration.registerClientRenderer();
         AnimatedBlockClientRegistration.registerBlockEntityRenderer(
-                ModBlocks.COMBINED_ORNAMENT,
-                ReveriePerfRender.wrapBer(ctx -> new CombinedOrnamentGeoBlockRenderer()));
-        AnimatedBlockClientRegistration.registerBlockEntityRenderer(
                 ModBlocks.BANQUETTE,
                 ReveriePerfRender.wrapBer(ctx -> new BanquetteGeoBlockRenderer(new BanquetteBlockGeoModel())));
         AnimatedBlockClientRegistration.registerBlockEntityRenderer(
@@ -81,10 +77,6 @@ public final class ClientModEvents {
                 ModBlocks.SOAP_MOLD, ReveriePerfRender.wrapBer(SoapMoldGeoBlockRenderer::new));
         AnimatedBlockClientRegistration.registerBlockEntityRenderer(
                 ModBlocks.DISPLAY_CABINET, ReveriePerfRender.wrapBer(ctx -> new DisplayCabinetGeoBlockRenderer()));
-        AnimatedBlockClientRegistration.registerBlockEntityRenderer(
-                ModBlocks.GEOLIB_ALIGNMENT_PROBE,
-                GeolibAnimatedBlockRenderers.defaultGeoRendererProvider(
-                        FantasyFurniture.MODID, "geolib_alignment_probe"));
     }
 
     @SubscribeEvent

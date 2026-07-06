@@ -27,10 +27,6 @@ public final class ModItems {
     public static final DeferredRegister<Item> ITEMS =
             DeferredRegister.create(ForgeRegistries.ITEMS, FantasyFurniture.MODID);
 
-    /** 线团原料（展示名待定）；换色请用 reverie_core {@code fantasy_spool}。 */
-    public static final RegistryObject<Item> FABRIC_COIL =
-            ITEMS.register("fabric_coil", () -> new Item(new Item.Properties()));
-
     /** 床板 6 组件：由 {@link BedPlate6Registration} 写入同一 {@link #ITEMS}。 */
     public static final RegistryObject<Item> BED_PLATE6_DISASSEMBLY_GLOVE = BedPlate6Registration.disassemblyGlove();
 

@@ -11,7 +11,7 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import org.junit.jupiter.api.Test;
-import org.lanye.fantasy_furniture.content.debug.block.GeolibAlignmentProbeBlock;
+import org.lanye.reverie_core.content.debug.block.GeolibAlignmentProbeBlock;
 import org.lanye.reverie_core.util.VoxelShapeRotation;
 
 /**

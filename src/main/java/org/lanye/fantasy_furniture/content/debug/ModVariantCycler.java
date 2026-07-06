@@ -14,9 +14,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import org.lanye.fantasy_furniture.FantasyFurniture;
 import org.lanye.fantasy_furniture.content.furniture.common.state.BanquetteShape;
 import org.lanye.fantasy_furniture.content.furniture.decor.PlainGlassWindowShapes;
-import org.lanye.fantasy_furniture.content.furniture.decor.block.CombinedOrnamentBlock;
 import org.lanye.fantasy_furniture.content.furniture.decor.block.PlainGlassWindowBlock;
-import org.lanye.fantasy_furniture.content.furniture.decor.blockentity.CombinedOrnamentBlockEntity;
 import org.lanye.fantasy_furniture.content.furniture.decor.item.PlainGlassWindowBlockItem;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.block.BanquetteBlock;
 import org.lanye.fantasy_furniture.content.soap.SoapBarAppearance;
@@ -52,9 +50,6 @@ public final class ModVariantCycler {
         }
         if (block instanceof SoapRackBlock) {
             return cycleSoapRackBlock(level, pos, state, reverse);
-        }
-        if (block instanceof CombinedOrnamentBlock) {
-            return cycleCombinedOrnament(level, pos, reverse);
         }
         if (block instanceof PlainGlassWindowBlock) {
             return cyclePlainGlassWindow(level, pos, state, reverse);
@@ -209,25 +204,6 @@ public final class ModVariantCycler {
         rack.clearContainedSoap();
         level.setBlock(pos, state.setValue(SoapRackBlock.HAS_SOAP, false), Block.UPDATE_ALL);
         return Optional.of(Component.translatable("debug.fantasy_furniture.variant.soap_rack_empty"));
-    }
-
-    private static Optional<Component> cycleCombinedOrnament(Level level, BlockPos pos, boolean reverse) {
-        BlockEntity be = level.getBlockEntity(pos);
-        if (!(be instanceof CombinedOrnamentBlockEntity ornament)) {
-            return Optional.empty();
-        }
-        if (reverse) {
-            ornament.cycleBase();
-            return Optional.of(
-                    Component.translatable(
-                            "debug.fantasy_furniture.variant.combined_ornament_base",
-                            ornament.getBaseVariant().id()));
-        }
-        ornament.cycleFigurine();
-        return Optional.of(
-                Component.translatable(
-                        "debug.fantasy_furniture.variant.combined_ornament_figurine",
-                        ornament.getFigurineVariant().id()));
     }
 
     private static Optional<Component> cyclePlainGlassWindow(

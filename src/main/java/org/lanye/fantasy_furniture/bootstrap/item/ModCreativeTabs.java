@@ -54,10 +54,6 @@ public final class ModCreativeTabs {
         list.add(out -> out.accept(ModBlocks.BLUE_WALLPAPER_ITEM.get()));
         list.add(out -> out.accept(ModBlocks.GREEN_WALLPAPER_ITEM.get()));
         list.add(out -> out.accept(ModBlocks.PURPLE_WALLPAPER_ITEM.get()));
-        list.add(out -> out.accept(ModItems.FABRIC_COIL.get()));
-        if (DevelopmentMode.enabled()) {
-            list.add(out -> out.accept(ModBlocks.GEOLIB_ALIGNMENT_PROBE.item().get()));
-        }
         list.add(out -> out.accept(ModItems.TANGHULU.get()));
         list.add(out -> out.accept(ModItems.ARCANE_WAND.get()));
         list.add(out -> out.accept(ModBlocks.BANQUETTE.item().get()));
@@ -75,7 +71,6 @@ public final class ModCreativeTabs {
         for (Supplier<? extends ItemLike> bedPlate6 : BedPlate6Registration.creativeTabSegment()) {
             list.add(out -> out.accept(bedPlate6.get()));
         }
-        list.add(out -> out.accept(ModBlocks.COMBINED_ORNAMENT.item().get()));
         for (var ro : PlainGlassWindowRegistration.items()) {
             list.add(out -> out.accept(ro.get()));
         }
