@@ -11,8 +11,10 @@ import org.lanye.fantasy_furniture.FantasyFurniture;
 @Mod.EventBusSubscriber(modid = FantasyFurniture.MODID, bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
 public final class PaintBrushRecolorHudClient {
 
-    private static final ResourceLocation OVERLAY_ID =
+    private static final ResourceLocation BRUSH_OVERLAY_ID =
             ResourceLocation.fromNamespaceAndPath(FantasyFurniture.MODID, "paint_brush_recolor");
+    private static final ResourceLocation SPOOL_OVERLAY_ID =
+            ResourceLocation.fromNamespaceAndPath(FantasyFurniture.MODID, "fantasy_spool_recolor");
 
     private PaintBrushRecolorHudClient() {}
 
@@ -20,7 +22,11 @@ public final class PaintBrushRecolorHudClient {
     public static void registerOverlays(RegisterGuiOverlaysEvent event) {
         event.registerAbove(
                 VanillaGuiOverlay.FOOD_LEVEL.id(),
-                OVERLAY_ID.getPath(),
+                BRUSH_OVERLAY_ID.getPath(),
                 PaintBrushRecolorHudOverlay.instance());
+        event.registerAbove(
+                VanillaGuiOverlay.FOOD_LEVEL.id(),
+                SPOOL_OVERLAY_ID.getPath(),
+                FantasySpoolRecolorHudOverlay.instance());
     }
 }

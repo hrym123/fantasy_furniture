@@ -10,17 +10,17 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.gui.overlay.ForgeGui;
 import net.minecraftforge.client.gui.overlay.IGuiOverlay;
 import org.lanye.fantasy_furniture.bootstrap.tag.ModTags;
-import org.lanye.fantasy_furniture.content.tool.BrushRecolorPreview;
+import org.lanye.fantasy_furniture.content.tool.CoilRecolorPreview;
 import org.lanye.reverie_core.bootstrap.item.ModItems;
 
 @OnlyIn(Dist.CLIENT)
-public final class PaintBrushRecolorHudOverlay implements IGuiOverlay {
+public final class FantasySpoolRecolorHudOverlay implements IGuiOverlay {
 
-    private static final PaintBrushRecolorHudOverlay INSTANCE = new PaintBrushRecolorHudOverlay();
+    private static final FantasySpoolRecolorHudOverlay INSTANCE = new FantasySpoolRecolorHudOverlay();
 
-    private PaintBrushRecolorHudOverlay() {}
+    private FantasySpoolRecolorHudOverlay() {}
 
-    static PaintBrushRecolorHudOverlay instance() {
+    static FantasySpoolRecolorHudOverlay instance() {
         return INSTANCE;
     }
 
@@ -30,7 +30,7 @@ public final class PaintBrushRecolorHudOverlay implements IGuiOverlay {
         if (mc.player == null || mc.level == null || mc.screen != null) {
             return;
         }
-        if (!mc.player.getMainHandItem().is(ModItems.PAINT_BRUSH.get())) {
+        if (!mc.player.getMainHandItem().is(ModItems.FANTASY_SPOOL.get())) {
             return;
         }
         HitResult hit = mc.hitResult;
@@ -38,14 +38,15 @@ public final class PaintBrushRecolorHudOverlay implements IGuiOverlay {
             return;
         }
         BlockState state = mc.level.getBlockState(blockHit.getBlockPos());
-        if (!state.is(ModTags.BRUSH_RECOLORABLE_BLOCKS)) {
+        if (!state.is(ModTags.COIL_RECOLORABLE_BLOCKS)) {
             return;
         }
-        var previewOpt = BrushRecolorPreview.forTargetState(state);
+        var previewOpt =
+                CoilRecolorPreview.forHit(mc.level, state, blockHit.getBlockPos(), blockHit.getLocation());
         if (previewOpt.isEmpty()) {
             return;
         }
-        BrushRecolorPreview.Preview preview = previewOpt.get();
+        CoilRecolorPreview.Preview preview = previewOpt.get();
         RecolorPreviewHudPanel.render(gui, graphics, screenWidth, screenHeight, preview.stack(), preview.name());
     }
 }
