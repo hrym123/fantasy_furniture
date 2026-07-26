@@ -18,6 +18,7 @@ import org.lanye.fantasy_furniture.content.furniture.decor.client.renderer.Plain
 import org.lanye.fantasy_furniture.content.soap.client.SoapBarClient;
 import org.lanye.fantasy_furniture.content.soap.client.renderer.BodyCreamGeoBlockRenderer;
 import org.lanye.fantasy_furniture.content.soap.client.renderer.BodyWashGeoBlockRenderer;
+import org.lanye.fantasy_furniture.content.soap.client.renderer.BubbleHeadLayer;
 import org.lanye.fantasy_furniture.content.soap.client.renderer.SoapBoxGeoBlockRenderer;
 import org.lanye.fantasy_furniture.content.soap.client.renderer.SoapMoldGeoBlockRenderer;
 import org.lanye.fantasy_furniture.content.soap.client.renderer.SoapPaperBagGeoBlockRenderer;
@@ -33,6 +34,8 @@ import org.lanye.fantasy_furniture.bootstrap.block.BedPlate6Registration;
 import org.lanye.reverie_core.geolib.client.AnimatedBlockClientRegistration;
 import org.lanye.reverie_core.geolib.client.GeolibAnimatedBlockRenderers;
 import org.lanye.reverie_core.util.ReveriePerfRender;
+
+import net.minecraft.client.renderer.entity.player.PlayerRenderer;
 
 @Mod.EventBusSubscriber(modid = FantasyFurniture.MODID, bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
 public final class ClientModEvents {
@@ -91,6 +94,16 @@ public final class ClientModEvents {
         AnimatedBlockClientRegistration.registerAllRenderers(event);
         event.registerEntityRenderer(ModEntities.FURNITURE_SEAT.get(), FurnitureSeatRenderer::new);
         event.registerEntityRenderer(ModEntities.SWEEPER_ROBOT.get(), SweeperRobotRenderer::new);
+    }
+
+    @SubscribeEvent
+    public static void addEntityLayers(EntityRenderersEvent.AddLayers event) {
+        for (String skin : event.getSkins()) {
+            PlayerRenderer renderer = event.getSkin(skin);
+            if (renderer != null) {
+                renderer.addLayer(new BubbleHeadLayer<>(renderer));
+            }
+        }
     }
 
     @SubscribeEvent

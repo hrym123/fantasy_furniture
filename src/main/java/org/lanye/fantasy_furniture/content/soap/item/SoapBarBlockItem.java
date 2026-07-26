@@ -3,8 +3,14 @@ package org.lanye.fantasy_furniture.content.soap.item;
 import java.util.function.Consumer;
 import net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer;
 import net.minecraft.network.chat.Component;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResultHolder;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.UseAnim;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraftforge.client.extensions.common.IClientItemExtensions;
 import org.jetbrains.annotations.NotNull;
@@ -12,11 +18,15 @@ import org.lanye.fantasy_furniture.content.soap.SoapBarAppearance;
 import org.lanye.fantasy_furniture.content.soap.SoapBarMaterials;
 import org.lanye.fantasy_furniture.content.soap.SoapBarWear;
 import org.lanye.fantasy_furniture.content.soap.client.SoapBarItemRenderer;
+import org.lanye.fantasy_furniture.content.soap.effect.BubbleEffectApplier;
+import org.lanye.fantasy_furniture.content.soap.effect.BubbleMobEffect;
 import org.lanye.reverie_core.geolib.GeolibBlockItem;
 import org.lanye.reverie_core.geolib.GeolibItemAssets;
 
 /**
  * 肥皂物品：单 id，磨损与颜料存于 NBT（{@link SoapBarAppearance}）；物品栏 2D 物品材质，手持 Geo。
+ *
+ * <p>对空气长按：无包装 → 泡泡效果；有包装 → 撕开包装（不消耗皂）。
  */
 public final class SoapBarBlockItem extends GeolibBlockItem {
 
@@ -44,6 +54,46 @@ public final class SoapBarBlockItem extends GeolibBlockItem {
     }
 
     @Override
+    public @NotNull InteractionResultHolder<ItemStack> use(
+            @NotNull Level level, @NotNull Player player, @NotNull InteractionHand hand) {
+        ItemStack stack = player.getItemInHand(hand);
+        player.startUsingItem(hand);
+        return InteractionResultHolder.consume(stack);
+    }
+
+    @Override
+    public int getUseDuration(@NotNull ItemStack stack) {
+        return BubbleMobEffect.USE_TICKS;
+    }
+
+    @Override
+    public @NotNull UseAnim getUseAnimation(@NotNull ItemStack stack) {
+        return UseAnim.BOW;
+    }
+
+    @Override
+    public @NotNull ItemStack finishUsingItem(
+            @NotNull ItemStack stack, @NotNull Level level, @NotNull LivingEntity entity) {
+        if (level.isClientSide) {
+            return stack;
+        }
+        SoapBarAppearance appearance = SoapBarAppearance.fromStack(stack);
+        if (appearance.isPackaged()) {
+            SoapBarAppearance torn =
+                    new SoapBarAppearance(
+                            appearance.wear(),
+                            appearance.materialId(),
+                            0,
+                            false,
+                            appearance.particleMatId());
+            SoapBarAppearance.writeToStack(stack, torn);
+            return stack;
+        }
+        BubbleEffectApplier.apply(entity);
+        return stack;
+    }
+
+    @Override
     public void initializeClient(@NotNull Consumer<IClientItemExtensions> consumer) {
         consumer.accept(
                 new IClientItemExtensions() {
@@ -62,7 +112,7 @@ public final class SoapBarBlockItem extends GeolibBlockItem {
     /** 创造栏 / 指令用：指定颜料与磨损的堆叠。 */
     public static ItemStack stackWithAppearance(Item item, SoapBarAppearance appearance) {
         ItemStack stack = new ItemStack(item);
-        appearance.writeToStack(stack, appearance);
+        SoapBarAppearance.writeToStack(stack, appearance);
         return stack;
     }
 }
