@@ -56,8 +56,9 @@ public final class BubbleHeadLayer<T extends LivingEntity, M extends HumanoidMod
         DecorativeHelmetArmorRenderer renderer = rendererFor(item, cat);
         ItemStack stack = new ItemStack(item);
 
+        // 勿再 head.translateAndRotate：prepForRender → applyBaseTransformations
+        // 已把 HumanoidModel.head 姿态匹配到 armorHead；再乘一次会把头饰摆幅放大约一倍。
         poseStack.pushPose();
-        getParentModel().head.translateAndRotate(poseStack);
         renderer.prepForRender(entity, stack, EquipmentSlot.HEAD, getParentModel());
         ResourceLocation texture = renderer.getTextureLocation(item);
         VertexConsumer consumer = buffer.getBuffer(RenderType.entityCutoutNoCull(texture));

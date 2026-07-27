@@ -26,7 +26,7 @@ import org.lanye.reverie_core.geolib.GeolibItemAssets;
 /**
  * 肥皂物品：单 id，磨损与颜料存于 NBT（{@link SoapBarAppearance}）；物品栏 2D 物品材质，手持 Geo。
  *
- * <p>对空气长按：无包装 → 泡泡效果；有包装 → 撕开包装（不消耗皂）。
+ * <p>对空气长按：有包装 → 撕开包装；无包装且蹲下 → 消耗肥皂并 +10 分钟泡泡；无包装站立 → 不消耗、+10 秒泡泡。
  */
 public final class SoapBarBlockItem extends GeolibBlockItem {
 
@@ -87,6 +87,13 @@ public final class SoapBarBlockItem extends GeolibBlockItem {
                             false,
                             appearance.particleMatId());
             SoapBarAppearance.writeToStack(stack, torn);
+            return stack;
+        }
+        if (entity.isCrouching()) {
+            BubbleEffectApplier.applyFromConsumedSoap(entity);
+            if (entity instanceof Player player && !player.getAbilities().instabuild) {
+                stack.shrink(1);
+            }
             return stack;
         }
         BubbleEffectApplier.apply(entity);
