@@ -31,11 +31,10 @@ import org.lanye.fantasy_furniture.content.soap.SoapBottleStackUse;
 import org.lanye.fantasy_furniture.content.soap.SoapStackCollisionShapes;
 import org.lanye.fantasy_furniture.content.soap.blockentity.ShampooBlockEntity;
 import org.lanye.fantasy_furniture.content.tool.BrushRecolor;
-import org.lanye.reverie_core.geolib.GeolibFacingEntityBlockWithFactory;
 import org.lanye.reverie_core.util.VoxelShapeRotation;
 
 /** 洗发露：单瓶用 {@code 洗发露_默认} geo；2 瓶及以上用 {@code 洗发露_堆叠_x4}；可与沐浴露 / 乳霜混合摞放。 */
-public final class ShampooBlock extends GeolibFacingEntityBlockWithFactory<ShampooBlockEntity> {
+public final class ShampooBlock extends SoapSeriesWaterloggableBlock<ShampooBlockEntity> {
 
     public static final IntegerProperty LAYERS =
             IntegerProperty.create("layers", 1, ShampooAssets.MAX_STACK);

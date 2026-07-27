@@ -13,7 +13,7 @@ import org.lanye.fantasy_furniture.content.soap.client.model.SoapBarBodyGeoModel
 import org.lanye.reverie_core.util.ReveriePerfRender;
 import software.bernie.geckolib.renderer.GeoBlockRenderer;
 
-/** 地上肥皂：未套袋仅皂体；套袋后袋体 + 皂体双 Pass。 */
+/** 地上肥皂：未包装仅皂体；套袋/套盒后包装体 + 皂体双 Pass。 */
 @OnlyIn(Dist.CLIENT)
 public final class SoapBarGeoBlockRenderer implements BlockEntityRenderer<SoapBarBlockEntity> {
 

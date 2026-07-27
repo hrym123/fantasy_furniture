@@ -21,9 +21,12 @@ public final class SoapBarCreativeTab {
     }
 
     public static ItemStack stackForMaterial(int materialId) {
-        return SoapBarBlockItem.stackWithAppearance(
-                ModBlocks.SOAP_BAR.item().get(),
-                new SoapBarAppearance(SoapBarAppearance.DEFAULT_WEAR, materialId));
+        ItemStack stack =
+                SoapBarBlockItem.stackWithAppearance(
+                        ModBlocks.SOAP_BAR.item().get(),
+                        new SoapBarAppearance(SoapBarAppearance.DEFAULT_WEAR, materialId));
+        SoapBarAppearance.writeCreativeParticle(stack);
+        return stack;
     }
 
     /** 六种颜料档（完整磨损），供展示地图等批量摆放。 */

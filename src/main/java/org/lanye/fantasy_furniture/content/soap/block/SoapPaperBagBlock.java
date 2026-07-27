@@ -26,17 +26,18 @@ import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import org.lanye.fantasy_furniture.bootstrap.block.ModBlocks;
 import org.lanye.fantasy_furniture.content.tool.BrushRecolor;
+import org.lanye.fantasy_furniture.content.soap.SoapBarAppearance;
+import org.lanye.fantasy_furniture.content.soap.SoapPackagingStackOps;
 import org.lanye.fantasy_furniture.content.soap.SoapPaperBagAppearance;
 import org.lanye.fantasy_furniture.content.soap.SoapPaperBagMaterials;
 import org.lanye.fantasy_furniture.content.soap.SoapPackagingTear;
 import org.lanye.fantasy_furniture.content.soap.SoapStackCollisionShapes;
 import org.lanye.fantasy_furniture.content.soap.blockentity.SoapPaperBagBlockEntity;
 import org.lanye.fantasy_furniture.content.soap.item.SoapPaperBagBlockItem;
-import org.lanye.reverie_core.geolib.GeolibFacingEntityBlockWithFactory;
 import org.lanye.reverie_core.util.VoxelShapeRotation;
 
-/** 空包装袋摞：最多四层，LIFO（见设计书 {@code 13-包装袋}）。 */
-public class SoapPaperBagBlock extends GeolibFacingEntityBlockWithFactory<SoapPaperBagBlockEntity> {
+/** 包装袋摞：空袋或带袋皂，最多四层，LIFO。 */
+public class SoapPaperBagBlock extends SoapSeriesWaterloggableBlock<SoapPaperBagBlockEntity> {
 
     public static final int MAX_LAYERS = 4;
 
@@ -88,6 +89,16 @@ public class SoapPaperBagBlock extends GeolibFacingEntityBlockWithFactory<SoapPa
 
     @Override
     public ItemStack getCloneItemStack(BlockGetter level, BlockPos pos, BlockState state) {
+        if (level.getBlockEntity(pos) instanceof SoapPaperBagBlockEntity bagBe && bagBe.layerCount() > 0) {
+            SoapBarAppearance soap = bagBe.packagedSoapAt(bagBe.layerCount() - 1);
+            if (soap != null) {
+                return SoapPackagingStackOps.packagedSoapStack(soap);
+            }
+            ItemStack stack = super.getCloneItemStack(level, pos, state);
+            SoapPaperBagAppearance.writeToStack(
+                    stack, new SoapPaperBagAppearance(bagBe.topMaterial()));
+            return stack;
+        }
         ItemStack stack = super.getCloneItemStack(level, pos, state);
         SoapPaperBagAppearance.writeToStack(stack, new SoapPaperBagAppearance(state.getValue(MATERIAL)));
         return stack;
@@ -103,8 +114,13 @@ public class SoapPaperBagBlock extends GeolibFacingEntityBlockWithFactory<SoapPa
             return List.of(fallback);
         }
         List<ItemStack> drops = new ArrayList<>();
-        for (int mat : be.layerMaterialsView()) {
-            drops.add(SoapPaperBagBlockItem.stackWithBagMaterial(asItem(), mat));
+        for (int i = 0; i < be.layerCount(); i++) {
+            SoapBarAppearance soap = be.packagedSoapAt(i);
+            if (soap != null) {
+                drops.add(SoapPackagingStackOps.packagedSoapStack(soap));
+            } else {
+                drops.add(SoapPaperBagBlockItem.stackWithBagMaterial(asItem(), be.materialAtLayer(i)));
+            }
         }
         return drops;
     }
@@ -145,31 +161,55 @@ public class SoapPaperBagBlock extends GeolibFacingEntityBlockWithFactory<SoapPa
         boolean sneaking = player.isShiftKeyDown();
 
         if (sneaking) {
-            if (!held.isEmpty() && !held.is(asItem())) {
+            boolean soapStack = be.isSoapStack();
+            if (!held.isEmpty()
+                    && !(soapStack
+                            ? held.is(ModBlocks.SOAP_BAR.item().get())
+                            : held.is(asItem()))) {
                 return InteractionResult.PASS;
             }
-            Integer popped = be.popTopLayer();
+            Object popped = be.popTop();
             if (popped == null) {
                 return InteractionResult.FAIL;
             }
-            ItemStack bag = SoapPaperBagBlockItem.stackWithBagMaterial(asItem(), popped);
-            if (!player.getInventory().add(bag)) {
-                player.drop(bag, false);
+            ItemStack give =
+                    popped instanceof SoapBarAppearance soap
+                            ? SoapPackagingStackOps.packagedSoapStack(soap)
+                            : SoapPaperBagBlockItem.stackWithBagMaterial(asItem(), (Integer) popped);
+            if (!player.getInventory().add(give)) {
+                player.drop(give, false);
             }
             if (be.layerCount() == 0) {
                 level.removeBlock(pos, false);
+            } else if (be.layerCount() == 1 && be.isSoapStack()) {
+                SoapPackagingStackOps.collapseBagSoapStackToSoapBar(level, pos, state);
             } else {
                 syncStateFromEntity(level, pos, state, be);
             }
             return InteractionResult.CONSUME;
         }
 
-        if (held.isEmpty() && be.layerCount() == 1) {
+        if (held.isEmpty() && be.layerCount() == 1 && be.isEmptyPackagingStack()) {
             if (state.getValue(TORN)) {
                 SoapPackagingTear.restoreTornSingleLayerStack(level, pos, state, TORN);
             } else {
                 SoapPackagingTear.beginTearSingleLayerStack(level, pos, state, TORN);
             }
+            return InteractionResult.CONSUME;
+        }
+
+        if (held.is(ModBlocks.SOAP_BAR.item().get())) {
+            SoapBarAppearance soap = SoapBarAppearance.fromStack(held);
+            if (!soap.isBagged() || soap.packagingTorn()) {
+                return InteractionResult.FAIL;
+            }
+            if (!be.pushSoapLayer(soap)) {
+                return InteractionResult.FAIL;
+            }
+            if (!player.getAbilities().instabuild) {
+                held.shrink(1);
+            }
+            syncStateFromEntity(level, pos, state, be);
             return InteractionResult.CONSUME;
         }
 
@@ -194,7 +234,7 @@ public class SoapPaperBagBlock extends GeolibFacingEntityBlockWithFactory<SoapPa
         return InteractionResult.PASS;
     }
 
-    static void syncStateFromEntity(Level level, BlockPos pos, BlockState state, SoapPaperBagBlockEntity be) {
+    public static void syncStateFromEntity(Level level, BlockPos pos, BlockState state, SoapPaperBagBlockEntity be) {
         int layers = Math.max(1, be.layerCount());
         BlockState next = state.setValue(LAYERS, layers).setValue(MATERIAL, be.topMaterial());
         if (layers != 1) {

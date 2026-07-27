@@ -9,12 +9,12 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import org.lanye.fantasy_furniture.content.soap.block.SoapBarBlock;
 
-/** 撕开包装：套袋皂两阶段去袋；空袋 / 空盒第二次右键还原完整态。 */
+/** 包装袋 / 包装盒：地上切换完整↔撕开（打开）geo；套皂态亦可去掉包装。 */
 public final class SoapPackagingTear {
 
     private SoapPackagingTear() {}
 
-    /** 套袋皂：进入撕开态（仍保留袋体 geo，换为 torn）。 */
+    /** 套包装皂：进入打开态（换为袋/盒撕开 geo，包装仍在）。 */
     public static void beginTearSoapBar(Level level, BlockPos pos, BlockState state) {
         if (!(state.getBlock() instanceof SoapBarBlock block) || !state.getValue(block.PACKAGED)) {
             return;
@@ -26,7 +26,19 @@ public final class SoapPackagingTear {
         playTearSound(level, pos);
     }
 
-    /** 套袋皂：撕开态完成后去除袋体。 */
+    /** 套包装皂：打开态还原为完整包装 geo。 */
+    public static void restoreTornSoapBar(Level level, BlockPos pos, BlockState state) {
+        if (!(state.getBlock() instanceof SoapBarBlock block) || !state.getValue(block.PACKAGED)) {
+            return;
+        }
+        if (!state.getValue(block.PACKAGING_TORN)) {
+            return;
+        }
+        level.setBlock(pos, state.setValue(block.PACKAGING_TORN, false), Block.UPDATE_ALL);
+        playTearSound(level, pos);
+    }
+
+    /** 套包装皂：去除包装（手持长按等）；地上右击不走此路径。 */
     public static void finishTearSoapBar(Level level, BlockPos pos, BlockState state) {
         if (!(state.getBlock() instanceof SoapBarBlock block) || !state.getValue(block.PACKAGED)) {
             return;
@@ -34,6 +46,7 @@ public final class SoapPackagingTear {
         level.setBlock(
                 pos,
                 state.setValue(block.PACKAGED, false)
+                        .setValue(block.BOXED, false)
                         .setValue(block.BAG_MATERIAL, 0)
                         .setValue(block.PACKAGING_TORN, false),
                 Block.UPDATE_ALL);
@@ -50,7 +63,7 @@ public final class SoapPackagingTear {
         playTearSound(level, pos);
     }
 
-    /** 单层盒摞：撕开态还原为完整包装 geo。 */
+    /** 单层袋 / 盒摞：撕开态还原为完整包装 geo。 */
     public static void restoreTornSingleLayerStack(
             Level level, BlockPos pos, BlockState state, BooleanProperty tornProperty) {
         if (!state.getValue(tornProperty)) {

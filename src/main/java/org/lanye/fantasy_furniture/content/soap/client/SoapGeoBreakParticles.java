@@ -1,5 +1,6 @@
 package org.lanye.fantasy_furniture.content.soap.client;
 
+import javax.annotation.Nullable;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.particle.ParticleEngine;
@@ -15,7 +16,6 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
@@ -57,24 +57,34 @@ public final class SoapGeoBreakParticles {
             return;
         }
         SoapPaperBoxAppearance appearance = SoapPaperBoxAppearance.fromState(state);
-        ResourceLocation spriteId =
+        ResourceLocation blockSpriteId =
                 ResourceLocation.fromNamespaceAndPath(
-                        FantasyFurniture.MODID,
-                        "block/soap_paper_box_" + appearance.materialId());
+                        FantasyFurniture.MODID, "block/soap_paper_box_" + appearance.materialId());
+        // 物品栏 UI 必进方块图集；作 block 贴图未 stitch 时的兜底，避免紫黑缺失粒子
+        ResourceLocation itemUiSpriteId =
+                ResourceLocation.fromNamespaceAndPath(
+                        FantasyFurniture.MODID, "item/" + appearance.itemUiTextureBasename());
         int stackStyle = state.getValue(block.STACK_STYLE);
         VoxelShape north = SoapStackCollisionShapes.soapPaperBoxNorth(1, stackStyle);
         VoxelShape shape =
                 VoxelShapeRotation.rotateYFromNorthLikeGeckoBlockRenderer(
                         north, state.getValue(block.FACING));
-        spawn(clientLevel, pos, shape, spriteId, state, manager);
+        spawn(clientLevel, pos, shape, blockSpriteId, itemUiSpriteId, state, manager);
     }
 
-    private static TextureAtlasSprite resolveBlockSprite(ResourceLocation spriteId, BlockState state) {
+    private static TextureAtlasSprite resolveBlockSprite(
+            ResourceLocation spriteId, @Nullable ResourceLocation fallbackSpriteId, BlockState state) {
         TextureAtlas atlas =
                 Minecraft.getInstance().getModelManager().getAtlas(TextureAtlas.LOCATION_BLOCKS);
         TextureAtlasSprite sprite = atlas.getSprite(spriteId);
         if (!isMissingSprite(sprite)) {
             return sprite;
+        }
+        if (fallbackSpriteId != null) {
+            sprite = atlas.getSprite(fallbackSpriteId);
+            if (!isMissingSprite(sprite)) {
+                return sprite;
+            }
         }
         BlockModelShaper shaper = Minecraft.getInstance().getBlockRenderer().getBlockModelShaper();
         BakedModel model = shaper.getBlockModel(state);
@@ -82,7 +92,8 @@ public final class SoapGeoBreakParticles {
     }
 
     private static boolean isMissingSprite(TextureAtlasSprite sprite) {
-        return MissingTextureAtlasSprite.getLocation().equals(sprite.contents().name());
+        return sprite == null
+                || MissingTextureAtlasSprite.getLocation().equals(sprite.contents().name());
     }
 
     private static void spawn(
@@ -92,10 +103,21 @@ public final class SoapGeoBreakParticles {
             ResourceLocation spriteId,
             BlockState state,
             ParticleEngine manager) {
+        spawn(level, pos, shape, spriteId, null, state, manager);
+    }
+
+    private static void spawn(
+            ClientLevel level,
+            BlockPos pos,
+            VoxelShape shape,
+            ResourceLocation spriteId,
+            @Nullable ResourceLocation fallbackSpriteId,
+            BlockState state,
+            ParticleEngine manager) {
         if (shape.isEmpty()) {
             return;
         }
-        TextureAtlasSprite sprite = resolveBlockSprite(spriteId, state);
+        TextureAtlasSprite sprite = resolveBlockSprite(spriteId, fallbackSpriteId, state);
         RandomSource random = level.getRandom();
         int count = MIN_COUNT + random.nextInt(EXTRA_COUNT);
         double minX = pos.getX() + shape.min(Direction.Axis.X);
@@ -104,11 +126,11 @@ public final class SoapGeoBreakParticles {
         double sizeX = shape.max(Direction.Axis.X) - shape.min(Direction.Axis.X);
         double sizeY = shape.max(Direction.Axis.Y) - shape.min(Direction.Axis.Y);
         double sizeZ = shape.max(Direction.Axis.Z) - shape.min(Direction.Axis.Z);
-        BlockState marker = Blocks.AIR.defaultBlockState();
         for (int i = 0; i < count; i++) {
             double x = minX + random.nextDouble() * sizeX;
             double y = minY + random.nextDouble() * sizeY;
             double z = minZ + random.nextDouble() * sizeZ;
+            // 用真实方块状态构造，再覆盖 sprite；避免 AIR 粒子图标为 missingno
             manager.add(
                     new TerrainParticle(
                             level,
@@ -118,7 +140,7 @@ public final class SoapGeoBreakParticles {
                             random.nextGaussian() * 0.15D,
                             random.nextGaussian() * 0.15D,
                             random.nextGaussian() * 0.15D,
-                            marker) {
+                            state) {
                         {
                             setSprite(sprite);
                         }

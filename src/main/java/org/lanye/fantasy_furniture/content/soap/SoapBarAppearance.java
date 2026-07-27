@@ -12,13 +12,18 @@ import org.lanye.fantasy_furniture.content.soap.block.SoapBarBlock;
  *
  * <p>贴图仅按颜料档 {@code soap_bar_{1..6}.png}；磨损只换 geo，三档共用同一套贴图（见 DEC-301）。
  *
- * <p>套袋态：{@link #bagMaterialId()} {@code > 0} 表示已套包装袋，袋色与皂颜料无关。
- * 撕开态：{@link #packagingTorn()} 为真时袋体 geo 换为 {@code soap_paper_bag_torn}。
+ * <p>包装态：{@link #bagMaterialId()} 与 {@link #boxMaterialId()} 互斥，{@code > 0} 表示已套袋或套盒；
+ * 包装色与皂颜料无关。撕开态：{@link #packagingTorn()} 为真时换 torn geo。
  *
  * <p>{@link #particleMatId()}：制皂液体决定的入水粒子色（与 {@link #materialId()} 颜料无关）。
  */
 public record SoapBarAppearance(
-        int wear, int materialId, int bagMaterialId, boolean packagingTorn, int particleMatId) {
+        int wear,
+        int materialId,
+        int bagMaterialId,
+        boolean packagingTorn,
+        int particleMatId,
+        int boxMaterialId) {
 
     public static final int DEFAULT_WEAR = 0;
     public static final int DEFAULT_MATERIAL = 1;
@@ -27,23 +32,37 @@ public record SoapBarAppearance(
     private static final String NBT_WEAR = "SoapWear";
     private static final String NBT_MAT = "SoapMat";
     private static final String NBT_BAG_MAT = "BagMat";
+    private static final String NBT_BOX_MAT = "BoxMat";
     private static final String NBT_BAG_TORN = "BagTorn";
     private static final String NBT_PART_MAT = "PartMat";
+    /** 为 true 时 {@link #NBT_PART_MAT} 来自制皂液体，可与颜料不同；缺省/创造栏皂按颜料映射。 */
+    public static final String NBT_PART_FROM_LIQUID = "PartFromLiquid";
 
     private static final ResourceLocation STATIC_ANIMATION =
             ResourceLocation.fromNamespaceAndPath(
                     FantasyFurniture.MODID, "animations/block/geolib_static.animation.json");
 
     public SoapBarAppearance(int wear, int materialId) {
-        this(wear, materialId, 0, false, DEFAULT_PARTICLE_MAT);
+        this(wear, materialId, 0, false, pigmentToParticleMat(materialId), 0);
     }
 
     public SoapBarAppearance(int wear, int materialId, int bagMaterialId) {
-        this(wear, materialId, bagMaterialId, false, DEFAULT_PARTICLE_MAT);
+        this(wear, materialId, bagMaterialId, false, pigmentToParticleMat(materialId), 0);
     }
 
     public SoapBarAppearance(int wear, int materialId, int bagMaterialId, boolean packagingTorn) {
-        this(wear, materialId, bagMaterialId, packagingTorn, DEFAULT_PARTICLE_MAT);
+        this(wear, materialId, bagMaterialId, packagingTorn, pigmentToParticleMat(materialId), 0);
+    }
+
+    public SoapBarAppearance(
+            int wear, int materialId, int bagMaterialId, boolean packagingTorn, int particleMatId) {
+        this(wear, materialId, bagMaterialId, packagingTorn, particleMatId, 0);
+    }
+
+    /** 套盒皂（袋色恒为 0）。 */
+    public static SoapBarAppearance withBox(
+            int wear, int materialId, int boxMaterialId, boolean packagingTorn, int particleMatId) {
+        return new SoapBarAppearance(wear, materialId, 0, packagingTorn, particleMatId, boxMaterialId);
     }
 
     public SoapBarAppearance {
@@ -54,24 +73,46 @@ public record SoapBarAppearance(
         if (bagMaterialId < 0 || bagMaterialId > SoapBarMaterials.COUNT) {
             bagMaterialId = 0;
         }
+        if (boxMaterialId < 0 || boxMaterialId > SoapPaperBoxMaterials.COUNT) {
+            boxMaterialId = 0;
+        }
+        if (boxMaterialId > 0) {
+            bagMaterialId = 0;
+        }
         if (!SoapFlatLiquidMaterials.isValid(particleMatId)) {
             particleMatId = DEFAULT_PARTICLE_MAT;
         }
-        if (!isPackaged(bagMaterialId)) {
+        if (!isPackaged(bagMaterialId, boxMaterialId)) {
             packagingTorn = false;
         }
     }
 
-    private static boolean isPackaged(int bagMaterialId) {
-        return bagMaterialId > 0;
+    private static boolean isPackaged(int bagMaterialId, int boxMaterialId) {
+        return bagMaterialId > 0 || boxMaterialId > 0;
     }
 
     public SoapBarWear wearEnum() {
         return SoapBarWear.fromIndex(wear);
     }
 
+    public boolean isBagged() {
+        return bagMaterialId > 0;
+    }
+
+    public boolean isBoxed() {
+        return boxMaterialId > 0;
+    }
+
     public boolean isPackaged() {
-        return isPackaged(bagMaterialId);
+        return isPackaged(bagMaterialId, boxMaterialId);
+    }
+
+    /** 当前包装色（袋或盒）；未包装为 0。 */
+    public int packagingMaterialId() {
+        if (isBoxed()) {
+            return boxMaterialId;
+        }
+        return bagMaterialId;
     }
 
     /** 未入水磨损、可放入肥皂盒 / 肥皂架。 */
@@ -98,8 +139,15 @@ public record SoapBarAppearance(
                 FantasyFurniture.MODID, "textures/item/" + itemUiTextureBasename() + ".png");
     }
 
-    public String bagTextureBasename() {
+    public String packagingTextureBasename() {
+        if (isBoxed()) {
+            return "soap_paper_box_" + boxMaterialId;
+        }
         return "soap_paper_bag_" + bagMaterialId;
+    }
+
+    public String bagTextureBasename() {
+        return packagingTextureBasename();
     }
 
     public ResourceLocation modelLocation() {
@@ -107,7 +155,13 @@ public record SoapBarAppearance(
                 FantasyFurniture.MODID, "geo/block/" + geoBasename() + ".geo.json");
     }
 
+    /** 包装袋 / 包装盒 geo（完整或撕开）。 */
     public ResourceLocation bagModelLocation() {
+        if (isBoxed()) {
+            return packagingTorn
+                    ? SoapPackagingAssets.boxTornModelLocation()
+                    : SoapPackagingAssets.boxIntactModelLocation();
+        }
         return packagingTorn
                 ? SoapPackagingAssets.bagTornModelLocation()
                 : SoapPackagingAssets.bagIntactModelLocation();
@@ -115,7 +169,7 @@ public record SoapBarAppearance(
 
     public ResourceLocation bagTextureLocation() {
         return ResourceLocation.fromNamespaceAndPath(
-                FantasyFurniture.MODID, "textures/block/" + bagTextureBasename() + ".png");
+                FantasyFurniture.MODID, "textures/block/" + packagingTextureBasename() + ".png");
     }
 
     /**
@@ -149,16 +203,40 @@ public record SoapBarAppearance(
         return new SoapBarAppearance(DEFAULT_WEAR, DEFAULT_MATERIAL);
     }
 
+    /**
+     * 皂体颜料 id → 入水粒子贴图 id（moonstarfish {@code 粒子_*.png} 按液体色名命名）。
+     * 无显式 {@link #NBT_PART_MAT} 时（如创造栏六色皂）与颜料同色；制皂模具写入的 PartMat 仍优先。
+     */
+    public static int pigmentToParticleMat(int materialId) {
+        if (!SoapBarMaterials.isValid(materialId)) {
+            materialId = DEFAULT_MATERIAL;
+        }
+        return switch (materialId) {
+            case 1 -> 5; // 冰蓝
+            case 2 -> 4; // 薄荷绿
+            case 3 -> 2; // 丁香紫
+            case 4 -> 1; // 樱花粉
+            case 5 -> 6; // 黄油黄
+            case 6 -> 3; // 樱桃红
+            default -> DEFAULT_PARTICLE_MAT;
+        };
+    }
+
     public static SoapBarAppearance fromState(BlockState state) {
+        return fromState(state, 0);
+    }
+
+    public static SoapBarAppearance fromState(BlockState state, int particleMatId) {
         if (state.getBlock() instanceof SoapBarBlock block) {
-            int bagMat = state.getValue(block.PACKAGED) ? state.getValue(block.BAG_MATERIAL) : 0;
-            boolean torn = state.getValue(block.PACKAGED) && state.getValue(block.PACKAGING_TORN);
-            return new SoapBarAppearance(
-                    state.getValue(SoapBarBlock.WEAR),
-                    state.getValue(SoapBarBlock.MATERIAL),
-                    bagMat,
-                    torn,
-                    DEFAULT_PARTICLE_MAT);
+            boolean packaged = state.getValue(block.PACKAGED);
+            int pkgMat = packaged ? state.getValue(block.BAG_MATERIAL) : 0;
+            boolean boxed = packaged && state.getValue(block.BOXED);
+            boolean torn = packaged && state.getValue(block.PACKAGING_TORN);
+            int material = state.getValue(SoapBarBlock.MATERIAL);
+            int part = particleMatId > 0 ? particleMatId : pigmentToParticleMat(material);
+            int bag = boxed ? 0 : pkgMat;
+            int box = boxed ? pkgMat : 0;
+            return new SoapBarAppearance(state.getValue(SoapBarBlock.WEAR), material, bag, torn, part, box);
         }
         return defaults();
     }
@@ -170,24 +248,36 @@ public record SoapBarAppearance(
         }
         int w = tag.contains(NBT_WEAR) ? tag.getInt(NBT_WEAR) : DEFAULT_WEAR;
         int m = tag.contains(NBT_MAT) ? tag.getInt(NBT_MAT) : DEFAULT_MATERIAL;
+        int box = tag.contains(NBT_BOX_MAT) ? tag.getInt(NBT_BOX_MAT) : 0;
         int bag = tag.contains(NBT_BAG_MAT) ? tag.getInt(NBT_BAG_MAT) : 0;
-        boolean torn = bag > 0 && tag.getBoolean(NBT_BAG_TORN);
+        if (box > 0) {
+            bag = 0;
+        }
+        boolean torn = (bag > 0 || box > 0) && tag.getBoolean(NBT_BAG_TORN);
         int part =
-                tag.contains(NBT_PART_MAT) ? tag.getInt(NBT_PART_MAT) : DEFAULT_PARTICLE_MAT;
-        return new SoapBarAppearance(w, m, bag, torn, part);
+                tag.contains(NBT_PART_MAT) && tag.getBoolean(NBT_PART_FROM_LIQUID)
+                        ? tag.getInt(NBT_PART_MAT)
+                        : pigmentToParticleMat(m);
+        return new SoapBarAppearance(w, m, bag, torn, part, box);
     }
 
     public static void writeToStack(ItemStack stack, SoapBarAppearance appearance) {
         CompoundTag tag = stack.getOrCreateTag();
         tag.putInt(NBT_WEAR, appearance.wear());
         tag.putInt(NBT_MAT, appearance.materialId());
-        if (appearance.particleMatId() != DEFAULT_PARTICLE_MAT) {
-            tag.putInt(NBT_PART_MAT, appearance.particleMatId());
-        } else {
-            tag.remove(NBT_PART_MAT);
-        }
-        if (appearance.isPackaged()) {
+        tag.putInt(NBT_PART_MAT, appearance.particleMatId());
+        // 不在此写入 PartFromLiquid；创造栏路径会清掉，模具在 write 后再 mark
+        if (appearance.isBoxed()) {
+            tag.putInt(NBT_BOX_MAT, appearance.boxMaterialId());
+            tag.remove(NBT_BAG_MAT);
+            if (appearance.packagingTorn()) {
+                tag.putBoolean(NBT_BAG_TORN, true);
+            } else {
+                tag.remove(NBT_BAG_TORN);
+            }
+        } else if (appearance.isBagged()) {
             tag.putInt(NBT_BAG_MAT, appearance.bagMaterialId());
+            tag.remove(NBT_BOX_MAT);
             if (appearance.packagingTorn()) {
                 tag.putBoolean(NBT_BAG_TORN, true);
             } else {
@@ -195,8 +285,27 @@ public record SoapBarAppearance(
             }
         } else {
             tag.remove(NBT_BAG_MAT);
+            tag.remove(NBT_BOX_MAT);
             tag.remove(NBT_BAG_TORN);
         }
+    }
+
+    /** 创造栏等：按颜料映射粒子，忽略历史错误 PartMat。 */
+    public static void writeCreativeParticle(ItemStack stack) {
+        CompoundTag tag = stack.getOrCreateTag();
+        tag.remove(NBT_PART_FROM_LIQUID);
+        int m = tag.contains(NBT_MAT) ? tag.getInt(NBT_MAT) : DEFAULT_MATERIAL;
+        tag.putInt(NBT_PART_MAT, pigmentToParticleMat(m));
+    }
+
+    public static boolean isParticleFromLiquid(ItemStack stack) {
+        CompoundTag tag = stack.getTag();
+        return tag != null && tag.getBoolean(NBT_PART_FROM_LIQUID);
+    }
+
+    /** 模具制皂：粒子色跟液体，与颜料可不同。 */
+    public static void markParticleFromLiquid(ItemStack stack) {
+        stack.getOrCreateTag().putBoolean(NBT_PART_FROM_LIQUID, true);
     }
 
     public ItemStack toStack(ItemStack base) {

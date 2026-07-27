@@ -6,6 +6,7 @@ import org.lanye.fantasy_furniture.bootstrap.block.ModBlocks;
 import org.lanye.fantasy_furniture.bootstrap.blockentity.ModBlockEntities;
 import org.lanye.fantasy_furniture.bootstrap.effect.ModEffects;
 import org.lanye.fantasy_furniture.bootstrap.entity.ModEntities;
+import org.lanye.fantasy_furniture.bootstrap.particle.ModParticles;
 import org.lanye.fantasy_furniture.content.sweeper.menu.ModMenuTypes;
 import org.lanye.fantasy_furniture.content.seat.ModSeatConfigs;
 import org.lanye.fantasy_furniture.bootstrap.item.ModCreativeTabs;
@@ -26,6 +27,7 @@ public final class ModBootstrap {
         ModEntities.register(modEventBus);
         ModMenuTypes.register(modEventBus);
         ModEffects.register(modEventBus);
+        ModParticles.register(modEventBus);
         ModItems.register(modEventBus);
         ModCreativeTabs.register(modEventBus);
     }

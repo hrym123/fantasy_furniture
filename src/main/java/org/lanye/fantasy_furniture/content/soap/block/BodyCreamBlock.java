@@ -31,11 +31,10 @@ import org.lanye.fantasy_furniture.content.soap.SoapBottleStackUse;
 import org.lanye.fantasy_furniture.content.soap.SoapStackCollisionShapes;
 import org.lanye.fantasy_furniture.content.soap.blockentity.BodyCreamBlockEntity;
 import org.lanye.fantasy_furniture.content.tool.BrushRecolor;
-import org.lanye.reverie_core.geolib.GeolibFacingEntityBlockWithFactory;
 import org.lanye.reverie_core.util.VoxelShapeRotation;
 
 /** 乳霜：单瓶用 {@code 乳霜_默认} geo；纯乳霜 2 瓶及以上用 {@code 乳霜_堆叠_x5}；混合摞最多 4 瓶。 */
-public final class BodyCreamBlock extends GeolibFacingEntityBlockWithFactory<BodyCreamBlockEntity> {
+public final class BodyCreamBlock extends SoapSeriesWaterloggableBlock<BodyCreamBlockEntity> {
 
     public static final IntegerProperty LAYERS =
             IntegerProperty.create("layers", 1, BodyCreamAssets.MAX_STACK);

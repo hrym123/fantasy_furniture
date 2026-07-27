@@ -37,7 +37,13 @@ public final class SoapBarBlockItem extends GeolibBlockItem {
     @Override
     public Component getName(ItemStack stack) {
         SoapBarAppearance appearance = SoapBarAppearance.fromStack(stack);
-        if (appearance.isPackaged()) {
+        if (appearance.isBoxed()) {
+            return Component.translatable(
+                    "item.fantasy_furniture.soap_bar.boxed",
+                    Component.translatable(
+                            SoapBarMaterials.colorTranslationKey(appearance.boxMaterialId())));
+        }
+        if (appearance.isBagged()) {
             return Component.translatable(
                     "item.fantasy_furniture.soap_bar.packaged",
                     Component.translatable(SoapBarMaterials.colorTranslationKey(appearance.bagMaterialId())));
@@ -79,14 +85,15 @@ public final class SoapBarBlockItem extends GeolibBlockItem {
         }
         SoapBarAppearance appearance = SoapBarAppearance.fromStack(stack);
         if (appearance.isPackaged()) {
-            SoapBarAppearance torn =
+            SoapBarAppearance unwrapped =
                     new SoapBarAppearance(
                             appearance.wear(),
                             appearance.materialId(),
                             0,
                             false,
-                            appearance.particleMatId());
-            SoapBarAppearance.writeToStack(stack, torn);
+                            appearance.particleMatId(),
+                            0);
+            SoapBarAppearance.writeToStack(stack, unwrapped);
             return stack;
         }
         if (entity.isCrouching()) {

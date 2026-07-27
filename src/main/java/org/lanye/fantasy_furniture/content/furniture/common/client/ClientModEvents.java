@@ -6,10 +6,14 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.EntityRenderersEvent;
 import net.minecraftforge.client.event.ModelEvent;
+import net.minecraftforge.client.event.RegisterParticleProvidersEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 import org.lanye.fantasy_furniture.FantasyFurniture;
+import org.lanye.fantasy_furniture.bootstrap.particle.ModParticles;
+import org.lanye.fantasy_furniture.content.soap.SoapFlatLiquidMaterials;
+import org.lanye.fantasy_furniture.content.soap.client.SoapDissolveParticle;
 import org.lanye.fantasy_furniture.content.sweeper.blockentity.SweeperDockBlockEntity;
 import org.lanye.fantasy_furniture.bootstrap.block.ModBlocks;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.client.model.BanquetteBlockGeoModel;
@@ -80,6 +84,14 @@ public final class ClientModEvents {
                 ModBlocks.SOAP_MOLD, ReveriePerfRender.wrapBer(SoapMoldGeoBlockRenderer::new));
         AnimatedBlockClientRegistration.registerBlockEntityRenderer(
                 ModBlocks.DISPLAY_CABINET, ReveriePerfRender.wrapBer(ctx -> new DisplayCabinetGeoBlockRenderer()));
+    }
+
+    @SubscribeEvent
+    public static void registerParticleProviders(RegisterParticleProvidersEvent event) {
+        for (int id = 1; id <= SoapFlatLiquidMaterials.COUNT; id++) {
+            event.registerSpriteSet(
+                    ModParticles.soapDissolveObject(id).get(), SoapDissolveParticle.Provider::new);
+        }
     }
 
     @SubscribeEvent

@@ -215,8 +215,11 @@ public class SoapMoldBlockEntity extends BlockEntity implements GeoBlockEntity {
         if (contents.phase() != SoapMoldPhase.READY) {
             return ItemStack.EMPTY;
         }
-        return SoapBarBlockItem.stackWithAppearance(
-                ModBlocks.SOAP_BAR.item().get(), pendingSoapAppearance());
+        ItemStack stack =
+                SoapBarBlockItem.stackWithAppearance(
+                        ModBlocks.SOAP_BAR.item().get(), pendingSoapAppearance());
+        SoapBarAppearance.markParticleFromLiquid(stack);
+        return stack;
     }
 
     @Nullable

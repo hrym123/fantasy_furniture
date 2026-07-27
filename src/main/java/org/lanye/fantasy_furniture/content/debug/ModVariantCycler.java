@@ -273,7 +273,12 @@ public final class ModVariantCycler {
 
     private static SoapBarAppearance withWear(SoapBarAppearance appearance, int wear) {
         return new SoapBarAppearance(
-                wear, appearance.materialId(), appearance.bagMaterialId(), appearance.packagingTorn());
+                wear,
+                appearance.materialId(),
+                appearance.bagMaterialId(),
+                appearance.packagingTorn(),
+                appearance.particleMatId(),
+                appearance.boxMaterialId());
     }
 
     /** 调试棒入皂占位：默认磨损 + 指定 pigment（盒体同色），循环中不切换 pigment。 */

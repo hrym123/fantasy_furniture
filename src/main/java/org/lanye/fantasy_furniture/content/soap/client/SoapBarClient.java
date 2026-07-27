@@ -29,13 +29,35 @@ public final class SoapBarClient {
     @SubscribeEvent
     public static void onClientSetup(FMLClientSetupEvent event) {
         event.enqueueWork(
-                () ->
-                        net.minecraft.client.renderer.item.ItemProperties.register(
-                                ModBlocks.SOAP_BAR.item().get(),
-                                SOAP_MATERIAL_PROPERTY,
-                                (stack, level, entity, seed) ->
-                                        materialPropertyValue(
-                                                SoapBarAppearance.fromStack(stack).materialId())));
+                () -> {
+                    var soapBar = ModBlocks.SOAP_BAR.item().get();
+                    net.minecraft.client.renderer.item.ItemProperties.register(
+                            soapBar,
+                            SOAP_MATERIAL_PROPERTY,
+                            (stack, level, entity, seed) ->
+                                    materialPropertyValue(
+                                            SoapBarAppearance.fromStack(stack).materialId()));
+                    // 套袋态物品栏 / Jade：用袋色 predicate 选包装袋 UI，不暴露皂色
+                    net.minecraft.client.renderer.item.ItemProperties.register(
+                            soapBar,
+                            SoapPaperBagClient.BAG_MATERIAL_PROPERTY,
+                            (stack, level, entity, seed) -> {
+                                SoapBarAppearance appearance = SoapBarAppearance.fromStack(stack);
+                                return appearance.isBagged()
+                                        ? materialPropertyValue(appearance.bagMaterialId())
+                                        : 0f;
+                            });
+                    // 套盒态：包装盒 UI，不暴露皂色
+                    net.minecraft.client.renderer.item.ItemProperties.register(
+                            soapBar,
+                            SoapPaperBoxClient.BOX_MATERIAL_PROPERTY,
+                            (stack, level, entity, seed) -> {
+                                SoapBarAppearance appearance = SoapBarAppearance.fromStack(stack);
+                                return appearance.isBoxed()
+                                        ? materialPropertyValue(appearance.boxMaterialId())
+                                        : 0f;
+                            });
+                });
     }
 
     /**

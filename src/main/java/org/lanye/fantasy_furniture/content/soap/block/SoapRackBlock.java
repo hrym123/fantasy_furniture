@@ -23,13 +23,12 @@ import org.lanye.fantasy_furniture.bootstrap.block.ModBlocks;
 import org.lanye.fantasy_furniture.content.soap.SoapBarAppearance;
 import org.lanye.fantasy_furniture.content.soap.blockentity.SoapRackBlockEntity;
 import org.lanye.fantasy_furniture.content.soap.item.SoapBarBlockItem;
-import org.lanye.reverie_core.geolib.GeolibFacingEntityBlockWithFactory;
 import org.lanye.reverie_core.util.VoxelShapeRotation;
 
 /**
  * 肥皂架：单 id；架上有无皂为方块状态，皂数据在方块实体（见设计书 {@code 12-肥皂架}）。
  */
-public class SoapRackBlock extends GeolibFacingEntityBlockWithFactory<SoapRackBlockEntity> {
+public class SoapRackBlock extends SoapSeriesWaterloggableBlock<SoapRackBlockEntity> {
 
     public static final BooleanProperty HAS_SOAP = BooleanProperty.create("has_soap");
 

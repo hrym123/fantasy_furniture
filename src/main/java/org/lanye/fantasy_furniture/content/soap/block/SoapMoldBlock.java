@@ -31,11 +31,10 @@ import org.lanye.fantasy_furniture.content.soap.item.SoapBarBlockItem;
 import org.lanye.fantasy_furniture.content.soap.mold.SoapMoldIngredients;
 import org.lanye.fantasy_furniture.content.soap.mold.SoapMoldPhase;
 import org.lanye.fantasy_furniture.content.tool.BrushRecolor;
-import org.lanye.reverie_core.geolib.GeolibFacingEntityBlockWithFactory;
 import org.lanye.reverie_core.util.VoxelShapeRotation;
 
 /** 肥皂模具：逐项右击装料、混合凝固与取皂（见 {@code soap_mold.gameplay.md}）。 */
-public class SoapMoldBlock extends GeolibFacingEntityBlockWithFactory<SoapMoldBlockEntity> {
+public class SoapMoldBlock extends SoapSeriesWaterloggableBlock<SoapMoldBlockEntity> {
 
     public static final IntegerProperty FILL_LEVEL = IntegerProperty.create("fill_level", 0, 4);
 
@@ -161,9 +160,10 @@ public class SoapMoldBlock extends GeolibFacingEntityBlockWithFactory<SoapMoldBl
         if (phase == SoapMoldPhase.READY) {
             SoapBarAppearance soap = be.tryTakeSoap();
             if (soap != null) {
-                giveOrDrop(
-                        player,
-                        SoapBarBlockItem.stackWithAppearance(ModBlocks.SOAP_BAR.item().get(), soap));
+                ItemStack stack =
+                        SoapBarBlockItem.stackWithAppearance(ModBlocks.SOAP_BAR.item().get(), soap);
+                SoapBarAppearance.markParticleFromLiquid(stack);
+                giveOrDrop(player, stack);
                 return InteractionResult.CONSUME;
             }
             return InteractionResult.FAIL;

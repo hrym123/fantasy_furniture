@@ -39,11 +39,10 @@ import org.lanye.fantasy_furniture.content.soap.item.ShampooBlockItem;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import org.lanye.fantasy_furniture.content.tool.BrushRecolor;
-import org.lanye.reverie_core.geolib.GeolibFacingEntityBlockWithFactory;
 import org.lanye.reverie_core.util.VoxelShapeRotation;
 
 /** 陈列柜：空柜仅渲染柜体；打开时可放入沐浴露 / 洗发露（合计最多 2 瓶，仅此二类）。 */
-public final class DisplayCabinetBlock extends GeolibFacingEntityBlockWithFactory<DisplayCabinetBlockEntity> {
+public final class DisplayCabinetBlock extends SoapSeriesWaterloggableBlock<DisplayCabinetBlockEntity> {
 
     public static final BooleanProperty OPEN = BooleanProperty.create("open");
     public static final IntegerProperty MATERIAL =

@@ -32,13 +32,12 @@ import org.lanye.fantasy_furniture.content.soap.blockentity.SoapBoxBlockEntity;
 import org.lanye.fantasy_furniture.content.soap.item.SoapBarBlockItem;
 import net.minecraftforge.client.extensions.common.IClientBlockExtensions;
 import org.lanye.fantasy_furniture.content.soap.client.SoapBoxBlockClientExtensions;
-import org.lanye.reverie_core.geolib.GeolibFacingEntityBlockWithFactory;
 import org.lanye.reverie_core.util.VoxelShapeRotation;
 
 /**
  * 肥皂盒：单 id；盖态与盒内有无皂为方块状态，盒内皂数据在方块实体（见设计书 {@code 11-肥皂盒}）。
  */
-public class SoapBoxBlock extends GeolibFacingEntityBlockWithFactory<SoapBoxBlockEntity> {
+public class SoapBoxBlock extends SoapSeriesWaterloggableBlock<SoapBoxBlockEntity> {
 
     public static final BooleanProperty OPEN = BooleanProperty.create("open");
     public static final BooleanProperty HAS_SOAP = BooleanProperty.create("has_soap");
