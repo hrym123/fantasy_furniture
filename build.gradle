@@ -63,7 +63,7 @@ configurations {
 }
 
 repositories {
-    // Jade / MaFgLib / Tweakerge：开发时 fg.deobf；IMBlocker 经 patch 后见下方（gradle.properties 非空才启用）
+    // Jade / MaFgLib / Tweakerge / Tickrate Changer：开发时 fg.deobf；IMBlocker 经 patch 后见下方（gradle.properties 非空才启用）
     maven {
         name = 'Curse Maven'
         url = 'https://cursemaven.com'
@@ -73,6 +73,16 @@ repositories {
         name = 'BlameJared'
         url = 'https://maven.blamejared.com'
         content { includeGroup 'mezz.jei' }
+    }
+    maven {
+        name = 'Architectury'
+        url = 'https://maven.architectury.dev/'
+        content { includeGroup 'dev.architectury' }
+    }
+    maven {
+        name = 'Shedaniel'
+        url = 'https://maven.shedaniel.me/'
+        content { includeGroup 'me.shedaniel.cloth' }
     }
 }
 
@@ -145,6 +155,12 @@ dependencies {
 
     // JEI：全模组 / 单模组 runClient 随客户端运行；@JeiPlugin 在 reverie_core（API 为 compileOnly）
     runtimeOnly fg.deobf("mezz.jei:jei-${minecraft_version}-forge:${jei_version}")
+
+    // Tickrate Changer：仅开发环境测 tick 加速（/tickrate）；不进发行包
+    // 硬依赖 Architectury + Cloth Config（AutoConfig · ConfigData）
+    runtimeOnly fg.deobf("dev.architectury:architectury-forge:${architectury_version}")
+    runtimeOnly fg.deobf("me.shedaniel.cloth:cloth-config-forge:${cloth_config_version}")
+    runtimeOnly fg.deobf("curse.maven:madgique-tickrate-changer-1096779:${tickrate_changer_curse_file_id}")
 
     testImplementation 'org.junit.jupiter:junit-jupiter:5.10.2'
     testImplementation 'org.mockito:mockito-junit-jupiter:5.11.0'
