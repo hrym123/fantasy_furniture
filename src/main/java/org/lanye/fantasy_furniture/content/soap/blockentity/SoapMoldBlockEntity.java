@@ -204,7 +204,7 @@ public class SoapMoldBlockEntity extends BlockEntity implements GeoBlockEntity {
 
     public SoapBarAppearance pendingSoapAppearance() {
         return new SoapBarAppearance(
-                SoapBarAppearance.DEFAULT_WEAR,
+                SoapBarAppearance.DEFAULT_DURABILITY,
                 contents.pigmentMatId(),
                 0,
                 false,

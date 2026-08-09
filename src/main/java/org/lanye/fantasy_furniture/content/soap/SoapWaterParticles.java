@@ -4,6 +4,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.SimpleParticleType;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import org.lanye.fantasy_furniture.bootstrap.particle.ModParticles;
 import org.lanye.fantasy_furniture.content.soap.block.SoapBarBlock;
@@ -11,6 +12,7 @@ import org.lanye.fantasy_furniture.content.soap.blockentity.SoapBarBlockEntity;
 
 /**
  * 肥皂入水粒子：仅在<strong>肥皂底部</strong>生成；深度测试开启。
+ * 泡泡效果期亦复用同款精灵粒子（环绕实体）。
  */
 public final class SoapWaterParticles {
 
@@ -32,7 +34,25 @@ public final class SoapWaterParticles {
         spawnOne(level, type, pos, y, 0.01, 0.02);
     }
 
-    /** 磨损推进或消失时的短爆发。 */
+    /**
+     * 泡泡效果期：环绕实体喷少量入水溶解粒子（色由 {@code particleMatId} 决定，与入水皂同源）。
+     */
+    public static void spawnAmbientAroundEntity(
+            ServerLevel level, LivingEntity entity, int particleMatId) {
+        if (level.random.nextInt(3) != 0) {
+            return;
+        }
+        SimpleParticleType type = ModParticles.soapDissolve(particleMatId);
+        double width = Math.max(0.4, entity.getBbWidth());
+        double height = Math.max(0.6, entity.getBbHeight());
+        double x = entity.getX() + (level.random.nextDouble() - 0.5) * width;
+        double y = entity.getY() + level.random.nextDouble() * height;
+        double z = entity.getZ() + (level.random.nextDouble() - 0.5) * width;
+        double vy = 0.01 + level.random.nextDouble() * 0.02;
+        send(level, type, x, y, z, 0.0, vy, 0.0);
+    }
+
+    /** 耐久消耗推进或消失时的短爆发。 */
     public static void spawnBurst(ServerLevel level, BlockPos pos, BlockState state, SoapBarBlockEntity be) {
         int particleMatId = resolveParticleMat(state, be);
         SimpleParticleType type = ModParticles.soapDissolve(particleMatId);

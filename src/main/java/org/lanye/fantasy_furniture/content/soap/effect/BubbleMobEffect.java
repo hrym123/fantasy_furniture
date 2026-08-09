@@ -1,6 +1,7 @@
 package org.lanye.fantasy_furniture.content.soap.effect;
 
 import java.util.UUID;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.effect.MobEffectCategory;
 import net.minecraft.world.entity.LivingEntity;
@@ -11,6 +12,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.common.ForgeMod;
 import org.jetbrains.annotations.NotNull;
+import org.lanye.fantasy_furniture.content.soap.SoapWaterParticles;
 
 /**
  * 泡泡效果：持续向上漂浮（对齐原版漂浮手感）、按入水方式耗氧；头饰造型由 amplifier
@@ -19,6 +21,9 @@ import org.jetbrains.annotations.NotNull;
  * <p>原版漂浮在 {@code LivingEntity#travel} 内改竖直速度并绕过普通下落重力；自定义效果若只在
  * {@link #applyEffectTick} 里 {@code +0.05}，随后仍吃重力（约 {@code -0.08}），观感会像缓降。
  * 此处取消实体重力并套用与原版漂浮Ⅰ相同的速度插值。
+ *
+ * <p>身体粒子：关闭原版效果螺旋，改刷与入水肥皂同款的溶解精灵（色见
+ * {@link BubbleEffectApplier#TAG_BUBBLE_PART_MAT}）。
  */
 public final class BubbleMobEffect extends MobEffect {
 
@@ -71,6 +76,7 @@ public final class BubbleMobEffect extends MobEffect {
         if (gravity != null) {
             gravity.removeModifier(ANTI_GRAVITY_ID);
         }
+        BubbleEffectApplier.clearParticleMat(entity);
         super.removeAttributeModifiers(entity, attributeMap, amplifier);
     }
 
@@ -89,6 +95,11 @@ public final class BubbleMobEffect extends MobEffect {
 
         if (entity.level().isClientSide) {
             return;
+        }
+
+        if (entity.level() instanceof ServerLevel serverLevel) {
+            SoapWaterParticles.spawnAmbientAroundEntity(
+                    serverLevel, entity, BubbleEffectApplier.readParticleMat(entity));
         }
 
         // baseTick 已在非水中回气约 +4；再扣 5 → 净约 -1 / tick，贴近入水耗氧

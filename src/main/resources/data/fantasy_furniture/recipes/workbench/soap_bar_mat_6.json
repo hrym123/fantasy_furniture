@@ -1,4 +1,4 @@
-{
+﻿{
   "type": "reverie_core:fantasy_workbench",
   "category": "fantasy_furniture",
   "core_count": 1,
@@ -10,7 +10,7 @@
   "result": {
     "item": "fantasy_furniture:soap_bar",
     "count": 1,
-    "nbt": "{SoapWear:0,SoapMat:6}"
+    "nbt": "{SoapDurability:3,SoapMat:6}"
   },
   "dye": "red"
 }

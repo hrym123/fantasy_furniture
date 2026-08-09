@@ -8,28 +8,33 @@ import org.lanye.fantasy_furniture.FantasyFurniture;
 import org.lanye.fantasy_furniture.content.soap.block.SoapBarBlock;
 
 /**
- * 肥皂外观 = 磨损档 geo × 颜料贴图（见设计书 {@code 01-组件一览 · 肥皂本体外观}）。
+ * 肥皂外观 = 耐久度档 geo × 颜料贴图（见设计书 soap_bar 玩法 · 耐久度）。
  *
- * <p>贴图仅按颜料档 {@code soap_bar_{1..6}.png}；磨损只换 geo，三档共用同一套贴图（见 DEC-301）。
+ * <p>贴图仅按颜料档 {@code soap_bar_{1..6}.png}；耐久度只换 geo，三档共用同一套贴图（见 DEC-301）。
  *
  * <p>包装态：{@link #bagMaterialId()} 与 {@link #boxMaterialId()} 互斥，{@code > 0} 表示已套袋或套盒；
  * 包装色与皂颜料无关。撕开态：{@link #packagingTorn()} 为真时换 torn geo。
  *
  * <p>{@link #particleMatId()}：制皂液体决定的入水粒子色（与 {@link #materialId()} 颜料无关）。
+ *
+ * <p>{@link #durability()}：剩余耐久 3/2/1（最大 {@link SoapBarDurability#MAX}）。旧 NBT {@code SoapWear}
+ * 在读取时迁移。
  */
 public record SoapBarAppearance(
-        int wear,
+        int durability,
         int materialId,
         int bagMaterialId,
         boolean packagingTorn,
         int particleMatId,
         int boxMaterialId) {
 
-    public static final int DEFAULT_WEAR = 0;
+    public static final int DEFAULT_DURABILITY = SoapBarDurability.MAX;
     public static final int DEFAULT_MATERIAL = 1;
     public static final int DEFAULT_PARTICLE_MAT = 1;
 
-    private static final String NBT_WEAR = "SoapWear";
+    private static final String NBT_DURABILITY = "SoapDurability";
+    /** 旧键：0/1/2 磨损档；读取时转为剩余耐久。 */
+    private static final String NBT_WEAR_LEGACY = "SoapWear";
     private static final String NBT_MAT = "SoapMat";
     private static final String NBT_BAG_MAT = "BagMat";
     private static final String NBT_BOX_MAT = "BoxMat";
@@ -42,31 +47,41 @@ public record SoapBarAppearance(
             ResourceLocation.fromNamespaceAndPath(
                     FantasyFurniture.MODID, "animations/block/geolib_static.animation.json");
 
-    public SoapBarAppearance(int wear, int materialId) {
-        this(wear, materialId, 0, false, pigmentToParticleMat(materialId), 0);
+    public SoapBarAppearance(int durability, int materialId) {
+        this(durability, materialId, 0, false, pigmentToParticleMat(materialId), 0);
     }
 
-    public SoapBarAppearance(int wear, int materialId, int bagMaterialId) {
-        this(wear, materialId, bagMaterialId, false, pigmentToParticleMat(materialId), 0);
-    }
-
-    public SoapBarAppearance(int wear, int materialId, int bagMaterialId, boolean packagingTorn) {
-        this(wear, materialId, bagMaterialId, packagingTorn, pigmentToParticleMat(materialId), 0);
+    public SoapBarAppearance(int durability, int materialId, int bagMaterialId) {
+        this(durability, materialId, bagMaterialId, false, pigmentToParticleMat(materialId), 0);
     }
 
     public SoapBarAppearance(
-            int wear, int materialId, int bagMaterialId, boolean packagingTorn, int particleMatId) {
-        this(wear, materialId, bagMaterialId, packagingTorn, particleMatId, 0);
+            int durability, int materialId, int bagMaterialId, boolean packagingTorn) {
+        this(durability, materialId, bagMaterialId, packagingTorn, pigmentToParticleMat(materialId), 0);
+    }
+
+    public SoapBarAppearance(
+            int durability,
+            int materialId,
+            int bagMaterialId,
+            boolean packagingTorn,
+            int particleMatId) {
+        this(durability, materialId, bagMaterialId, packagingTorn, particleMatId, 0);
     }
 
     /** 套盒皂（袋色恒为 0）。 */
     public static SoapBarAppearance withBox(
-            int wear, int materialId, int boxMaterialId, boolean packagingTorn, int particleMatId) {
-        return new SoapBarAppearance(wear, materialId, 0, packagingTorn, particleMatId, boxMaterialId);
+            int durability,
+            int materialId,
+            int boxMaterialId,
+            boolean packagingTorn,
+            int particleMatId) {
+        return new SoapBarAppearance(
+                durability, materialId, 0, packagingTorn, particleMatId, boxMaterialId);
     }
 
     public SoapBarAppearance {
-        wear = SoapBarWear.clamp(wear);
+        durability = SoapBarDurability.clamp(durability);
         if (!SoapBarMaterials.isValid(materialId)) {
             materialId = DEFAULT_MATERIAL;
         }
@@ -91,8 +106,8 @@ public record SoapBarAppearance(
         return bagMaterialId > 0 || boxMaterialId > 0;
     }
 
-    public SoapBarWear wearEnum() {
-        return SoapBarWear.fromIndex(wear);
+    public SoapBarDurability durabilityEnum() {
+        return SoapBarDurability.fromRemaining(durability);
     }
 
     public boolean isBagged() {
@@ -115,16 +130,16 @@ public record SoapBarAppearance(
         return bagMaterialId;
     }
 
-    /** 未入水磨损、可放入肥皂盒 / 肥皂架。 */
+    /** 满耐久（未入水消耗），可放入肥皂盒 / 肥皂架。 */
     public boolean isFull() {
-        return wear == DEFAULT_WEAR;
+        return durability == DEFAULT_DURABILITY;
     }
 
     public String geoBasename() {
-        return wearEnum().geoBasename();
+        return durabilityEnum().geoBasename();
     }
 
-    /** 颜料贴图 basename，与磨损 geo 无关（{@code soap_bar_1} … {@code soap_bar_6}）。 */
+    /** 颜料贴图 basename，与耐久度 geo 无关（{@code soap_bar_1} … {@code soap_bar_6}）。 */
     public String textureBasename() {
         return "soap_bar_" + materialId;
     }
@@ -200,7 +215,7 @@ public record SoapBarAppearance(
     }
 
     public static SoapBarAppearance defaults() {
-        return new SoapBarAppearance(DEFAULT_WEAR, DEFAULT_MATERIAL);
+        return new SoapBarAppearance(DEFAULT_DURABILITY, DEFAULT_MATERIAL);
     }
 
     /**
@@ -236,7 +251,8 @@ public record SoapBarAppearance(
             int part = particleMatId > 0 ? particleMatId : pigmentToParticleMat(material);
             int bag = boxed ? 0 : pkgMat;
             int box = boxed ? pkgMat : 0;
-            return new SoapBarAppearance(state.getValue(SoapBarBlock.WEAR), material, bag, torn, part, box);
+            return new SoapBarAppearance(
+                    state.getValue(SoapBarBlock.DURABILITY), material, bag, torn, part, box);
         }
         return defaults();
     }
@@ -246,7 +262,7 @@ public record SoapBarAppearance(
         if (tag == null) {
             return defaults();
         }
-        int w = tag.contains(NBT_WEAR) ? tag.getInt(NBT_WEAR) : DEFAULT_WEAR;
+        int d = readDurability(tag);
         int m = tag.contains(NBT_MAT) ? tag.getInt(NBT_MAT) : DEFAULT_MATERIAL;
         int box = tag.contains(NBT_BOX_MAT) ? tag.getInt(NBT_BOX_MAT) : 0;
         int bag = tag.contains(NBT_BAG_MAT) ? tag.getInt(NBT_BAG_MAT) : 0;
@@ -258,12 +274,24 @@ public record SoapBarAppearance(
                 tag.contains(NBT_PART_MAT) && tag.getBoolean(NBT_PART_FROM_LIQUID)
                         ? tag.getInt(NBT_PART_MAT)
                         : pigmentToParticleMat(m);
-        return new SoapBarAppearance(w, m, bag, torn, part, box);
+        return new SoapBarAppearance(d, m, bag, torn, part, box);
+    }
+
+    /** 优先 {@code SoapDurability}；否则旧 {@code SoapWear} 0/1/2 → 3/2/1。 */
+    public static int readDurability(CompoundTag tag) {
+        if (tag.contains(NBT_DURABILITY)) {
+            return SoapBarDurability.clamp(tag.getInt(NBT_DURABILITY));
+        }
+        if (tag.contains(NBT_WEAR_LEGACY)) {
+            return SoapBarDurability.fromLegacyWear(tag.getInt(NBT_WEAR_LEGACY));
+        }
+        return DEFAULT_DURABILITY;
     }
 
     public static void writeToStack(ItemStack stack, SoapBarAppearance appearance) {
         CompoundTag tag = stack.getOrCreateTag();
-        tag.putInt(NBT_WEAR, appearance.wear());
+        tag.putInt(NBT_DURABILITY, appearance.durability());
+        tag.remove(NBT_WEAR_LEGACY);
         tag.putInt(NBT_MAT, appearance.materialId());
         tag.putInt(NBT_PART_MAT, appearance.particleMatId());
         // 不在此写入 PartFromLiquid；创造栏路径会清掉，模具在 write 后再 mark

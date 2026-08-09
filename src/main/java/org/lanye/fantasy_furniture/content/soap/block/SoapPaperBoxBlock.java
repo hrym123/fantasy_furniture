@@ -173,11 +173,9 @@ public final class SoapPaperBoxBlock extends SoapSeriesWaterloggableBlock<SoapPa
         boolean sneaking = player.isShiftKeyDown();
 
         if (sneaking) {
-            boolean soapStack = be.isSoapStack();
             if (!held.isEmpty()
-                    && !(soapStack
-                            ? held.is(ModBlocks.SOAP_BAR.item().get())
-                            : held.is(asItem()))) {
+                    && !held.is(asItem())
+                    && !held.is(ModBlocks.SOAP_BAR.item().get())) {
                 return InteractionResult.PASS;
             }
             Object popped = be.popTop();
@@ -193,7 +191,7 @@ public final class SoapPaperBoxBlock extends SoapSeriesWaterloggableBlock<SoapPa
             }
             if (be.layerCount() == 0) {
                 level.removeBlock(pos, false);
-            } else if (be.layerCount() == 1 && be.isSoapStack()) {
+            } else if (be.layerCount() == 1 && be.packagedSoapAt(0) != null) {
                 SoapPackagingStackOps.collapseBoxSoapStackToSoapBar(level, pos, state);
             } else {
                 syncStateFromEntity(level, pos, state, be);

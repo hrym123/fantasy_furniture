@@ -24,14 +24,13 @@ import net.minecraft.world.phys.shapes.VoxelShape;
 import org.lanye.fantasy_furniture.content.soap.BodyCreamAppearance;
 import org.lanye.fantasy_furniture.content.soap.BodyCreamAssets;
 import org.lanye.fantasy_furniture.content.soap.BodyCreamMaterials;
+import org.lanye.fantasy_furniture.content.soap.OrientedVoxelShapes;
 import org.lanye.fantasy_furniture.content.soap.SoapBottleKind;
-import org.lanye.fantasy_furniture.content.soap.SoapBottleMixedCollisionShapes;
 import org.lanye.fantasy_furniture.content.soap.SoapBottleStackRules;
 import org.lanye.fantasy_furniture.content.soap.SoapBottleStackUse;
 import org.lanye.fantasy_furniture.content.soap.SoapStackCollisionShapes;
 import org.lanye.fantasy_furniture.content.soap.blockentity.BodyCreamBlockEntity;
 import org.lanye.fantasy_furniture.content.tool.BrushRecolor;
-import org.lanye.reverie_core.util.VoxelShapeRotation;
 
 /** 乳霜：单瓶用 {@code 乳霜_默认} geo；纯乳霜 2 瓶及以上用 {@code 乳霜_堆叠_x5}；混合摞最多 4 瓶。 */
 public final class BodyCreamBlock extends SoapSeriesWaterloggableBlock<BodyCreamBlockEntity> {
@@ -65,14 +64,13 @@ public final class BodyCreamBlock extends SoapSeriesWaterloggableBlock<BodyCream
         if (raw instanceof BodyCreamBlockEntity be && be.layerCount() > 0) {
             if (SoapBottleStackRules.needsPerLayerStackCollision(
                     be.layersView(), SoapBottleKind.BODY_CREAM)) {
-                north = SoapBottleMixedCollisionShapes.north(be.layersView());
-            } else {
-                north = SoapStackCollisionShapes.bodyCreamNorth(be.layerCount());
+                return be.mixedCollisionShape(state.getValue(FACING));
             }
+            north = SoapStackCollisionShapes.bodyCreamNorth(be.layerCount());
         } else {
             north = SoapStackCollisionShapes.bodyCreamNorth(layers);
         }
-        return VoxelShapeRotation.rotateYFromNorthLikeGeckoBlockRenderer(north, state.getValue(FACING));
+        return OrientedVoxelShapes.geckoFromNorth(north, state.getValue(FACING));
     }
 
     @Override

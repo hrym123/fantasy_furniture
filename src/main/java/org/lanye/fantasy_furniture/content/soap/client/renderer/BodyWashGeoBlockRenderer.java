@@ -6,23 +6,19 @@ import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-import org.lanye.fantasy_furniture.content.soap.BodyWashAssets;
 import org.lanye.fantasy_furniture.content.soap.SoapBottleKind;
 import org.lanye.fantasy_furniture.content.soap.SoapBottleLayer;
-import org.lanye.fantasy_furniture.content.soap.SoapBottleStackSlots;
 import org.lanye.fantasy_furniture.content.soap.blockentity.BodyWashBlockEntity;
-import org.lanye.fantasy_furniture.content.soap.client.BodyWashStackRenderState;
 import org.lanye.fantasy_furniture.content.soap.client.model.BodyWashSingleGeoModel;
 import org.lanye.reverie_core.util.ReveriePerfRender;
 import software.bernie.geckolib.renderer.GeoBlockRenderer;
 
-/** 单瓶用 {@code body_wash} geo；纯沐浴露多瓶用 {@code body_wash1}…{@code body_wash4}；混合摞按层种类分 Pass 绘制。 */
+/** 单瓶用 {@code body_wash} geo；纯沐浴露多瓶合并 Pass；混合摞按 (种类,材质) 分桶绘制。 */
 @OnlyIn(Dist.CLIENT)
 public final class BodyWashGeoBlockRenderer implements BlockEntityRenderer<BodyWashBlockEntity> {
 
     private final GeoBlockRenderer<BodyWashBlockEntity> singleRenderer =
             new GeoBlockRenderer<>(new BodyWashSingleGeoModel());
-    private final BodyWashStackLayerRenderer stackRenderer = new BodyWashStackLayerRenderer();
     private final SoapBottleMixedStackRenderer mixedRenderer = new SoapBottleMixedStackRenderer();
 
     @Override
@@ -81,17 +77,16 @@ public final class BodyWashGeoBlockRenderer implements BlockEntityRenderer<BodyW
                             packedOverlay));
             return;
         }
-        for (int i = 0; i < count; i++) {
-            BodyWashStackRenderState.set(
-                    BodyWashAssets.stackBoneForLayerIndex(i), blockEntity.materialAtLayer(i));
-            try {
-                ReveriePerfRender.geoBlock(
-                        "body_wash_stack",
-                        () -> stackRenderer.render(
-                                blockEntity, partialTick, poseStack, bufferSource, packedLight, packedOverlay));
-            } finally {
-                BodyWashStackRenderState.clear();
-            }
-        }
+        ReveriePerfRender.geoBlock(
+                "body_wash_stack",
+                () -> mixedRenderer.renderHomogeneousKindStack(
+                        blockEntity,
+                        layers,
+                        SoapBottleKind.BODY_WASH,
+                        partialTick,
+                        poseStack,
+                        bufferSource,
+                        packedLight,
+                        packedOverlay));
     }
 }

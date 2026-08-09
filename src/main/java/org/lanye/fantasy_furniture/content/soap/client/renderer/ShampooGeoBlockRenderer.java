@@ -6,23 +6,19 @@ import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-import org.lanye.fantasy_furniture.content.soap.ShampooAssets;
 import org.lanye.fantasy_furniture.content.soap.SoapBottleKind;
 import org.lanye.fantasy_furniture.content.soap.SoapBottleLayer;
-import org.lanye.fantasy_furniture.content.soap.SoapBottleStackSlots;
 import org.lanye.fantasy_furniture.content.soap.blockentity.ShampooBlockEntity;
-import org.lanye.fantasy_furniture.content.soap.client.ShampooStackRenderState;
 import org.lanye.fantasy_furniture.content.soap.client.model.ShampooSingleGeoModel;
 import org.lanye.reverie_core.util.ReveriePerfRender;
 import software.bernie.geckolib.renderer.GeoBlockRenderer;
 
-/** 单瓶用 {@code shampoo} geo；纯洗发露多瓶用 {@code block1}…{@code block4}；混合摞按层种类分 Pass 绘制。 */
+/** 单瓶用 {@code shampoo} geo；纯洗发露多瓶合并 Pass；混合摞按 (种类,材质) 分桶绘制。 */
 @OnlyIn(Dist.CLIENT)
 public final class ShampooGeoBlockRenderer implements BlockEntityRenderer<ShampooBlockEntity> {
 
     private final GeoBlockRenderer<ShampooBlockEntity> singleRenderer =
             new GeoBlockRenderer<>(new ShampooSingleGeoModel());
-    private final ShampooStackLayerRenderer stackRenderer = new ShampooStackLayerRenderer();
     private final SoapBottleMixedStackRenderer mixedRenderer = new SoapBottleMixedStackRenderer();
 
     @Override
@@ -81,17 +77,16 @@ public final class ShampooGeoBlockRenderer implements BlockEntityRenderer<Shampo
                             packedOverlay));
             return;
         }
-        for (int i = 0; i < count; i++) {
-            ShampooStackRenderState.set(
-                    ShampooAssets.stackBoneForLayerIndex(i), blockEntity.materialAtLayer(i));
-            try {
-                ReveriePerfRender.geoBlock(
-                        "shampoo_stack",
-                        () -> stackRenderer.render(
-                                blockEntity, partialTick, poseStack, bufferSource, packedLight, packedOverlay));
-            } finally {
-                ShampooStackRenderState.clear();
-            }
-        }
+        ReveriePerfRender.geoBlock(
+                "shampoo_stack",
+                () -> mixedRenderer.renderHomogeneousKindStack(
+                        blockEntity,
+                        layers,
+                        SoapBottleKind.SHAMPOO,
+                        partialTick,
+                        poseStack,
+                        bufferSource,
+                        packedLight,
+                        packedOverlay));
     }
 }

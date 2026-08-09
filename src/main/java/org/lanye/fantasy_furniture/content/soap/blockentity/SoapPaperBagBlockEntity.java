@@ -101,7 +101,7 @@ public class SoapPaperBagBlockEntity extends BlockEntity implements GeoBlockEnti
     }
 
     public boolean pushLayer(int materialId) {
-        if (isSoapStack() || layerMaterials.size() >= SoapPaperBagBlock.MAX_LAYERS) {
+        if (layerMaterials.size() >= SoapPaperBagBlock.MAX_LAYERS) {
             return false;
         }
         layerMaterials.add(materialId);
@@ -114,16 +114,13 @@ public class SoapPaperBagBlockEntity extends BlockEntity implements GeoBlockEnti
         if (!packaged.isBagged() || packaged.packagingTorn()) {
             return false;
         }
-        if (isEmptyPackagingStack() && !layerMaterials.isEmpty()) {
-            return false;
-        }
         if (layerMaterials.size() >= SoapPaperBagBlock.MAX_LAYERS) {
             return false;
         }
         layerMaterials.add(packaged.bagMaterialId());
         layerSoaps.add(
                 new SoapBarAppearance(
-                        packaged.wear(),
+                        packaged.durability(),
                         packaged.materialId(),
                         0,
                         false,

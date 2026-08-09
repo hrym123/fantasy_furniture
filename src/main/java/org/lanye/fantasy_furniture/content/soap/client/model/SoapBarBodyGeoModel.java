@@ -5,7 +5,7 @@ import org.lanye.fantasy_furniture.content.soap.SoapBarAppearance;
 import org.lanye.fantasy_furniture.content.soap.blockentity.SoapBarBlockEntity;
 import software.bernie.geckolib.model.GeoModel;
 
-/** 地上肥皂：磨损 geo × 颜料贴图。 */
+/** 地上肥皂：耐久度 geo × 颜料贴图。 */
 public final class SoapBarBodyGeoModel extends GeoModel<SoapBarBlockEntity> {
 
     private SoapBarAppearance appearance(SoapBarBlockEntity entity) {

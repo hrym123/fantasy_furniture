@@ -11,17 +11,18 @@ import org.lanye.fantasy_furniture.content.soap.SoapBottleStackSlots;
 import org.lanye.fantasy_furniture.content.soap.blockentity.SoapBottleBlockEntity;
 import org.lanye.fantasy_furniture.content.soap.client.BodyCreamStackRenderState;
 import org.lanye.fantasy_furniture.content.soap.client.model.BodyCreamStackGeoModel;
+import org.lanye.reverie_core.geolib.client.GeoRenderTier;
+import org.lanye.reverie_core.geolib.client.ReverieGeoBlockRenderer;
 import software.bernie.geckolib.cache.object.BakedGeoModel;
 import software.bernie.geckolib.cache.object.GeoBone;
-import software.bernie.geckolib.renderer.GeoBlockRenderer;
 
-/** 摞体单层 Pass：按 {@link BodyCreamStackRenderState} 仅显示目标 {@code blockN} 骨骼。 */
-final class BodyCreamStackLayerRenderer extends GeoBlockRenderer<SoapBottleBlockEntity> {
+/** 摞体 Pass：按 {@link BodyCreamStackRenderState} 显示一个或多个 {@code blockN} 骨骼。 */
+final class BodyCreamStackLayerRenderer extends ReverieGeoBlockRenderer<SoapBottleBlockEntity> {
 
     private static final Set<String> LAYER_BONES = SoapBottleStackSlots.bodyCreamStackBoneSet();
 
     BodyCreamStackLayerRenderer() {
-        super(new BodyCreamStackGeoModel());
+        super(new BodyCreamStackGeoModel(), GeoRenderTier.STATIC);
     }
 
     @Override
@@ -63,15 +64,15 @@ final class BodyCreamStackLayerRenderer extends GeoBlockRenderer<SoapBottleBlock
     }
 
     private static Map<GeoBone, Boolean> applyLayerBoneVisibility(BakedGeoModel model) {
-        String visible = BodyCreamStackRenderState.visibleBone();
+        Set<String> visible = BodyCreamStackRenderState.visibleBones();
         Map<GeoBone, Boolean> oldHidden = new HashMap<>();
-        if (visible == null) {
+        if (visible.isEmpty()) {
             return oldHidden;
         }
         for (GeoBone bone : flattenBones(model)) {
             if (LAYER_BONES.contains(bone.getName())) {
                 oldHidden.put(bone, bone.isHidden());
-                bone.setHidden(!bone.getName().equals(visible));
+                bone.setHidden(!visible.contains(bone.getName()));
             }
         }
         return oldHidden;

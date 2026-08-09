@@ -24,14 +24,13 @@ import net.minecraft.world.phys.shapes.VoxelShape;
 import org.lanye.fantasy_furniture.content.soap.BodyWashAppearance;
 import org.lanye.fantasy_furniture.content.soap.BodyWashAssets;
 import org.lanye.fantasy_furniture.content.soap.BodyWashMaterials;
+import org.lanye.fantasy_furniture.content.soap.OrientedVoxelShapes;
 import org.lanye.fantasy_furniture.content.soap.SoapBottleKind;
-import org.lanye.fantasy_furniture.content.soap.SoapBottleMixedCollisionShapes;
 import org.lanye.fantasy_furniture.content.soap.SoapBottleStackRules;
 import org.lanye.fantasy_furniture.content.soap.SoapBottleStackUse;
 import org.lanye.fantasy_furniture.content.soap.SoapStackCollisionShapes;
 import org.lanye.fantasy_furniture.content.soap.blockentity.BodyWashBlockEntity;
 import org.lanye.fantasy_furniture.content.tool.BrushRecolor;
-import org.lanye.reverie_core.util.VoxelShapeRotation;
 
 /** 沐浴露：单瓶用 {@code 沐浴露_默认} geo；2 瓶及以上用 {@code 沐浴露_堆叠_x4}；可与洗发露 / 乳霜混合摞放。 */
 public final class BodyWashBlock extends SoapSeriesWaterloggableBlock<BodyWashBlockEntity> {
@@ -66,11 +65,10 @@ public final class BodyWashBlock extends SoapSeriesWaterloggableBlock<BodyWashBl
                 && be.layerCount() > 0
                 && SoapBottleStackRules.needsPerLayerStackCollision(
                         be.layersView(), SoapBottleKind.BODY_WASH)) {
-            north = SoapBottleMixedCollisionShapes.north(be.layersView());
-        } else {
-            north = SoapStackCollisionShapes.bodyWashNorth(layers);
+            return be.mixedCollisionShape(state.getValue(FACING));
         }
-        return VoxelShapeRotation.rotateYFromNorthLikeGeckoBlockRenderer(north, state.getValue(FACING));
+        north = SoapStackCollisionShapes.bodyWashNorth(layers);
+        return OrientedVoxelShapes.geckoFromNorth(north, state.getValue(FACING));
     }
 
     @Override

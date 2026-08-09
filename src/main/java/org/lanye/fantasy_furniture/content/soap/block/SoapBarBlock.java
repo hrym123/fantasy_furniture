@@ -31,7 +31,7 @@ import net.minecraft.world.phys.shapes.VoxelShape;
 import org.lanye.fantasy_furniture.bootstrap.block.ModBlocks;
 import org.lanye.fantasy_furniture.content.soap.SoapBarAppearance;
 import org.lanye.fantasy_furniture.content.soap.SoapBarMaterials;
-import org.lanye.fantasy_furniture.content.soap.SoapBarWear;
+import org.lanye.fantasy_furniture.content.soap.SoapBarDurability;
 import org.lanye.fantasy_furniture.content.soap.SoapPackagingStackOps;
 import org.lanye.fantasy_furniture.content.soap.SoapPackagingTear;
 import org.lanye.fantasy_furniture.content.soap.SoapPaperBagAppearance;
@@ -43,11 +43,12 @@ import org.lanye.fantasy_furniture.content.soap.item.SoapBarBlockItem;
 import org.lanye.reverie_core.util.VoxelShapeRotation;
 
 /**
- * 肥皂：可放置于地面；磨损档决定碰撞与 geo，颜料档决定贴图（见设计书 {@code 02-肥皂与包装}）。
+ * 肥皂：可放置于地面；耐久度档决定碰撞与 geo，颜料档决定贴图（见设计书 {@code 02-肥皂与包装}）。
  */
 public class SoapBarBlock extends SoapSeriesWaterloggableBlock<SoapBarBlockEntity> {
 
-    public static final IntegerProperty WEAR = IntegerProperty.create("wear", 0, 2);
+    public static final IntegerProperty DURABILITY =
+            IntegerProperty.create("durability", SoapBarDurability.MIN, SoapBarDurability.MAX);
     public static final IntegerProperty MATERIAL = IntegerProperty.create("material", 1, SoapBarMaterials.COUNT);
     public static final BooleanProperty PACKAGED = BooleanProperty.create("packaged");
     /** 为真且 {@link #PACKAGED} 时表示套盒；否则套袋。包装色仍写在 {@link #BAG_MATERIAL}。 */
@@ -66,7 +67,7 @@ public class SoapBarBlock extends SoapSeriesWaterloggableBlock<SoapBarBlockEntit
                 stateDefinition
                         .any()
                         .setValue(FACING, Direction.NORTH)
-                        .setValue(WEAR, SoapBarAppearance.DEFAULT_WEAR)
+                        .setValue(DURABILITY, SoapBarAppearance.DEFAULT_DURABILITY)
                         .setValue(MATERIAL, SoapBarAppearance.DEFAULT_MATERIAL)
                         .setValue(PACKAGED, false)
                         .setValue(BOXED, false)
@@ -77,7 +78,7 @@ public class SoapBarBlock extends SoapSeriesWaterloggableBlock<SoapBarBlockEntit
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
         super.createBlockStateDefinition(builder);
-        builder.add(WEAR, MATERIAL, PACKAGED, BOXED, BAG_MATERIAL, PACKAGING_TORN);
+        builder.add(DURABILITY, MATERIAL, PACKAGED, BOXED, BAG_MATERIAL, PACKAGING_TORN);
     }
 
     @Nullable
@@ -90,7 +91,7 @@ public class SoapBarBlock extends SoapSeriesWaterloggableBlock<SoapBarBlockEntit
                         type, ModBlocks.SOAP_BAR.blockEntityType().get(), SoapBarBlock::serverTick);
     }
 
-    /** 同格含水（waterlogged）或流体为水 → 计入入水磨损。 */
+    /** 同格含水（waterlogged）或流体为水 → 计入入水耐久消耗。 */
     public static boolean isImmersedInWater(Level level, BlockPos pos, BlockState state) {
         if (state.hasProperty(WATERLOGGED) && state.getValue(WATERLOGGED)) {
             return true;
@@ -107,9 +108,9 @@ public class SoapBarBlock extends SoapSeriesWaterloggableBlock<SoapBarBlockEntit
     @Override
     public VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
         VoxelShape north =
-                switch (SoapBarWear.clamp(state.getValue(WEAR))) {
-                    case 1 -> SHAPE_USED_ONCE_NORTH;
-                    case 2 -> SHAPE_USED_TWICE_NORTH;
+                switch (SoapBarDurability.clamp(state.getValue(DURABILITY))) {
+                    case 2 -> SHAPE_USED_ONCE_NORTH;
+                    case 1 -> SHAPE_USED_TWICE_NORTH;
                     default -> SHAPE_FULL_NORTH;
                 };
         return VoxelShapeRotation.rotateYFromNorth(north, state.getValue(FACING));
@@ -124,7 +125,7 @@ public class SoapBarBlock extends SoapSeriesWaterloggableBlock<SoapBarBlockEntit
             ItemStack stack) {
         SoapBarAppearance appearance = SoapBarAppearance.fromStack(stack);
         BlockState placed =
-                state.setValue(WEAR, appearance.wear())
+                state.setValue(DURABILITY, appearance.durability())
                         .setValue(MATERIAL, appearance.materialId())
                         .setValue(PACKAGED, appearance.isPackaged())
                         .setValue(BOXED, appearance.isBoxed())
@@ -226,10 +227,10 @@ public class SoapBarBlock extends SoapSeriesWaterloggableBlock<SoapBarBlockEntit
             return InteractionResult.CONSUME;
         }
 
-        // 包装态：手持同款带包装皂 → 叠摞；空手普通右击开合；潜行取回；去除包装仅手持长按
+        // 包装态：手持同款带包装皂或空袋/空盒 → 叠摞；空手普通右击开合；潜行取回；去除包装仅手持长按
         if (packaged) {
+            SoapBarAppearance here = appearanceAt(level, pos, state);
             if (held.is(ModBlocks.SOAP_BAR.item().get())) {
-                SoapBarAppearance here = appearanceAt(level, pos, state);
                 SoapBarAppearance heldApp = SoapBarAppearance.fromStack(held);
                 if (here.isBagged()
                         && heldApp.isBagged()
@@ -259,11 +260,37 @@ public class SoapBarBlock extends SoapSeriesWaterloggableBlock<SoapBarBlockEntit
                 }
                 return InteractionResult.FAIL;
             }
+            if (here.isBagged()
+                    && !here.packagingTorn()
+                    && held.is(ModBlocks.SOAP_PAPER_BAG.item().get())) {
+                SoapPaperBagAppearance bag = SoapPaperBagAppearance.fromStack(held);
+                if (!SoapPackagingStackOps.beginBagStackFromSoapAndEmpty(
+                        level, pos, state, here, bag.bagMaterialId())) {
+                    return InteractionResult.FAIL;
+                }
+                if (!player.getAbilities().instabuild) {
+                    held.shrink(1);
+                }
+                return InteractionResult.CONSUME;
+            }
+            if (here.isBoxed()
+                    && !here.packagingTorn()
+                    && held.is(ModBlocks.SOAP_PAPER_BOX.item().get())) {
+                SoapPaperBoxAppearance box = SoapPaperBoxAppearance.fromStack(held);
+                if (!SoapPackagingStackOps.beginBoxStackFromSoapAndEmpty(
+                        level, pos, state, here, box.materialId())) {
+                    return InteractionResult.FAIL;
+                }
+                if (!player.getAbilities().instabuild) {
+                    held.shrink(1);
+                }
+                return InteractionResult.CONSUME;
+            }
             if (held.isEmpty()) {
                 if (player.isShiftKeyDown()) {
                     ItemStack soap =
                             SoapBarBlockItem.stackWithAppearance(
-                                    ModBlocks.SOAP_BAR.item().get(), appearanceAt(level, pos, state));
+                                    ModBlocks.SOAP_BAR.item().get(), here);
                     if (!player.getInventory().add(soap)) {
                         player.drop(soap, false);
                     }
@@ -283,15 +310,15 @@ public class SoapBarBlock extends SoapSeriesWaterloggableBlock<SoapBarBlockEntit
     }
 
     /**
-     * 入水消耗等玩法推进磨损；颜料不变。磨损为 {@code 2} 后再调用则移除方块。
+     * 入水消耗等玩法推进耐久度；颜料不变。剩余耐久为 {@code 1} 后再调用则移除方块。
      */
-    public static void advanceWear(Level level, BlockPos pos, BlockState state) {
+    public static void advanceDurability(Level level, BlockPos pos, BlockState state) {
         if (!(state.getBlock() instanceof SoapBarBlock)) {
             return;
         }
-        int wear = state.getValue(WEAR);
-        if (wear < 2) {
-            level.setBlock(pos, state.setValue(WEAR, wear + 1), Block.UPDATE_ALL);
+        int durability = state.getValue(DURABILITY);
+        if (durability > SoapBarDurability.MIN) {
+            level.setBlock(pos, state.setValue(DURABILITY, durability - 1), Block.UPDATE_ALL);
         } else {
             level.removeBlock(pos, false);
         }

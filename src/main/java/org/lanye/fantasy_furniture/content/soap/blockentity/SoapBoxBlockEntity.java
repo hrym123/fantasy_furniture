@@ -10,6 +10,7 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import org.lanye.fantasy_furniture.bootstrap.block.ModBlocks;
 import org.lanye.fantasy_furniture.content.soap.SoapBarAppearance;
+import org.lanye.fantasy_furniture.content.soap.SoapBarDurability;
 import org.lanye.fantasy_furniture.content.soap.block.SoapBoxBlock;
 import software.bernie.geckolib.animatable.GeoBlockEntity;
 import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
@@ -18,10 +19,11 @@ import software.bernie.geckolib.core.animation.AnimationController;
 import software.bernie.geckolib.core.object.PlayState;
 import software.bernie.geckolib.util.GeckoLibUtil;
 
-/** 肥皂盒方块实体：盒色由方块状态驱动；盒内皂磨损与颜料存 NBT。 */
+/** 肥皂盒方块实体：盒色由方块状态驱动；盒内皂耐久度与颜料存 NBT。 */
 public class SoapBoxBlockEntity extends BlockEntity implements GeoBlockEntity {
 
-    private static final String TAG_SOAP_WEAR = "SoapWear";
+    private static final String TAG_SOAP_DURABILITY = "SoapDurability";
+    private static final String TAG_SOAP_WEAR_LEGACY = "SoapWear";
     private static final String TAG_SOAP_MAT = "SoapMat";
 
     private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
@@ -52,16 +54,23 @@ public class SoapBoxBlockEntity extends BlockEntity implements GeoBlockEntity {
     @Override
     protected void saveAdditional(CompoundTag tag) {
         super.saveAdditional(tag);
-        tag.putInt(TAG_SOAP_WEAR, containedSoap.wear());
+        tag.putInt(TAG_SOAP_DURABILITY, containedSoap.durability());
+        tag.remove(TAG_SOAP_WEAR_LEGACY);
         tag.putInt(TAG_SOAP_MAT, containedSoap.materialId());
     }
 
     @Override
     public void load(CompoundTag tag) {
         super.load(tag);
-        int wear = tag.contains(TAG_SOAP_WEAR) ? tag.getInt(TAG_SOAP_WEAR) : SoapBarAppearance.DEFAULT_WEAR;
+        int durability =
+                tag.contains(TAG_SOAP_DURABILITY)
+                        ? tag.getInt(TAG_SOAP_DURABILITY)
+                        : tag.contains(TAG_SOAP_WEAR_LEGACY)
+                                ? SoapBarDurability.fromLegacyWear(
+                                        tag.getInt(TAG_SOAP_WEAR_LEGACY))
+                                : SoapBarAppearance.DEFAULT_DURABILITY;
         int mat = tag.contains(TAG_SOAP_MAT) ? tag.getInt(TAG_SOAP_MAT) : SoapBarAppearance.DEFAULT_MATERIAL;
-        containedSoap = new SoapBarAppearance(wear, mat);
+        containedSoap = new SoapBarAppearance(durability, mat);
     }
 
     @Override

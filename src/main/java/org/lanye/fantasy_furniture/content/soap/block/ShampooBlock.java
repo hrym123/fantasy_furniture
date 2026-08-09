@@ -25,13 +25,12 @@ import org.lanye.fantasy_furniture.content.soap.ShampooAppearance;
 import org.lanye.fantasy_furniture.content.soap.ShampooAssets;
 import org.lanye.fantasy_furniture.content.soap.ShampooMaterials;
 import org.lanye.fantasy_furniture.content.soap.SoapBottleKind;
-import org.lanye.fantasy_furniture.content.soap.SoapBottleMixedCollisionShapes;
+import org.lanye.fantasy_furniture.content.soap.OrientedVoxelShapes;
 import org.lanye.fantasy_furniture.content.soap.SoapBottleStackRules;
 import org.lanye.fantasy_furniture.content.soap.SoapBottleStackUse;
 import org.lanye.fantasy_furniture.content.soap.SoapStackCollisionShapes;
 import org.lanye.fantasy_furniture.content.soap.blockentity.ShampooBlockEntity;
 import org.lanye.fantasy_furniture.content.tool.BrushRecolor;
-import org.lanye.reverie_core.util.VoxelShapeRotation;
 
 /** 洗发露：单瓶用 {@code 洗发露_默认} geo；2 瓶及以上用 {@code 洗发露_堆叠_x4}；可与沐浴露 / 乳霜混合摞放。 */
 public final class ShampooBlock extends SoapSeriesWaterloggableBlock<ShampooBlockEntity> {
@@ -66,11 +65,10 @@ public final class ShampooBlock extends SoapSeriesWaterloggableBlock<ShampooBloc
                 && be.layerCount() > 0
                 && SoapBottleStackRules.needsPerLayerStackCollision(
                         be.layersView(), SoapBottleKind.SHAMPOO)) {
-            north = SoapBottleMixedCollisionShapes.north(be.layersView());
-        } else {
-            north = SoapStackCollisionShapes.shampooNorth(layers);
+            return be.mixedCollisionShape(state.getValue(FACING));
         }
-        return VoxelShapeRotation.rotateYFromNorthLikeGeckoBlockRenderer(north, state.getValue(FACING));
+        north = SoapStackCollisionShapes.shampooNorth(layers);
+        return OrientedVoxelShapes.geckoFromNorth(north, state.getValue(FACING));
     }
 
     @Override

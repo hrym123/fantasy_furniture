@@ -18,7 +18,7 @@ import org.lanye.fantasy_furniture.content.soap.blockentity.SoapPaperBagBlockEnt
 import org.lanye.fantasy_furniture.content.soap.blockentity.SoapPaperBoxBlockEntity;
 import org.lanye.fantasy_furniture.content.soap.item.SoapBarBlockItem;
 
-/** 带皂包装摞：与空袋/空盒共用摞方块与层数上限，每层另存皂数据。 */
+/** 包装摞：空袋/空盒与带皂包装可混叠，共用摞方块与层数上限。 */
 public final class SoapPackagingStackOps {
 
     private SoapPackagingStackOps() {}
@@ -87,6 +87,74 @@ public final class SoapPackagingStackOps {
         return true;
     }
 
+    /** 地上带袋皂 + 手持空袋 → 袋摞（底层带皂、顶层空袋）。 */
+    public static boolean beginBagStackFromSoapAndEmpty(
+            Level level,
+            BlockPos pos,
+            BlockState soapBarState,
+            SoapBarAppearance soap,
+            int emptyBagMaterialId) {
+        if (!soap.isBagged() || soap.packagingTorn() || !SoapPaperBagMaterials.isPlayable(emptyBagMaterialId)) {
+            return false;
+        }
+        Direction facing = soapBarState.getValue(SoapBarBlock.FACING);
+        boolean waterlogged =
+                soapBarState.hasProperty(SoapSeriesWaterloggableBlock.WATERLOGGED)
+                        && soapBarState.getValue(SoapSeriesWaterloggableBlock.WATERLOGGED);
+        BlockState bagState =
+                ModBlocks.SOAP_PAPER_BAG
+                        .block()
+                        .get()
+                        .defaultBlockState()
+                        .setValue(SoapPaperBagBlock.FACING, facing)
+                        .setValue(SoapPaperBagBlock.LAYERS, 2)
+                        .setValue(SoapPaperBagBlock.MATERIAL, emptyBagMaterialId)
+                        .setValue(SoapPaperBagBlock.TORN, false)
+                        .setValue(SoapSeriesWaterloggableBlock.WATERLOGGED, waterlogged);
+        level.setBlock(pos, bagState, Block.UPDATE_ALL);
+        if (level.getBlockEntity(pos) instanceof SoapPaperBagBlockEntity be) {
+            be.clearLayers();
+            be.pushSoapLayer(soap);
+            be.pushLayer(emptyBagMaterialId);
+            SoapPaperBagBlock.syncStateFromEntity(level, pos, bagState, be);
+        }
+        return true;
+    }
+
+    /** 地上带盒皂 + 手持空盒 → 盒摞（底层带皂、顶层空盒）。 */
+    public static boolean beginBoxStackFromSoapAndEmpty(
+            Level level,
+            BlockPos pos,
+            BlockState soapBarState,
+            SoapBarAppearance soap,
+            int emptyBoxMaterialId) {
+        if (!soap.isBoxed() || soap.packagingTorn() || !SoapPaperBoxMaterials.isValid(emptyBoxMaterialId)) {
+            return false;
+        }
+        Direction facing = soapBarState.getValue(SoapBarBlock.FACING);
+        boolean waterlogged =
+                soapBarState.hasProperty(SoapSeriesWaterloggableBlock.WATERLOGGED)
+                        && soapBarState.getValue(SoapSeriesWaterloggableBlock.WATERLOGGED);
+        BlockState boxState =
+                ModBlocks.SOAP_PAPER_BOX
+                        .block()
+                        .get()
+                        .defaultBlockState()
+                        .setValue(SoapPaperBoxBlock.FACING, facing)
+                        .setValue(SoapPaperBoxBlock.LAYERS, 2)
+                        .setValue(SoapPaperBoxBlock.MATERIAL, emptyBoxMaterialId)
+                        .setValue(SoapPaperBoxBlock.TORN, false)
+                        .setValue(SoapSeriesWaterloggableBlock.WATERLOGGED, waterlogged);
+        level.setBlock(pos, boxState, Block.UPDATE_ALL);
+        if (level.getBlockEntity(pos) instanceof SoapPaperBoxBlockEntity be) {
+            be.clearLayers();
+            be.pushSoapLayer(soap);
+            be.pushLayer(emptyBoxMaterialId);
+            SoapPaperBoxBlock.syncStateFromEntity(level, pos, boxState, be);
+        }
+        return true;
+    }
+
     /** 带皂袋摞只剩 1 层时还原为地上带袋皂（可开合模型）。 */
     public static void collapseBagSoapStackToSoapBar(Level level, BlockPos pos, BlockState bagState) {
         if (!(level.getBlockEntity(pos) instanceof SoapPaperBagBlockEntity be) || be.layerCount() != 1) {
@@ -126,7 +194,7 @@ public final class SoapPackagingStackOps {
                         .get()
                         .defaultBlockState()
                         .setValue(SoapBarBlock.FACING, facing)
-                        .setValue(SoapBarBlock.WEAR, appearance.wear())
+                        .setValue(SoapBarBlock.DURABILITY, appearance.durability())
                         .setValue(SoapBarBlock.MATERIAL, appearance.materialId())
                         .setValue(SoapBarBlock.PACKAGED, true)
                         .setValue(SoapBarBlock.BOXED, appearance.isBoxed())
@@ -141,7 +209,7 @@ public final class SoapPackagingStackOps {
 
     public static void writeSoapBodyToLayerTag(CompoundTag entry, SoapBarAppearance appearance) {
         entry.putBoolean("HasSoap", true);
-        entry.putInt("SoapWear", appearance.wear());
+        entry.putInt("SoapDurability", appearance.durability());
         entry.putInt("SoapMat", appearance.materialId());
         entry.putInt("PartMat", appearance.particleMatId());
     }
@@ -151,20 +219,24 @@ public final class SoapPackagingStackOps {
         if (!entry.getBoolean("HasSoap")) {
             return null;
         }
-        int wear = entry.contains("SoapWear") ? entry.getInt("SoapWear") : SoapBarAppearance.DEFAULT_WEAR;
+        int durability = entry.contains("SoapDurability")
+                ? entry.getInt("SoapDurability")
+                : entry.contains("SoapWear")
+                        ? SoapBarDurability.fromLegacyWear(entry.getInt("SoapWear"))
+                        : SoapBarAppearance.DEFAULT_DURABILITY;
         int mat = entry.contains("SoapMat") ? entry.getInt("SoapMat") : SoapBarAppearance.DEFAULT_MATERIAL;
         int part =
                 entry.contains("PartMat") ? entry.getInt("PartMat") : SoapBarAppearance.pigmentToParticleMat(mat);
-        return new SoapBarAppearance(wear, mat, 0, false, part, 0);
+        return new SoapBarAppearance(durability, mat, 0, false, part, 0);
     }
 
     public static SoapBarAppearance baggedFromLayer(int bagMat, SoapBarAppearance body) {
         return new SoapBarAppearance(
-                body.wear(), body.materialId(), bagMat, false, body.particleMatId(), 0);
+                body.durability(), body.materialId(), bagMat, false, body.particleMatId(), 0);
     }
 
     public static SoapBarAppearance boxedFromLayer(int boxMat, SoapBarAppearance body) {
         return SoapBarAppearance.withBox(
-                body.wear(), body.materialId(), boxMat, false, body.particleMatId());
+                body.durability(), body.materialId(), boxMat, false, body.particleMatId());
     }
 }

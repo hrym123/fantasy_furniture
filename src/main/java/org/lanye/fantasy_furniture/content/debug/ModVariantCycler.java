@@ -19,7 +19,7 @@ import org.lanye.fantasy_furniture.content.furniture.decor.item.PlainGlassWindow
 import org.lanye.fantasy_furniture.content.furniture.livingroom.block.BanquetteBlock;
 import org.lanye.fantasy_furniture.content.soap.SoapBarAppearance;
 import org.lanye.fantasy_furniture.content.soap.SoapBarMaterials;
-import org.lanye.fantasy_furniture.content.soap.SoapBarWear;
+import org.lanye.fantasy_furniture.content.soap.SoapBarDurability;
 import org.lanye.fantasy_furniture.content.soap.block.SoapBarBlock;
 import org.lanye.fantasy_furniture.content.soap.block.SoapBoxBlock;
 import org.lanye.fantasy_furniture.content.soap.block.SoapRackBlock;
@@ -28,11 +28,11 @@ import org.lanye.fantasy_furniture.content.soap.blockentity.SoapRackBlockEntity;
 import org.lanye.fantasy_furniture.content.soap.item.SoapBarBlockItem;
 import org.lanye.fantasy_furniture.content.soap.item.SoapBoxBlockItem;
 
-/** 变体调试棒：循环本模组模型变体（磨损 geo、盖态、造型等），不切换材质/颜料。 */
+/** 变体调试棒：循环本模组模型变体（耐久度 geo、盖态、造型等），不切换材质/颜料。 */
 public final class ModVariantCycler {
 
-    private static final int SOAP_WEAR_MIN = 0;
-    private static final int SOAP_WEAR_MAX = 2;
+    private static final int SOAP_DURABILITY_MIN = SoapBarDurability.MIN;
+    private static final int SOAP_DURABILITY_MAX = SoapBarDurability.MAX;
 
     private ModVariantCycler() {}
 
@@ -67,12 +67,12 @@ public final class ModVariantCycler {
         Item item = stack.getItem();
         if (item instanceof SoapBarBlockItem) {
             SoapBarAppearance current = SoapBarAppearance.fromStack(stack);
-            SoapBarAppearance next = advanceSoapWear(current, reverse);
+            SoapBarAppearance next = advanceSoapDurability(current, reverse);
             if (next.equals(current)) {
                 return Optional.empty();
             }
             SoapBarAppearance.writeToStack(stack, next);
-            return Optional.of(describeSoapWear(next));
+            return Optional.of(describeSoapDurability(next));
         }
         if (item instanceof SoapBoxBlockItem) {
             return Optional.empty();
@@ -103,14 +103,16 @@ public final class ModVariantCycler {
 
     private static Optional<Component> cycleSoapBarBlock(
             Level level, BlockPos pos, BlockState state, boolean reverse) {
-        int wear = state.getValue(SoapBarBlock.WEAR);
+        int durability = state.getValue(SoapBarBlock.DURABILITY);
         int mat = state.getValue(SoapBarBlock.MATERIAL);
-        SoapBarAppearance next = advanceSoapWear(new SoapBarAppearance(wear, mat), reverse);
-        if (next.wear() == wear) {
+        SoapBarAppearance next =
+                advanceSoapDurability(new SoapBarAppearance(durability, mat), reverse);
+        if (next.durability() == durability) {
             return Optional.empty();
         }
-        level.setBlock(pos, state.setValue(SoapBarBlock.WEAR, next.wear()), Block.UPDATE_ALL);
-        return Optional.of(describeSoapWear(next));
+        level.setBlock(
+                pos, state.setValue(SoapBarBlock.DURABILITY, next.durability()), Block.UPDATE_ALL);
+        return Optional.of(describeSoapDurability(next));
     }
 
     private static Optional<Component> cycleSoapBoxBlock(
@@ -124,8 +126,8 @@ public final class ModVariantCycler {
 
         if (reverse) {
             if (hasSoap && boxBe != null) {
-                if (soap.wear() > SOAP_WEAR_MIN) {
-                    SoapBarAppearance prev = withWear(soap, soap.wear() - 1);
+                if (soap.durability() < SOAP_DURABILITY_MAX) {
+                    SoapBarAppearance prev = withDurability(soap, soap.durability() + 1);
                     boxBe.setContainedSoap(prev);
                     soap = prev;
                 } else {
@@ -150,8 +152,8 @@ public final class ModVariantCycler {
                 return Optional.empty();
             }
         } else if (boxBe != null) {
-            if (soap.wear() < SOAP_WEAR_MAX) {
-                SoapBarAppearance next = withWear(soap, soap.wear() + 1);
+            if (soap.durability() > SOAP_DURABILITY_MIN) {
+                SoapBarAppearance next = withDurability(soap, soap.durability() - 1);
                 boxBe.setContainedSoap(next);
                 soap = next;
             } else {
@@ -185,18 +187,18 @@ public final class ModVariantCycler {
             return Optional.of(
                     Component.translatable(
                             "debug.fantasy_furniture.variant.soap_rack_soap",
-                            describeSoapWear(inserted)));
+                            describeSoapDurability(inserted)));
         }
         if (rack == null) {
             return Optional.empty();
         }
         SoapBarAppearance soap = rack.containedSoap();
-        SoapBarAppearance advanced = advanceSoapWear(soap, reverse);
+        SoapBarAppearance advanced = advanceSoapDurability(soap, reverse);
         if (!advanced.equals(soap)) {
             rack.setContainedSoap(advanced);
             return Optional.of(
                     Component.translatable(
-                            "debug.fantasy_furniture.variant.soap_rack_soap", describeSoapWear(advanced)));
+                            "debug.fantasy_furniture.variant.soap_rack_soap", describeSoapDurability(advanced)));
         }
         if (reverse) {
             return Optional.empty();
@@ -253,27 +255,27 @@ public final class ModVariantCycler {
                 open
                         ? Component.translatable("debug.fantasy_furniture.lid.open")
                         : Component.translatable("debug.fantasy_furniture.lid.closed"),
-                describeSoapWear(soap));
+                describeSoapDurability(soap));
     }
 
-    /** 仅推进磨损档 geo，颜料档不变。 */
-    private static SoapBarAppearance advanceSoapWear(SoapBarAppearance current, boolean reverse) {
-        int wear = current.wear();
+    /** 仅推进耐久度档 geo（正向消耗、反向恢复），颜料档不变。 */
+    private static SoapBarAppearance advanceSoapDurability(SoapBarAppearance current, boolean reverse) {
+        int durability = current.durability();
         if (reverse) {
-            if (wear <= SOAP_WEAR_MIN) {
+            if (durability >= SOAP_DURABILITY_MAX) {
                 return current;
             }
-            return withWear(current, wear - 1);
+            return withDurability(current, durability + 1);
         }
-        if (wear >= SOAP_WEAR_MAX) {
+        if (durability <= SOAP_DURABILITY_MIN) {
             return current;
         }
-        return withWear(current, wear + 1);
+        return withDurability(current, durability - 1);
     }
 
-    private static SoapBarAppearance withWear(SoapBarAppearance appearance, int wear) {
+    private static SoapBarAppearance withDurability(SoapBarAppearance appearance, int durability) {
         return new SoapBarAppearance(
-                wear,
+                durability,
                 appearance.materialId(),
                 appearance.bagMaterialId(),
                 appearance.packagingTorn(),
@@ -281,15 +283,15 @@ public final class ModVariantCycler {
                 appearance.boxMaterialId());
     }
 
-    /** 调试棒入皂占位：默认磨损 + 指定 pigment（盒体同色），循环中不切换 pigment。 */
+    /** 调试棒入皂占位：满耐久 + 指定 pigment（盒体同色），循环中不切换 pigment。 */
     private static SoapBarAppearance debugPlaceholderSoap(int materialId) {
-        return new SoapBarAppearance(SoapBarAppearance.DEFAULT_WEAR, materialId);
+        return new SoapBarAppearance(SoapBarAppearance.DEFAULT_DURABILITY, materialId);
     }
 
-    private static Component describeSoapWear(SoapBarAppearance appearance) {
+    private static Component describeSoapDurability(SoapBarAppearance appearance) {
         return Component.translatable(
-                "debug.fantasy_furniture.variant.soap_wear",
-                Component.translatable(SoapBarWear.wearTranslationKey(appearance.wear())),
+                "debug.fantasy_furniture.variant.soap_durability",
+                Component.translatable(SoapBarDurability.translationKey(appearance.durability())),
                 Component.translatable(SoapBarMaterials.colorTranslationKey(appearance.materialId())));
     }
 

@@ -27,6 +27,7 @@ public final class SoapPaperBoxClient {
                                 ModBlocks.SOAP_PAPER_BOX.item().get(),
                                 BOX_MATERIAL_PROPERTY,
                                 (stack, level, entity, seed) ->
-                                        SoapPaperBoxAppearance.fromStack(stack).materialId() * 0.01f));
+                                        SoapBarClient.materialPropertyValue(
+                                                SoapPaperBoxAppearance.fromStack(stack).materialId())));
     }
 }

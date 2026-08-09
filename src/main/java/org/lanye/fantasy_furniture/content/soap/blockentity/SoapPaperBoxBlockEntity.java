@@ -100,7 +100,7 @@ public final class SoapPaperBoxBlockEntity extends BlockEntity implements GeoBlo
     }
 
     public boolean pushLayer(int materialId) {
-        if (isSoapStack() || layerMaterials.size() >= SoapPaperBoxAssets.MAX_STACK) {
+        if (layerMaterials.size() >= SoapPaperBoxAssets.MAX_STACK) {
             return false;
         }
         layerMaterials.add(materialId);
@@ -113,16 +113,13 @@ public final class SoapPaperBoxBlockEntity extends BlockEntity implements GeoBlo
         if (!packaged.isBoxed() || packaged.packagingTorn()) {
             return false;
         }
-        if (isEmptyPackagingStack() && !layerMaterials.isEmpty()) {
-            return false;
-        }
         if (layerMaterials.size() >= SoapPaperBoxAssets.MAX_STACK) {
             return false;
         }
         layerMaterials.add(packaged.boxMaterialId());
         layerSoaps.add(
                 new SoapBarAppearance(
-                        packaged.wear(),
+                        packaged.durability(),
                         packaged.materialId(),
                         0,
                         false,

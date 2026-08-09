@@ -7,23 +7,24 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import net.minecraft.client.renderer.MultiBufferSource;
-import org.lanye.fantasy_furniture.content.soap.blockentity.SoapBottleBlockEntity;
 import org.lanye.fantasy_furniture.content.soap.SoapBottleKind;
 import org.lanye.fantasy_furniture.content.soap.SoapBottleStackSlots;
+import org.lanye.fantasy_furniture.content.soap.blockentity.SoapBottleBlockEntity;
 import org.lanye.fantasy_furniture.content.soap.client.ShampooStackRenderState;
 import org.lanye.fantasy_furniture.content.soap.client.model.ShampooStackGeoModel;
+import org.lanye.reverie_core.geolib.client.GeoRenderTier;
+import org.lanye.reverie_core.geolib.client.ReverieGeoBlockRenderer;
 import software.bernie.geckolib.cache.object.BakedGeoModel;
 import software.bernie.geckolib.cache.object.GeoBone;
-import software.bernie.geckolib.renderer.GeoBlockRenderer;
 
-/** 摞体单层 Pass：按 {@link ShampooStackRenderState} 仅显示目标 {@code blockN} 骨骼。 */
-final class ShampooStackLayerRenderer extends GeoBlockRenderer<SoapBottleBlockEntity> {
+/** 摞体 Pass：按 {@link ShampooStackRenderState} 显示一个或多个 {@code blockN} 骨骼。 */
+final class ShampooStackLayerRenderer extends ReverieGeoBlockRenderer<SoapBottleBlockEntity> {
 
     private static final Set<String> LAYER_BONES =
             SoapBottleStackSlots.layerBoneSet(SoapBottleKind.SHAMPOO);
 
     ShampooStackLayerRenderer() {
-        super(new ShampooStackGeoModel());
+        super(new ShampooStackGeoModel(), GeoRenderTier.STATIC);
     }
 
     @Override
@@ -65,15 +66,15 @@ final class ShampooStackLayerRenderer extends GeoBlockRenderer<SoapBottleBlockEn
     }
 
     private static Map<GeoBone, Boolean> applyLayerBoneVisibility(BakedGeoModel model) {
-        String visible = ShampooStackRenderState.visibleBone();
+        Set<String> visible = ShampooStackRenderState.visibleBones();
         Map<GeoBone, Boolean> oldHidden = new HashMap<>();
-        if (visible == null) {
+        if (visible.isEmpty()) {
             return oldHidden;
         }
         for (GeoBone bone : flattenBones(model)) {
             if (LAYER_BONES.contains(bone.getName())) {
                 oldHidden.put(bone, bone.isHidden());
-                bone.setHidden(!bone.getName().equals(visible));
+                bone.setHidden(!visible.contains(bone.getName()));
             }
         }
         return oldHidden;

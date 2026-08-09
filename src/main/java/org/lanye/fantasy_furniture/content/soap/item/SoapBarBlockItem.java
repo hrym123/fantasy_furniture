@@ -16,7 +16,7 @@ import net.minecraftforge.client.extensions.common.IClientItemExtensions;
 import org.jetbrains.annotations.NotNull;
 import org.lanye.fantasy_furniture.content.soap.SoapBarAppearance;
 import org.lanye.fantasy_furniture.content.soap.SoapBarMaterials;
-import org.lanye.fantasy_furniture.content.soap.SoapBarWear;
+import org.lanye.fantasy_furniture.content.soap.SoapBarDurability;
 import org.lanye.fantasy_furniture.content.soap.client.SoapBarItemRenderer;
 import org.lanye.fantasy_furniture.content.soap.effect.BubbleEffectApplier;
 import org.lanye.fantasy_furniture.content.soap.effect.BubbleMobEffect;
@@ -24,7 +24,7 @@ import org.lanye.reverie_core.geolib.GeolibBlockItem;
 import org.lanye.reverie_core.geolib.GeolibItemAssets;
 
 /**
- * 肥皂物品：单 id，磨损与颜料存于 NBT（{@link SoapBarAppearance}）；物品栏 2D 物品材质，手持 Geo。
+ * 肥皂物品：单 id，耐久度与颜料存于 NBT（{@link SoapBarAppearance}）；物品栏 2D 物品材质，手持 Geo。
  *
  * <p>对空气长按：有包装 → 撕开包装；无包装且蹲下 → 消耗肥皂并 +10 分钟泡泡；无包装站立 → 不消耗、+10 秒泡泡。
  */
@@ -48,7 +48,7 @@ public final class SoapBarBlockItem extends GeolibBlockItem {
                     "item.fantasy_furniture.soap_bar.packaged",
                     Component.translatable(SoapBarMaterials.colorTranslationKey(appearance.bagMaterialId())));
         }
-        if (appearance.wear() == SoapBarAppearance.DEFAULT_WEAR) {
+        if (appearance.durability() == SoapBarAppearance.DEFAULT_DURABILITY) {
             return Component.translatable(
                     "item.fantasy_furniture.soap_bar.named_full",
                     Component.translatable(SoapBarMaterials.colorTranslationKey(appearance.materialId())));
@@ -56,7 +56,7 @@ public final class SoapBarBlockItem extends GeolibBlockItem {
         return Component.translatable(
                 "item.fantasy_furniture.soap_bar.named_worn",
                 Component.translatable(SoapBarMaterials.colorTranslationKey(appearance.materialId())),
-                Component.translatable(SoapBarWear.wearTranslationKey(appearance.wear())));
+                Component.translatable(SoapBarDurability.translationKey(appearance.durability())));
     }
 
     @Override
@@ -87,7 +87,7 @@ public final class SoapBarBlockItem extends GeolibBlockItem {
         if (appearance.isPackaged()) {
             SoapBarAppearance unwrapped =
                     new SoapBarAppearance(
-                            appearance.wear(),
+                            appearance.durability(),
                             appearance.materialId(),
                             0,
                             false,
@@ -97,13 +97,13 @@ public final class SoapBarBlockItem extends GeolibBlockItem {
             return stack;
         }
         if (entity.isCrouching()) {
-            BubbleEffectApplier.applyFromConsumedSoap(entity);
+            BubbleEffectApplier.applyFromConsumedSoap(entity, appearance);
             if (entity instanceof Player player && !player.getAbilities().instabuild) {
                 stack.shrink(1);
             }
             return stack;
         }
-        BubbleEffectApplier.apply(entity);
+        BubbleEffectApplier.apply(entity, appearance);
         return stack;
     }
 
@@ -123,7 +123,7 @@ public final class SoapBarBlockItem extends GeolibBlockItem {
                 });
     }
 
-    /** 创造栏 / 指令用：指定颜料与磨损的堆叠。 */
+    /** 创造栏 / 指令用：指定颜料与耐久度的堆叠。 */
     public static ItemStack stackWithAppearance(Item item, SoapBarAppearance appearance) {
         ItemStack stack = new ItemStack(item);
         SoapBarAppearance.writeToStack(stack, appearance);

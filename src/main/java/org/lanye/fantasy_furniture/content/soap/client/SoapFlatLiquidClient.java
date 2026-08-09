@@ -38,6 +38,7 @@ public final class SoapFlatLiquidClient {
                 item,
                 LIQUID_MATERIAL_PREDICATE,
                 (stack, level, entity, seed) ->
-                        SoapFlatLiquidAppearance.fromStack(stack, stem).materialId() * 0.01f);
+                        SoapBarClient.materialPropertyValue(
+                                SoapFlatLiquidAppearance.fromStack(stack, stem).materialId()));
     }
 }

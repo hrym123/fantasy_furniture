@@ -28,11 +28,15 @@ public final class SoapPaperBagClient {
                                 ModBlocks.SOAP_PAPER_BAG.item().get(),
                                 BAG_MATERIAL_PROPERTY,
                                 (stack, level, entity, seed) ->
-                                        SoapPaperBagAppearance.fromStack(stack).bagMaterialId() * 0.01f));
+                                        materialPropertyValue(
+                                                SoapPaperBagAppearance.fromStack(stack).bagMaterialId())));
     }
 
-    /** 物品栏 UI 图 predicate：材质 id {@code 1}–{@link SoapPaperBagMaterials#COUNT} → {@code 0.01}–{@code 0.07}。 */
+    /**
+     * 物品栏 UI 图 predicate：材质 id {@code 1}–{@link SoapPaperBagMaterials#COUNT} → {@code 0.01}–{@code 0.07}。
+     * 须 {@code (float)(id * 0.01)}，见 {@link SoapBarClient#materialPropertyValue(int)}。
+     */
     public static float materialPropertyValue(int bagMaterialId) {
-        return bagMaterialId * 0.01f;
+        return SoapBarClient.materialPropertyValue(bagMaterialId);
     }
 }

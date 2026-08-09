@@ -23,11 +23,11 @@ import software.bernie.geckolib.core.object.PlayState;
 import software.bernie.geckolib.util.GeckoLibUtil;
 
 /**
- * 肥皂方块实体：磨损与颜料由 {@link SoapBarBlock} 方块状态驱动渲染；入水磨损计时与粒子色写在本实体。
+ * 肥皂方块实体：耐久度与颜料由 {@link SoapBarBlock} 方块状态驱动渲染；入水耐久消耗计时与粒子色写在本实体。
  */
 public class SoapBarBlockEntity extends BlockEntity implements GeoBlockEntity {
 
-    /** 每一磨损档所需连续浸水时长（1 分钟）。 */
+    /** 每消耗 1 点耐久所需连续浸水时长（1 分钟）。 */
     public static final int WATER_WEAR_INTERVAL_TICKS = 20 * 60;
 
     private static final int AMBIENT_PARTICLE_INTERVAL_TICKS = 12;
@@ -38,7 +38,7 @@ public class SoapBarBlockEntity extends BlockEntity implements GeoBlockEntity {
 
     private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
 
-    /** 当前磨损档内已累计的浸水 tick；离水不清零。 */
+    /** 当前耐久档内已累计的浸水 tick；离水不清零。 */
     private int waterWearTicks;
 
     private boolean wasImmersed;
@@ -106,7 +106,7 @@ public class SoapBarBlockEntity extends BlockEntity implements GeoBlockEntity {
         waterWearTicks = 0;
         setChanged();
         SoapWaterParticles.spawnBurst(level, worldPosition, state, this);
-        SoapBarBlock.advanceWear(level, worldPosition, state);
+        SoapBarBlock.advanceDurability(level, worldPosition, state);
     }
 
     @Override

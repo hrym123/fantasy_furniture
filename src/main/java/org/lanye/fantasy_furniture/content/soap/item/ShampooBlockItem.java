@@ -11,6 +11,7 @@ import net.minecraft.world.level.block.Block;
 import net.minecraftforge.client.extensions.common.IClientItemExtensions;
 import org.jetbrains.annotations.NotNull;
 import org.lanye.fantasy_furniture.content.soap.DisplayCabinetBottleInsert;
+import org.lanye.fantasy_furniture.content.soap.SoapRackBottleInsert;
 import org.lanye.fantasy_furniture.content.soap.ShampooAppearance;
 import org.lanye.fantasy_furniture.content.soap.ShampooMaterials;
 import org.lanye.fantasy_furniture.content.soap.client.ShampooItemRenderer;
@@ -29,6 +30,10 @@ public final class ShampooBlockItem extends GeolibBlockItem {
         InteractionResult cabinet = DisplayCabinetBottleInsert.useOnOpenCabinet(context);
         if (cabinet != null) {
             return cabinet;
+        }
+        InteractionResult rack = SoapRackBottleInsert.useOnRack(context);
+        if (rack != null) {
+            return rack;
         }
         return super.useOn(context);
     }

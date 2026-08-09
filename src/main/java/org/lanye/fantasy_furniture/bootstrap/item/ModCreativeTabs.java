@@ -57,7 +57,7 @@ public final class ModCreativeTabs {
         list.add(out -> out.accept(ModItems.TANGHULU.get()));
         list.add(out -> out.accept(ModItems.ARCANE_WAND.get()));
         list.add(out -> out.accept(ModBlocks.BANQUETTE.item().get()));
-        SoapBarCreativeTab.appendDefaultWearEntries(list);
+        SoapBarCreativeTab.appendFullDurabilityEntries(list);
         SoapBoxCreativeTab.appendClosedEmptyBoxEntries(list);
         list.add(out -> out.accept(ModBlocks.SOAP_RACK.item().get()));
         SoapPaperBagCreativeTab.appendEntries(list);

@@ -3,6 +3,8 @@ package org.lanye.fantasy_furniture.content.soap.block;
 import java.util.List;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
@@ -21,12 +23,14 @@ import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import org.lanye.fantasy_furniture.bootstrap.block.ModBlocks;
 import org.lanye.fantasy_furniture.content.soap.SoapBarAppearance;
+import org.lanye.fantasy_furniture.content.soap.SoapBottleKind;
+import org.lanye.fantasy_furniture.content.soap.SoapBottleLayer;
 import org.lanye.fantasy_furniture.content.soap.blockentity.SoapRackBlockEntity;
 import org.lanye.fantasy_furniture.content.soap.item.SoapBarBlockItem;
 import org.lanye.reverie_core.util.VoxelShapeRotation;
 
 /**
- * 肥皂架：单 id；架上有无皂为方块状态，皂数据在方块实体（见设计书 {@code 12-肥皂架}）。
+ * 肥皂架：单 id；架上有无皂为方块状态；皂与瓶罐组合在方块实体（SOAP-006）。
  */
 public class SoapRackBlock extends SoapSeriesWaterloggableBlock<SoapRackBlockEntity> {
 
@@ -58,14 +62,22 @@ public class SoapRackBlock extends SoapSeriesWaterloggableBlock<SoapRackBlockEnt
 
     @Override
     public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean isMoving) {
-        if (!state.is(newState.getBlock()) && !level.isClientSide && state.getValue(HAS_SOAP)) {
+        if (!state.is(newState.getBlock()) && !level.isClientSide) {
             BlockEntity be = level.getBlockEntity(pos);
             if (be instanceof SoapRackBlockEntity rack) {
-                Block.popResource(
-                        level,
-                        pos,
-                        SoapBarBlockItem.stackWithAppearance(
-                                ModBlocks.SOAP_BAR.item().get(), rack.containedSoap()));
+                if (state.getValue(HAS_SOAP)) {
+                    Block.popResource(
+                            level,
+                            pos,
+                            SoapBarBlockItem.stackWithAppearance(
+                                    ModBlocks.SOAP_BAR.item().get(), rack.containedSoap()));
+                }
+                for (SoapBottleLayer layer : rack.bottlesView()) {
+                    Block.popResource(
+                            level,
+                            pos,
+                            SoapBottleKind.stackWithMaterial(layer.kind(), layer.materialId()));
+                }
             }
         }
         super.onRemove(state, level, pos, newState, isMoving);
@@ -85,14 +97,55 @@ public class SoapRackBlock extends SoapSeriesWaterloggableBlock<SoapRackBlockEnt
         ItemStack held = player.getItemInHand(hand);
         boolean hasSoap = state.getValue(HAS_SOAP);
         boolean sneaking = player.isShiftKeyDown();
+        SoapRackBlockEntity be = blockEntity(level, pos);
+        if (be == null) {
+            return InteractionResult.FAIL;
+        }
+
+        SoapBottleKind heldBottle = SoapBottleKind.fromItem(held);
+        if (heldBottle != null) {
+            SoapBottleLayer layer = new SoapBottleLayer(heldBottle, heldBottle.materialFromStack(held));
+            if (!be.pushBottle(layer)) {
+                return InteractionResult.FAIL;
+            }
+            if (!player.getAbilities().instabuild) {
+                held.shrink(1);
+            }
+            syncClient(level, pos, state);
+            level.playSound(null, pos, SoundEvents.BOTTLE_FILL, SoundSource.BLOCKS, 0.8f, 1.0f);
+            return InteractionResult.CONSUME;
+        }
+
+        if (sneaking) {
+            if (be.bottleCount() > 0) {
+                SoapBottleLayer popped = be.popBottle();
+                if (popped == null) {
+                    return InteractionResult.FAIL;
+                }
+                ItemStack drop = SoapBottleKind.stackWithMaterial(popped.kind(), popped.materialId());
+                if (!player.getInventory().add(drop)) {
+                    player.drop(drop, false);
+                }
+                syncClient(level, pos, state);
+                return InteractionResult.CONSUME;
+            }
+            if (hasSoap) {
+                ItemStack soap =
+                        SoapBarBlockItem.stackWithAppearance(
+                                ModBlocks.SOAP_BAR.item().get(), be.containedSoap());
+                if (!player.getInventory().add(soap)) {
+                    player.drop(soap, false);
+                }
+                be.clearContainedSoap();
+                level.setBlock(pos, state.setValue(HAS_SOAP, false), Block.UPDATE_ALL);
+                return InteractionResult.CONSUME;
+            }
+            return InteractionResult.PASS;
+        }
 
         if (!hasSoap && held.is(ModBlocks.SOAP_BAR.item().get())) {
             SoapBarAppearance soap = SoapBarAppearance.fromStack(held);
             if (!soap.isFull()) {
-                return InteractionResult.FAIL;
-            }
-            SoapRackBlockEntity be = blockEntity(level, pos);
-            if (be == null) {
                 return InteractionResult.FAIL;
             }
             be.setContainedSoap(soap);
@@ -103,23 +156,16 @@ public class SoapRackBlock extends SoapSeriesWaterloggableBlock<SoapRackBlockEnt
             return InteractionResult.CONSUME;
         }
 
-        if (hasSoap && sneaking) {
-            SoapRackBlockEntity be = blockEntity(level, pos);
-            if (be == null) {
-                return InteractionResult.FAIL;
-            }
-            ItemStack soap =
-                    SoapBarBlockItem.stackWithAppearance(
-                            ModBlocks.SOAP_BAR.item().get(), be.containedSoap());
-            if (!player.getInventory().add(soap)) {
-                player.drop(soap, false);
-            }
-            be.clearContainedSoap();
-            level.setBlock(pos, state.setValue(HAS_SOAP, false), Block.UPDATE_ALL);
-            return InteractionResult.CONSUME;
-        }
-
         return InteractionResult.PASS;
+    }
+
+    private static void syncClient(Level level, BlockPos pos, BlockState state) {
+        BlockEntity be = level.getBlockEntity(pos);
+        if (be != null) {
+            be.setChanged();
+            level.blockEntityChanged(pos);
+            level.sendBlockUpdated(pos, state, state, Block.UPDATE_ALL);
+        }
     }
 
     @javax.annotation.Nullable

@@ -3,13 +3,16 @@ package org.lanye.fantasy_furniture.content.soap.item;
 import java.util.function.Consumer;
 import net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer;
 import net.minecraft.network.chat.Component;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.block.Block;
 import net.minecraftforge.client.extensions.common.IClientItemExtensions;
 import org.jetbrains.annotations.NotNull;
 import org.lanye.fantasy_furniture.content.soap.BodyCreamAppearance;
 import org.lanye.fantasy_furniture.content.soap.BodyCreamMaterials;
+import org.lanye.fantasy_furniture.content.soap.SoapRackBottleInsert;
 import org.lanye.fantasy_furniture.content.soap.client.BodyCreamItemRenderer;
 import org.lanye.reverie_core.geolib.GeolibBlockItem;
 import org.lanye.reverie_core.geolib.GeolibItemAssets;
@@ -19,6 +22,15 @@ public final class BodyCreamBlockItem extends GeolibBlockItem {
 
     public BodyCreamBlockItem(Block block, Item.Properties properties, GeolibItemAssets assets) {
         super(block, properties, assets);
+    }
+
+    @Override
+    public InteractionResult useOn(UseOnContext context) {
+        InteractionResult rack = SoapRackBottleInsert.useOnRack(context);
+        if (rack != null) {
+            return rack;
+        }
+        return super.useOn(context);
     }
 
     @Override
