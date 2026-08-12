@@ -17,6 +17,7 @@ import org.lanye.fantasy_furniture.content.soap.SoapBottleLayer;
 import org.lanye.fantasy_furniture.content.soap.SoapBottleMixedCollisionShapes;
 import org.lanye.fantasy_furniture.content.soap.SoapBottleStackData;
 import org.lanye.fantasy_furniture.content.soap.SoapBottleStackUse;
+import org.lanye.fantasy_furniture.content.soap.SoapStackCarrierKind;
 import org.lanye.reverie_core.util.VoxelShapeRotation;
 import software.bernie.geckolib.animatable.GeoBlockEntity;
 import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
@@ -98,6 +99,23 @@ public abstract class SoapBottleBlockEntity extends BlockEntity
         return stack.layersView();
     }
 
+    @Nullable
+    public SoapStackCarrierKind carrier() {
+        return stack.carrier();
+    }
+
+    public boolean carrierIntermediate() {
+        return stack.carrierIntermediate();
+    }
+
+    public int carrierBoxMaterialId() {
+        return stack.carrierBoxMaterialId();
+    }
+
+    public boolean hasCarrier() {
+        return stack.hasCarrier();
+    }
+
     public void setSingleLayer(SoapBottleKind kind, int materialId) {
         stack.setSingleLayer(kind, materialId);
         invalidateMixedCollisionCache();
@@ -106,11 +124,13 @@ public abstract class SoapBottleBlockEntity extends BlockEntity
 
     public boolean replaceTopMaterial(int materialId) {
         SoapBottleLayer top = stack.topLayer();
-        if (top == null) {
+        if (top == null || !top.kind().isValidMaterial(materialId)) {
             return false;
         }
-        stack.popTopLayer();
-        stack.pushLayer(new SoapBottleLayer(top.kind(), materialId));
+        // 原地替换，避免有 carrier 时走 pushLayer 接受规则
+        if (!stack.replaceTopMaterial(materialId)) {
+            return false;
+        }
         invalidateMixedCollisionCache();
         setChanged();
         return true;

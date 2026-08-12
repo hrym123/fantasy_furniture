@@ -49,6 +49,7 @@ import org.lanye.fantasy_furniture.content.soap.item.DisplayCabinetBlockItem;
 import org.lanye.fantasy_furniture.content.soap.item.SoapSeriesBlockItem;
 import org.lanye.fantasy_furniture.content.soap.item.SoapBarBlockItem;
 import org.lanye.fantasy_furniture.content.soap.item.SoapBoxBlockItem;
+import org.lanye.fantasy_furniture.content.soap.item.SoapRackBlockItem;
 import org.lanye.fantasy_furniture.content.soap.item.BodyCreamBlockItem;
 import org.lanye.fantasy_furniture.content.soap.item.BodyWashBlockItem;
 import org.lanye.fantasy_furniture.content.soap.item.SoapPaperBagBlockItem;
@@ -133,7 +134,7 @@ public final class FurnitureAnimatedBlocks {
                                     SoapRackBlock::new,
                                     SoapRackBlockEntity::new,
                                     (block, props) ->
-                                            new GeolibBlockItem(
+                                            new SoapRackBlockItem(
                                                     block,
                                                     props,
                                                     GeolibItemAssets.blockAssetWithTexture(

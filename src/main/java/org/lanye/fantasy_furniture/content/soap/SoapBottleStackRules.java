@@ -3,10 +3,12 @@ package org.lanye.fantasy_furniture.content.soap;
 import java.util.List;
 
 /**
- * 瓶罐摞层数上限。
+ * 瓶罐摞层数与特殊场合 2/3 载体规则。
  *
  * <p>规则：乳霜 / 沐浴露 / 洗发露可任意组合、任意顺序摆放；默认上限 {@link SoapBottleKind#MIXED_MAX_STACK}（4）。
- * 特例：已有 4 瓶乳霜（纯乳霜摞）时，可再放第 5 瓶乳霜（上限 {@link BodyCreamAssets#MAX_STACK}）。
+ * 特例 1：已有 4 瓶乳霜（纯乳霜摞）时，可再放第 5 瓶乳霜（上限 {@link BodyCreamAssets#MAX_STACK}）。
+ * 特例 2：第 3 位为乳霜且无载体时，第 4 位可放架或盒。
+ * 特例 3：恰好 2 瓶且无载体时可先放架/盒（中间态），再仅可放乳霜进入完成态（同特例 2）。
  */
 public final class SoapBottleStackRules {
 
@@ -19,7 +21,9 @@ public final class SoapBottleStackRules {
      */
     public static int maxStackFor(List<SoapBottleLayer> layers, SoapBottleKind incomingKind) {
         if (layers.isEmpty()) {
-            return incomingKind == SoapBottleKind.BODY_CREAM ? BodyCreamAssets.MAX_STACK : SoapBottleKind.MIXED_MAX_STACK;
+            return incomingKind == SoapBottleKind.BODY_CREAM
+                    ? BodyCreamAssets.MAX_STACK
+                    : SoapBottleKind.MIXED_MAX_STACK;
         }
         if (wouldBeHomogeneousCream(layers, incomingKind)) {
             return BodyCreamAssets.MAX_STACK;
@@ -36,6 +40,39 @@ public final class SoapBottleStackRules {
             return BodyCreamAssets.MAX_STACK;
         }
         return SoapBottleKind.MIXED_MAX_STACK;
+    }
+
+    /** 特殊 2：三瓶且顶层乳霜、尚无载体 → 可放架/盒进入完成态。 */
+    public static boolean isSpecial2CarrierReady(SoapBottleStackData data) {
+        return data.carrier() == null
+                && data.layerCount() == 3
+                && topIsCream(data.layersView());
+    }
+
+    /** 特殊 3 中间：恰好两瓶、尚无载体 → 可放架/盒进入中间态。 */
+    public static boolean isSpecial3IntermediateReady(SoapBottleStackData data) {
+        return data.carrier() == null && data.layerCount() == 2;
+    }
+
+    /** 完成态：有载体且非中间态（三瓶 + 第 4 位架/盒）。 */
+    public static boolean isCarrierCompleted(SoapBottleStackData data) {
+        return data.carrier() != null && !data.carrierIntermediate();
+    }
+
+    public static boolean canAcceptBottle(SoapBottleStackData data, SoapBottleKind kind) {
+        if (data.carrier() != null) {
+            // 中间态仅可再接受乳霜（走完成路径）；完成态不再接受瓶。
+            return data.carrierIntermediate() && kind == SoapBottleKind.BODY_CREAM;
+        }
+        return data.layerCount() < maxStackFor(data.layersView(), kind);
+    }
+
+    public static boolean canAcceptCarrier(
+            SoapBottleStackData data, SoapStackCarrierKind carrier) {
+        if (carrier == null || data.carrier() != null) {
+            return false;
+        }
+        return isSpecial2CarrierReady(data) || isSpecial3IntermediateReady(data);
     }
 
     /** 纯乳霜摞且层数 ≥2 时才走 {@code 乳霜_堆叠_x5} 管线（含第 5 陈列位）。 */
@@ -79,6 +116,13 @@ public final class SoapBottleStackRules {
             }
         }
         return true;
+    }
+
+    private static boolean topIsCream(List<SoapBottleLayer> layers) {
+        if (layers.isEmpty()) {
+            return false;
+        }
+        return layers.get(layers.size() - 1).kind() == SoapBottleKind.BODY_CREAM;
     }
 
     /** 现有层全是乳霜，且再叠的也是乳霜 → 允许到第 5 瓶。 */

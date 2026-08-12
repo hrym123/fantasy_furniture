@@ -13,13 +13,17 @@ import org.lanye.fantasy_furniture.content.soap.client.model.ShampooSingleGeoMod
 import org.lanye.reverie_core.util.ReveriePerfRender;
 import software.bernie.geckolib.renderer.GeoBlockRenderer;
 
-/** 单瓶用 {@code shampoo} geo；纯洗发露多瓶合并 Pass；混合摞按 (种类,材质) 分桶绘制。 */
+/** 单瓶用 {@code shampoo} geo；纯洗发露多瓶合并 Pass；混合摞按 (种类,材质) 分桶绘制。
+ *
+ * <p>有载体时另叠架/盒 overlay。TODO：完成态第 3 位乳霜应对齐组合目录 {@code 乳霜.bbmodel}。
+ */
 @OnlyIn(Dist.CLIENT)
 public final class ShampooGeoBlockRenderer implements BlockEntityRenderer<ShampooBlockEntity> {
 
     private final GeoBlockRenderer<ShampooBlockEntity> singleRenderer =
             new GeoBlockRenderer<>(new ShampooSingleGeoModel());
     private final SoapBottleMixedStackRenderer mixedRenderer = new SoapBottleMixedStackRenderer();
+    private final SoapBottleCarrierOverlayRenderer carrierOverlay = new SoapBottleCarrierOverlayRenderer();
 
     @Override
     public void render(
@@ -33,6 +37,8 @@ public final class ShampooGeoBlockRenderer implements BlockEntityRenderer<Shampo
         int count = blockEntity.visibleLayerCount();
         renderLayers(
                 blockEntity, layers, count, partialTick, poseStack, bufferSource, packedLight, packedOverlay);
+        carrierOverlay.renderIfPresent(
+                blockEntity, partialTick, poseStack, bufferSource, packedLight, packedOverlay);
     }
 
     private void renderLayers(

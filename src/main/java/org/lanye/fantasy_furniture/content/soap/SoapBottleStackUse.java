@@ -17,7 +17,7 @@ import net.minecraft.world.level.storage.loot.LootParams;
 import net.minecraft.world.phys.BlockHitResult;
 import org.lanye.fantasy_furniture.content.tool.BrushRecolor;
 
-/** 沐浴露 / 洗发露 / 乳霜混合摞放：服务端交互与掉落。 */
+/** 沐浴露 / 洗发露 / 乳霜混合摞放：服务端交互与掉落（含特殊 2/3 架盒载体）。 */
 public final class SoapBottleStackUse {
 
     private SoapBottleStackUse() {}
@@ -26,6 +26,15 @@ public final class SoapBottleStackUse {
         SoapBottleStackData stackData();
 
         void markStackChanged();
+
+        @Nullable
+        default SoapStackCarrierKind carrierKind() {
+            return stackData().carrier();
+        }
+
+        default boolean carrierIntermediate() {
+            return stackData().carrierIntermediate();
+        }
     }
 
     public static InteractionResult onUseServer(
@@ -53,8 +62,22 @@ public final class SoapBottleStackUse {
         boolean sneaking = player.isShiftKeyDown();
 
         if (sneaking) {
-            if (!held.isEmpty() && !SoapBottleKind.isSoapBottleItem(held)) {
+            if (!held.isEmpty()
+                    && !SoapBottleKind.isSoapBottleItem(held)
+                    && SoapStackCarrierKind.fromItem(held) == null) {
                 return InteractionResult.PASS;
+            }
+            if (stack.hasCarrier()) {
+                ItemStack drop = stack.popCarrierItem();
+                if (drop == null) {
+                    return InteractionResult.FAIL;
+                }
+                holder.markStackChanged();
+                if (!player.getInventory().add(drop)) {
+                    player.drop(drop, false);
+                }
+                syncState(level, pos, state, stack, layersProperty, materialProperty);
+                return InteractionResult.CONSUME;
             }
             SoapBottleLayer popped = stack.popTopLayer();
             if (popped == null) {
@@ -73,10 +96,33 @@ public final class SoapBottleStackUse {
             return InteractionResult.CONSUME;
         }
 
+        SoapStackCarrierKind heldCarrier = SoapStackCarrierKind.fromItem(held);
+        if (heldCarrier != null && SoapBottleStackRules.canAcceptCarrier(stack, heldCarrier)) {
+            int boxMat =
+                    heldCarrier == SoapStackCarrierKind.BOX
+                            ? SoapBoxAppearance.fromStack(held).boxMaterialId()
+                            : SoapBoxAppearance.DEFAULT_MATERIAL;
+            if (!stack.tryPushCarrier(heldCarrier, boxMat)) {
+                return InteractionResult.FAIL;
+            }
+            holder.markStackChanged();
+            if (!player.getAbilities().instabuild) {
+                held.shrink(1);
+            }
+            syncState(level, pos, state, stack, layersProperty, materialProperty);
+            return InteractionResult.CONSUME;
+        }
+
         SoapBottleKind heldKind = SoapBottleKind.fromItem(held);
         if (heldKind != null) {
             int materialId = heldKind.materialFromStack(held);
-            if (!stack.pushLayer(new SoapBottleLayer(heldKind, materialId))) {
+            if (heldKind == SoapBottleKind.BODY_CREAM
+                    && stack.hasCarrier()
+                    && stack.carrierIntermediate()) {
+                if (!stack.tryPushCreamAfterCarrier(materialId)) {
+                    return InteractionResult.FAIL;
+                }
+            } else if (!stack.pushLayer(new SoapBottleLayer(heldKind, materialId))) {
                 return InteractionResult.FAIL;
             }
             holder.markStackChanged();
@@ -101,7 +147,7 @@ public final class SoapBottleStackUse {
             return List.of(fallback);
         }
         SoapBottleStackData stack = holder.stackData();
-        if (stack.layerCount() == 0) {
+        if (stack.layerCount() == 0 && !stack.hasCarrier()) {
             ItemStack fallback = new ItemStack(state.getBlock().asItem());
             writeHostAppearance(fallback, state, materialProperty, stack.hostKind());
             return List.of(fallback);
@@ -109,6 +155,9 @@ public final class SoapBottleStackUse {
         List<ItemStack> drops = new ArrayList<>();
         for (SoapBottleLayer layer : stack.layersView()) {
             drops.add(SoapBottleKind.stackWithMaterial(layer.kind(), layer.materialId()));
+        }
+        if (stack.hasCarrier()) {
+            drops.add(stack.carrier().toItemStack(stack.carrierBoxMaterialId()));
         }
         return drops;
     }
@@ -125,6 +174,11 @@ public final class SoapBottleStackUse {
                 pos,
                 state.setValue(layersProperty, layers).setValue(materialProperty, stack.topMaterial()),
                 Block.UPDATE_ALL);
+        BlockEntity be = level.getBlockEntity(pos);
+        if (be != null) {
+            be.setChanged();
+            level.sendBlockUpdated(pos, state, level.getBlockState(pos), Block.UPDATE_CLIENTS);
+        }
     }
 
     /** 泵头动画等：仅顶层为该种类时触发。 */

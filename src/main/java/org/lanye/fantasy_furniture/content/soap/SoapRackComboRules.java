@@ -4,9 +4,11 @@ import java.util.List;
 import javax.annotation.Nullable;
 
 /**
- * 肥皂架上瓶罐组合合法性：仅允许能走到方案 1–3 之一的中间态 / 完成态。
+ * 肥皂架上瓶罐组合（历史方案 1–3）已由地面瓶罐摞 + 特殊场合 2/3 取代，见 {@code
+ * docs/设计/组合玩法/04玩意/肥皂/combo-fantasy_furniture-soap_bottle_combos.md}。
  *
- * <p>地面瓶罐独立摞放不走本类。
+ * <p>本类 {@link #canAccept} 恒为 false，架上不再接受新瓶罐；入皂仍由 {@link
+ * org.lanye.fantasy_furniture.content.soap.block.SoapRackBlock} 处理。
  */
 public final class SoapRackComboRules {
 
@@ -44,51 +46,28 @@ public final class SoapRackComboRules {
         }
     }
 
-    /** 当前层列表是否仍可到达某一合法方案（有皂可稍后补，不影响瓶罐可达性）。 */
+    /** 仅空列表视为可达（兼容旧存档已挂瓶的只读展示）；不再接受新瓶。 */
     public static boolean isReachable(List<SoapBottleLayer> layers, boolean hasSoap) {
-        return isReachable(Counts.of(layers));
+        return layers.isEmpty();
     }
 
     public static boolean isReachable(Counts counts) {
-        if (counts.totalBottles() == 0) {
-            return true;
-        }
-        if (counts.wash() <= 1 && counts.shampoo() <= 1 && counts.cream() <= 1) {
-            return true; // 方案 1 路径
-        }
-        if (counts.liquids() <= 3 && counts.cream() <= 1) {
-            return true; // 方案 2 路径
-        }
-        if (counts.wash() == 0 && counts.shampoo() == 0 && counts.cream() <= 2) {
-            return true; // 方案 3 路径
-        }
+        return counts.totalBottles() == 0;
+    }
+
+    /** 架上不再接受瓶罐组合；恒 false。 */
+    public static boolean canAccept(List<SoapBottleLayer> layers, SoapBottleKind incoming) {
         return false;
     }
 
-    public static boolean canAccept(List<SoapBottleLayer> layers, SoapBottleKind incoming) {
-        return isReachable(Counts.of(layers).withAdded(incoming));
-    }
-
-    /**
-     * 完成态方案；中间态返回 null。沐浴+洗发+乳霜各 1 且有皂时优先方案 1（即使也像方案 2 子集）。
-     */
+    /** 旧方案完成态已废止；恒返回 null。 */
     @Nullable
     public static SoapRackComboScheme completedScheme(List<SoapBottleLayer> layers, boolean hasSoap) {
-        Counts c = Counts.of(layers);
-        if (hasSoap && c.wash() == 1 && c.shampoo() == 1 && c.cream() == 1) {
-            return SoapRackComboScheme.LIQUIDS_CREAM_RACK_SOAP;
-        }
-        if (c.liquids() == 3 && c.cream() == 1) {
-            return SoapRackComboScheme.LIQUIDS_X3_CREAM;
-        }
-        if (hasSoap && c.wash() == 0 && c.shampoo() == 0 && c.cream() == 2) {
-            return SoapRackComboScheme.CREAM2_RACK_SOAP;
-        }
         return null;
     }
 
-    /** 方案 3 完成态上禁止再叠肥皂盒（由肥皂盒交互侧查询）。 */
+    /** 旧方案 3 叠盒禁令已废止。 */
     public static boolean forbidsSoapBoxOnTop(List<SoapBottleLayer> layers, boolean hasSoap) {
-        return completedScheme(layers, hasSoap) == SoapRackComboScheme.CREAM2_RACK_SOAP;
+        return false;
     }
 }
