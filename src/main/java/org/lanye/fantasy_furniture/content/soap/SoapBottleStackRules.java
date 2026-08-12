@@ -2,11 +2,21 @@ package org.lanye.fantasy_furniture.content.soap;
 
 import java.util.List;
 
-/** 瓶罐摞层数上限与是否允许混合摞放。 */
+/**
+ * 瓶罐摞层数上限。
+ *
+ * <p>规则：乳霜 / 沐浴露 / 洗发露可任意组合、任意顺序摆放；默认上限 {@link SoapBottleKind#MIXED_MAX_STACK}（4）。
+ * 特例：已有 4 瓶乳霜（纯乳霜摞）时，可再放第 5 瓶乳霜（上限 {@link BodyCreamAssets#MAX_STACK}）。
+ */
 public final class SoapBottleStackRules {
 
     private SoapBottleStackRules() {}
 
+    /**
+     * 在现有层上再叠 {@code incomingKind} 时的允许上限。
+     *
+     * <p>已有 4 瓶乳霜且再叠乳霜 → 5；其余任意组合 → 4。
+     */
     public static int maxStackFor(List<SoapBottleLayer> layers, SoapBottleKind incomingKind) {
         if (layers.isEmpty()) {
             return incomingKind == SoapBottleKind.BODY_CREAM ? BodyCreamAssets.MAX_STACK : SoapBottleKind.MIXED_MAX_STACK;
@@ -17,6 +27,7 @@ public final class SoapBottleStackRules {
         return SoapBottleKind.MIXED_MAX_STACK;
     }
 
+    /** 当前摞的层数上限（不看下一瓶种类）。纯乳霜 → 5，否则 → 4。 */
     public static int maxStackFor(List<SoapBottleLayer> layers) {
         if (layers.isEmpty()) {
             return BodyCreamAssets.MAX_STACK;
@@ -70,6 +81,7 @@ public final class SoapBottleStackRules {
         return true;
     }
 
+    /** 现有层全是乳霜，且再叠的也是乳霜 → 允许到第 5 瓶。 */
     private static boolean wouldBeHomogeneousCream(List<SoapBottleLayer> layers, SoapBottleKind incomingKind) {
         if (incomingKind != SoapBottleKind.BODY_CREAM) {
             return false;
