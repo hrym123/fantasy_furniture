@@ -1,6 +1,7 @@
 package org.lanye.fantasy_furniture.content.furniture.decor.block;
 
 import java.util.List;
+import java.util.function.Consumer;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.util.Mth;
@@ -22,6 +23,7 @@ import net.minecraft.world.level.storage.loot.LootParams;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
+import net.minecraftforge.client.extensions.common.IClientBlockExtensions;
 import net.minecraftforge.registries.ForgeRegistries;
 import org.lanye.fantasy_furniture.FantasyFurniture;
 import org.lanye.fantasy_furniture.bootstrap.block.ModBlocks;
@@ -29,6 +31,7 @@ import org.lanye.fantasy_furniture.content.furniture.common.state.PlainGlassWind
 import org.lanye.fantasy_furniture.content.furniture.decor.PlainGlassWindowMaterials;
 import org.lanye.fantasy_furniture.content.furniture.decor.PlainGlassWindowShapes;
 import org.lanye.fantasy_furniture.content.furniture.decor.blockentity.PlainGlassWindowBlockEntity;
+import org.lanye.fantasy_furniture.content.furniture.decor.client.PlainGlassWindowBlockClientExtensions;
 import org.lanye.fantasy_furniture.content.furniture.decor.item.PlainGlassWindowBlockItem;
 import org.lanye.fantasy_furniture.content.tool.BrushRecolor;
 import org.lanye.reverie_core.geolib.GeolibFacingEntityBlockWithFactory;
@@ -94,6 +97,11 @@ public class PlainGlassWindowBlock extends GeolibFacingEntityBlockWithFactory<Pl
             def = def.setValue(MATERIAL, PlainGlassWindowMaterialVariant.WHITE);
         }
         registerDefaultState(def);
+    }
+
+    @Override
+    public void initializeClient(Consumer<IClientBlockExtensions> consumer) {
+        PlainGlassWindowBlockClientExtensions.register(consumer);
     }
 
     @Override

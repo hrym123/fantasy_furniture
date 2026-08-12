@@ -1,6 +1,7 @@
 package org.lanye.fantasy_furniture.content.soap.block;
 
 import java.util.List;
+import java.util.function.Consumer;
 import javax.annotation.Nullable;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -21,7 +22,9 @@ import net.minecraft.world.level.storage.loot.LootParams;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
+import net.minecraftforge.client.extensions.common.IClientBlockExtensions;
 import org.lanye.fantasy_furniture.content.soap.ShampooAppearance;
+import org.lanye.fantasy_furniture.content.soap.client.SoapColoredBreakClientExtensions;
 import org.lanye.fantasy_furniture.content.soap.ShampooAssets;
 import org.lanye.fantasy_furniture.content.soap.ShampooMaterials;
 import org.lanye.fantasy_furniture.content.soap.SoapBottleKind;
@@ -48,6 +51,11 @@ public final class ShampooBlock extends SoapSeriesWaterloggableBlock<ShampooBloc
                         .setValue(FACING, Direction.NORTH)
                         .setValue(LAYERS, 1)
                         .setValue(MATERIAL, ShampooMaterials.DEFAULT));
+    }
+
+    @Override
+    public void initializeClient(Consumer<IClientBlockExtensions> consumer) {
+        SoapColoredBreakClientExtensions.register(consumer);
     }
 
     @Override

@@ -4,7 +4,8 @@ import javax.annotation.Nullable;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.particle.ParticleEngine;
-import net.minecraft.client.particle.TerrainParticle;
+import net.minecraft.client.particle.ParticleRenderType;
+import net.minecraft.client.particle.TextureSheetParticle;
 import net.minecraft.client.renderer.block.BlockModelShaper;
 import net.minecraft.client.renderer.texture.MissingTextureAtlasSprite;
 import net.minecraft.client.renderer.texture.TextureAtlas;
@@ -20,14 +21,32 @@ import net.minecraft.world.phys.shapes.VoxelShape;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.lanye.fantasy_furniture.FantasyFurniture;
+import org.lanye.fantasy_furniture.content.soap.BodyCreamAppearance;
+import org.lanye.fantasy_furniture.content.soap.BodyWashAppearance;
+import org.lanye.fantasy_furniture.content.soap.DisplayCabinetAppearance;
+import org.lanye.fantasy_furniture.content.soap.ShampooAppearance;
+import org.lanye.fantasy_furniture.content.soap.SoapBarAppearance;
 import org.lanye.fantasy_furniture.content.soap.SoapBoxAppearance;
+import org.lanye.fantasy_furniture.content.soap.SoapPaperBagAppearance;
 import org.lanye.fantasy_furniture.content.soap.SoapPaperBoxAppearance;
 import org.lanye.fantasy_furniture.content.soap.SoapStackCollisionShapes;
+import org.lanye.fantasy_furniture.content.soap.block.BodyCreamBlock;
+import org.lanye.fantasy_furniture.content.soap.block.BodyWashBlock;
+import org.lanye.fantasy_furniture.content.soap.block.DisplayCabinetBlock;
+import org.lanye.fantasy_furniture.content.soap.block.ShampooBlock;
+import org.lanye.fantasy_furniture.content.soap.block.SoapBarBlock;
 import org.lanye.fantasy_furniture.content.soap.block.SoapBoxBlock;
+import org.lanye.fantasy_furniture.content.soap.block.SoapPaperBagBlock;
 import org.lanye.fantasy_furniture.content.soap.block.SoapPaperBoxBlock;
 import org.lanye.reverie_core.util.VoxelShapeRotation;
 
-/** Geo 肥皂盒 / 包装盒摞：按材质贴图喷破坏粒子；摞体只用单层碰撞范围采样，避免粒子过多。 */
+/**
+ * Geo 肥皂系：按材质贴图喷破坏粒子（模型 JSON 写死 {@code *_1} 时默认粒子色错误）。
+ * 摞体只用单层碰撞范围采样，避免粒子过多。
+ *
+ * <p>使用 {@link SheetBreakParticle} 而非 {@code TerrainParticle(BlockState)}：后者会绑模型
+ * {@code particle}（常写死默认色）。
+ */
 @OnlyIn(Dist.CLIENT)
 public final class SoapGeoBreakParticles {
 
@@ -70,6 +89,126 @@ public final class SoapGeoBreakParticles {
                 VoxelShapeRotation.rotateYFromNorthLikeGeckoBlockRenderer(
                         north, state.getValue(block.FACING));
         spawn(clientLevel, pos, shape, blockSpriteId, itemUiSpriteId, state, manager);
+    }
+
+    public static void forSoapBar(
+            BlockState state, Level level, BlockPos pos, ParticleEngine manager) {
+        if (!(state.getBlock() instanceof SoapBarBlock) || !(level instanceof ClientLevel clientLevel)) {
+            return;
+        }
+        SoapBarAppearance appearance = SoapBarAppearance.fromState(state);
+        String blockBasename =
+                appearance.isPackaged()
+                        ? appearance.packagingTextureBasename()
+                        : appearance.textureBasename();
+        ResourceLocation blockSpriteId =
+                ResourceLocation.fromNamespaceAndPath(FantasyFurniture.MODID, "block/" + blockBasename);
+        ResourceLocation itemUiSpriteId;
+        if (appearance.isBoxed()) {
+            itemUiSpriteId =
+                    ResourceLocation.fromNamespaceAndPath(
+                            FantasyFurniture.MODID, "item/soap_paper_box_ui_" + appearance.boxMaterialId());
+        } else if (appearance.isPackaged()) {
+            itemUiSpriteId =
+                    ResourceLocation.fromNamespaceAndPath(
+                            FantasyFurniture.MODID, "item/soap_paper_bag_ui_" + appearance.bagMaterialId());
+        } else {
+            itemUiSpriteId =
+                    ResourceLocation.fromNamespaceAndPath(
+                            FantasyFurniture.MODID, "item/" + appearance.itemUiTextureBasename());
+        }
+        VoxelShape shape = state.getShape(level, pos);
+        spawn(clientLevel, pos, shape, blockSpriteId, itemUiSpriteId, state, manager);
+    }
+
+    public static void forSoapPaperBag(
+            BlockState state, Level level, BlockPos pos, ParticleEngine manager) {
+        if (!(state.getBlock() instanceof SoapPaperBagBlock block)
+                || !(level instanceof ClientLevel clientLevel)) {
+            return;
+        }
+        SoapPaperBagAppearance appearance = SoapPaperBagAppearance.fromState(state);
+        boolean stacked = state.getValue(block.LAYERS) > 1;
+        String blockBasename =
+                stacked ? appearance.stackTextureBasename() : appearance.handheldTextureBasename();
+        ResourceLocation blockSpriteId =
+                ResourceLocation.fromNamespaceAndPath(FantasyFurniture.MODID, "block/" + blockBasename);
+        ResourceLocation itemUiSpriteId =
+                ResourceLocation.fromNamespaceAndPath(
+                        FantasyFurniture.MODID, "item/" + appearance.itemUiTextureBasename());
+        VoxelShape north = SoapStackCollisionShapes.soapPaperBagNorth(1);
+        VoxelShape shape =
+                VoxelShapeRotation.rotateYFromNorthLikeGeckoBlockRenderer(
+                        north, state.getValue(block.FACING));
+        spawn(clientLevel, pos, shape, blockSpriteId, itemUiSpriteId, state, manager);
+    }
+
+    public static void forBodyWash(
+            BlockState state, Level level, BlockPos pos, ParticleEngine manager) {
+        if (!(state.getBlock() instanceof BodyWashBlock block)
+                || !(level instanceof ClientLevel clientLevel)) {
+            return;
+        }
+        BodyWashAppearance appearance = new BodyWashAppearance(state.getValue(block.MATERIAL));
+        ResourceLocation blockSpriteId = blockAtlasSpriteFromTexture(appearance.textureLocation());
+        VoxelShape north = SoapStackCollisionShapes.bodyWashNorth(1);
+        VoxelShape shape =
+                VoxelShapeRotation.rotateYFromNorthLikeGeckoBlockRenderer(
+                        north, state.getValue(block.FACING));
+        spawn(clientLevel, pos, shape, blockSpriteId, state, manager);
+    }
+
+    public static void forShampoo(
+            BlockState state, Level level, BlockPos pos, ParticleEngine manager) {
+        if (!(state.getBlock() instanceof ShampooBlock block)
+                || !(level instanceof ClientLevel clientLevel)) {
+            return;
+        }
+        ShampooAppearance appearance = new ShampooAppearance(state.getValue(block.MATERIAL));
+        ResourceLocation blockSpriteId = blockAtlasSpriteFromTexture(appearance.textureLocation());
+        VoxelShape north = SoapStackCollisionShapes.shampooNorth(1);
+        VoxelShape shape =
+                VoxelShapeRotation.rotateYFromNorthLikeGeckoBlockRenderer(
+                        north, state.getValue(block.FACING));
+        spawn(clientLevel, pos, shape, blockSpriteId, state, manager);
+    }
+
+    public static void forBodyCream(
+            BlockState state, Level level, BlockPos pos, ParticleEngine manager) {
+        if (!(state.getBlock() instanceof BodyCreamBlock block)
+                || !(level instanceof ClientLevel clientLevel)) {
+            return;
+        }
+        BodyCreamAppearance appearance = new BodyCreamAppearance(state.getValue(block.MATERIAL));
+        ResourceLocation blockSpriteId = blockAtlasSpriteFromTexture(appearance.textureLocation());
+        VoxelShape north = SoapStackCollisionShapes.bodyCreamNorth(1);
+        VoxelShape shape =
+                VoxelShapeRotation.rotateYFromNorthLikeGeckoBlockRenderer(
+                        north, state.getValue(block.FACING));
+        spawn(clientLevel, pos, shape, blockSpriteId, state, manager);
+    }
+
+    public static void forDisplayCabinet(
+            BlockState state, Level level, BlockPos pos, ParticleEngine manager) {
+        if (!(state.getBlock() instanceof DisplayCabinetBlock)
+                || !(level instanceof ClientLevel clientLevel)) {
+            return;
+        }
+        DisplayCabinetAppearance appearance = DisplayCabinetAppearance.fromState(state);
+        boolean open = state.getValue(DisplayCabinetBlock.OPEN);
+        ResourceLocation blockSpriteId =
+                blockAtlasSpriteFromTexture(appearance.textureLocation(open));
+        VoxelShape shape = state.getShape(level, pos);
+        spawn(clientLevel, pos, shape, blockSpriteId, state, manager);
+    }
+
+    /** {@code textures/block/foo.png} → 方块图集 id {@code block/foo}。 */
+    private static ResourceLocation blockAtlasSpriteFromTexture(ResourceLocation textureLocation) {
+        String path = textureLocation.getPath();
+        if (path.startsWith("textures/") && path.endsWith(".png")) {
+            path = path.substring("textures/".length(), path.length() - ".png".length());
+        }
+        return ResourceLocation.fromNamespaceAndPath(textureLocation.getNamespace(), path);
     }
 
     private static TextureAtlasSprite resolveBlockSprite(
@@ -130,9 +269,8 @@ public final class SoapGeoBreakParticles {
             double x = minX + random.nextDouble() * sizeX;
             double y = minY + random.nextDouble() * sizeY;
             double z = minZ + random.nextDouble() * sizeZ;
-            // 用真实方块状态构造，再覆盖 sprite；避免 AIR 粒子图标为 missingno
             manager.add(
-                    new TerrainParticle(
+                    new SheetBreakParticle(
                             level,
                             x,
                             y,
@@ -140,11 +278,37 @@ public final class SoapGeoBreakParticles {
                             random.nextGaussian() * 0.15D,
                             random.nextGaussian() * 0.15D,
                             random.nextGaussian() * 0.15D,
-                            state) {
-                        {
-                            setSprite(sprite);
-                        }
-                    });
+                            sprite));
+        }
+    }
+
+    /** 破坏碎屑：固定贴图精灵，不读方块模型 particle。 */
+    @OnlyIn(Dist.CLIENT)
+    private static final class SheetBreakParticle extends TextureSheetParticle {
+
+        private SheetBreakParticle(
+                ClientLevel level,
+                double x,
+                double y,
+                double z,
+                double xd,
+                double yd,
+                double zd,
+                TextureAtlasSprite sprite) {
+            super(level, x, y, z, xd, yd, zd);
+            setSprite(sprite);
+            this.gravity = 1.0F;
+            this.rCol = 0.6F;
+            this.gCol = 0.6F;
+            this.bCol = 0.6F;
+            this.quadSize *= 0.5F;
+            this.lifetime = Math.max(1, (int) (16.0D / (this.random.nextFloat() * 0.9D + 0.1D)));
+            this.hasPhysics = true;
+        }
+
+        @Override
+        public ParticleRenderType getRenderType() {
+            return ParticleRenderType.TERRAIN_SHEET;
         }
     }
 }

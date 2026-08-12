@@ -1,6 +1,7 @@
 package org.lanye.fantasy_furniture.content.soap.block;
 
 import java.util.List;
+import java.util.function.Consumer;
 import javax.annotation.Nullable;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -28,7 +29,9 @@ import net.minecraft.world.level.block.state.properties.IntegerProperty;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
+import net.minecraftforge.client.extensions.common.IClientBlockExtensions;
 import org.lanye.fantasy_furniture.bootstrap.block.ModBlocks;
+import org.lanye.fantasy_furniture.content.soap.client.SoapColoredBreakClientExtensions;
 import org.lanye.fantasy_furniture.content.soap.SoapBarAppearance;
 import org.lanye.fantasy_furniture.content.soap.SoapBarMaterials;
 import org.lanye.fantasy_furniture.content.soap.SoapBarDurability;
@@ -73,6 +76,11 @@ public class SoapBarBlock extends SoapSeriesWaterloggableBlock<SoapBarBlockEntit
                         .setValue(BOXED, false)
                         .setValue(BAG_MATERIAL, 0)
                         .setValue(PACKAGING_TORN, false));
+    }
+
+    @Override
+    public void initializeClient(Consumer<IClientBlockExtensions> consumer) {
+        SoapColoredBreakClientExtensions.register(consumer);
     }
 
     @Override
