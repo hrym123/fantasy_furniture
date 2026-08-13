@@ -125,12 +125,14 @@ public final class SoapBottleStackUse {
             part = sneaking ? fallbackTopOrCarrier(stack) : null;
         }
 
-        // 命中载体：开合/入皂/取皂；无动作时勿 PASS（否则宿主方块会播瓶泵动画）
+        // 命中载体：开合/入皂/取皂；无动作则放行（hitOrTopLayerIs 已排除载体误播泵动画）
         if (part != null && SoapBottleParts.isCarrier(part)) {
             InteractionResult carrierResult =
                     interactCarrier(
                             level, pos, state, player, held, holder, stack, layersProperty, materialProperty);
-            return carrierResult == InteractionResult.PASS ? InteractionResult.FAIL : carrierResult;
+            if (carrierResult != InteractionResult.PASS) {
+                return carrierResult;
+            }
         }
 
         if (sneaking) {
@@ -340,7 +342,7 @@ public final class SoapBottleStackUse {
         if (stack.layerCount() == 0 && !stack.hasCarrier()) {
             level.removeBlock(pos, false);
         } else {
-            PartialBlockInteractionFx.playDestroyEffects(level, pos, state);
+            // 潜行右键收回：静默同步；破碎音/粒子仅留给左键部分拆除
             syncState(level, pos, state, stack, layersProperty, materialProperty);
         }
         return InteractionResult.CONSUME;

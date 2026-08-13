@@ -148,6 +148,14 @@ public final class BodyWashBlock extends SoapSeriesWaterloggableBlock<BodyWashBl
         if (BrushRecolor.defersBlockUse(player, hand, state)) {
             return InteractionResult.PASS;
         }
+        if (hand == InteractionHand.MAIN_HAND
+                && player.getItemInHand(hand).isEmpty()
+                && !player.isShiftKeyDown()) {
+            BodyWashBlockEntity be = blockEntity(level, pos);
+            if (be != null) {
+                be.onServerUseAnim(hit);
+            }
+        }
         return InteractionResult.SUCCESS;
     }
 

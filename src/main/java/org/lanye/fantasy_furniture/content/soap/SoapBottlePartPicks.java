@@ -31,7 +31,8 @@ public final class SoapBottlePartPicks {
             } else {
                 shape = slotNorth(layer.kind(), i + 1);
             }
-            int tier = 100 + (SoapBottleStackData.MAX_SLOTS - 1 - i);
+            // 瓶优先于载体（重叠时准心/泵动画落在瓶上；入皂靠持皂优先，不依赖载体抢 tier）
+            int tier = 10 + (SoapBottleStackData.MAX_SLOTS - 1 - i);
             list.add(PartPickEntry.of(SoapBottleParts.bottle(i), shape, tier));
         }
 
@@ -39,7 +40,7 @@ public final class SoapBottlePartPicks {
         if (carrier != null) {
             VoxelShape carrierShape =
                     SoapBottleCarrierCollisionShapes.carrierNorth(carrier, data.carrierIntermediate());
-            list.add(PartPickEntry.of(SoapBottleParts.CARRIER, carrierShape, 0));
+            list.add(PartPickEntry.of(SoapBottleParts.CARRIER, carrierShape, 100));
         }
         return list;
     }

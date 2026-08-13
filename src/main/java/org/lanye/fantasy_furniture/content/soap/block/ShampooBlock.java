@@ -151,7 +151,7 @@ public final class ShampooBlock extends SoapSeriesWaterloggableBlock<ShampooBloc
                 && !player.isShiftKeyDown()) {
             ShampooBlockEntity be = blockEntity(level, pos);
             if (be != null) {
-                be.triggerUseAnim();
+                be.triggerUseAnim(hit);
             }
         }
         return InteractionResult.SUCCESS;
