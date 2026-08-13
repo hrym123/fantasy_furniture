@@ -71,7 +71,7 @@ public final class BodyCreamBlock extends SoapSeriesWaterloggableBlock<BodyCream
         if (raw instanceof BodyCreamBlockEntity be && be.layerCount() > 0) {
             if (be.hasCarrier()
                     || SoapBottleStackRules.needsPerLayerStackCollision(
-                            be.layersView(), SoapBottleKind.BODY_CREAM)) {
+                            be.stackData(), SoapBottleKind.BODY_CREAM)) {
                 return be.mixedCollisionShape(state.getValue(FACING));
             }
             return OrientedVoxelShapes.geckoFromNorth(

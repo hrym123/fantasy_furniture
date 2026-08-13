@@ -4,18 +4,39 @@ import java.util.List;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 
-/** 混合瓶罐摞：按自底向上层序与每层种类合并对应陈列位北向体素。 */
+/** 瓶罐摞：按<strong>槽号</strong>合并北向体素（空槽跳过）。 */
 public final class SoapBottleMixedCollisionShapes {
 
     private SoapBottleMixedCollisionShapes() {}
 
+    public static VoxelShape north(SoapBottleStackData data) {
+        return northExcludingSlot(data, -1);
+    }
+
+    /** @deprecated 稠密列表；请用 {@link #north(SoapBottleStackData)} */
+    @Deprecated
     public static VoxelShape north(List<SoapBottleLayer> layers) {
         return northExcludingSlot(layers, -1);
     }
 
-    /**
-     * 按层合并北向体素；{@code excludeSlotOneBased} 为正时跳过该陈列位（完成态第 3 位改用组合乳霜盒）。
-     */
+    public static VoxelShape northExcludingSlot(SoapBottleStackData data, int excludeSlotOneBased) {
+        VoxelShape shape = Shapes.empty();
+        int limit = SoapBottleStackData.MAX_SLOTS;
+        for (int i = 0; i < limit; i++) {
+            SoapBottleLayer layer = data.slotAt(i);
+            if (layer == null) {
+                continue;
+            }
+            int slot = i + 1;
+            if (slot == excludeSlotOneBased) {
+                continue;
+            }
+            shape = Shapes.or(shape, slotNorth(layer.kind(), slot));
+        }
+        return shape;
+    }
+
+    @Deprecated
     public static VoxelShape northExcludingSlot(List<SoapBottleLayer> layers, int excludeSlotOneBased) {
         if (layers.isEmpty()) {
             return Shapes.empty();

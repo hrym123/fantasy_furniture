@@ -1,7 +1,6 @@
 package org.lanye.fantasy_furniture.content.soap.client.renderer;
 
 import com.mojang.blaze3d.vertex.PoseStack;
-import java.util.List;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
@@ -16,19 +15,19 @@ import org.lanye.fantasy_furniture.content.soap.client.model.SoapBottleCarrierSt
 import org.lanye.fantasy_furniture.content.soap.client.model.SoapBottleCreamStandaloneGeoModel;
 import org.lanye.reverie_core.composite.OffsetGeoPartLayer;
 import org.lanye.reverie_core.composite.PartPose;
+import org.lanye.reverie_core.composite.PoseAfterFacingGeoBlockRenderer;
 import org.lanye.reverie_core.util.ReveriePerfRender;
-import software.bernie.geckolib.renderer.GeoBlockRenderer;
 
 /**
- * 瓶罐摞架/盒与完成态乳霜：单件 geo + {@link SoapComboLayouts} 偏移（不再切组合专用 geo）。
+ * 瓶罐摞架/盒与完成态乳霜：单件 geo + {@link SoapComboLayouts}；偏移在朝向旋转之后施加。
  */
 @OnlyIn(Dist.CLIENT)
 public final class SoapBottleCarrierOverlayRenderer {
 
-    private final GeoBlockRenderer<SoapBottleBlockEntity> carrierRenderer =
-            new GeoBlockRenderer<>(new SoapBottleCarrierStandaloneGeoModel());
-    private final GeoBlockRenderer<SoapBottleBlockEntity> creamRenderer =
-            new GeoBlockRenderer<>(new SoapBottleCreamStandaloneGeoModel());
+    private final PoseAfterFacingGeoBlockRenderer<SoapBottleBlockEntity> carrierRenderer =
+            new PoseAfterFacingGeoBlockRenderer<>(new SoapBottleCarrierStandaloneGeoModel());
+    private final PoseAfterFacingGeoBlockRenderer<SoapBottleBlockEntity> creamRenderer =
+            new PoseAfterFacingGeoBlockRenderer<>(new SoapBottleCreamStandaloneGeoModel());
 
     public void renderIfPresent(
             SoapBottleBlockEntity blockEntity,
@@ -72,11 +71,11 @@ public final class SoapBottleCarrierOverlayRenderer {
             MultiBufferSource bufferSource,
             int packedLight,
             int packedOverlay) {
-        List<SoapBottleLayer> layers = blockEntity.layersView();
-        if (layers.size() < 3 || layers.get(2).kind() != SoapBottleKind.BODY_CREAM) {
+        SoapBottleLayer cream = blockEntity.stackData().slotAt(2);
+        if (cream == null || cream.kind() != SoapBottleKind.BODY_CREAM) {
             return;
         }
-        SoapBottleComboCreamRenderState.set(layers.get(2).materialId());
+        SoapBottleComboCreamRenderState.set(cream.materialId());
         try {
             ReveriePerfRender.geoBlock(
                     "soap_bottle_cream_offset",

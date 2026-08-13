@@ -1,22 +1,16 @@
 package org.lanye.fantasy_furniture.content.soap.client.renderer;
 
 import com.mojang.blaze3d.vertex.PoseStack;
-import java.util.List;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-import org.lanye.fantasy_furniture.content.soap.SoapBottleKind;
-import org.lanye.fantasy_furniture.content.soap.SoapBottleLayer;
 import org.lanye.fantasy_furniture.content.soap.blockentity.BodyWashBlockEntity;
 import org.lanye.fantasy_furniture.content.soap.client.model.BodyWashSingleGeoModel;
 import org.lanye.reverie_core.util.ReveriePerfRender;
 import software.bernie.geckolib.renderer.GeoBlockRenderer;
 
-/** 单瓶用 {@code body_wash} geo；纯沐浴露多瓶合并 Pass；混合摞按 (种类,材质) 分桶绘制。
- *
- * <p>有载体时另叠架/盒 overlay。TODO：完成态第 3 位乳霜应对齐组合目录 {@code 乳霜.bbmodel}。
- */
+/** 单瓶（仅槽 0）用默认 geo；多瓶 / 空槽 / 载体用按槽骨骼 Pass。 */
 @OnlyIn(Dist.CLIENT)
 public final class BodyWashGeoBlockRenderer implements BlockEntityRenderer<BodyWashBlockEntity> {
 
@@ -33,66 +27,20 @@ public final class BodyWashGeoBlockRenderer implements BlockEntityRenderer<BodyW
             MultiBufferSource bufferSource,
             int packedLight,
             int packedOverlay) {
-        List<SoapBottleLayer> layers = blockEntity.layersView();
         int count = blockEntity.layerCount();
-        renderLayers(
-                blockEntity, layers, count, partialTick, poseStack, bufferSource, packedLight, packedOverlay);
-        carrierOverlay.renderIfPresent(
-                blockEntity, partialTick, poseStack, bufferSource, packedLight, packedOverlay);
-    }
-
-    private void renderLayers(
-            BodyWashBlockEntity blockEntity,
-            List<SoapBottleLayer> layers,
-            int count,
-            float partialTick,
-            PoseStack poseStack,
-            MultiBufferSource bufferSource,
-            int packedLight,
-            int packedOverlay) {
-        if (count <= 1) {
-            if (SoapBottleMixedStackRenderer.needsMixedPath(layers, SoapBottleKind.BODY_WASH)) {
-                ReveriePerfRender.geoBlock(
-                        "body_wash_mixed_stack",
-                        () -> mixedRenderer.render(
-                                blockEntity,
-                                layers,
-                                partialTick,
-                                poseStack,
-                                bufferSource,
-                                packedLight,
-                                packedOverlay));
-                return;
-            }
+        int first = blockEntity.stackData().firstOccupiedSlot();
+        if (count == 1 && first == 0 && !blockEntity.hasCarrier()) {
             ReveriePerfRender.geoBlock(
                     "body_wash",
                     () -> singleRenderer.render(
                             blockEntity, partialTick, poseStack, bufferSource, packedLight, packedOverlay));
-            return;
-        }
-        if (SoapBottleMixedStackRenderer.needsMixedPath(layers, SoapBottleKind.BODY_WASH)) {
+        } else if (count > 0) {
             ReveriePerfRender.geoBlock(
-                    "body_wash_mixed_stack",
-                    () -> mixedRenderer.render(
-                            blockEntity,
-                            layers,
-                            partialTick,
-                            poseStack,
-                            bufferSource,
-                            packedLight,
-                            packedOverlay));
-            return;
+                    "body_wash_slots",
+                    () -> mixedRenderer.renderFromSlots(
+                            blockEntity, partialTick, poseStack, bufferSource, packedLight, packedOverlay));
         }
-        ReveriePerfRender.geoBlock(
-                "body_wash_stack",
-                () -> mixedRenderer.renderHomogeneousKindStack(
-                        blockEntity,
-                        layers,
-                        SoapBottleKind.BODY_WASH,
-                        partialTick,
-                        poseStack,
-                        bufferSource,
-                        packedLight,
-                        packedOverlay));
+        carrierOverlay.renderIfPresent(
+                blockEntity, partialTick, poseStack, bufferSource, packedLight, packedOverlay);
     }
 }

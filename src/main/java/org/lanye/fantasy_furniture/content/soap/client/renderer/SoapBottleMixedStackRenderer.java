@@ -11,6 +11,7 @@ import java.util.stream.Collectors;
 import net.minecraft.client.renderer.MultiBufferSource;
 import org.lanye.fantasy_furniture.content.soap.SoapBottleKind;
 import org.lanye.fantasy_furniture.content.soap.SoapBottleLayer;
+import org.lanye.fantasy_furniture.content.soap.SoapBottleStackData;
 import org.lanye.fantasy_furniture.content.soap.SoapBottleStackRules;
 import org.lanye.fantasy_furniture.content.soap.SoapBottleStackSlots;
 import org.lanye.fantasy_furniture.content.soap.blockentity.SoapBottleBlockEntity;
@@ -18,44 +19,47 @@ import org.lanye.fantasy_furniture.content.soap.client.BodyCreamStackRenderState
 import org.lanye.fantasy_furniture.content.soap.client.BodyWashStackRenderState;
 import org.lanye.fantasy_furniture.content.soap.client.ShampooStackRenderState;
 
-/** 混合瓶罐摞：按 (种类, 材质) 合并 Pass，同贴图多陈列位一次绘制。 */
+/** 混合 / 含空槽瓶罐摞：按槽号点亮骨骼，同贴图多陈列位合并 Pass。 */
 public final class SoapBottleMixedStackRenderer {
 
     private final BodyWashStackLayerRenderer washStack = new BodyWashStackLayerRenderer();
     private final ShampooStackLayerRenderer shampooStack = new ShampooStackLayerRenderer();
     private final BodyCreamStackLayerRenderer creamStack = new BodyCreamStackLayerRenderer();
 
+    public static boolean needsMixedPath(SoapBottleStackData data, SoapBottleKind hostKind) {
+        return SoapBottleStackRules.needsPerLayerStackCollision(data, hostKind);
+    }
+
+    /** @deprecated 请用 {@link #needsMixedPath(SoapBottleStackData, SoapBottleKind)} */
+    @Deprecated
     public static boolean needsMixedPath(List<SoapBottleLayer> layers, SoapBottleKind hostKind) {
         return SoapBottleStackRules.needsPerLayerStackCollision(layers, hostKind);
     }
 
-    public void render(
+    public void renderFromSlots(
             SoapBottleBlockEntity blockEntity,
-            List<SoapBottleLayer> layers,
             float partialTick,
             PoseStack poseStack,
             MultiBufferSource bufferSource,
             int packedLight,
             int packedOverlay) {
-        boolean skipComboCreamSlot = SoapBottleStackRules.isCarrierCompleted(blockEntity.stackData());
+        SoapBottleStackData data = blockEntity.stackData();
+        boolean skipComboCreamSlot = SoapBottleStackRules.isCarrierCompleted(data);
         Map<PassKey, List<Integer>> groups = new LinkedHashMap<>();
-        for (int i = 0; i < layers.size(); i++) {
-            SoapBottleLayer layer = layers.get(i);
-            int slot = i + 1;
-            if (slot > SoapBottleKind.MIXED_MAX_STACK) {
+        for (int slotIdx = 0; slotIdx < SoapBottleStackData.MAX_SLOTS; slotIdx++) {
+            SoapBottleLayer layer = data.slotAt(slotIdx);
+            if (layer == null) {
                 continue;
             }
-            // 完成态第 3 位乳霜改由单件乳霜 geo + 布局偏移绘制
             if (skipComboCreamSlot
-                    && i == 2
+                    && slotIdx == 2
                     && layer.kind() == SoapBottleKind.BODY_CREAM) {
                 continue;
             }
             groups
                     .computeIfAbsent(new PassKey(layer.kind(), layer.materialId()), k -> new ArrayList<>(2))
-                    .add(i);
+                    .add(slotIdx);
         }
-
         for (Map.Entry<PassKey, List<Integer>> entry : groups.entrySet()) {
             PassKey key = entry.getKey();
             Set<String> bones =
@@ -79,7 +83,17 @@ public final class SoapBottleMixedStackRenderer {
         }
     }
 
-    /** 纯乳霜摞（≥2 层）：按 {@code block1}…{@code blockN} 绘制，可含第 5 陈列位。 */
+    public void render(
+            SoapBottleBlockEntity blockEntity,
+            List<SoapBottleLayer> layers,
+            float partialTick,
+            PoseStack poseStack,
+            MultiBufferSource bufferSource,
+            int packedLight,
+            int packedOverlay) {
+        renderFromSlots(blockEntity, partialTick, poseStack, bufferSource, packedLight, packedOverlay);
+    }
+
     public void renderHomogeneousCreamStack(
             SoapBottleBlockEntity blockEntity,
             List<SoapBottleLayer> layers,
@@ -88,18 +102,9 @@ public final class SoapBottleMixedStackRenderer {
             MultiBufferSource bufferSource,
             int packedLight,
             int packedOverlay) {
-        renderHomogeneousByMaterial(
-                blockEntity,
-                layers,
-                SoapBottleKind.BODY_CREAM,
-                partialTick,
-                poseStack,
-                bufferSource,
-                packedLight,
-                packedOverlay);
+        renderFromSlots(blockEntity, partialTick, poseStack, bufferSource, packedLight, packedOverlay);
     }
 
-    /** 纯沐浴露 / 洗发露多瓶：按材质分桶，同贴图多陈列位一次绘制。 */
     public void renderHomogeneousKindStack(
             SoapBottleBlockEntity blockEntity,
             List<SoapBottleLayer> layers,
@@ -109,57 +114,7 @@ public final class SoapBottleMixedStackRenderer {
             MultiBufferSource bufferSource,
             int packedLight,
             int packedOverlay) {
-        renderHomogeneousByMaterial(
-                blockEntity,
-                layers,
-                kind,
-                partialTick,
-                poseStack,
-                bufferSource,
-                packedLight,
-                packedOverlay);
-    }
-
-    private void renderHomogeneousByMaterial(
-            SoapBottleBlockEntity blockEntity,
-            List<SoapBottleLayer> layers,
-            SoapBottleKind kind,
-            float partialTick,
-            PoseStack poseStack,
-            MultiBufferSource bufferSource,
-            int packedLight,
-            int packedOverlay) {
-        boolean skipComboCreamSlot =
-                kind == SoapBottleKind.BODY_CREAM
-                        && SoapBottleStackRules.isCarrierCompleted(blockEntity.stackData());
-        Map<Integer, List<Integer>> byMaterial = new LinkedHashMap<>();
-        for (int i = 0; i < layers.size(); i++) {
-            if (skipComboCreamSlot && i == 2) {
-                continue;
-            }
-            SoapBottleLayer layer = layers.get(i);
-            byMaterial.computeIfAbsent(layer.materialId(), k -> new ArrayList<>(2)).add(i);
-        }
-        for (Map.Entry<Integer, List<Integer>> entry : byMaterial.entrySet()) {
-            Set<String> bones =
-                    entry.getValue().stream()
-                            .map(idx -> SoapBottleStackSlots.boneForLayer(kind, idx))
-                            .filter(Objects::nonNull)
-                            .collect(Collectors.toSet());
-            if (bones.isEmpty()) {
-                continue;
-            }
-            renderMergedPass(
-                    blockEntity,
-                    kind,
-                    bones,
-                    entry.getKey(),
-                    partialTick,
-                    poseStack,
-                    bufferSource,
-                    packedLight,
-                    packedOverlay);
-        }
+        renderFromSlots(blockEntity, partialTick, poseStack, bufferSource, packedLight, packedOverlay);
     }
 
     private void renderMergedPass(

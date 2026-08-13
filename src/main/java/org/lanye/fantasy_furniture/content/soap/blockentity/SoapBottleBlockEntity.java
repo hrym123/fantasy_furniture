@@ -77,15 +77,14 @@ public abstract class SoapBottleBlockEntity extends BlockEntity
      */
     public VoxelShape mixedCollisionNorth() {
         if (cachedMixedNorth == null) {
-            List<SoapBottleLayer> layers = layersView();
             VoxelShape shape;
             if (SoapBottleStackRules.isCarrierCompleted(stack)
-                    && layers.size() >= 3
-                    && layers.get(2).kind() == SoapBottleKind.BODY_CREAM) {
-                shape = SoapBottleMixedCollisionShapes.northExcludingSlot(layers, 3);
+                    && stack.slotAt(2) != null
+                    && stack.slotAt(2).kind() == SoapBottleKind.BODY_CREAM) {
+                shape = SoapBottleMixedCollisionShapes.northExcludingSlot(stack, 3);
                 shape = Shapes.or(shape, SoapBottleCarrierCollisionShapes.COMBO_CREAM);
             } else {
-                shape = SoapBottleMixedCollisionShapes.north(layers);
+                shape = SoapBottleMixedCollisionShapes.north(stack);
             }
             SoapStackCarrierKind carrierKind = stack.carrier();
             if (carrierKind != null) {
@@ -125,16 +124,36 @@ public abstract class SoapBottleBlockEntity extends BlockEntity
         return stack.layerCount();
     }
 
-    public int materialAtLayer(int indexFromBottom) {
-        return stack.layerAt(indexFromBottom).materialId();
+    public int materialAtLayer(int slotIndex) {
+        SoapBottleLayer layer = stack.slotAt(slotIndex);
+        if (layer != null) {
+            return layer.materialId();
+        }
+        // 单瓶渲染读 0 号槽时：若占用在其它槽，用首个占用材质；仍空则用展示材质（避免默认蓝闪一下）
+        if (slotIndex == 0) {
+            int first = stack.firstOccupiedSlot();
+            if (first >= 0) {
+                return stack.slotAt(first).materialId();
+            }
+            return stack.displayMaterial();
+        }
+        return stack.hostKind().defaultMaterial();
     }
 
-    public SoapBottleKind kindAtLayer(int indexFromBottom) {
-        return stack.layerAt(indexFromBottom).kind();
+    public SoapBottleKind kindAtLayer(int slotIndex) {
+        SoapBottleLayer layer = stack.slotAt(slotIndex);
+        if (layer != null) {
+            return layer.kind();
+        }
+        int first = stack.firstOccupiedSlot();
+        if (first >= 0) {
+            return stack.slotAt(first).kind();
+        }
+        return stack.hostKind();
     }
 
     public int topMaterial() {
-        return stack.topMaterial();
+        return stack.displayMaterial();
     }
 
     public List<SoapBottleLayer> layersView() {

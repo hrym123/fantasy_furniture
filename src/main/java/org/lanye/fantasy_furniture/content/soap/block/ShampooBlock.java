@@ -71,7 +71,7 @@ public final class ShampooBlock extends SoapSeriesWaterloggableBlock<ShampooBloc
         if (raw instanceof ShampooBlockEntity be && be.layerCount() > 0) {
             if (be.hasCarrier()
                     || SoapBottleStackRules.needsPerLayerStackCollision(
-                            be.layersView(), SoapBottleKind.SHAMPOO)) {
+                            be.stackData(), SoapBottleKind.SHAMPOO)) {
                 return be.mixedCollisionShape(state.getValue(FACING));
             }
         }

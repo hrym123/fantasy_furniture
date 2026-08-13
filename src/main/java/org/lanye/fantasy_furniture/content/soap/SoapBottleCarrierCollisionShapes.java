@@ -4,33 +4,43 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.phys.shapes.VoxelShape;
 
 /**
- * 瓶罐摞上架/盒载体北向碰撞（组合陈列位绝对外接盒）。
+ * 瓶罐摞上架/盒 / 完成态乳霜北向碰撞：与<strong>单独放置</strong>同形，再经 {@link SoapComboLayouts} 平移到位。
  *
- * <p>与 {@link SoapComboLayouts} 偏移标定同源；<strong>不是</strong>独立 geo 文件——渲染用单件架/盒 geo。
+ * <p>渲染亦为单件 geo + 同表偏移，故碰撞与可见模型一致。
  */
 public final class SoapBottleCarrierCollisionShapes {
 
     private SoapBottleCarrierCollisionShapes() {}
 
-    /** 完成态架陈列位外接盒（仅碰撞 / 选取） */
+    /** 与 {@code SoapRackBlock} 北向一致 */
+    private static final VoxelShape RACK_STANDALONE_NORTH = Block.box(4.0, 0.0, 5.5, 12.0, 1.0, 10.5);
+
+    /** 与 {@code SoapBoxBlock} 关盖北向一致（载体 overlay 用关盖 geo） */
+    private static final VoxelShape BOX_CLOSED_STANDALONE_NORTH =
+            Block.box(3.5, 0.0, 5.0, 12.5, 4.0, 11.0);
+
+    /** 完成态架陈列位 */
     public static final VoxelShape RACK_COMPLETED =
-            Block.box(1.00, 0.00, 1.50, 9.00, 1.00, 6.50);
+            SoapComboLayouts.RACK_DONE.transformNorthShape(RACK_STANDALONE_NORTH);
 
-    /** 中间态架陈列位外接盒 */
+    /** 中间态架陈列位 */
     public static final VoxelShape RACK_INTERMEDIATE =
-            Block.box(4.00, 0.00, 1.50, 12.00, 1.00, 6.50);
+            SoapComboLayouts.RACK_MID.transformNorthShape(RACK_STANDALONE_NORTH);
 
-    /** 完成态盒陈列位外接盒 */
+    /** 完成态盒陈列位 */
     public static final VoxelShape BOX_COMPLETED =
-            Block.box(0.00, 0.00, 1.00, 9.00, 5.00, 7.00);
+            SoapComboLayouts.BOX_DONE.transformNorthShape(BOX_CLOSED_STANDALONE_NORTH);
 
-    /** 中间态盒陈列位外接盒 */
+    /** 中间态盒陈列位 */
     public static final VoxelShape BOX_INTERMEDIATE =
-            Block.box(3.50, 0.00, 1.00, 12.50, 5.00, 7.00);
+            SoapComboLayouts.BOX_MID.transformNorthShape(BOX_CLOSED_STANDALONE_NORTH);
 
-    /** 完成态第 3 位乳霜陈列外接盒 */
+    /**
+     * 完成态第 3 位乳霜：单瓶乳霜碰撞 + {@link SoapComboLayouts#CREAM_DONE_FROM_SINGLE}（与 overlay 同源）。
+     */
     public static final VoxelShape COMBO_CREAM =
-            Block.box(10.00, 0.00, 2.00, 15.00, 3.75, 7.00);
+            SoapComboLayouts.CREAM_DONE_FROM_SINGLE.transformNorthShape(
+                    SoapStackCollisionShapes.bodyCreamNorth(1));
 
     public static VoxelShape carrierNorth(SoapStackCarrierKind kind, boolean intermediate) {
         return switch (kind) {

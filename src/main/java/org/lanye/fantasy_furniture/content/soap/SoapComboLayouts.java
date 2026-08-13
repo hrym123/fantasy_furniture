@@ -7,37 +7,33 @@ import org.lanye.reverie_core.composite.PartPose;
 /**
  * 瓶罐摞载体 / 完成态乳霜：单件 geo 相对默认放置的布局偏移（方块坐标）。
  *
- * <p>由单件碰撞盒 min 与组合陈列碰撞盒 min 之差标定，与 {@link SoapBottleCarrierCollisionShapes} 同源。
+ * <p>{@link SoapBottleCarrierCollisionShapes} 对单件碰撞做 {@link PartPose#transformNorthShape}，与本表同源。
  */
 public final class SoapComboLayouts {
 
-    /**
-     * 架：standalone {@code box(4,0,5.5,12,1,10.5)} → 完成态 {@code box(1,0,1.5,9,1,6.5)}
-     */
+    /** 架：默认位 → 完成态陈列位（Δx=-3、Δz=-4 像素） */
     public static final PartPose RACK_DONE = PartPose.translate(-3.0 / 16.0, 0.0, -4.0 / 16.0);
 
-    /** 架：→ 中间态 {@code box(4,0,1.5,12,1,6.5)} */
+    /** 架：默认位 → 中间态陈列位（Δz=-4 像素） */
     public static final PartPose RACK_MID = PartPose.translate(0.0, 0.0, -4.0 / 16.0);
 
-    /**
-     * 盒：standalone 关盖 {@code box(3.5,0,5,12.5,4,11)} → 完成态 {@code box(0,0,1,9,5,7)}
-     */
+    /** 盒：默认关盖位 → 完成态陈列位（Δx=-3.5、Δz=-4 像素） */
     public static final PartPose BOX_DONE = PartPose.translate(-3.5 / 16.0, 0.0, -4.0 / 16.0);
 
-    /** 盒：→ 中间态 {@code box(3.5,0,1,12.5,5,7)} */
+    /** 盒：默认关盖位 → 中间态陈列位（Δz=-4 像素） */
     public static final PartPose BOX_MID = PartPose.translate(0.0, 0.0, -4.0 / 16.0);
 
     /**
-     * 完成态第 3 位乳霜：堆叠位 3 {@code box(9,0,2,…)} → 组合位 {@code box(10,0,2,…)}；
-     * 若用<strong>单瓶</strong>默认 geo（近位 1），则另见 {@link #CREAM_DONE_FROM_SINGLE}。
-     */
-    public static final PartPose CREAM_DONE_FROM_SLOT3 = PartPose.translate(1.0 / 16.0, 0.0, 0.0);
-
-    /**
-     * 单瓶乳霜默认（近位 1 {@code box(9,0,9,…)}）→ 组合乳霜位 {@code box(10,0,2,…)}。
+     * 单瓶乳霜默认碰撞 {@code box(5.5…10.5)} → 完成态陈列位（原组合标定 {@code box(10,0,2,15,3.75,7)}）。
+     * Δ = min 差：(10-5.5, 0, 2-5.5) 像素 → (4.5, 0, -3.5)/16。
      */
     public static final PartPose CREAM_DONE_FROM_SINGLE =
-            PartPose.translate(1.0 / 16.0, 0.0, -7.0 / 16.0);
+            PartPose.translate(4.5 / 16.0, 0.0, -3.5 / 16.0);
+
+    /**
+     * 堆叠位 3 {@code box(9,0,2,…)} → 同上组合位（仅差 Δx=+1 像素）。
+     */
+    public static final PartPose CREAM_DONE_FROM_SLOT3 = PartPose.translate(1.0 / 16.0, 0.0, 0.0);
 
     public static final PartLayoutTable TABLE =
             PartLayoutTable.builder()

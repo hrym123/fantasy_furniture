@@ -1,17 +1,10 @@
 package org.lanye.fantasy_furniture.content.furniture.livingroom.client;
 
-import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.VertexConsumer;
-import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.LevelRenderer;
-import net.minecraft.client.renderer.RenderType;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.block.BedBlock;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
-import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
@@ -21,8 +14,9 @@ import net.minecraftforge.fml.common.Mod;
 import org.lanye.fantasy_furniture.FantasyFurniture;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.block.BedPlate6Block;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.blockentity.BedPlate6BlockEntity;
+import org.lanye.reverie_core.composite.client.CompositeCrosshairOutlines;
 
-/** 床板 6 准心黑框：{@link BedPlate6Block#getShape} 用并集做射线，此处只画当前子件（避免并集多框同亮）。 */
+/** 床板 6 准心黑框：只画当前子件（避免并集多框同亮）；描边见 core。 */
 @OnlyIn(Dist.CLIENT)
 @Mod.EventBusSubscriber(modid = FantasyFurniture.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
 public final class BedPlate6CrosshairOutlineEvents {
@@ -60,22 +54,6 @@ public final class BedPlate6CrosshairOutlineEvents {
         if (outline.isEmpty()) {
             return;
         }
-
-        event.setCanceled(true);
-        Camera camera = event.getCamera();
-        Vec3 cam = camera.getPosition();
-        PoseStack poseStack = event.getPoseStack();
-        VertexConsumer consumer =
-                event.getMultiBufferSource().getBuffer(RenderType.lines());
-        double ox = pos.getX() - cam.x;
-        double oy = pos.getY() - cam.y;
-        double oz = pos.getZ() - cam.z;
-        float alpha = mc.player != null && mc.player.isSpectator() ? 1.0F : 0.4F;
-        poseStack.pushPose();
-        poseStack.translate(ox, oy, oz);
-        for (AABB box : outline.toAabbs()) {
-            LevelRenderer.renderLineBox(poseStack, consumer, box, 0.0F, 0.0F, 0.0F, alpha);
-        }
-        poseStack.popPose();
+        CompositeCrosshairOutlines.renderPartOutline(event, pos, outline);
     }
 }

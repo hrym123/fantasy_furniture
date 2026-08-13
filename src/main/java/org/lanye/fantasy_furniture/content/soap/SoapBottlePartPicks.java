@@ -7,9 +7,7 @@ import org.lanye.reverie_core.composite.CompositePartId;
 import org.lanye.reverie_core.composite.PartPickEntry;
 
 /**
- * 瓶罐摞准心选取条目：碰撞体素即选取体素（绝对北向，已含组合位）。
- *
- * <p>瓶层 tier = 层序（上层优先）；载体 tier = 0（与瓶重叠时优先点到载体）。
+ * 瓶罐摞准心选取：按<strong>槽号</strong>生成条目（空槽不生成）。
  */
 public final class SoapBottlePartPicks {
 
@@ -17,25 +15,23 @@ public final class SoapBottlePartPicks {
 
     public static List<PartPickEntry> entries(SoapBottleStackData data) {
         List<PartPickEntry> list = new ArrayList<>();
-        List<SoapBottleLayer> layers = data.layersView();
         boolean completedCream =
                 SoapBottleStackRules.isCarrierCompleted(data)
-                        && layers.size() >= 3
-                        && layers.get(2).kind() == SoapBottleKind.BODY_CREAM;
+                        && data.slotAt(2) != null
+                        && data.slotAt(2).kind() == SoapBottleKind.BODY_CREAM;
 
-        int n = Math.min(layers.size(), SoapBottleKind.MIXED_MAX_STACK);
-        if (SoapBottleStackRules.isHomogeneousCream(layers)) {
-            n = Math.min(layers.size(), BodyCreamAssets.MAX_STACK);
-        }
-        for (int i = 0; i < n; i++) {
+        for (int i = 0; i < SoapBottleStackData.MAX_SLOTS; i++) {
+            SoapBottleLayer layer = data.slotAt(i);
+            if (layer == null) {
+                continue;
+            }
             VoxelShape shape;
             if (completedCream && i == 2) {
                 shape = SoapBottleCarrierCollisionShapes.COMBO_CREAM;
             } else {
-                shape = slotNorth(layers.get(i).kind(), i + 1);
+                shape = slotNorth(layer.kind(), i + 1);
             }
-            // 上层瓶优先于下层（tier 更小）
-            int tier = 100 + (n - 1 - i);
+            int tier = 100 + (SoapBottleStackData.MAX_SLOTS - 1 - i);
             list.add(PartPickEntry.of(SoapBottleParts.bottle(i), shape, tier));
         }
 
@@ -50,8 +46,10 @@ public final class SoapBottlePartPicks {
 
     public static List<CompositePartId> activeParts(SoapBottleStackData data) {
         List<CompositePartId> ids = new ArrayList<>();
-        for (int i = 0; i < data.layerCount(); i++) {
-            ids.add(SoapBottleParts.bottle(i));
+        for (int i = 0; i < SoapBottleStackData.MAX_SLOTS; i++) {
+            if (data.slotAt(i) != null) {
+                ids.add(SoapBottleParts.bottle(i));
+            }
         }
         if (data.hasCarrier()) {
             ids.add(SoapBottleParts.CARRIER);
