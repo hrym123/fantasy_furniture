@@ -37,11 +37,18 @@ public final class SoapBottleMixedStackRenderer {
             MultiBufferSource bufferSource,
             int packedLight,
             int packedOverlay) {
+        boolean skipComboCreamSlot = SoapBottleStackRules.isCarrierCompleted(blockEntity.stackData());
         Map<PassKey, List<Integer>> groups = new LinkedHashMap<>();
         for (int i = 0; i < layers.size(); i++) {
             SoapBottleLayer layer = layers.get(i);
             int slot = i + 1;
             if (slot > SoapBottleKind.MIXED_MAX_STACK) {
+                continue;
+            }
+            // 完成态第 3 位乳霜改由组合目录乳霜 geo 绘制
+            if (skipComboCreamSlot
+                    && i == 2
+                    && layer.kind() == SoapBottleKind.BODY_CREAM) {
                 continue;
             }
             groups
@@ -122,8 +129,14 @@ public final class SoapBottleMixedStackRenderer {
             MultiBufferSource bufferSource,
             int packedLight,
             int packedOverlay) {
+        boolean skipComboCreamSlot =
+                kind == SoapBottleKind.BODY_CREAM
+                        && SoapBottleStackRules.isCarrierCompleted(blockEntity.stackData());
         Map<Integer, List<Integer>> byMaterial = new LinkedHashMap<>();
         for (int i = 0; i < layers.size(); i++) {
+            if (skipComboCreamSlot && i == 2) {
+                continue;
+            }
             SoapBottleLayer layer = layers.get(i);
             byMaterial.computeIfAbsent(layer.materialId(), k -> new ArrayList<>(2)).add(i);
         }

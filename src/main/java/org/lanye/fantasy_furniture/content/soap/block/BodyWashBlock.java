@@ -67,15 +67,16 @@ public final class BodyWashBlock extends SoapSeriesWaterloggableBlock<BodyWashBl
     @Override
     public VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
         int layers = state.getValue(LAYERS);
-        VoxelShape north;
         BlockEntity raw = level.getBlockEntity(pos);
-        if (raw instanceof BodyWashBlockEntity be
-                && be.layerCount() > 0
-                && SoapBottleStackRules.needsPerLayerStackCollision(
-                        be.layersView(), SoapBottleKind.BODY_WASH)) {
-            return be.mixedCollisionShape(state.getValue(FACING));
+        if (raw instanceof BodyWashBlockEntity be && be.layerCount() > 0) {
+            // 含载体 / 混合摞时须走 BE 合并体素；纯同种无载体仍可用查表，但统一走 BE 以免漏载体碰撞
+            if (be.hasCarrier()
+                    || SoapBottleStackRules.needsPerLayerStackCollision(
+                            be.layersView(), SoapBottleKind.BODY_WASH)) {
+                return be.mixedCollisionShape(state.getValue(FACING));
+            }
         }
-        north = SoapStackCollisionShapes.bodyWashNorth(layers);
+        VoxelShape north = SoapStackCollisionShapes.bodyWashNorth(layers);
         return OrientedVoxelShapes.geckoFromNorth(north, state.getValue(FACING));
     }
 

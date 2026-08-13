@@ -67,15 +67,15 @@ public final class ShampooBlock extends SoapSeriesWaterloggableBlock<ShampooBloc
     @Override
     public VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
         int layers = state.getValue(LAYERS);
-        VoxelShape north;
         BlockEntity raw = level.getBlockEntity(pos);
-        if (raw instanceof ShampooBlockEntity be
-                && be.layerCount() > 0
-                && SoapBottleStackRules.needsPerLayerStackCollision(
-                        be.layersView(), SoapBottleKind.SHAMPOO)) {
-            return be.mixedCollisionShape(state.getValue(FACING));
+        if (raw instanceof ShampooBlockEntity be && be.layerCount() > 0) {
+            if (be.hasCarrier()
+                    || SoapBottleStackRules.needsPerLayerStackCollision(
+                            be.layersView(), SoapBottleKind.SHAMPOO)) {
+                return be.mixedCollisionShape(state.getValue(FACING));
+            }
         }
-        north = SoapStackCollisionShapes.shampooNorth(layers);
+        VoxelShape north = SoapStackCollisionShapes.shampooNorth(layers);
         return OrientedVoxelShapes.geckoFromNorth(north, state.getValue(FACING));
     }
 

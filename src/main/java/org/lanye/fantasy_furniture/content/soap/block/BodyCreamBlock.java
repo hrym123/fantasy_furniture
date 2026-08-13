@@ -67,18 +67,18 @@ public final class BodyCreamBlock extends SoapSeriesWaterloggableBlock<BodyCream
     @Override
     public VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
         int layers = state.getValue(LAYERS);
-        VoxelShape north;
         BlockEntity raw = level.getBlockEntity(pos);
         if (raw instanceof BodyCreamBlockEntity be && be.layerCount() > 0) {
-            if (SoapBottleStackRules.needsPerLayerStackCollision(
-                    be.layersView(), SoapBottleKind.BODY_CREAM)) {
+            if (be.hasCarrier()
+                    || SoapBottleStackRules.needsPerLayerStackCollision(
+                            be.layersView(), SoapBottleKind.BODY_CREAM)) {
                 return be.mixedCollisionShape(state.getValue(FACING));
             }
-            north = SoapStackCollisionShapes.bodyCreamNorth(be.layerCount());
-        } else {
-            north = SoapStackCollisionShapes.bodyCreamNorth(layers);
+            return OrientedVoxelShapes.geckoFromNorth(
+                    SoapStackCollisionShapes.bodyCreamNorth(be.layerCount()), state.getValue(FACING));
         }
-        return OrientedVoxelShapes.geckoFromNorth(north, state.getValue(FACING));
+        return OrientedVoxelShapes.geckoFromNorth(
+                SoapStackCollisionShapes.bodyCreamNorth(layers), state.getValue(FACING));
     }
 
     @Override

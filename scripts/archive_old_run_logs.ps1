@@ -6,7 +6,8 @@ param(
 
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 if ([string]::IsNullOrWhiteSpace($LogsDir)) {
-    $LogsDir = Join-Path $scriptDir "..\\run\\logs"
+    # mods/fantasy_furniture/scripts → 工作区根/run/logs
+    $LogsDir = Join-Path $scriptDir "..\\..\\..\\run\\logs"
 }
 
 $resolvedLogsDir = (Resolve-Path -LiteralPath $LogsDir).Path
