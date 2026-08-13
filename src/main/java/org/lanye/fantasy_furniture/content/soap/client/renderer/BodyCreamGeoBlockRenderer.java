@@ -16,7 +16,7 @@ import software.bernie.geckolib.renderer.GeoBlockRenderer;
 
 /** 单瓶用 {@code body_cream} geo；纯乳霜多瓶用 {@code 乳霜_堆叠_x5}；混合摞按 (种类,材质) 分桶绘制。
  *
- * <p>有载体时另叠组合架/盒 overlay；完成态第 3 位乳霜改用组合 {@code soap_bottle_combo_cream}。
+ * <p>有载体时另叠单件架/盒 + 布局偏移；完成态第 3 位乳霜同。
  */
 @OnlyIn(Dist.CLIENT)
 public final class BodyCreamGeoBlockRenderer implements BlockEntityRenderer<BodyCreamBlockEntity> {

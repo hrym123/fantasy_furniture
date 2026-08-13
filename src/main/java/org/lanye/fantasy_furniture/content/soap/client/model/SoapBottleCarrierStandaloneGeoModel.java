@@ -1,7 +1,6 @@
 package org.lanye.fantasy_furniture.content.soap.client.model;
 
 import net.minecraft.resources.ResourceLocation;
-import org.lanye.fantasy_furniture.content.soap.SoapBottleComboAssets;
 import org.lanye.fantasy_furniture.content.soap.SoapBoxAppearance;
 import org.lanye.fantasy_furniture.content.soap.SoapRackAssets;
 import org.lanye.fantasy_furniture.content.soap.SoapStackCarrierKind;
@@ -10,18 +9,18 @@ import org.lanye.fantasy_furniture.content.soap.client.SoapBottleCarrierRenderSt
 import software.bernie.geckolib.model.GeoModel;
 
 /**
- * 瓶罐摞 carrier overlay：组合目录导出 geo（完成态 / 中间态 {@code *2}）；贴图复用架/盒既有资源。
+ * 瓶罐摞载体：单件架 / 关盖盒 geo（位姿由 {@link org.lanye.reverie_core.composite.OffsetGeoPartLayer} 施加）。
  */
-public final class SoapBottleCarrierOverlayGeoModel extends GeoModel<SoapBottleBlockEntity> {
+public final class SoapBottleCarrierStandaloneGeoModel extends GeoModel<SoapBottleBlockEntity> {
 
     @Override
     public ResourceLocation getModelResource(SoapBottleBlockEntity animatable) {
         SoapStackCarrierKind kind = SoapBottleCarrierRenderState.kind();
-        boolean intermediate = SoapBottleCarrierRenderState.intermediate();
         if (kind == SoapStackCarrierKind.BOX) {
-            return SoapBottleComboAssets.boxModel(intermediate);
+            return new SoapBoxAppearance(SoapBottleCarrierRenderState.boxMaterialId())
+                    .boxModelLocation(false);
         }
-        return SoapBottleComboAssets.rackModel(intermediate);
+        return SoapRackAssets.MODEL;
     }
 
     @Override

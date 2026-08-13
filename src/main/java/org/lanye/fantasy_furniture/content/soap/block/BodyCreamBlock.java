@@ -113,6 +113,23 @@ public final class BodyCreamBlock extends SoapSeriesWaterloggableBlock<BodyCream
     }
 
     @Override
+    public boolean onDestroyedByPlayer(
+            BlockState state,
+            Level level,
+            BlockPos pos,
+            Player player,
+            boolean willHarvest,
+            net.minecraft.world.level.material.FluidState fluid) {
+        boolean remove =
+                SoapBottleStackUse.onDestroyedByPlayer(
+                        state, level, pos, player, willHarvest, fluid, LAYERS, MATERIAL);
+        if (!remove) {
+            return false;
+        }
+        return super.onDestroyedByPlayer(state, level, pos, player, willHarvest, fluid);
+    }
+
+    @Override
     protected InteractionResult onUseClient(
             BlockState state,
             Level level,

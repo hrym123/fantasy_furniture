@@ -161,6 +161,33 @@ public final class SoapBottleStackData {
         return layers.remove(layers.size() - 1);
     }
 
+    /** 按下标弹出一层；若导致载体态非法则一并清除载体。 */
+    @Nullable
+    public SoapBottleLayer popLayerAt(int indexFromBottom) {
+        if (indexFromBottom < 0 || indexFromBottom >= layers.size()) {
+            return null;
+        }
+        SoapBottleLayer removed = layers.remove(indexFromBottom);
+        sanitizeCarrierAfterBottleChange();
+        return removed;
+    }
+
+    /** 瓶层变更后：完成态须仍为 3 瓶且第 3 乳霜；中间态须仍为 2 瓶。 */
+    private void sanitizeCarrierAfterBottleChange() {
+        if (carrier == null) {
+            return;
+        }
+        if (carrierIntermediate) {
+            if (layers.size() != 2) {
+                clearCarrierFields();
+            }
+            return;
+        }
+        if (layers.size() != 3 || layers.get(2).kind() != SoapBottleKind.BODY_CREAM) {
+            clearCarrierFields();
+        }
+    }
+
     public void clear() {
         layers.clear();
         clearCarrierFields();

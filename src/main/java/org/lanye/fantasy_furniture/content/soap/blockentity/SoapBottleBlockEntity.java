@@ -17,17 +17,21 @@ import org.lanye.fantasy_furniture.content.soap.SoapBottleCarrierCollisionShapes
 import org.lanye.fantasy_furniture.content.soap.SoapBottleKind;
 import org.lanye.fantasy_furniture.content.soap.SoapBottleLayer;
 import org.lanye.fantasy_furniture.content.soap.SoapBottleMixedCollisionShapes;
+import org.lanye.fantasy_furniture.content.soap.SoapBottlePartPicks;
+import org.lanye.fantasy_furniture.content.soap.SoapBottleParts;
 import org.lanye.fantasy_furniture.content.soap.SoapBottleStackData;
 import org.lanye.fantasy_furniture.content.soap.SoapBottleStackRules;
 import org.lanye.fantasy_furniture.content.soap.SoapBottleStackUse;
 import org.lanye.fantasy_furniture.content.soap.SoapStackCarrierKind;
+import org.lanye.reverie_core.composite.CompositePartHost;
+import org.lanye.reverie_core.composite.CompositePartId;
 import org.lanye.reverie_core.util.VoxelShapeRotation;
 import software.bernie.geckolib.animatable.GeoBlockEntity;
 import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
 
 /** 沐浴露 / 洗发露 / 乳霜摞的共用 BE 基类（层列表 + 混合摞 NBT）。 */
 public abstract class SoapBottleBlockEntity extends BlockEntity
-        implements GeoBlockEntity, SoapBottleStackUse.Holder {
+        implements GeoBlockEntity, SoapBottleStackUse.Holder, CompositePartHost {
 
     private final SoapBottleStackData stack;
     /** 混合摞北向碰撞缓存；层序变更时清空（与材质无关）。 */
@@ -55,6 +59,16 @@ public abstract class SoapBottleBlockEntity extends BlockEntity
     public void markStackChanged() {
         invalidateMixedCollisionCache();
         setChanged();
+    }
+
+    @Override
+    public String compositeLayoutKey() {
+        return SoapBottleParts.layoutKey(stack);
+    }
+
+    @Override
+    public List<CompositePartId> activeCompositeParts() {
+        return SoapBottlePartPicks.activeParts(stack);
     }
 
     /**

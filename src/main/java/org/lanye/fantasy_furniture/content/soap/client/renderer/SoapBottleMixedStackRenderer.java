@@ -45,7 +45,7 @@ public final class SoapBottleMixedStackRenderer {
             if (slot > SoapBottleKind.MIXED_MAX_STACK) {
                 continue;
             }
-            // 完成态第 3 位乳霜改由组合目录乳霜 geo 绘制
+            // 完成态第 3 位乳霜改由单件乳霜 geo + 布局偏移绘制
             if (skipComboCreamSlot
                     && i == 2
                     && layer.kind() == SoapBottleKind.BODY_CREAM) {

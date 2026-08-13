@@ -2,18 +2,17 @@ package org.lanye.fantasy_furniture.content.soap.client.model;
 
 import net.minecraft.resources.ResourceLocation;
 import org.lanye.fantasy_furniture.content.soap.BodyCreamAppearance;
-import org.lanye.fantasy_furniture.content.soap.SoapBottleComboAssets;
-import org.lanye.fantasy_furniture.content.soap.SoapRackAssets;
+import org.lanye.fantasy_furniture.content.soap.BodyCreamAssets;
 import org.lanye.fantasy_furniture.content.soap.blockentity.SoapBottleBlockEntity;
 import org.lanye.fantasy_furniture.content.soap.client.SoapBottleComboCreamRenderState;
 import software.bernie.geckolib.model.GeoModel;
 
-/** 完成态第 3 位乳霜：组合目录 {@code 乳霜.bbmodel} 导出 geo。 */
-public final class SoapBottleComboCreamGeoModel extends GeoModel<SoapBottleBlockEntity> {
+/** 完成态第 3 位：单瓶乳霜 geo + {@link org.lanye.fantasy_furniture.content.soap.SoapComboLayouts} 偏移。 */
+public final class SoapBottleCreamStandaloneGeoModel extends GeoModel<SoapBottleBlockEntity> {
 
     @Override
     public ResourceLocation getModelResource(SoapBottleBlockEntity animatable) {
-        return SoapBottleComboAssets.CREAM_MODEL;
+        return BodyCreamAssets.singleModelLocation();
     }
 
     @Override
@@ -23,6 +22,6 @@ public final class SoapBottleComboCreamGeoModel extends GeoModel<SoapBottleBlock
 
     @Override
     public ResourceLocation getAnimationResource(SoapBottleBlockEntity animatable) {
-        return SoapRackAssets.ANIMATION;
+        return BodyCreamAssets.singleAnimationLocation();
     }
 }

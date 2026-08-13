@@ -2,11 +2,16 @@ package org.lanye.fantasy_furniture.content.soap.blockentity;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.world.level.block.HorizontalDirectionalBlock;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.BlockHitResult;
 import org.lanye.fantasy_furniture.bootstrap.block.ModBlocks;
 import org.lanye.fantasy_furniture.content.soap.BodyWashAssets;
 import org.lanye.fantasy_furniture.content.soap.SoapBottleKind;
+import org.lanye.fantasy_furniture.content.soap.SoapBottlePartPicks;
 import org.lanye.fantasy_furniture.content.soap.SoapBottleStackUse;
+import org.lanye.reverie_core.composite.CompositePartId;
+import org.lanye.reverie_core.composite.PartHitHelpers;
 import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
 import software.bernie.geckolib.core.animation.AnimatableManager;
 import software.bernie.geckolib.core.animation.Animation;
@@ -56,10 +61,24 @@ public final class BodyWashBlockEntity extends SoapBottleBlockEntity {
         loadStack(tag, BodyWashAssets.MAX_STACK);
     }
 
+    public void onServerUseAnim(BlockHitResult hit) {
+        CompositePartId part =
+                PartHitHelpers.resolveHitPart(
+                        hit, getBlockState().getValue(HorizontalDirectionalBlock.FACING), SoapBottlePartPicks.entries(stack()));
+        if (!SoapBottleStackUse.hitOrTopLayerIs(stack(), SoapBottleKind.BODY_WASH, part)) {
+            return;
+        }
+        playUseAnim();
+    }
+
     public void onServerUseAnim() {
         if (!SoapBottleStackUse.topLayerIs(stack(), SoapBottleKind.BODY_WASH)) {
             return;
         }
+        playUseAnim();
+    }
+
+    private void playUseAnim() {
         int layers = Math.max(1, layerCount());
         String trigger =
                 switch (layers) {

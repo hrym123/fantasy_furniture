@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import javax.annotation.Nullable;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
@@ -13,11 +14,15 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.IntegerProperty;
+import net.minecraft.world.level.material.FluidState;
 import net.minecraft.world.level.storage.loot.LootParams;
 import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.level.block.HorizontalDirectionalBlock;
 import org.lanye.fantasy_furniture.content.tool.BrushRecolor;
+import org.lanye.reverie_core.composite.CompositePartId;
+import org.lanye.reverie_core.composite.PartHitHelpers;
 
-/** 沐浴露 / 洗发露 / 乳霜混合摞放：服务端交互与掉落（含特殊 2/3 架盒载体）。 */
+/** 沐浴露 / 洗发露 / 乳霜混合摞：分件选取取出 / 破坏；可叠优先；其余走命中件交互。 */
 public final class SoapBottleStackUse {
 
     private SoapBottleStackUse() {}
@@ -59,6 +64,7 @@ public final class SoapBottleStackUse {
         }
         SoapBottleStackData stack = holder.stackData();
         ItemStack held = player.getItemInHand(hand);
+        Direction facing = state.getValue(HorizontalDirectionalBlock.FACING);
         boolean sneaking = player.isShiftKeyDown();
 
         if (sneaking) {
@@ -67,35 +73,15 @@ public final class SoapBottleStackUse {
                     && SoapStackCarrierKind.fromItem(held) == null) {
                 return InteractionResult.PASS;
             }
-            if (stack.hasCarrier()) {
-                ItemStack drop = stack.popCarrierItem();
-                if (drop == null) {
-                    return InteractionResult.FAIL;
-                }
-                holder.markStackChanged();
-                if (!player.getInventory().add(drop)) {
-                    player.drop(drop, false);
-                }
-                syncState(level, pos, state, stack, layersProperty, materialProperty);
-                return InteractionResult.CONSUME;
+            CompositePartId part =
+                    PartHitHelpers.resolveHitPart(hit, facing, SoapBottlePartPicks.entries(stack));
+            if (part == null) {
+                part = fallbackTopOrCarrier(stack);
             }
-            SoapBottleLayer popped = stack.popTopLayer();
-            if (popped == null) {
-                return InteractionResult.FAIL;
-            }
-            holder.markStackChanged();
-            ItemStack drop = SoapBottleKind.stackWithMaterial(popped.kind(), popped.materialId());
-            if (!player.getInventory().add(drop)) {
-                player.drop(drop, false);
-            }
-            if (stack.layerCount() == 0) {
-                level.removeBlock(pos, false);
-            } else {
-                syncState(level, pos, state, stack, layersProperty, materialProperty);
-            }
-            return InteractionResult.CONSUME;
+            return popHitPart(level, pos, state, player, holder, stack, part, layersProperty, materialProperty);
         }
 
+        // 可叠优先：架/盒 / 瓶
         SoapStackCarrierKind heldCarrier = SoapStackCarrierKind.fromItem(held);
         if (heldCarrier != null && SoapBottleStackRules.canAcceptCarrier(stack, heldCarrier)) {
             int boxMat =
@@ -133,7 +119,125 @@ public final class SoapBottleStackUse {
             return InteractionResult.CONSUME;
         }
 
+        // 命中件自身交互（泵头等）：空手 / 非可叠物品
+        CompositePartId part =
+                PartHitHelpers.resolveHitPart(hit, facing, SoapBottlePartPicks.entries(stack));
+        if (part == null) {
+            return InteractionResult.PASS;
+        }
+        int bottleIdx = SoapBottleParts.bottleIndex(part);
+        if (bottleIdx >= 0) {
+            // 泵头由宿主 Block 播动画；此处放行
+            return InteractionResult.PASS;
+        }
+        // 载体：摞内暂无入皂/开盖 NBT
         return InteractionResult.PASS;
+    }
+
+    /**
+     * 破坏只掉命中件；若仍有剩余部件则保留方块（返回 {@code false} 表示未摧毁）。
+     */
+    public static boolean onDestroyedByPlayer(
+            BlockState state,
+            Level level,
+            BlockPos pos,
+            Player player,
+            boolean willHarvest,
+            FluidState fluid,
+            IntegerProperty layersProperty,
+            IntegerProperty materialProperty) {
+        if (level.isClientSide) {
+            return true;
+        }
+        BlockEntity be = level.getBlockEntity(pos);
+        if (!(be instanceof Holder holder)) {
+            return true;
+        }
+        SoapBottleStackData stack = holder.stackData();
+        if (stack.layerCount() <= 1 && !stack.hasCarrier()) {
+            return true;
+        }
+        Direction facing = state.getValue(HorizontalDirectionalBlock.FACING);
+        double reach = player.getBlockReach();
+        CompositePartId part =
+                PartHitHelpers.resolveHitPartFromPlayer(
+                        player, pos, facing, SoapBottlePartPicks.entries(stack), reach);
+        if (part == null) {
+            part = fallbackTopOrCarrier(stack);
+        }
+        ItemStack drop = takeHitPart(stack, part);
+        if (drop == null) {
+            return true;
+        }
+        holder.markStackChanged();
+        if (willHarvest && !player.getAbilities().instabuild) {
+            if (!player.getInventory().add(drop)) {
+                player.drop(drop, false);
+            }
+        } else if (!player.getAbilities().instabuild) {
+            Block.popResource(level, pos, drop);
+        }
+        if (stack.layerCount() == 0 && !stack.hasCarrier()) {
+            return true;
+        }
+        syncState(level, pos, state, stack, layersProperty, materialProperty);
+        return false;
+    }
+
+    private static InteractionResult popHitPart(
+            Level level,
+            BlockPos pos,
+            BlockState state,
+            Player player,
+            Holder holder,
+            SoapBottleStackData stack,
+            @Nullable CompositePartId part,
+            IntegerProperty layersProperty,
+            IntegerProperty materialProperty) {
+        if (part == null) {
+            return InteractionResult.FAIL;
+        }
+        ItemStack drop = takeHitPart(stack, part);
+        if (drop == null) {
+            return InteractionResult.FAIL;
+        }
+        holder.markStackChanged();
+        if (!player.getInventory().add(drop)) {
+            player.drop(drop, false);
+        }
+        if (stack.layerCount() == 0 && !stack.hasCarrier()) {
+            level.removeBlock(pos, false);
+        } else {
+            syncState(level, pos, state, stack, layersProperty, materialProperty);
+        }
+        return InteractionResult.CONSUME;
+    }
+
+    @Nullable
+    private static ItemStack takeHitPart(SoapBottleStackData stack, CompositePartId part) {
+        if (SoapBottleParts.isCarrier(part)) {
+            return stack.popCarrierItem();
+        }
+        int idx = SoapBottleParts.bottleIndex(part);
+        if (idx < 0) {
+            return null;
+        }
+        SoapBottleLayer layer = stack.popLayerAt(idx);
+        if (layer == null) {
+            return null;
+        }
+        return SoapBottleKind.stackWithMaterial(layer.kind(), layer.materialId());
+    }
+
+    @Nullable
+    private static CompositePartId fallbackTopOrCarrier(SoapBottleStackData stack) {
+        if (stack.hasCarrier()) {
+            return SoapBottleParts.CARRIER;
+        }
+        if (stack.layerCount() == 0) {
+            return null;
+        }
+        return SoapBottleParts.bottle(stack.layerCount() - 1);
     }
 
     public static List<ItemStack> getDrops(
@@ -181,7 +285,21 @@ public final class SoapBottleStackUse {
         }
     }
 
-    /** 泵头动画等：仅顶层为该种类时触发。 */
+    /** 泵头动画等：命中层（或顶层回退）为该种类时触发。 */
+    public static boolean hitOrTopLayerIs(
+            SoapBottleStackData stack,
+            SoapBottleKind kind,
+            @Nullable CompositePartId hitPart) {
+        if (hitPart != null) {
+            int idx = SoapBottleParts.bottleIndex(hitPart);
+            if (idx >= 0) {
+                return stack.layerAt(idx).kind() == kind;
+            }
+        }
+        SoapBottleLayer top = stack.topLayer();
+        return top != null && top.kind() == kind;
+    }
+
     public static boolean topLayerIs(SoapBottleStackData stack, SoapBottleKind kind) {
         SoapBottleLayer top = stack.topLayer();
         return top != null && top.kind() == kind;

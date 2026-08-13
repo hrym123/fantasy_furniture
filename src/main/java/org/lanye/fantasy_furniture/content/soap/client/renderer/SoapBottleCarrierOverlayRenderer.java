@@ -7,27 +7,28 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.lanye.fantasy_furniture.content.soap.SoapBottleKind;
 import org.lanye.fantasy_furniture.content.soap.SoapBottleLayer;
+import org.lanye.fantasy_furniture.content.soap.SoapComboLayouts;
 import org.lanye.fantasy_furniture.content.soap.SoapStackCarrierKind;
 import org.lanye.fantasy_furniture.content.soap.blockentity.SoapBottleBlockEntity;
 import org.lanye.fantasy_furniture.content.soap.client.SoapBottleCarrierRenderState;
 import org.lanye.fantasy_furniture.content.soap.client.SoapBottleComboCreamRenderState;
-import org.lanye.fantasy_furniture.content.soap.client.model.SoapBottleCarrierOverlayGeoModel;
-import org.lanye.fantasy_furniture.content.soap.client.model.SoapBottleComboCreamGeoModel;
+import org.lanye.fantasy_furniture.content.soap.client.model.SoapBottleCarrierStandaloneGeoModel;
+import org.lanye.fantasy_furniture.content.soap.client.model.SoapBottleCreamStandaloneGeoModel;
+import org.lanye.reverie_core.composite.OffsetGeoPartLayer;
+import org.lanye.reverie_core.composite.PartPose;
 import org.lanye.reverie_core.util.ReveriePerfRender;
 import software.bernie.geckolib.renderer.GeoBlockRenderer;
 
 /**
- * 瓶罐摞上组合架/盒（及完成态第 3 位组合乳霜）overlay。
- *
- * <p>几何已按组合目录 bbmodel 就位，不再做 PoseStack 临时平移。
+ * 瓶罐摞架/盒与完成态乳霜：单件 geo + {@link SoapComboLayouts} 偏移（不再切组合专用 geo）。
  */
 @OnlyIn(Dist.CLIENT)
 public final class SoapBottleCarrierOverlayRenderer {
 
     private final GeoBlockRenderer<SoapBottleBlockEntity> carrierRenderer =
-            new GeoBlockRenderer<>(new SoapBottleCarrierOverlayGeoModel());
+            new GeoBlockRenderer<>(new SoapBottleCarrierStandaloneGeoModel());
     private final GeoBlockRenderer<SoapBottleBlockEntity> creamRenderer =
-            new GeoBlockRenderer<>(new SoapBottleComboCreamGeoModel());
+            new GeoBlockRenderer<>(new SoapBottleCreamStandaloneGeoModel());
 
     public void renderIfPresent(
             SoapBottleBlockEntity blockEntity,
@@ -42,14 +43,17 @@ public final class SoapBottleCarrierOverlayRenderer {
         }
         boolean intermediate = blockEntity.carrierIntermediate();
         if (!intermediate) {
-            renderComboCreamIfPresent(
+            renderCreamIfPresent(
                     blockEntity, partialTick, poseStack, bufferSource, packedLight, packedOverlay);
         }
+        PartPose pose = SoapComboLayouts.carrierPose(kind, intermediate);
         SoapBottleCarrierRenderState.set(kind, blockEntity.carrierBoxMaterialId(), intermediate);
         try {
             ReveriePerfRender.geoBlock(
-                    "soap_bottle_carrier_overlay",
-                    () -> carrierRenderer.render(
+                    "soap_bottle_carrier_offset",
+                    () -> OffsetGeoPartLayer.renderWithPose(
+                            pose,
+                            carrierRenderer,
                             blockEntity,
                             partialTick,
                             poseStack,
@@ -61,7 +65,7 @@ public final class SoapBottleCarrierOverlayRenderer {
         }
     }
 
-    private void renderComboCreamIfPresent(
+    private void renderCreamIfPresent(
             SoapBottleBlockEntity blockEntity,
             float partialTick,
             PoseStack poseStack,
@@ -75,8 +79,10 @@ public final class SoapBottleCarrierOverlayRenderer {
         SoapBottleComboCreamRenderState.set(layers.get(2).materialId());
         try {
             ReveriePerfRender.geoBlock(
-                    "soap_bottle_combo_cream",
-                    () -> creamRenderer.render(
+                    "soap_bottle_cream_offset",
+                    () -> OffsetGeoPartLayer.renderWithPose(
+                            SoapComboLayouts.CREAM_DONE_FROM_SINGLE,
+                            creamRenderer,
                             blockEntity,
                             partialTick,
                             poseStack,

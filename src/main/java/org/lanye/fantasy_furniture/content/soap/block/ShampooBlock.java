@@ -111,6 +111,23 @@ public final class ShampooBlock extends SoapSeriesWaterloggableBlock<ShampooBloc
     }
 
     @Override
+    public boolean onDestroyedByPlayer(
+            BlockState state,
+            Level level,
+            BlockPos pos,
+            Player player,
+            boolean willHarvest,
+            net.minecraft.world.level.material.FluidState fluid) {
+        boolean remove =
+                SoapBottleStackUse.onDestroyedByPlayer(
+                        state, level, pos, player, willHarvest, fluid, LAYERS, MATERIAL);
+        if (!remove) {
+            return false;
+        }
+        return super.onDestroyedByPlayer(state, level, pos, player, willHarvest, fluid);
+    }
+
+    @Override
     protected InteractionResult onUseClient(
             BlockState state,
             Level level,
@@ -151,7 +168,7 @@ public final class ShampooBlock extends SoapSeriesWaterloggableBlock<ShampooBloc
                 && !player.isShiftKeyDown()) {
             ShampooBlockEntity be = blockEntity(level, pos);
             if (be != null) {
-                be.triggerUseAnim();
+                be.triggerUseAnim(hit);
                 return InteractionResult.CONSUME;
             }
         }

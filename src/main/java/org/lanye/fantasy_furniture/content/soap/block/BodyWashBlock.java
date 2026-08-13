@@ -112,6 +112,23 @@ public final class BodyWashBlock extends SoapSeriesWaterloggableBlock<BodyWashBl
     }
 
     @Override
+    public boolean onDestroyedByPlayer(
+            BlockState state,
+            Level level,
+            BlockPos pos,
+            Player player,
+            boolean willHarvest,
+            net.minecraft.world.level.material.FluidState fluid) {
+        boolean remove =
+                SoapBottleStackUse.onDestroyedByPlayer(
+                        state, level, pos, player, willHarvest, fluid, LAYERS, MATERIAL);
+        if (!remove) {
+            return false;
+        }
+        return super.onDestroyedByPlayer(state, level, pos, player, willHarvest, fluid);
+    }
+
+    @Override
     protected InteractionResult onUseClient(
             BlockState state,
             Level level,
@@ -144,7 +161,7 @@ public final class BodyWashBlock extends SoapSeriesWaterloggableBlock<BodyWashBl
                 && !player.isShiftKeyDown()) {
             BodyWashBlockEntity be = blockEntity(level, pos);
             if (be != null) {
-                be.onServerUseAnim();
+                be.onServerUseAnim(hit);
                 return InteractionResult.CONSUME;
             }
         }
