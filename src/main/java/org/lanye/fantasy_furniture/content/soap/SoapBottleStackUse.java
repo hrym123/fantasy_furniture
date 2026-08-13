@@ -68,21 +68,7 @@ public final class SoapBottleStackUse {
         Direction facing = state.getValue(HorizontalDirectionalBlock.FACING);
         boolean sneaking = player.isShiftKeyDown();
 
-        if (sneaking) {
-            if (!held.isEmpty()
-                    && !SoapBottleKind.isSoapBottleItem(held)
-                    && SoapStackCarrierKind.fromItem(held) == null) {
-                return InteractionResult.PASS;
-            }
-            CompositePartId part =
-                    PartHitHelpers.resolveHitPart(hit, facing, SoapBottlePartPicks.entries(stack));
-            if (part == null) {
-                part = fallbackTopOrCarrier(stack);
-            }
-            return popHitPart(level, pos, state, player, holder, stack, part, layersProperty, materialProperty);
-        }
-
-        // 可叠优先：架/盒 / 瓶
+        // 可叠优先：架/盒 / 瓶（与是否潜行无关；对齐独立皂架「潜行未取件时仍可入皂」）
         SoapStackCarrierKind heldCarrier = SoapStackCarrierKind.fromItem(held);
         if (heldCarrier != null && SoapBottleStackRules.canAcceptCarrier(stack, heldCarrier)) {
             int boxMat =
@@ -122,19 +108,44 @@ public final class SoapBottleStackUse {
             return InteractionResult.CONSUME;
         }
 
-        // 命中件自身交互：载体入皂/开盖；瓶泵头放行
+        // 持皂：对齐独立架/盒「点方块即入皂/开盖」，不依赖准心落在载体体积内
+        if (stack.hasCarrier()
+                && held.is(org.lanye.fantasy_furniture.bootstrap.block.ModBlocks.SOAP_BAR.item().get())) {
+            InteractionResult soapOnCarrier =
+                    interactCarrier(
+                            level, pos, state, player, held, holder, stack, layersProperty, materialProperty);
+            if (soapOnCarrier != InteractionResult.PASS) {
+                return soapOnCarrier;
+            }
+        }
+
         CompositePartId part =
                 PartHitHelpers.resolveHitPart(hit, facing, SoapBottlePartPicks.entries(stack));
         if (part == null) {
-            return InteractionResult.PASS;
+            part = sneaking ? fallbackTopOrCarrier(stack) : null;
         }
-        if (SoapBottleParts.isCarrier(part)) {
-            return interactCarrier(level, pos, state, player, held, holder, stack, layersProperty, materialProperty);
+
+        // 命中载体：开合/入皂/取皂；无动作时勿 PASS（否则宿主方块会播瓶泵动画）
+        if (part != null && SoapBottleParts.isCarrier(part)) {
+            InteractionResult carrierResult =
+                    interactCarrier(
+                            level, pos, state, player, held, holder, stack, layersProperty, materialProperty);
+            return carrierResult == InteractionResult.PASS ? InteractionResult.FAIL : carrierResult;
         }
-        int bottleIdx = SoapBottleParts.bottleIndex(part);
-        if (bottleIdx >= 0) {
-            return InteractionResult.PASS;
+
+        if (sneaking) {
+            if (!held.isEmpty()
+                    && !SoapBottleKind.isSoapBottleItem(held)
+                    && SoapStackCarrierKind.fromItem(held) == null) {
+                return InteractionResult.PASS;
+            }
+            if (part == null) {
+                part = fallbackTopOrCarrier(stack);
+            }
+            return popHitPart(level, pos, state, player, holder, stack, part, layersProperty, materialProperty);
         }
+
+        // 瓶泵头等：放行给方块后续动画
         return InteractionResult.PASS;
     }
 
@@ -156,6 +167,7 @@ public final class SoapBottleStackUse {
         boolean sneaking = player.isShiftKeyDown();
 
         if (kind == SoapStackCarrierKind.BOX) {
+            // 对齐 SoapBoxBlock#onUseServer
             if (!stack.carrierBoxOpen() && !stack.carrierHasSoap()) {
                 stack.setCarrierBoxOpen(true);
                 holder.markStackChanged();
@@ -196,6 +208,12 @@ public final class SoapBottleStackUse {
                 if (!player.getInventory().add(drop)) {
                     player.drop(drop, false);
                 }
+                holder.markStackChanged();
+                syncState(level, pos, state, stack, layersProperty, materialProperty);
+                return InteractionResult.CONSUME;
+            }
+            if (stack.carrierHasSoap() && !sneaking) {
+                stack.setCarrierBoxOpen(!stack.carrierBoxOpen());
                 holder.markStackChanged();
                 syncState(level, pos, state, stack, layersProperty, materialProperty);
                 return InteractionResult.CONSUME;
@@ -445,8 +463,11 @@ public final class SoapBottleStackUse {
         if (hitPart != null) {
             int idx = SoapBottleParts.bottleIndex(hitPart);
             if (idx >= 0) {
-                return stack.layerAt(idx).kind() == kind;
+                SoapBottleLayer layer = stack.slotAt(idx);
+                return layer != null && layer.kind() == kind;
             }
+            // 命中载体等非瓶件：不得回落到顶层瓶（否则点架/盒也会播泵动画）
+            return false;
         }
         SoapBottleLayer top = stack.topLayer();
         return top != null && top.kind() == kind;

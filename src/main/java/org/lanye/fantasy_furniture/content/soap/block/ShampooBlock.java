@@ -99,6 +99,14 @@ public final class ShampooBlock extends SoapSeriesWaterloggableBlock<ShampooBloc
 
     @Override
     public ItemStack getCloneItemStack(BlockGetter level, BlockPos pos, BlockState state) {
+        if (level instanceof Level l && l.isClientSide()) {
+            ItemStack picked =
+                    org.lanye.fantasy_furniture.content.soap.client.SoapBottleClientPick
+                            .resolveCloneItemStack(l, state, pos);
+            if (!picked.isEmpty()) {
+                return picked;
+            }
+        }
         ItemStack stack = super.getCloneItemStack(level, pos, state);
         ShampooAppearance.writeToStack(stack, new ShampooAppearance(state.getValue(MATERIAL)));
         return stack;

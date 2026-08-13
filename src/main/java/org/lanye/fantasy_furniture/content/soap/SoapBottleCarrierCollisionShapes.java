@@ -6,7 +6,7 @@ import net.minecraft.world.phys.shapes.VoxelShape;
 /**
  * 瓶罐摞上架/盒 / 完成态乳霜北向碰撞：与<strong>单独放置</strong>同形，再经 {@link SoapComboLayouts} 平移到位。
  *
- * <p>渲染亦为单件 geo + 同表偏移，故碰撞与可见模型一致。
+ * <p>渲染亦为单件 geo + 同表偏移，故碰撞与可见模型一致。选取形与碰撞共用本类外形。
  */
 public final class SoapBottleCarrierCollisionShapes {
 
@@ -15,7 +15,7 @@ public final class SoapBottleCarrierCollisionShapes {
     /** 与 {@code SoapRackBlock} 北向一致 */
     private static final VoxelShape RACK_STANDALONE_NORTH = Block.box(4.0, 0.0, 5.5, 12.0, 1.0, 10.5);
 
-    /** 与 {@code SoapBoxBlock} 关盖北向一致（载体 overlay 用关盖 geo） */
+    /** 与 {@code SoapBoxBlock} 关盖北向一致 */
     private static final VoxelShape BOX_CLOSED_STANDALONE_NORTH =
             Block.box(3.5, 0.0, 5.0, 12.5, 4.0, 11.0);
 
@@ -42,6 +42,7 @@ public final class SoapBottleCarrierCollisionShapes {
             SoapComboLayouts.CREAM_DONE_FROM_SINGLE.transformNorthShape(
                     SoapStackCollisionShapes.bodyCreamNorth(1));
 
+    /** 碰撞 / 选取共用。 */
     public static VoxelShape carrierNorth(SoapStackCarrierKind kind, boolean intermediate) {
         return switch (kind) {
             case RACK -> intermediate ? RACK_INTERMEDIATE : RACK_COMPLETED;

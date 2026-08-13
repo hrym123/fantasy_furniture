@@ -101,6 +101,14 @@ public final class BodyCreamBlock extends SoapSeriesWaterloggableBlock<BodyCream
 
     @Override
     public ItemStack getCloneItemStack(BlockGetter level, BlockPos pos, BlockState state) {
+        if (level instanceof Level l && l.isClientSide()) {
+            ItemStack picked =
+                    org.lanye.fantasy_furniture.content.soap.client.SoapBottleClientPick
+                            .resolveCloneItemStack(l, state, pos);
+            if (!picked.isEmpty()) {
+                return picked;
+            }
+        }
         ItemStack stack = super.getCloneItemStack(level, pos, state);
         BodyCreamAppearance.writeToStack(stack, new BodyCreamAppearance(state.getValue(MATERIAL)));
         return stack;

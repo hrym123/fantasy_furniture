@@ -9,7 +9,7 @@ import org.lanye.fantasy_furniture.content.soap.client.SoapBottleCarrierRenderSt
 import software.bernie.geckolib.model.GeoModel;
 
 /**
- * 瓶罐摞载体：单件架 / 关盖盒 geo（位姿由 {@link org.lanye.reverie_core.composite.OffsetGeoPartLayer} 施加）。
+ * 瓶罐摞载体：单件架 / 开闭盖盒 geo（位姿由 {@link org.lanye.reverie_core.composite.OffsetGeoPartLayer} 施加）。
  */
 public final class SoapBottleCarrierStandaloneGeoModel extends GeoModel<SoapBottleBlockEntity> {
 
@@ -18,7 +18,7 @@ public final class SoapBottleCarrierStandaloneGeoModel extends GeoModel<SoapBott
         SoapStackCarrierKind kind = SoapBottleCarrierRenderState.kind();
         if (kind == SoapStackCarrierKind.BOX) {
             return new SoapBoxAppearance(SoapBottleCarrierRenderState.boxMaterialId())
-                    .boxModelLocation(false);
+                    .boxModelLocation(SoapBottleCarrierRenderState.boxOpen());
         }
         return SoapRackAssets.MODEL;
     }
@@ -28,7 +28,7 @@ public final class SoapBottleCarrierStandaloneGeoModel extends GeoModel<SoapBott
         SoapStackCarrierKind kind = SoapBottleCarrierRenderState.kind();
         if (kind == SoapStackCarrierKind.BOX) {
             return new SoapBoxAppearance(SoapBottleCarrierRenderState.boxMaterialId())
-                    .boxTextureLocation(false);
+                    .boxTextureLocation(SoapBottleCarrierRenderState.boxOpen());
         }
         return SoapRackAssets.TEXTURE;
     }

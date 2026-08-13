@@ -100,6 +100,15 @@ public final class BodyWashBlock extends SoapSeriesWaterloggableBlock<BodyWashBl
 
     @Override
     public ItemStack getCloneItemStack(BlockGetter level, BlockPos pos, BlockState state) {
+        // 客户端：按准心分件（Jade usePickedResult / 中键选取）
+        if (level instanceof Level l && l.isClientSide()) {
+            ItemStack picked =
+                    org.lanye.fantasy_furniture.content.soap.client.SoapBottleClientPick
+                            .resolveCloneItemStack(l, state, pos);
+            if (!picked.isEmpty()) {
+                return picked;
+            }
+        }
         ItemStack stack = super.getCloneItemStack(level, pos, state);
         BodyWashAppearance.writeToStack(stack, new BodyWashAppearance(state.getValue(MATERIAL)));
         return stack;
