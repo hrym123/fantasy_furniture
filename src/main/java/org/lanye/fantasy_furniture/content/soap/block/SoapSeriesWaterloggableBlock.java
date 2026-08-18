@@ -4,6 +4,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.LevelAccessor;
+import net.minecraft.world.level.LevelReader;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.SimpleWaterloggedBlock;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -18,7 +19,7 @@ import net.minecraft.world.level.material.Fluids;
 import org.lanye.reverie_core.geolib.GeolibFacingEntityBlockWithFactory;
 
 /**
- * 肥皂套系可放置家具：支持 {@link BlockStateProperties#WATERLOGGED}，可与水源同格。
+ * 肥皂套系可放置家具：含水；仅可置于<strong>底面实体支撑</strong>（U015 / Opt-018）。
  */
 public abstract class SoapSeriesWaterloggableBlock<BE extends BlockEntity>
         extends GeolibFacingEntityBlockWithFactory<BE> implements SimpleWaterloggedBlock {
@@ -38,8 +39,20 @@ public abstract class SoapSeriesWaterloggableBlock<BE extends BlockEntity>
 
     @Override
     public BlockState getStateForPlacement(BlockPlaceContext context) {
+        BlockState base = super.getStateForPlacement(context);
+        if (base == null) {
+            return null;
+        }
         FluidState fluid = context.getLevel().getFluidState(context.getClickedPos());
-        return super.getStateForPlacement(context).setValue(WATERLOGGED, fluid.getType() == Fluids.WATER);
+        BlockState state = base.setValue(WATERLOGGED, fluid.getType() == Fluids.WATER);
+        return state.canSurvive(context.getLevel(), context.getClickedPos()) ? state : null;
+    }
+
+    /** 仅底面：下方方块顶面须 {@link BlockState#isFaceSturdy}（不可贴墙 / 浮空）。 */
+    @Override
+    public boolean canSurvive(BlockState state, LevelReader level, BlockPos pos) {
+        BlockPos below = pos.below();
+        return level.getBlockState(below).isFaceSturdy(level, below, Direction.UP);
     }
 
     @Override
@@ -55,6 +68,12 @@ public abstract class SoapSeriesWaterloggableBlock<BE extends BlockEntity>
             LevelAccessor level,
             BlockPos pos,
             BlockPos neighborPos) {
+        if (!state.canSurvive(level, pos)) {
+            if (!level.isClientSide()) {
+                level.destroyBlock(pos, true);
+            }
+            return state;
+        }
         if (state.getValue(WATERLOGGED)) {
             level.scheduleTick(pos, Fluids.WATER, Fluids.WATER.getTickDelay(level));
         }

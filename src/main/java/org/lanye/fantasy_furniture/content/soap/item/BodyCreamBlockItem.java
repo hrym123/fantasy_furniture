@@ -12,6 +12,7 @@ import net.minecraftforge.client.extensions.common.IClientItemExtensions;
 import org.jetbrains.annotations.NotNull;
 import org.lanye.fantasy_furniture.content.soap.BodyCreamAppearance;
 import org.lanye.fantasy_furniture.content.soap.BodyCreamMaterials;
+import org.lanye.fantasy_furniture.content.soap.SoapBottleStackClickThrough;
 import org.lanye.fantasy_furniture.content.soap.SoapRackBottleInsert;
 import org.lanye.fantasy_furniture.content.soap.client.BodyCreamItemRenderer;
 import org.lanye.reverie_core.geolib.GeolibBlockItem;
@@ -29,6 +30,10 @@ public final class BodyCreamBlockItem extends GeolibBlockItem {
         InteractionResult rack = SoapRackBottleInsert.useOnRack(context);
         if (rack != null) {
             return rack;
+        }
+        InteractionResult stack = SoapBottleStackClickThrough.useOnStackOrSupportBelow(context);
+        if (stack != null) {
+            return stack;
         }
         return super.useOn(context);
     }

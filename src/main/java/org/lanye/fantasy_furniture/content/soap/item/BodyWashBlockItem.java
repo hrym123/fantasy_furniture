@@ -11,9 +11,10 @@ import net.minecraft.world.level.block.Block;
 import net.minecraftforge.client.extensions.common.IClientItemExtensions;
 import org.jetbrains.annotations.NotNull;
 import org.lanye.fantasy_furniture.content.soap.BodyWashAppearance;
-import org.lanye.fantasy_furniture.content.soap.DisplayCabinetBottleInsert;
-import org.lanye.fantasy_furniture.content.soap.SoapRackBottleInsert;
 import org.lanye.fantasy_furniture.content.soap.BodyWashMaterials;
+import org.lanye.fantasy_furniture.content.soap.DisplayCabinetBottleInsert;
+import org.lanye.fantasy_furniture.content.soap.SoapBottleStackClickThrough;
+import org.lanye.fantasy_furniture.content.soap.SoapRackBottleInsert;
 import org.lanye.fantasy_furniture.content.soap.client.BodyWashItemRenderer;
 import org.lanye.reverie_core.geolib.GeolibBlockItem;
 import org.lanye.reverie_core.geolib.GeolibItemAssets;
@@ -34,6 +35,10 @@ public final class BodyWashBlockItem extends GeolibBlockItem {
         InteractionResult rack = SoapRackBottleInsert.useOnRack(context);
         if (rack != null) {
             return rack;
+        }
+        InteractionResult stack = SoapBottleStackClickThrough.useOnStackOrSupportBelow(context);
+        if (stack != null) {
+            return stack;
         }
         return super.useOn(context);
     }
