@@ -4,10 +4,10 @@ import net.minecraft.util.Mth;
 import net.minecraft.util.StringRepresentable;
 
 /**
- * 普通玻璃窗 {@code material} BlockState 与物品 id 后缀；顺序须与
+ * 0号窗户颜色后缀与贴图槽序；注册 id 为 {@code styled_window_0_<色>}。顺序须与
  * {@link org.lanye.fantasy_furniture.content.furniture.decor.PlainGlassWindowSharedTextures#TEXTURE_STEMS} 槽位 0..n 一致。
  *
- * <p>序列化名为英文颜色（及下划线词），重复主色（如多档 cream）用 {@code cream_b}、{@code cream_c} 区分，避免用槽位数字作 id。
+ * <p>REG-608：每种颜色一对 block/item 同 id，不再作为 BlockState {@code material} 轴。
  */
 public enum PlainGlassWindowMaterialVariant implements StringRepresentable {
     WHITE("white"),

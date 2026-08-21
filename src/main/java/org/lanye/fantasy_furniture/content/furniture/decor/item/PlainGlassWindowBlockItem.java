@@ -10,15 +10,14 @@ import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import org.lanye.fantasy_furniture.content.furniture.common.state.PlainGlassWindowMaterialVariant;
-import org.lanye.fantasy_furniture.content.furniture.decor.PlainGlassWindowMaterials;
 import org.lanye.fantasy_furniture.content.furniture.decor.PlainGlassWindowShapes;
 import org.lanye.fantasy_furniture.content.furniture.decor.block.PlainGlassWindowBlock;
 import org.lanye.reverie_core.geolib.GeolibBlockItem;
 import org.lanye.reverie_core.geolib.GeolibItemAssets;
 
 /**
- * 每种 {@link PlainGlassWindowMaterials} 材质套一个注册物品；放置时写入 {@link PlainGlassWindowBlock#SHAPE}，若存在
- * {@link PlainGlassWindowBlock#MATERIAL} 属性则同时写入材质变体（造型由 {@link #TAG_SHAPE} 携带，世界中右键切换造型）。
+ * 0号窗户：每种颜色一对 block/item 同 id（REG-608）；放置时写入 {@link PlainGlassWindowBlock#SHAPE}（颜色由方块 id
+ * 决定）。造型由 {@link #TAG_SHAPE} 携带，世界中右键切换。
  */
 public final class PlainGlassWindowBlockItem extends GeolibBlockItem {
 
@@ -40,10 +39,6 @@ public final class PlainGlassWindowBlockItem extends GeolibBlockItem {
         return variant.ordinal();
     }
 
-    /**
-     * {@link net.minecraft.world.item.BlockItem} 默认使用方块的描述 id，九种材质会全部显示为「普通玻璃窗」。
-     * 每种注册物品应对应 {@code item.fantasy_furniture.plain_glass_window_<材质>}。
-     */
     @Override
     public String getDescriptionId() {
         return Util.makeDescriptionId("item", BuiltInRegistries.ITEM.getKey(this));
@@ -59,9 +54,6 @@ public final class PlainGlassWindowBlockItem extends GeolibBlockItem {
         }
         if (state.getBlock() instanceof PlainGlassWindowBlock) {
             state = state.setValue(PlainGlassWindowBlock.SHAPE, s);
-            if (PlainGlassWindowBlock.MATERIAL != null) {
-                state = state.setValue(PlainGlassWindowBlock.MATERIAL, variant);
-            }
         }
         return super.placeBlock(context, state);
     }

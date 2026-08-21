@@ -9,9 +9,9 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import org.lanye.fantasy_furniture.bootstrap.block.CeramicTileBlocks;
+import org.lanye.fantasy_furniture.bootstrap.block.PlainGlassWindowRegistration;
 import org.lanye.fantasy_furniture.bootstrap.block.WallpaperBlocks;
 import org.lanye.fantasy_furniture.bootstrap.tag.ModTags;
-import org.lanye.reverie_core.tool.PaintBrushRecolorHandlers;
 import org.lanye.fantasy_furniture.content.furniture.common.state.PlainGlassWindowMaterialVariant;
 import org.lanye.fantasy_furniture.content.furniture.decor.block.PlainGlassWindowBlock;
 import org.lanye.fantasy_furniture.content.soap.SoapBarMaterials;
@@ -32,6 +32,7 @@ import org.lanye.fantasy_furniture.content.soap.block.DisplayCabinetBlock;
 import org.lanye.fantasy_furniture.content.soap.block.ShampooBlock;
 import org.lanye.fantasy_furniture.content.soap.blockentity.ShampooBlockEntity;
 import org.lanye.fantasy_furniture.content.soap.blockentity.SoapPaperBoxBlockEntity;
+import org.lanye.reverie_core.tool.PaintBrushRecolorHandlers;
 
 /** 刷子对 {@link ModTags#BRUSH_RECOLORABLE_BLOCKS} 成员循环换色的服务端逻辑。 */
 public final class BrushRecolor {
@@ -54,10 +55,14 @@ public final class BrushRecolor {
         if (!state.is(ModTags.BRUSH_RECOLORABLE_BLOCKS)) {
             return Optional.empty();
         }
-        if (state.getBlock() instanceof PlainGlassWindowBlock && PlainGlassWindowBlock.MATERIAL != null) {
-            PlainGlassWindowMaterialVariant current = state.getValue(PlainGlassWindowBlock.MATERIAL);
-            PlainGlassWindowMaterialVariant next = nextInCycle(current);
-            return Optional.of(state.setValue(PlainGlassWindowBlock.MATERIAL, next));
+        if (state.getBlock() instanceof PlainGlassWindowBlock current) {
+            PlainGlassWindowMaterialVariant next = nextInCycle(current.variant());
+            Block nextBlock = PlainGlassWindowRegistration.block(next).get();
+            return Optional.of(
+                    nextBlock
+                            .defaultBlockState()
+                            .setValue(PlainGlassWindowBlock.FACING, state.getValue(PlainGlassWindowBlock.FACING))
+                            .setValue(PlainGlassWindowBlock.SHAPE, state.getValue(PlainGlassWindowBlock.SHAPE)));
         }
         for (CeramicTileBlocks.TileVariant variant : CeramicTileBlocks.TileVariant.values()) {
             if (state.is(variant.entry().block().get())) {

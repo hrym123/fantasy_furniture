@@ -5,11 +5,9 @@ import java.util.function.Consumer;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.util.Mth;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
@@ -17,18 +15,13 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
-import net.minecraft.world.level.block.state.properties.EnumProperty;
 import net.minecraft.world.level.block.state.properties.IntegerProperty;
 import net.minecraft.world.level.storage.loot.LootParams;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import net.minecraftforge.client.extensions.common.IClientBlockExtensions;
-import net.minecraftforge.registries.ForgeRegistries;
-import org.lanye.fantasy_furniture.FantasyFurniture;
-import org.lanye.fantasy_furniture.bootstrap.block.ModBlocks;
 import org.lanye.fantasy_furniture.content.furniture.common.state.PlainGlassWindowMaterialVariant;
-import org.lanye.fantasy_furniture.content.furniture.decor.PlainGlassWindowMaterials;
 import org.lanye.fantasy_furniture.content.furniture.decor.PlainGlassWindowShapes;
 import org.lanye.fantasy_furniture.content.furniture.decor.blockentity.PlainGlassWindowBlockEntity;
 import org.lanye.fantasy_furniture.content.furniture.decor.client.PlainGlassWindowBlockClientExtensions;
@@ -36,67 +29,52 @@ import org.lanye.fantasy_furniture.content.furniture.decor.item.PlainGlassWindow
 import org.lanye.fantasy_furniture.content.tool.BrushRecolor;
 import org.lanye.reverie_core.geolib.GeolibFacingEntityBlockWithFactory;
 import org.lanye.reverie_core.util.VoxelShapeRotation;
-import org.jetbrains.annotations.Nullable;
 
 /**
- * 普通玻璃窗：{@link #FACING}×{@link #SHAPE} 必选；{@link #MATERIAL}（颜色名枚举）仅在
- * {@link PlainGlassWindowMaterials#count()} &gt; 1 时存在于 BlockState。贴图按材质序数选用。右键按
- * {@link PlainGlassWindowShapes#nextShapeInCycle(int)} 顺序切换造型。
+ * 0号窗户：{@link #FACING}×{@link #SHAPE}；颜色由<strong>方块注册 id / {@link #variant}</strong>表达（REG-608，无
+ * {@code material} 轴）。右键按 {@link PlainGlassWindowShapes#nextShapeInCycle(int)} 切换造型。
  *
- * <p>光照：与玻璃类方块一致，不挡光（{@link #getLightBlock} 为 0、允许天光竖直向下传播）。
+ * <p>光照：与玻璃类方块一致，不挡光。
  *
- * <p>碰撞：北向基准与 {@code tools/collision/geo_collision_box.py} 外接盒一致（多数造型）；斜角 45° 使用<strong>整格外接盒</strong>
- * {@code Block.box(0,0,0,16,16,16)}，与单格线框及「占满一格」的交互预期一致。随 {@link #FACING} 经
- * {@link VoxelShapeRotation#rotateYFromNorth} 旋转。
+ * <p>碰撞：北向基准与 {@code tools/collision/geo_collision_box.py} 外接盒一致（多数造型）；斜角 45° 使用整格外接盒。
  */
 public class PlainGlassWindowBlock extends GeolibFacingEntityBlockWithFactory<PlainGlassWindowBlockEntity> {
 
     /**
      * {@link #playerWillDestroy} 在方块被替换前调用，{@link #onRemove} 需知是否为创造玩家以抑制掉落（见 T006）。
-     * 非玩家破坏（爆炸等）下为 {@code null}，仍应掉落默认物品。
      */
     private static final ThreadLocal<Player> BREAKING_PLAYER = new ThreadLocal<>();
 
     public static final IntegerProperty SHAPE =
             IntegerProperty.create("shape", 0, PlainGlassWindowShapes.COUNT - 1);
 
-    /**
-     * 多材质套时注册；仅一种材质时为 {@code null}（世界中恒视为材质索引 0）。
-     */
-    @Nullable
-    public static final EnumProperty<PlainGlassWindowMaterialVariant> MATERIAL = createMaterialProperty();
+    private final PlainGlassWindowMaterialVariant variant;
 
-    @Nullable
-    private static EnumProperty<PlainGlassWindowMaterialVariant> createMaterialProperty() {
-        return PlainGlassWindowMaterials.count() > 1
-                ? EnumProperty.create("material", PlainGlassWindowMaterialVariant.class)
-                : null;
-    }
-
-    /** 从方块状态解析材质索引；单材质且无 {@link #MATERIAL} 属性时恒为 0。 */
-    public static int materialIndex(BlockState state) {
-        return MATERIAL != null ? state.getValue(MATERIAL).ordinal() : 0;
-    }
-
-    /**
-     * 北向基准碰撞，索引与 {@link PlainGlassWindowShapes#geoBasename(int)} 一致。
-     * 造型 0～3 与 {@code tools/collision/geo_collision_box.py} 外接盒一致；斜角 45°（索引 4）为整格 {@code 16³} 外接盒。
-     */
     private static final VoxelShape[] SHAPES_NORTH = {
         Block.box(0.0D, 0.0D, 0.0D, 16.0D, 16.0D, 1.4D), // straight
         Block.box(0.0D, 0.0D, 0.0D, 16.0D, 1.4D, 16.0D), // 90°
         Block.box(0.0D, 0.0D, 0.0D, 16.0D, 7.3581D, 16.0D), // 22.5°
         Block.box(0.0D, 0.0D, 0.205D, 16.0D, 16.5463D, 16.0D), // 45°
-        Block.box(0.0D, 0.0D, 0.0D, 16.0D, 16.0D, 16.0D), // 斜角 45°：整格外接盒（单格立方）
+        Block.box(0.0D, 0.0D, 0.0D, 16.0D, 16.0D, 16.0D), // 斜角 45°
     };
 
-    public PlainGlassWindowBlock(BlockBehaviour.Properties properties) {
+    public PlainGlassWindowBlock(
+            BlockBehaviour.Properties properties, PlainGlassWindowMaterialVariant variant) {
         super(properties, PlainGlassWindowBlockEntity::new);
-        BlockState def = defaultBlockState().setValue(SHAPE, 0);
-        if (MATERIAL != null) {
-            def = def.setValue(MATERIAL, PlainGlassWindowMaterialVariant.WHITE);
+        this.variant = variant;
+        registerDefaultState(defaultBlockState().setValue(SHAPE, 0));
+    }
+
+    public PlainGlassWindowMaterialVariant variant() {
+        return variant;
+    }
+
+    /** 从方块实例解析材质索引（REG-608：颜色由 block id 表达）。 */
+    public static int materialIndex(BlockState state) {
+        if (state.getBlock() instanceof PlainGlassWindowBlock window) {
+            return window.variant.ordinal();
         }
-        registerDefaultState(def);
+        return 0;
     }
 
     @Override
@@ -108,9 +86,6 @@ public class PlainGlassWindowBlock extends GeolibFacingEntityBlockWithFactory<Pl
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
         super.createBlockStateDefinition(builder);
         builder.add(SHAPE);
-        if (MATERIAL != null) {
-            builder.add(MATERIAL);
-        }
     }
 
     @Override
@@ -191,30 +166,20 @@ public class PlainGlassWindowBlock extends GeolibFacingEntityBlockWithFactory<Pl
     }
 
     /**
-     * 破坏、爆炸等非创造掉落：保留被拆方块 {@linkplain #materialIndex 材质}，造型固定为 0（默认模型、无
-     * {@link PlainGlassWindowBlockItem#TAG_SHAPE}），与 T006 口径一致。
+     * 破坏掉落：同名 item（REG-608），造型固定为 0（无 {@link PlainGlassWindowBlockItem#TAG_SHAPE}），见 T006。
      */
     private static ItemStack defaultDropStack(BlockState state) {
-        return stackForMaterialAndShape(materialIndex(state), 0);
+        return stackForShape(state, 0);
     }
 
-    /** 选取方块（Ctrl 中键等）仍反映当前材质与造型。 */
+    /** 中键选取：同名 item + 当前造型。 */
     private static ItemStack stackForState(BlockState state) {
         int shape = Mth.clamp(state.getValue(SHAPE), 0, PlainGlassWindowShapes.COUNT - 1);
-        return stackForMaterialAndShape(materialIndex(state), shape);
+        return stackForShape(state, shape);
     }
 
-    private static ItemStack stackForMaterialAndShape(int materialIndex, int shape) {
-        Item item =
-                ForgeRegistries.ITEMS.getValue(
-                        ResourceLocation.fromNamespaceAndPath(
-                                FantasyFurniture.MODID,
-                                "plain_glass_window_" + PlainGlassWindowMaterials.itemSuffix(materialIndex)));
-        if (item == null) {
-            item = ModBlocks.PLAIN_GLASS_WINDOW.item().get();
-        }
-        ItemStack stack = new ItemStack(item);
-        // 与创造栏默认物品一致：造型 0 不写 NBT，否则无法与无标签堆叠
+    private static ItemStack stackForShape(BlockState state, int shape) {
+        ItemStack stack = new ItemStack(state.getBlock().asItem());
         if (shape != 0) {
             stack.getOrCreateTag().putInt(PlainGlassWindowBlockItem.TAG_SHAPE, shape);
         }

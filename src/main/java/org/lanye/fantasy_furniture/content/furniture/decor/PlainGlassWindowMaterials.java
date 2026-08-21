@@ -6,14 +6,12 @@ import java.util.List;
 import org.lanye.fantasy_furniture.content.furniture.common.state.PlainGlassWindowMaterialVariant;
 
 /**
- * 普通玻璃窗「材质」：与 {@link PlainGlassWindowSharedTextures#SLOT_COUNT}（当前 9）一一对应，创造栏物品 id 为
- * {@code plain_glass_window_<颜色后缀>}（见 {@link PlainGlassWindowMaterialVariant}）；方块 {@code material} 为同名枚举。
+ * 0号窗户「材质」：与 {@link PlainGlassWindowSharedTextures#SLOT_COUNT}（当前 9）一一对应；每种颜色一对
+ * {@code styled_window_0_<颜色后缀>} block/item 同 id（REG-608；与型号窗 {@code styled_window_1} 等同前缀）。
  *
  * <p>每套 {@link #stem(int, int)} 当前均为 {@link PlainGlassWindowSharedTextures#TEXTURE_STEMS} 的拷贝；世界中与手持预览均用
- * {@link #itemPreviewStem(int)}（第 {@code material} 槽对应 PNG）。若日后为每种材质导出**整套**不同 9 槽文件，替换
- * {@link #STEM_SETS} 中对应行即可。
- *
- * <p>须与 {@code blockstates/plain_glass_window.json} 中 {@code facing}×{@code shape}×{@code material} 全组合一致。
+ * {@link #itemPreviewStem(int)}（第 {@code material} 槽对应 PNG）。贴图文件 stem 仍为历史
+ * {@code plain_glass_window_*}。
  */
 public final class PlainGlassWindowMaterials {
 

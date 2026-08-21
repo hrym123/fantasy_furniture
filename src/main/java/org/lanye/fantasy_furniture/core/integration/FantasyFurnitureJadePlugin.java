@@ -1,6 +1,7 @@
 package org.lanye.fantasy_furniture.core.integration;
 
 import org.lanye.fantasy_furniture.bootstrap.block.ModBlocks;
+import org.lanye.fantasy_furniture.bootstrap.block.PlainGlassWindowRegistration;
 import org.lanye.fantasy_furniture.content.sweeper.entity.SweeperRobotEntity;
 import snownee.jade.api.IWailaClientRegistration;
 import snownee.jade.api.IWailaCommonRegistration;
@@ -20,8 +21,10 @@ public final class FantasyFurnitureJadePlugin implements IWailaPlugin {
 
     @Override
     public void registerClient(IWailaClientRegistration registration) {
-        // 普通玻璃窗：多方块共用一个 Block，名称须来自 pick（与 getCloneItemStack 一致），否则玉只显示方块译名「普通玻璃窗」
-        registration.usePickedResult(ModBlocks.PLAIN_GLASS_WINDOW.block().get());
+        // 0号窗户：每色独立 block；标题与同 id 物品译名一致（中键选取 / pick）
+        for (var blockRo : PlainGlassWindowRegistration.blocks()) {
+            registration.usePickedResult(blockRo.get());
+        }
         // 床板 6：按击中高度区分被单/被套/枕头，玉标题与床品物品译名一致
         registration.usePickedResult(ModBlocks.BED_PLATE6.block().get());
         // 肥皂：方块状态含颜料/磨损，标题与 {@link org.lanye.fantasy_furniture.content.soap.item.SoapBarBlockItem#getName} 一致

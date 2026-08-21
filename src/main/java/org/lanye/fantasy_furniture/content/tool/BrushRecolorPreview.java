@@ -6,9 +6,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.state.BlockState;
 import org.lanye.fantasy_furniture.bootstrap.block.CeramicTileBlocks;
 import org.lanye.fantasy_furniture.bootstrap.block.ModBlocks;
-import org.lanye.fantasy_furniture.bootstrap.block.PlainGlassWindowRegistration;
 import org.lanye.fantasy_furniture.bootstrap.block.WallpaperBlocks;
-import org.lanye.fantasy_furniture.content.furniture.common.state.PlainGlassWindowMaterialVariant;
 import org.lanye.fantasy_furniture.content.furniture.decor.block.PlainGlassWindowBlock;
 import org.lanye.fantasy_furniture.content.soap.block.BodyCreamBlock;
 import org.lanye.fantasy_furniture.content.soap.block.BodyWashBlock;
@@ -40,14 +38,8 @@ public final class BrushRecolorPreview {
     }
 
     private static Optional<ItemStack> itemStackFor(BlockState state) {
-        if (state.getBlock() instanceof PlainGlassWindowBlock && PlainGlassWindowBlock.MATERIAL != null) {
-            PlainGlassWindowMaterialVariant material = state.getValue(PlainGlassWindowBlock.MATERIAL);
-            int index = material.ordinal();
-            var items = PlainGlassWindowRegistration.items();
-            if (index < 0 || index >= items.size()) {
-                return Optional.empty();
-            }
-            return Optional.of(new ItemStack(items.get(index).get()));
+        if (state.getBlock() instanceof PlainGlassWindowBlock) {
+            return Optional.of(new ItemStack(state.getBlock().asItem()));
         }
         for (CeramicTileBlocks.TileVariant variant : CeramicTileBlocks.TileVariant.values()) {
             if (state.is(variant.entry().block().get())) {
