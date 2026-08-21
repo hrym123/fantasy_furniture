@@ -1,64 +1,64 @@
 {
   "variants": {
     "facing=north,shape=0": {
-      "model": "fantasy_furniture:block/plain_glass_window"
+      "model": "fantasy_furniture:block/styled_window_0"
     },
     "facing=north,shape=1": {
-      "model": "fantasy_furniture:block/plain_glass_window"
+      "model": "fantasy_furniture:block/styled_window_0"
     },
     "facing=north,shape=2": {
-      "model": "fantasy_furniture:block/plain_glass_window"
+      "model": "fantasy_furniture:block/styled_window_0"
     },
     "facing=north,shape=3": {
-      "model": "fantasy_furniture:block/plain_glass_window"
+      "model": "fantasy_furniture:block/styled_window_0"
     },
     "facing=north,shape=4": {
-      "model": "fantasy_furniture:block/plain_glass_window"
+      "model": "fantasy_furniture:block/styled_window_0"
     },
     "facing=south,shape=0": {
-      "model": "fantasy_furniture:block/plain_glass_window"
+      "model": "fantasy_furniture:block/styled_window_0"
     },
     "facing=south,shape=1": {
-      "model": "fantasy_furniture:block/plain_glass_window"
+      "model": "fantasy_furniture:block/styled_window_0"
     },
     "facing=south,shape=2": {
-      "model": "fantasy_furniture:block/plain_glass_window"
+      "model": "fantasy_furniture:block/styled_window_0"
     },
     "facing=south,shape=3": {
-      "model": "fantasy_furniture:block/plain_glass_window"
+      "model": "fantasy_furniture:block/styled_window_0"
     },
     "facing=south,shape=4": {
-      "model": "fantasy_furniture:block/plain_glass_window"
+      "model": "fantasy_furniture:block/styled_window_0"
     },
     "facing=east,shape=0": {
-      "model": "fantasy_furniture:block/plain_glass_window"
+      "model": "fantasy_furniture:block/styled_window_0"
     },
     "facing=east,shape=1": {
-      "model": "fantasy_furniture:block/plain_glass_window"
+      "model": "fantasy_furniture:block/styled_window_0"
     },
     "facing=east,shape=2": {
-      "model": "fantasy_furniture:block/plain_glass_window"
+      "model": "fantasy_furniture:block/styled_window_0"
     },
     "facing=east,shape=3": {
-      "model": "fantasy_furniture:block/plain_glass_window"
+      "model": "fantasy_furniture:block/styled_window_0"
     },
     "facing=east,shape=4": {
-      "model": "fantasy_furniture:block/plain_glass_window"
+      "model": "fantasy_furniture:block/styled_window_0"
     },
     "facing=west,shape=0": {
-      "model": "fantasy_furniture:block/plain_glass_window"
+      "model": "fantasy_furniture:block/styled_window_0"
     },
     "facing=west,shape=1": {
-      "model": "fantasy_furniture:block/plain_glass_window"
+      "model": "fantasy_furniture:block/styled_window_0"
     },
     "facing=west,shape=2": {
-      "model": "fantasy_furniture:block/plain_glass_window"
+      "model": "fantasy_furniture:block/styled_window_0"
     },
     "facing=west,shape=3": {
-      "model": "fantasy_furniture:block/plain_glass_window"
+      "model": "fantasy_furniture:block/styled_window_0"
     },
     "facing=west,shape=4": {
-      "model": "fantasy_furniture:block/plain_glass_window"
+      "model": "fantasy_furniture:block/styled_window_0"
     }
   }
 }

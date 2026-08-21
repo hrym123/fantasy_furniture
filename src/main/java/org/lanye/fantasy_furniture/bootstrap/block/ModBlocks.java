@@ -11,7 +11,7 @@ import org.lanye.fantasy_furniture.bootstrap.block.BedPlate6Registration;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.blockentity.BanquetteBlockEntity;
 import org.lanye.reverie_core.geolib.bed.BedPlateBaseBlockEntity;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.blockentity.GreenSofaBlockEntity;
-import org.lanye.fantasy_furniture.content.furniture.decor.blockentity.PlainGlassWindowBlockEntity;
+import org.lanye.fantasy_furniture.content.furniture.decor.blockentity.StyledWindow0BlockEntity;
 import org.lanye.fantasy_furniture.content.furniture.decor.blockentity.LotteryMachineBlockEntity;
 import org.lanye.fantasy_furniture.content.sweeper.blockentity.SweeperDockBlockEntity;
 import org.lanye.fantasy_furniture.content.soap.blockentity.SoapBarBlockEntity;
@@ -123,8 +123,8 @@ public final class ModBlocks {
             FurnitureAnimatedBlocks.SWEEPER_DOCK;
     public static final AnimatedBlockEntry<BedPlateBaseBlockEntity> BED_PLATE6 = BedPlate6Registration.mainEntry();
 
-    public static final AnimatedBlockEntry<PlainGlassWindowBlockEntity> PLAIN_GLASS_WINDOW =
-            FurnitureAnimatedBlocks.PLAIN_GLASS_WINDOW;
+    public static final AnimatedBlockEntry<StyledWindow0BlockEntity> STYLED_WINDOW_0 =
+            FurnitureAnimatedBlocks.STYLED_WINDOW_0;
 
     public static final AnimatedBlockEntry<SoapBarBlockEntity> SOAP_BAR = FurnitureAnimatedBlocks.SOAP_BAR;
 

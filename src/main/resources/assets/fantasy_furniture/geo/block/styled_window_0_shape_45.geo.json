@@ -3,7 +3,7 @@
 	"minecraft:geometry": [
 		{
 			"description": {
-				"identifier": "geometry.plain_glass_window_shape_straight",
+				"identifier": "geometry.styled_window_0_shape_45",
 				"texture_width": 64,
 				"texture_height": 64,
 				"visible_bounds_width": 1,
@@ -31,6 +31,11 @@
 						0.0,
 						-7.3
 					],
+					"rotation": [
+						-45.0,
+						-0.0,
+						0.0
+					],
 					"cubes": []
 				},
 				{
@@ -50,7 +55,7 @@
 							],
 							"size": [
 								14.0,
-								14.0,
+								20.7,
 								0.40000000000000036
 							],
 							"uv": {
@@ -135,7 +140,7 @@
 							],
 							"size": [
 								1.0,
-								15.0,
+								21.7,
 								1.4000000000000004
 							],
 							"uv": {
@@ -283,7 +288,7 @@
 							],
 							"size": [
 								1.0,
-								15.0,
+								21.7,
 								1.4000000000000004
 							],
 							"uv": {
@@ -352,7 +357,7 @@
 						{
 							"origin": [
 								-7.0,
-								15.0,
+								21.7,
 								-8.0
 							],
 							"size": [

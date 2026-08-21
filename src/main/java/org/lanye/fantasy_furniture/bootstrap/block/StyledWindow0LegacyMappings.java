@@ -8,7 +8,7 @@ import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.MissingMappingsEvent;
 import org.lanye.fantasy_furniture.FantasyFurniture;
-import org.lanye.fantasy_furniture.content.furniture.common.state.PlainGlassWindowMaterialVariant;
+import org.lanye.fantasy_furniture.content.furniture.common.state.StyledWindow0MaterialVariant;
 
 /**
  * 旧 id → {@code styled_window_0_*}：
@@ -18,9 +18,9 @@ import org.lanye.fantasy_furniture.content.furniture.common.state.PlainGlassWind
  * </ul>
  */
 @Mod.EventBusSubscriber(modid = FantasyFurniture.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE)
-public final class PlainGlassWindowLegacyMappings {
+public final class StyledWindow0LegacyMappings {
 
-    private PlainGlassWindowLegacyMappings() {}
+    private StyledWindow0LegacyMappings() {}
 
     @SubscribeEvent
     public static void onMissingMappings(MissingMappingsEvent event) {
@@ -36,12 +36,12 @@ public final class PlainGlassWindowLegacyMappings {
             ResourceLocation key = mapping.getKey();
             if (legacySingle.equals(key)) {
                 mapping.remap(
-                        PlainGlassWindowRegistration.block(PlainGlassWindowMaterialVariant.WHITE).get());
+                        StyledWindow0Registration.block(StyledWindow0MaterialVariant.WHITE).get());
                 continue;
             }
-            PlainGlassWindowMaterialVariant color = colorFromLegacyPath(key);
+            StyledWindow0MaterialVariant color = colorFromLegacyPath(key);
             if (color != null) {
-                mapping.remap(PlainGlassWindowRegistration.block(color).get());
+                mapping.remap(StyledWindow0Registration.block(color).get());
             }
         }
     }
@@ -49,15 +49,15 @@ public final class PlainGlassWindowLegacyMappings {
     private static void remapItems(MissingMappingsEvent event) {
         for (MissingMappingsEvent.Mapping<Item> mapping :
                 event.getMappings(ForgeRegistries.Keys.ITEMS, FantasyFurniture.MODID)) {
-            PlainGlassWindowMaterialVariant color = colorFromLegacyPath(mapping.getKey());
+            StyledWindow0MaterialVariant color = colorFromLegacyPath(mapping.getKey());
             if (color != null) {
-                mapping.remap(PlainGlassWindowRegistration.items().get(color.ordinal()).get());
+                mapping.remap(StyledWindow0Registration.items().get(color.ordinal()).get());
             }
         }
     }
 
     /** 历史色物品/方块 path → 色枚举。 */
-    private static PlainGlassWindowMaterialVariant colorFromLegacyPath(ResourceLocation key) {
+    private static StyledWindow0MaterialVariant colorFromLegacyPath(ResourceLocation key) {
         if (!FantasyFurniture.MODID.equals(key.getNamespace())) {
             return null;
         }
@@ -65,7 +65,7 @@ public final class PlainGlassWindowLegacyMappings {
         for (String prefix : new String[] {"plain_glass_window_", "styled_window_plain_"}) {
             if (path.startsWith(prefix)) {
                 String suffix = path.substring(prefix.length());
-                for (PlainGlassWindowMaterialVariant v : PlainGlassWindowMaterialVariant.values()) {
+                for (StyledWindow0MaterialVariant v : StyledWindow0MaterialVariant.values()) {
                     if (v.getSerializedName().equals(suffix)) {
                         return v;
                     }

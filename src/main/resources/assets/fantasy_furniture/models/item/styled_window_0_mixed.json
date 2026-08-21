@@ -1,6 +1,6 @@
 {
-  "parent": "fantasy_furniture:item/plain_glass_window_item_base",
+  "parent": "fantasy_furniture:item/styled_window_0_item_base",
   "textures": {
-    "particle": "fantasy_furniture:block/plain_glass_window_7_mixed"
+    "particle": "fantasy_furniture:block/styled_window_0_7_mixed"
   }
 }

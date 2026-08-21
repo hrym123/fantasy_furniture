@@ -3,20 +3,20 @@ package org.lanye.fantasy_furniture.content.furniture.decor;
 import net.minecraft.util.Mth;
 
 /**
- * 普通玻璃窗 {@code shape} 与 MoonStarfish bbmodel / 导出资源 basename 对应（{@code geo/block/<basename>.geo.json}）。
+ * 0号窗户 {@code shape} 与 MoonStarfish bbmodel / 导出资源 basename 对应（{@code geo/block/<basename>.geo.json}）。
  *
  * <p>索引与 basename 固定对应（方块状态、碰撞、资源路径）；右键切换顺序见 {@link #nextShapeInCycle(int)}。
  */
-public final class PlainGlassWindowShapes {
+public final class StyledWindow0Shapes {
 
     public static final int COUNT = 5;
 
     private static final String[] GEO_BASENAMES = {
-        "plain_glass_window_shape_straight",
-        "plain_glass_window_shape_90",
-        "plain_glass_window_shape_22p5",
-        "plain_glass_window_shape_45",
-        "plain_glass_window_shape_diag45",
+        "styled_window_0_shape_straight",
+        "styled_window_0_shape_90",
+        "styled_window_0_shape_22p5",
+        "styled_window_0_shape_45",
+        "styled_window_0_shape_diag45",
     };
 
     /**
@@ -24,7 +24,7 @@ public final class PlainGlassWindowShapes {
      */
     private static final int[] RIGHT_CLICK_CYCLE = {0, 3, 2, 1, 4};
 
-    private PlainGlassWindowShapes() {}
+    private StyledWindow0Shapes() {}
 
     public static boolean isValid(int id) {
         return id >= 0 && id < COUNT;

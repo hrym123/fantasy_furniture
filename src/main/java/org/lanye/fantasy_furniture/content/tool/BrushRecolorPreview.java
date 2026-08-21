@@ -7,7 +7,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import org.lanye.fantasy_furniture.bootstrap.block.CeramicTileBlocks;
 import org.lanye.fantasy_furniture.bootstrap.block.ModBlocks;
 import org.lanye.fantasy_furniture.bootstrap.block.WallpaperBlocks;
-import org.lanye.fantasy_furniture.content.furniture.decor.block.PlainGlassWindowBlock;
+import org.lanye.fantasy_furniture.content.furniture.decor.block.StyledWindow0Block;
 import org.lanye.fantasy_furniture.content.soap.block.BodyCreamBlock;
 import org.lanye.fantasy_furniture.content.soap.block.BodyWashBlock;
 import org.lanye.fantasy_furniture.content.soap.block.SoapBoxBlock;
@@ -38,7 +38,7 @@ public final class BrushRecolorPreview {
     }
 
     private static Optional<ItemStack> itemStackFor(BlockState state) {
-        if (state.getBlock() instanceof PlainGlassWindowBlock) {
+        if (state.getBlock() instanceof StyledWindow0Block) {
             return Optional.of(new ItemStack(state.getBlock().asItem()));
         }
         for (CeramicTileBlocks.TileVariant variant : CeramicTileBlocks.TileVariant.values()) {

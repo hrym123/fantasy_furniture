@@ -13,9 +13,9 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import org.lanye.fantasy_furniture.FantasyFurniture;
 import org.lanye.fantasy_furniture.content.furniture.common.state.BanquetteShape;
-import org.lanye.fantasy_furniture.content.furniture.decor.PlainGlassWindowShapes;
-import org.lanye.fantasy_furniture.content.furniture.decor.block.PlainGlassWindowBlock;
-import org.lanye.fantasy_furniture.content.furniture.decor.item.PlainGlassWindowBlockItem;
+import org.lanye.fantasy_furniture.content.furniture.decor.StyledWindow0Shapes;
+import org.lanye.fantasy_furniture.content.furniture.decor.block.StyledWindow0Block;
+import org.lanye.fantasy_furniture.content.furniture.decor.item.StyledWindow0BlockItem;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.block.BanquetteBlock;
 import org.lanye.fantasy_furniture.content.soap.SoapBarAppearance;
 import org.lanye.fantasy_furniture.content.soap.SoapBarMaterials;
@@ -51,8 +51,8 @@ public final class ModVariantCycler {
         if (block instanceof SoapRackBlock) {
             return cycleSoapRackBlock(level, pos, state, reverse);
         }
-        if (block instanceof PlainGlassWindowBlock) {
-            return cyclePlainGlassWindow(level, pos, state, reverse);
+        if (block instanceof StyledWindow0Block) {
+            return cycleStyledWindow0(level, pos, state, reverse);
         }
         if (block instanceof BanquetteBlock) {
             return cycleBanquette(level, pos, state, reverse);
@@ -77,26 +77,28 @@ public final class ModVariantCycler {
         if (item instanceof SoapBoxBlockItem) {
             return Optional.empty();
         }
-        if (item instanceof PlainGlassWindowBlockItem) {
-            int shape = readPlainGlassShape(stack);
-            int nextShape = reverse ? prevPlainGlassShape(shape) : PlainGlassWindowShapes.nextShapeInCycle(shape);
+        if (item instanceof StyledWindow0BlockItem) {
+            int shape = readStyledWindow0Shape(stack);
+            int nextShape = reverse ? prevStyledWindow0Shape(shape) : StyledWindow0Shapes.nextShapeInCycle(shape);
             if (nextShape == shape) {
                 return Optional.empty();
             }
             if (nextShape == 0) {
                 if (stack.hasTag()) {
-                    stack.getTag().remove(PlainGlassWindowBlockItem.TAG_SHAPE);
+                    stack.getTag().remove(StyledWindow0BlockItem.TAG_SHAPE);
+                    stack.getTag().remove(StyledWindow0BlockItem.TAG_SHAPE_LEGACY);
                     if (stack.getTag().isEmpty()) {
                         stack.setTag(null);
                     }
                 }
             } else {
-                stack.getOrCreateTag().putInt(PlainGlassWindowBlockItem.TAG_SHAPE, nextShape);
+                stack.getOrCreateTag().remove(StyledWindow0BlockItem.TAG_SHAPE_LEGACY);
+                stack.getOrCreateTag().putInt(StyledWindow0BlockItem.TAG_SHAPE, nextShape);
             }
             return Optional.of(
                     Component.translatable(
-                            "debug.fantasy_furniture.variant.plain_glass_shape",
-                            PlainGlassWindowShapes.geoBasename(nextShape)));
+                            "debug.fantasy_furniture.variant.styled_window_0_shape",
+                            StyledWindow0Shapes.geoBasename(nextShape)));
         }
         return Optional.empty();
     }
@@ -208,18 +210,18 @@ public final class ModVariantCycler {
         return Optional.of(Component.translatable("debug.fantasy_furniture.variant.soap_rack_empty"));
     }
 
-    private static Optional<Component> cyclePlainGlassWindow(
+    private static Optional<Component> cycleStyledWindow0(
             Level level, BlockPos pos, BlockState state, boolean reverse) {
-        int shape = state.getValue(PlainGlassWindowBlock.SHAPE);
-        int next = reverse ? prevPlainGlassShape(shape) : PlainGlassWindowShapes.nextShapeInCycle(shape);
+        int shape = state.getValue(StyledWindow0Block.SHAPE);
+        int next = reverse ? prevStyledWindow0Shape(shape) : StyledWindow0Shapes.nextShapeInCycle(shape);
         if (next == shape) {
             return Optional.empty();
         }
-        level.setBlock(pos, state.setValue(PlainGlassWindowBlock.SHAPE, next), Block.UPDATE_ALL);
+        level.setBlock(pos, state.setValue(StyledWindow0Block.SHAPE, next), Block.UPDATE_ALL);
         return Optional.of(
                 Component.translatable(
-                        "debug.fantasy_furniture.variant.plain_glass_shape",
-                        PlainGlassWindowShapes.geoBasename(next)));
+                        "debug.fantasy_furniture.variant.styled_window_0_shape",
+                        StyledWindow0Shapes.geoBasename(next)));
     }
 
     private static Optional<Component> cycleBanquette(
@@ -295,17 +297,23 @@ public final class ModVariantCycler {
                 Component.translatable(SoapBarMaterials.colorTranslationKey(appearance.materialId())));
     }
 
-    private static int readPlainGlassShape(ItemStack stack) {
-        if (stack.getTag() != null && stack.getTag().contains(PlainGlassWindowBlockItem.TAG_SHAPE)) {
-            return stack.getTag().getInt(PlainGlassWindowBlockItem.TAG_SHAPE);
+    private static int readStyledWindow0Shape(ItemStack stack) {
+        if (stack.getTag() == null) {
+            return 0;
+        }
+        if (stack.getTag().contains(StyledWindow0BlockItem.TAG_SHAPE)) {
+            return stack.getTag().getInt(StyledWindow0BlockItem.TAG_SHAPE);
+        }
+        if (stack.getTag().contains(StyledWindow0BlockItem.TAG_SHAPE_LEGACY)) {
+            return stack.getTag().getInt(StyledWindow0BlockItem.TAG_SHAPE_LEGACY);
         }
         return 0;
     }
 
-    private static int prevPlainGlassShape(int shape) {
+    private static int prevStyledWindow0Shape(int shape) {
         int probe = shape;
-        for (int i = 0; i < PlainGlassWindowShapes.COUNT; i++) {
-            int next = PlainGlassWindowShapes.nextShapeInCycle(probe);
+        for (int i = 0; i < StyledWindow0Shapes.COUNT; i++) {
+            int next = StyledWindow0Shapes.nextShapeInCycle(probe);
             if (next == shape) {
                 return probe;
             }

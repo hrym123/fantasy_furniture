@@ -18,7 +18,7 @@ import org.lanye.fantasy_furniture.content.sweeper.blockentity.SweeperDockBlockE
 import org.lanye.fantasy_furniture.bootstrap.block.ModBlocks;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.client.model.BanquetteBlockGeoModel;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.client.renderer.BanquetteGeoBlockRenderer;
-import org.lanye.fantasy_furniture.content.furniture.decor.client.renderer.PlainGlassWindowGeoBlockRenderer;
+import org.lanye.fantasy_furniture.content.furniture.decor.client.renderer.StyledWindow0GeoBlockRenderer;
 import org.lanye.fantasy_furniture.content.soap.client.SoapBarClient;
 import org.lanye.fantasy_furniture.content.soap.client.renderer.BodyCreamGeoBlockRenderer;
 import org.lanye.fantasy_furniture.content.soap.client.renderer.BodyWashGeoBlockRenderer;
@@ -62,8 +62,8 @@ public final class ClientModEvents {
                 GeolibAnimatedBlockRenderers.variableTextureGeoRendererProvider(
                         FantasyFurniture.MODID, "sweeper_dock", SweeperDockBlockEntity::getTextureLocation));
         AnimatedBlockClientRegistration.registerBlockEntityRenderer(
-                ModBlocks.PLAIN_GLASS_WINDOW,
-                ReveriePerfRender.wrapBer(ctx -> new PlainGlassWindowGeoBlockRenderer()));
+                ModBlocks.STYLED_WINDOW_0,
+                ReveriePerfRender.wrapBer(ctx -> new StyledWindow0GeoBlockRenderer()));
         AnimatedBlockClientRegistration.registerBlockEntityRenderer(
                 ModBlocks.SOAP_BAR, ReveriePerfRender.wrapBer(SoapBarClient.blockRendererProvider()));
         AnimatedBlockClientRegistration.registerBlockEntityRenderer(

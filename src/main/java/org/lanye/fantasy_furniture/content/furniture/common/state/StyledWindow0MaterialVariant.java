@@ -5,11 +5,11 @@ import net.minecraft.util.StringRepresentable;
 
 /**
  * 0号窗户颜色后缀与贴图槽序；注册 id 为 {@code styled_window_0_<色>}。顺序须与
- * {@link org.lanye.fantasy_furniture.content.furniture.decor.PlainGlassWindowSharedTextures#TEXTURE_STEMS} 槽位 0..n 一致。
+ * {@link org.lanye.fantasy_furniture.content.furniture.decor.StyledWindow0SharedTextures#TEXTURE_STEMS} 槽位 0..n 一致。
  *
  * <p>REG-608：每种颜色一对 block/item 同 id，不再作为 BlockState {@code material} 轴。
  */
-public enum PlainGlassWindowMaterialVariant implements StringRepresentable {
+public enum StyledWindow0MaterialVariant implements StringRepresentable {
     WHITE("white"),
     BLACK("black"),
     TAN("tan"),
@@ -22,7 +22,7 @@ public enum PlainGlassWindowMaterialVariant implements StringRepresentable {
 
     private final String id;
 
-    PlainGlassWindowMaterialVariant(String id) {
+    StyledWindow0MaterialVariant(String id) {
         this.id = id;
     }
 
@@ -31,9 +31,9 @@ public enum PlainGlassWindowMaterialVariant implements StringRepresentable {
         return id;
     }
 
-    /** 与 {@link org.lanye.fantasy_furniture.content.furniture.decor.PlainGlassWindowSharedTextures#TEXTURE_STEMS} 索引一致。 */
-    public static PlainGlassWindowMaterialVariant byIndex(int material) {
-        PlainGlassWindowMaterialVariant[] v = values();
+    /** 与 {@link org.lanye.fantasy_furniture.content.furniture.decor.StyledWindow0SharedTextures#TEXTURE_STEMS} 索引一致。 */
+    public static StyledWindow0MaterialVariant byIndex(int material) {
+        StyledWindow0MaterialVariant[] v = values();
         return v[Mth.clamp(material, 0, v.length - 1)];
     }
 }

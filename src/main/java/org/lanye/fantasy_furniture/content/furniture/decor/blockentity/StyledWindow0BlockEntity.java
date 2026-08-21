@@ -17,15 +17,15 @@ import software.bernie.geckolib.util.GeckoLibUtil;
 import javax.annotation.Nullable;
 
 /**
- * 普通玻璃窗：外观完全由 {@link net.minecraft.world.level.block.state.BlockState} 的 {@code shape}（与 {@code facing}）决定，
+ * 0号窗户：外观完全由 {@link net.minecraft.world.level.block.state.BlockState} 的 {@code shape}（与 {@code facing}）决定，
  * 方块实体仅用于 GeckoLib 渲染钩子，不在此持久化造型。
  */
-public class PlainGlassWindowBlockEntity extends BlockEntity implements GeoBlockEntity {
+public class StyledWindow0BlockEntity extends BlockEntity implements GeoBlockEntity {
 
     private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
 
-    public PlainGlassWindowBlockEntity(BlockPos pos, BlockState state) {
-        super(ModBlocks.PLAIN_GLASS_WINDOW.blockEntityType().get(), pos, state);
+    public StyledWindow0BlockEntity(BlockPos pos, BlockState state) {
+        super(ModBlocks.STYLED_WINDOW_0.blockEntityType().get(), pos, state);
     }
 
     @Override

@@ -21,24 +21,24 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import net.minecraftforge.client.extensions.common.IClientBlockExtensions;
-import org.lanye.fantasy_furniture.content.furniture.common.state.PlainGlassWindowMaterialVariant;
-import org.lanye.fantasy_furniture.content.furniture.decor.PlainGlassWindowShapes;
-import org.lanye.fantasy_furniture.content.furniture.decor.blockentity.PlainGlassWindowBlockEntity;
-import org.lanye.fantasy_furniture.content.furniture.decor.client.PlainGlassWindowBlockClientExtensions;
-import org.lanye.fantasy_furniture.content.furniture.decor.item.PlainGlassWindowBlockItem;
+import org.lanye.fantasy_furniture.content.furniture.common.state.StyledWindow0MaterialVariant;
+import org.lanye.fantasy_furniture.content.furniture.decor.StyledWindow0Shapes;
+import org.lanye.fantasy_furniture.content.furniture.decor.blockentity.StyledWindow0BlockEntity;
+import org.lanye.fantasy_furniture.content.furniture.decor.client.StyledWindow0BlockClientExtensions;
+import org.lanye.fantasy_furniture.content.furniture.decor.item.StyledWindow0BlockItem;
 import org.lanye.fantasy_furniture.content.tool.BrushRecolor;
 import org.lanye.reverie_core.geolib.GeolibFacingEntityBlockWithFactory;
 import org.lanye.reverie_core.util.VoxelShapeRotation;
 
 /**
  * 0号窗户：{@link #FACING}×{@link #SHAPE}；颜色由<strong>方块注册 id / {@link #variant}</strong>表达（REG-608，无
- * {@code material} 轴）。右键按 {@link PlainGlassWindowShapes#nextShapeInCycle(int)} 切换造型。
+ * {@code material} 轴）。右键按 {@link StyledWindow0Shapes#nextShapeInCycle(int)} 切换造型。
  *
  * <p>光照：与玻璃类方块一致，不挡光。
  *
  * <p>碰撞：北向基准与 {@code tools/collision/geo_collision_box.py} 外接盒一致（多数造型）；斜角 45° 使用整格外接盒。
  */
-public class PlainGlassWindowBlock extends GeolibFacingEntityBlockWithFactory<PlainGlassWindowBlockEntity> {
+public class StyledWindow0Block extends GeolibFacingEntityBlockWithFactory<StyledWindow0BlockEntity> {
 
     /**
      * {@link #playerWillDestroy} 在方块被替换前调用，{@link #onRemove} 需知是否为创造玩家以抑制掉落（见 T006）。
@@ -46,9 +46,9 @@ public class PlainGlassWindowBlock extends GeolibFacingEntityBlockWithFactory<Pl
     private static final ThreadLocal<Player> BREAKING_PLAYER = new ThreadLocal<>();
 
     public static final IntegerProperty SHAPE =
-            IntegerProperty.create("shape", 0, PlainGlassWindowShapes.COUNT - 1);
+            IntegerProperty.create("shape", 0, StyledWindow0Shapes.COUNT - 1);
 
-    private final PlainGlassWindowMaterialVariant variant;
+    private final StyledWindow0MaterialVariant variant;
 
     private static final VoxelShape[] SHAPES_NORTH = {
         Block.box(0.0D, 0.0D, 0.0D, 16.0D, 16.0D, 1.4D), // straight
@@ -58,20 +58,20 @@ public class PlainGlassWindowBlock extends GeolibFacingEntityBlockWithFactory<Pl
         Block.box(0.0D, 0.0D, 0.0D, 16.0D, 16.0D, 16.0D), // 斜角 45°
     };
 
-    public PlainGlassWindowBlock(
-            BlockBehaviour.Properties properties, PlainGlassWindowMaterialVariant variant) {
-        super(properties, PlainGlassWindowBlockEntity::new);
+    public StyledWindow0Block(
+            BlockBehaviour.Properties properties, StyledWindow0MaterialVariant variant) {
+        super(properties, StyledWindow0BlockEntity::new);
         this.variant = variant;
         registerDefaultState(defaultBlockState().setValue(SHAPE, 0));
     }
 
-    public PlainGlassWindowMaterialVariant variant() {
+    public StyledWindow0MaterialVariant variant() {
         return variant;
     }
 
     /** 从方块实例解析材质索引（REG-608：颜色由 block id 表达）。 */
     public static int materialIndex(BlockState state) {
-        if (state.getBlock() instanceof PlainGlassWindowBlock window) {
+        if (state.getBlock() instanceof StyledWindow0Block window) {
             return window.variant.ordinal();
         }
         return 0;
@@ -79,7 +79,7 @@ public class PlainGlassWindowBlock extends GeolibFacingEntityBlockWithFactory<Pl
 
     @Override
     public void initializeClient(Consumer<IClientBlockExtensions> consumer) {
-        PlainGlassWindowBlockClientExtensions.register(consumer);
+        StyledWindow0BlockClientExtensions.register(consumer);
     }
 
     @Override
@@ -109,7 +109,7 @@ public class PlainGlassWindowBlock extends GeolibFacingEntityBlockWithFactory<Pl
     }
 
     private static VoxelShape shapeFor(BlockState state) {
-        int s = Mth.clamp(state.getValue(SHAPE), 0, PlainGlassWindowShapes.COUNT - 1);
+        int s = Mth.clamp(state.getValue(SHAPE), 0, StyledWindow0Shapes.COUNT - 1);
         VoxelShape north = SHAPES_NORTH[s];
         Direction dir = state.getValue(FACING);
         return switch (dir) {
@@ -166,7 +166,7 @@ public class PlainGlassWindowBlock extends GeolibFacingEntityBlockWithFactory<Pl
     }
 
     /**
-     * 破坏掉落：同名 item（REG-608），造型固定为 0（无 {@link PlainGlassWindowBlockItem#TAG_SHAPE}），见 T006。
+     * 破坏掉落：同名 item（REG-608），造型固定为 0（无 {@link StyledWindow0BlockItem#TAG_SHAPE}），见 T006。
      */
     private static ItemStack defaultDropStack(BlockState state) {
         return stackForShape(state, 0);
@@ -174,14 +174,14 @@ public class PlainGlassWindowBlock extends GeolibFacingEntityBlockWithFactory<Pl
 
     /** 中键选取：同名 item + 当前造型。 */
     private static ItemStack stackForState(BlockState state) {
-        int shape = Mth.clamp(state.getValue(SHAPE), 0, PlainGlassWindowShapes.COUNT - 1);
+        int shape = Mth.clamp(state.getValue(SHAPE), 0, StyledWindow0Shapes.COUNT - 1);
         return stackForShape(state, shape);
     }
 
     private static ItemStack stackForShape(BlockState state, int shape) {
         ItemStack stack = new ItemStack(state.getBlock().asItem());
         if (shape != 0) {
-            stack.getOrCreateTag().putInt(PlainGlassWindowBlockItem.TAG_SHAPE, shape);
+            stack.getOrCreateTag().putInt(StyledWindow0BlockItem.TAG_SHAPE, shape);
         }
         return stack;
     }
@@ -201,7 +201,7 @@ public class PlainGlassWindowBlock extends GeolibFacingEntityBlockWithFactory<Pl
         if (BrushRecolor.defersBlockUse(player, hand, state)) {
             return InteractionResult.PASS;
         }
-        int s = PlainGlassWindowShapes.nextShapeInCycle(state.getValue(SHAPE));
+        int s = StyledWindow0Shapes.nextShapeInCycle(state.getValue(SHAPE));
         level.setBlock(pos, state.setValue(SHAPE, s), Block.UPDATE_ALL_IMMEDIATE);
         return InteractionResult.sidedSuccess(level.isClientSide);
     }

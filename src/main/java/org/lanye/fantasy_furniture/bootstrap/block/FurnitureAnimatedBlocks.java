@@ -16,7 +16,7 @@ import org.lanye.fantasy_furniture.FantasyFurniture;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.block.GreenSofaBlock;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.blockentity.BanquetteBlockEntity;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.blockentity.GreenSofaBlockEntity;
-import org.lanye.fantasy_furniture.content.furniture.decor.blockentity.PlainGlassWindowBlockEntity;
+import org.lanye.fantasy_furniture.content.furniture.decor.blockentity.StyledWindow0BlockEntity;
 import org.lanye.fantasy_furniture.content.furniture.decor.blockentity.LotteryMachineBlockEntity;
 import org.lanye.fantasy_furniture.content.sweeper.blockentity.SweeperDockBlockEntity;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.block.BanquetteBlock;
@@ -53,7 +53,7 @@ import org.lanye.fantasy_furniture.content.soap.item.SoapRackBlockItem;
 import org.lanye.fantasy_furniture.content.soap.item.BodyCreamBlockItem;
 import org.lanye.fantasy_furniture.content.soap.item.BodyWashBlockItem;
 import org.lanye.fantasy_furniture.content.soap.item.SoapPaperBagBlockItem;
-import org.lanye.fantasy_furniture.bootstrap.block.PlainGlassWindowRegistration;
+import org.lanye.fantasy_furniture.bootstrap.block.StyledWindow0Registration;
 import org.lanye.fantasy_furniture.bootstrap.blockentity.ModBlockEntities;
 import org.lanye.reverie_core.geolib.AnimatedBlockEntry;
 import org.lanye.reverie_core.geolib.AnimatedBlockRegistration;
@@ -280,6 +280,6 @@ public final class FurnitureAnimatedBlocks {
 
     public static final AnimatedBlockEntry<BedPlateBaseBlockEntity> BED_PLATE6 = BedPlate6Registration.mainEntry();
 
-    public static final AnimatedBlockEntry<PlainGlassWindowBlockEntity> PLAIN_GLASS_WINDOW =
-            PlainGlassWindowRegistration.entry();
+    public static final AnimatedBlockEntry<StyledWindow0BlockEntity> STYLED_WINDOW_0 =
+            StyledWindow0Registration.entry();
 }

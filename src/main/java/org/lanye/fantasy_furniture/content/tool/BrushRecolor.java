@@ -9,11 +9,11 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import org.lanye.fantasy_furniture.bootstrap.block.CeramicTileBlocks;
-import org.lanye.fantasy_furniture.bootstrap.block.PlainGlassWindowRegistration;
+import org.lanye.fantasy_furniture.bootstrap.block.StyledWindow0Registration;
 import org.lanye.fantasy_furniture.bootstrap.block.WallpaperBlocks;
 import org.lanye.fantasy_furniture.bootstrap.tag.ModTags;
-import org.lanye.fantasy_furniture.content.furniture.common.state.PlainGlassWindowMaterialVariant;
-import org.lanye.fantasy_furniture.content.furniture.decor.block.PlainGlassWindowBlock;
+import org.lanye.fantasy_furniture.content.furniture.common.state.StyledWindow0MaterialVariant;
+import org.lanye.fantasy_furniture.content.furniture.decor.block.StyledWindow0Block;
 import org.lanye.fantasy_furniture.content.soap.SoapBarMaterials;
 import org.lanye.fantasy_furniture.content.soap.SoapPaperBagMaterials;
 import org.lanye.fantasy_furniture.content.soap.BodyCreamMaterials;
@@ -55,14 +55,14 @@ public final class BrushRecolor {
         if (!state.is(ModTags.BRUSH_RECOLORABLE_BLOCKS)) {
             return Optional.empty();
         }
-        if (state.getBlock() instanceof PlainGlassWindowBlock current) {
-            PlainGlassWindowMaterialVariant next = nextInCycle(current.variant());
-            Block nextBlock = PlainGlassWindowRegistration.block(next).get();
+        if (state.getBlock() instanceof StyledWindow0Block current) {
+            StyledWindow0MaterialVariant next = nextInCycle(current.variant());
+            Block nextBlock = StyledWindow0Registration.block(next).get();
             return Optional.of(
                     nextBlock
                             .defaultBlockState()
-                            .setValue(PlainGlassWindowBlock.FACING, state.getValue(PlainGlassWindowBlock.FACING))
-                            .setValue(PlainGlassWindowBlock.SHAPE, state.getValue(PlainGlassWindowBlock.SHAPE)));
+                            .setValue(StyledWindow0Block.FACING, state.getValue(StyledWindow0Block.FACING))
+                            .setValue(StyledWindow0Block.SHAPE, state.getValue(StyledWindow0Block.SHAPE)));
         }
         for (CeramicTileBlocks.TileVariant variant : CeramicTileBlocks.TileVariant.values()) {
             if (state.is(variant.entry().block().get())) {

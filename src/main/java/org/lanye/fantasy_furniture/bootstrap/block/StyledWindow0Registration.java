@@ -11,11 +11,11 @@ import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraftforge.registries.RegistryObject;
 import org.lanye.fantasy_furniture.FantasyFurniture;
 import org.lanye.fantasy_furniture.bootstrap.blockentity.ModBlockEntities;
-import org.lanye.fantasy_furniture.content.furniture.common.state.PlainGlassWindowMaterialVariant;
-import org.lanye.fantasy_furniture.content.furniture.decor.PlainGlassWindowMaterials;
-import org.lanye.fantasy_furniture.content.furniture.decor.block.PlainGlassWindowBlock;
-import org.lanye.fantasy_furniture.content.furniture.decor.blockentity.PlainGlassWindowBlockEntity;
-import org.lanye.fantasy_furniture.content.furniture.decor.item.PlainGlassWindowBlockItem;
+import org.lanye.fantasy_furniture.content.furniture.common.state.StyledWindow0MaterialVariant;
+import org.lanye.fantasy_furniture.content.furniture.decor.StyledWindow0Materials;
+import org.lanye.fantasy_furniture.content.furniture.decor.block.StyledWindow0Block;
+import org.lanye.fantasy_furniture.content.furniture.decor.blockentity.StyledWindow0BlockEntity;
+import org.lanye.fantasy_furniture.content.furniture.decor.item.StyledWindow0BlockItem;
 import org.lanye.reverie_core.geolib.AnimatedBlockEntry;
 import org.lanye.reverie_core.geolib.GeolibItemAssets;
 
@@ -23,50 +23,50 @@ import org.lanye.reverie_core.geolib.GeolibItemAssets;
  * 0号窗户（REG-608）：每种颜色 {@code styled_window_0_<色>} 的 <strong>block id = item id</strong> 成对
  *（与 {@code styled_window_1} 等型号窗同前缀）；共用一个 {@link BlockEntityType}（注册名 {@code styled_window_0}）。
  */
-public final class PlainGlassWindowRegistration {
+public final class StyledWindow0Registration {
 
-    private static final ResourceLocation PLAIN_GLASS_WINDOW_PREVIEW_GEO =
+    private static final ResourceLocation STYLED_WINDOW_0_PREVIEW_GEO =
             ResourceLocation.fromNamespaceAndPath(
-                    FantasyFurniture.MODID, "geo/block/plain_glass_window_shape_straight.geo.json");
+                    FantasyFurniture.MODID, "geo/block/styled_window_0_shape_straight.geo.json");
 
     private static final ResourceLocation GEOLIB_STATIC_ANIMATION =
             ResourceLocation.fromNamespaceAndPath(
                     FantasyFurniture.MODID, "animations/block/geolib_static.animation.json");
 
-    private static final Map<PlainGlassWindowMaterialVariant, RegistryObject<Block>> BLOCKS_BY_VARIANT =
-            new EnumMap<>(PlainGlassWindowMaterialVariant.class);
+    private static final Map<StyledWindow0MaterialVariant, RegistryObject<Block>> BLOCKS_BY_VARIANT =
+            new EnumMap<>(StyledWindow0MaterialVariant.class);
 
     private static final List<RegistryObject<Block>> BLOCKS = registerBlocks();
 
-    private static final RegistryObject<BlockEntityType<PlainGlassWindowBlockEntity>> BLOCK_ENTITY_TYPE =
+    private static final RegistryObject<BlockEntityType<StyledWindow0BlockEntity>> BLOCK_ENTITY_TYPE =
             ModBlockEntities.BLOCK_ENTITY_TYPES.register(
                     "styled_window_0",
                     () ->
                             BlockEntityType.Builder.of(
-                                            PlainGlassWindowBlockEntity::new,
+                                            StyledWindow0BlockEntity::new,
                                             BLOCKS.stream().map(RegistryObject::get).toArray(Block[]::new))
                                     .build(null));
 
     private static final List<RegistryObject<Item>> ITEMS = registerItems();
 
-    /** 白色条目：供 {@link ModBlocks#PLAIN_GLASS_WINDOW} / BER 使用（BET 已含全部色方块）。 */
-    private static final AnimatedBlockEntry<PlainGlassWindowBlockEntity> ENTRY =
+    /** 白色条目：供 {@link ModBlocks#STYLED_WINDOW_0} / BER 使用（BET 已含全部色方块）。 */
+    private static final AnimatedBlockEntry<StyledWindow0BlockEntity> ENTRY =
             new AnimatedBlockEntry<>(
-                    BLOCKS_BY_VARIANT.get(PlainGlassWindowMaterialVariant.WHITE),
-                    ITEMS.get(PlainGlassWindowMaterialVariant.WHITE.ordinal()),
+                    BLOCKS_BY_VARIANT.get(StyledWindow0MaterialVariant.WHITE),
+                    ITEMS.get(StyledWindow0MaterialVariant.WHITE.ordinal()),
                     BLOCK_ENTITY_TYPE);
 
-    private PlainGlassWindowRegistration() {}
+    private StyledWindow0Registration() {}
 
     private static List<RegistryObject<Block>> registerBlocks() {
         List<RegistryObject<Block>> list = new ArrayList<>();
-        for (PlainGlassWindowMaterialVariant v : PlainGlassWindowMaterialVariant.values()) {
-            final PlainGlassWindowMaterialVariant vv = v;
+        for (StyledWindow0MaterialVariant v : StyledWindow0MaterialVariant.values()) {
+            final StyledWindow0MaterialVariant vv = v;
             RegistryObject<Block> ro =
                     ModBlocks.BLOCKS.register(
                             "styled_window_0_" + vv.getSerializedName(),
                             () ->
-                                    new PlainGlassWindowBlock(
+                                    new StyledWindow0Block(
                                             FurnitureBlockProperties.glassWindow(), vv));
             BLOCKS_BY_VARIANT.put(vv, ro);
             list.add(ro);
@@ -76,22 +76,22 @@ public final class PlainGlassWindowRegistration {
 
     private static List<RegistryObject<Item>> registerItems() {
         List<RegistryObject<Item>> list = new ArrayList<>();
-        for (PlainGlassWindowMaterialVariant v : PlainGlassWindowMaterialVariant.values()) {
-            final PlainGlassWindowMaterialVariant vv = v;
+        for (StyledWindow0MaterialVariant v : StyledWindow0MaterialVariant.values()) {
+            final StyledWindow0MaterialVariant vv = v;
             RegistryObject<Block> blockRo = BLOCKS_BY_VARIANT.get(vv);
             list.add(
                     ModBlocks.BLOCK_ITEMS.register(
                             "styled_window_0_" + vv.getSerializedName(),
                             () ->
-                                    new PlainGlassWindowBlockItem(
+                                    new StyledWindow0BlockItem(
                                             blockRo.get(),
                                             new Item.Properties(),
                                             new GeolibItemAssets(
-                                                    PLAIN_GLASS_WINDOW_PREVIEW_GEO,
+                                                    STYLED_WINDOW_0_PREVIEW_GEO,
                                                     ResourceLocation.fromNamespaceAndPath(
                                                             FantasyFurniture.MODID,
                                                             "textures/block/"
-                                                                    + PlainGlassWindowMaterials.itemPreviewStem(
+                                                                    + StyledWindow0Materials.itemPreviewStem(
                                                                             vv.ordinal())
                                                                     + ".png"),
                                                     GEOLIB_STATIC_ANIMATION),
@@ -100,15 +100,15 @@ public final class PlainGlassWindowRegistration {
         return List.copyOf(list);
     }
 
-    public static AnimatedBlockEntry<PlainGlassWindowBlockEntity> entry() {
+    public static AnimatedBlockEntry<StyledWindow0BlockEntity> entry() {
         return ENTRY;
     }
 
-    public static RegistryObject<BlockEntityType<PlainGlassWindowBlockEntity>> blockEntityType() {
+    public static RegistryObject<BlockEntityType<StyledWindow0BlockEntity>> blockEntityType() {
         return BLOCK_ENTITY_TYPE;
     }
 
-    /** 与 {@link PlainGlassWindowMaterials} / 枚举序一致。 */
+    /** 与 {@link StyledWindow0Materials} / 枚举序一致。 */
     public static List<RegistryObject<Item>> items() {
         return ITEMS;
     }
@@ -117,7 +117,7 @@ public final class PlainGlassWindowRegistration {
         return BLOCKS;
     }
 
-    public static RegistryObject<Block> block(PlainGlassWindowMaterialVariant variant) {
+    public static RegistryObject<Block> block(StyledWindow0MaterialVariant variant) {
         return BLOCKS_BY_VARIANT.get(variant);
     }
 }

@@ -17,24 +17,24 @@ import net.minecraft.world.phys.shapes.VoxelShape;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.lanye.fantasy_furniture.FantasyFurniture;
-import org.lanye.fantasy_furniture.content.furniture.decor.PlainGlassWindowMaterials;
-import org.lanye.fantasy_furniture.content.furniture.decor.block.PlainGlassWindowBlock;
+import org.lanye.fantasy_furniture.content.furniture.decor.StyledWindow0Materials;
+import org.lanye.fantasy_furniture.content.furniture.decor.block.StyledWindow0Block;
 
-/** 普通玻璃窗：按材质贴图喷破坏粒子（模型 JSON 写死白窗 particle）。 */
+/** 0号窗户：按材质贴图喷破坏粒子（模型 JSON 写死白窗 particle）。 */
 @OnlyIn(Dist.CLIENT)
-public final class PlainGlassWindowBreakParticles {
+public final class StyledWindow0BreakParticles {
 
     private static final int MIN_COUNT = 4;
     private static final int EXTRA_COUNT = 4;
 
-    private PlainGlassWindowBreakParticles() {}
+    private StyledWindow0BreakParticles() {}
 
     public static void spawn(BlockState state, Level level, BlockPos pos, ParticleEngine manager) {
-        if (!(state.getBlock() instanceof PlainGlassWindowBlock)
+        if (!(state.getBlock() instanceof StyledWindow0Block)
                 || !(level instanceof ClientLevel clientLevel)) {
             return;
         }
-        String stem = PlainGlassWindowMaterials.itemPreviewStem(PlainGlassWindowBlock.materialIndex(state));
+        String stem = StyledWindow0Materials.itemPreviewStem(StyledWindow0Block.materialIndex(state));
         ResourceLocation spriteId =
                 ResourceLocation.fromNamespaceAndPath(FantasyFurniture.MODID, "block/" + stem);
         VoxelShape shape = state.getShape(level, pos);
