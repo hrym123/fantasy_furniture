@@ -1,0 +1,6 @@
+{
+  "parent": "fantasy_furniture:item/styled_window_6_item_base",
+  "textures": {
+    "particle": "fantasy_furniture:block/styled_window_6_6_light_yellow"
+  }
+}

@@ -10,6 +10,15 @@
     "fantasy_furniture:display_cabinet",
     "fantasy_furniture:body_cream",
     "fantasy_furniture:body_wash",
-    "fantasy_furniture:shampoo"
+    "fantasy_furniture:shampoo",
+    "#fantasy_furniture:styled_window_1",
+    "#fantasy_furniture:styled_window_1_5",
+    "#fantasy_furniture:styled_window_2",
+    "#fantasy_furniture:styled_window_2_5",
+    "#fantasy_furniture:styled_window_3",
+    "#fantasy_furniture:styled_window_4",
+    "#fantasy_furniture:styled_window_5",
+    "#fantasy_furniture:styled_window_6",
+    "#fantasy_furniture:styled_window_7"
   ]
 }

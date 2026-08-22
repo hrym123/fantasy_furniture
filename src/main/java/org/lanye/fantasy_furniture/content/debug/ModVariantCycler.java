@@ -16,6 +16,10 @@ import org.lanye.fantasy_furniture.content.furniture.common.state.BanquetteShape
 import org.lanye.fantasy_furniture.content.furniture.decor.StyledWindow0Shapes;
 import org.lanye.fantasy_furniture.content.furniture.decor.block.StyledWindow0Block;
 import org.lanye.fantasy_furniture.content.furniture.decor.item.StyledWindow0BlockItem;
+import org.lanye.fantasy_furniture.content.furniture.decor.series.StyledWindowSeriesBlock;
+import org.lanye.fantasy_furniture.content.furniture.decor.series.StyledWindowSeriesBlockItem;
+import org.lanye.fantasy_furniture.content.furniture.decor.series.StyledWindowSeriesCatalog;
+import org.lanye.fantasy_furniture.content.furniture.decor.series.StyledWindowSeriesSpec;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.block.BanquetteBlock;
 import org.lanye.fantasy_furniture.content.soap.SoapBarAppearance;
 import org.lanye.fantasy_furniture.content.soap.SoapBarMaterials;
@@ -53,6 +57,9 @@ public final class ModVariantCycler {
         }
         if (block instanceof StyledWindow0Block) {
             return cycleStyledWindow0(level, pos, state, reverse);
+        }
+        if (block instanceof StyledWindowSeriesBlock) {
+            return cycleStyledWindowSeries(level, pos, state, reverse);
         }
         if (block instanceof BanquetteBlock) {
             return cycleBanquette(level, pos, state, reverse);
@@ -99,6 +106,33 @@ public final class ModVariantCycler {
                     Component.translatable(
                             "debug.fantasy_furniture.variant.styled_window_0_shape",
                             StyledWindow0Shapes.geoBasename(nextShape)));
+        }
+        if (item instanceof StyledWindowSeriesBlockItem seriesItem) {
+            StyledWindowSeriesSpec spec = StyledWindowSeriesCatalog.get(seriesItem.seriesId());
+            String nbt = seriesItem.seriesId().shapeNbtKey();
+            int shape = 0;
+            if (stack.hasTag() && stack.getTag().contains(nbt)) {
+                shape = stack.getTag().getInt(nbt);
+            }
+            int nextShape =
+                    reverse
+                            ? prevSeriesShape(spec, shape)
+                            : spec.nextShapeInCycle(shape);
+            if (nextShape == shape) {
+                return Optional.empty();
+            }
+            if (nextShape == 0) {
+                if (stack.hasTag()) {
+                    stack.getTag().remove(nbt);
+                    if (stack.getTag().isEmpty()) {
+                        stack.setTag(null);
+                    }
+                }
+            } else {
+                stack.getOrCreateTag().putInt(nbt, nextShape);
+            }
+            return Optional.of(
+                    Component.literal(spec.geoBasename(nextShape)));
         }
         return Optional.empty();
     }
@@ -222,6 +256,33 @@ public final class ModVariantCycler {
                 Component.translatable(
                         "debug.fantasy_furniture.variant.styled_window_0_shape",
                         StyledWindow0Shapes.geoBasename(next)));
+    }
+
+    private static Optional<Component> cycleStyledWindowSeries(
+            Level level, BlockPos pos, BlockState state, boolean reverse) {
+        StyledWindowSeriesBlock block = (StyledWindowSeriesBlock) state.getBlock();
+        StyledWindowSeriesSpec spec = block.spec();
+        int shape = state.getValue(StyledWindowSeriesBlock.SHAPE);
+        int next = reverse ? prevSeriesShape(spec, shape) : spec.nextShapeInCycle(shape);
+        if (next == shape) {
+            return Optional.empty();
+        }
+        BlockPos master = StyledWindowSeriesBlock.masterPos(state, pos);
+        BlockState masterState = level.getBlockState(master);
+        StyledWindowSeriesBlock.setShapeOnFootprint(level, master, masterState, next);
+        return Optional.of(Component.literal(spec.geoBasename(next)));
+    }
+
+    private static int prevSeriesShape(StyledWindowSeriesSpec spec, int shape) {
+        int probe = shape;
+        for (int i = 0; i < spec.shapeCount(); i++) {
+            int next = spec.nextShapeInCycle(probe);
+            if (next == shape) {
+                return probe;
+            }
+            probe = next;
+        }
+        return 0;
     }
 
     private static Optional<Component> cycleBanquette(

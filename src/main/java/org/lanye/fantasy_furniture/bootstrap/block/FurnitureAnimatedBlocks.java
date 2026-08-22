@@ -282,4 +282,9 @@ public final class FurnitureAnimatedBlocks {
 
     public static final AnimatedBlockEntry<StyledWindow0BlockEntity> STYLED_WINDOW_0 =
             StyledWindow0Registration.entry();
+
+    static {
+        // 触发 1～7 号表驱动注册（DeferredRegister 挂到 ModBlocks）
+        StyledWindowSeriesRegistration.bootstrap();
+    }
 }

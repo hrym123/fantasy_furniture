@@ -18,7 +18,10 @@ import org.lanye.fantasy_furniture.content.sweeper.blockentity.SweeperDockBlockE
 import org.lanye.fantasy_furniture.bootstrap.block.ModBlocks;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.client.model.BanquetteBlockGeoModel;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.client.renderer.BanquetteGeoBlockRenderer;
+import org.lanye.fantasy_furniture.bootstrap.block.StyledWindowSeriesRegistration;
 import org.lanye.fantasy_furniture.content.furniture.decor.client.renderer.StyledWindow0GeoBlockRenderer;
+import org.lanye.fantasy_furniture.content.furniture.decor.series.StyledWindowSeriesGeoBlockRenderer;
+import org.lanye.fantasy_furniture.content.furniture.decor.series.StyledWindowSeriesId;
 import org.lanye.fantasy_furniture.content.soap.client.SoapBarClient;
 import org.lanye.fantasy_furniture.content.soap.client.renderer.BodyCreamGeoBlockRenderer;
 import org.lanye.fantasy_furniture.content.soap.client.renderer.BodyWashGeoBlockRenderer;
@@ -64,6 +67,11 @@ public final class ClientModEvents {
         AnimatedBlockClientRegistration.registerBlockEntityRenderer(
                 ModBlocks.STYLED_WINDOW_0,
                 ReveriePerfRender.wrapBer(ctx -> new StyledWindow0GeoBlockRenderer()));
+        for (StyledWindowSeriesId seriesId : StyledWindowSeriesId.values()) {
+            AnimatedBlockClientRegistration.registerBlockEntityRenderer(
+                    StyledWindowSeriesRegistration.entry(seriesId),
+                    ReveriePerfRender.wrapBer(ctx -> new StyledWindowSeriesGeoBlockRenderer()));
+        }
         AnimatedBlockClientRegistration.registerBlockEntityRenderer(
                 ModBlocks.SOAP_BAR, ReveriePerfRender.wrapBer(SoapBarClient.blockRendererProvider()));
         AnimatedBlockClientRegistration.registerBlockEntityRenderer(

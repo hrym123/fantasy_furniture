@@ -1,0 +1,436 @@
+{
+  "variants": {
+    "facing=north,shape=0,part_u=0,part_v=0": {
+      "model": "fantasy_furniture:block/styled_window_3"
+    },
+    "facing=north,shape=0,part_u=0,part_v=1": {
+      "model": "fantasy_furniture:block/styled_window_multiblock_part"
+    },
+    "facing=north,shape=0,part_u=0,part_v=2": {
+      "model": "fantasy_furniture:block/styled_window_multiblock_part"
+    },
+    "facing=north,shape=0,part_u=1,part_v=0": {
+      "model": "fantasy_furniture:block/styled_window_multiblock_part"
+    },
+    "facing=north,shape=0,part_u=1,part_v=1": {
+      "model": "fantasy_furniture:block/styled_window_multiblock_part"
+    },
+    "facing=north,shape=0,part_u=1,part_v=2": {
+      "model": "fantasy_furniture:block/styled_window_multiblock_part"
+    },
+    "facing=north,shape=0,part_u=2,part_v=0": {
+      "model": "fantasy_furniture:block/styled_window_multiblock_part"
+    },
+    "facing=north,shape=0,part_u=2,part_v=1": {
+      "model": "fantasy_furniture:block/styled_window_multiblock_part"
+    },
+    "facing=north,shape=0,part_u=2,part_v=2": {
+      "model": "fantasy_furniture:block/styled_window_multiblock_part"
+    },
+    "facing=north,shape=1,part_u=0,part_v=0": {
+      "model": "fantasy_furniture:block/styled_window_3"
+    },
+    "facing=north,shape=1,part_u=0,part_v=1": {
+      "model": "fantasy_furniture:block/styled_window_multiblock_part"
+    },
+    "facing=north,shape=1,part_u=0,part_v=2": {
+      "model": "fantasy_furniture:block/styled_window_multiblock_part"
+    },
+    "facing=north,shape=1,part_u=1,part_v=0": {
+      "model": "fantasy_furniture:block/styled_window_multiblock_part"
+    },
+    "facing=north,shape=1,part_u=1,part_v=1": {
+      "model": "fantasy_furniture:block/styled_window_multiblock_part"
+    },
+    "facing=north,shape=1,part_u=1,part_v=2": {
+      "model": "fantasy_furniture:block/styled_window_multiblock_part"
+    },
+    "facing=north,shape=1,part_u=2,part_v=0": {
+      "model": "fantasy_furniture:block/styled_window_multiblock_part"
+    },
+    "facing=north,shape=1,part_u=2,part_v=1": {
+      "model": "fantasy_furniture:block/styled_window_multiblock_part"
+    },
+    "facing=north,shape=1,part_u=2,part_v=2": {
+      "model": "fantasy_furniture:block/styled_window_multiblock_part"
+    },
+    "facing=north,shape=2,part_u=0,part_v=0": {
+      "model": "fantasy_furniture:block/styled_window_3"
+    },
+    "facing=north,shape=2,part_u=0,part_v=1": {
+      "model": "fantasy_furniture:block/styled_window_multiblock_part"
+    },
+    "facing=north,shape=2,part_u=0,part_v=2": {
+      "model": "fantasy_furniture:block/styled_window_multiblock_part"
+    },
+    "facing=north,shape=2,part_u=1,part_v=0": {
+      "model": "fantasy_furniture:block/styled_window_multiblock_part"
+    },
+    "facing=north,shape=2,part_u=1,part_v=1": {
+      "model": "fantasy_furniture:block/styled_window_multiblock_part"
+    },
+    "facing=north,shape=2,part_u=1,part_v=2": {
+      "model": "fantasy_furniture:block/styled_window_multiblock_part"
+    },
+    "facing=north,shape=2,part_u=2,part_v=0": {
+      "model": "fantasy_furniture:block/styled_window_multiblock_part"
+    },
+    "facing=north,shape=2,part_u=2,part_v=1": {
+      "model": "fantasy_furniture:block/styled_window_multiblock_part"
+    },
+    "facing=north,shape=2,part_u=2,part_v=2": {
+      "model": "fantasy_furniture:block/styled_window_multiblock_part"
+    },
+    "facing=north,shape=3,part_u=0,part_v=0": {
+      "model": "fantasy_furniture:block/styled_window_3"
+    },
+    "facing=north,shape=3,part_u=0,part_v=1": {
+      "model": "fantasy_furniture:block/styled_window_multiblock_part"
+    },
+    "facing=north,shape=3,part_u=0,part_v=2": {
+      "model": "fantasy_furniture:block/styled_window_multiblock_part"
+    },
+    "facing=north,shape=3,part_u=1,part_v=0": {
+      "model": "fantasy_furniture:block/styled_window_multiblock_part"
+    },
+    "facing=north,shape=3,part_u=1,part_v=1": {
+      "model": "fantasy_furniture:block/styled_window_multiblock_part"
+    },
+    "facing=north,shape=3,part_u=1,part_v=2": {
+      "model": "fantasy_furniture:block/styled_window_multiblock_part"
+    },
+    "facing=north,shape=3,part_u=2,part_v=0": {
+      "model": "fantasy_furniture:block/styled_window_multiblock_part"
+    },
+    "facing=north,shape=3,part_u=2,part_v=1": {
+      "model": "fantasy_furniture:block/styled_window_multiblock_part"
+    },
+    "facing=north,shape=3,part_u=2,part_v=2": {
+      "model": "fantasy_furniture:block/styled_window_multiblock_part"
+    },
+    "facing=south,shape=0,part_u=0,part_v=0": {
+      "model": "fantasy_furniture:block/styled_window_3"
+    },
+    "facing=south,shape=0,part_u=0,part_v=1": {
+      "model": "fantasy_furniture:block/styled_window_multiblock_part"
+    },
+    "facing=south,shape=0,part_u=0,part_v=2": {
+      "model": "fantasy_furniture:block/styled_window_multiblock_part"
+    },
+    "facing=south,shape=0,part_u=1,part_v=0": {
+      "model": "fantasy_furniture:block/styled_window_multiblock_part"
+    },
+    "facing=south,shape=0,part_u=1,part_v=1": {
+      "model": "fantasy_furniture:block/styled_window_multiblock_part"
+    },
+    "facing=south,shape=0,part_u=1,part_v=2": {
+      "model": "fantasy_furniture:block/styled_window_multiblock_part"
+    },
+    "facing=south,shape=0,part_u=2,part_v=0": {
+      "model": "fantasy_furniture:block/styled_window_multiblock_part"
+    },
+    "facing=south,shape=0,part_u=2,part_v=1": {
+      "model": "fantasy_furniture:block/styled_window_multiblock_part"
+    },
+    "facing=south,shape=0,part_u=2,part_v=2": {
+      "model": "fantasy_furniture:block/styled_window_multiblock_part"
+    },
+    "facing=south,shape=1,part_u=0,part_v=0": {
+      "model": "fantasy_furniture:block/styled_window_3"
+    },
+    "facing=south,shape=1,part_u=0,part_v=1": {
+      "model": "fantasy_furniture:block/styled_window_multiblock_part"
+    },
+    "facing=south,shape=1,part_u=0,part_v=2": {
+      "model": "fantasy_furniture:block/styled_window_multiblock_part"
+    },
+    "facing=south,shape=1,part_u=1,part_v=0": {
+      "model": "fantasy_furniture:block/styled_window_multiblock_part"
+    },
+    "facing=south,shape=1,part_u=1,part_v=1": {
+      "model": "fantasy_furniture:block/styled_window_multiblock_part"
+    },
+    "facing=south,shape=1,part_u=1,part_v=2": {
+      "model": "fantasy_furniture:block/styled_window_multiblock_part"
+    },
+    "facing=south,shape=1,part_u=2,part_v=0": {
+      "model": "fantasy_furniture:block/styled_window_multiblock_part"
+    },
+    "facing=south,shape=1,part_u=2,part_v=1": {
+      "model": "fantasy_furniture:block/styled_window_multiblock_part"
+    },
+    "facing=south,shape=1,part_u=2,part_v=2": {
+      "model": "fantasy_furniture:block/styled_window_multiblock_part"
+    },
+    "facing=south,shape=2,part_u=0,part_v=0": {
+      "model": "fantasy_furniture:block/styled_window_3"
+    },
+    "facing=south,shape=2,part_u=0,part_v=1": {
+      "model": "fantasy_furniture:block/styled_window_multiblock_part"
+    },
+    "facing=south,shape=2,part_u=0,part_v=2": {
+      "model": "fantasy_furniture:block/styled_window_multiblock_part"
+    },
+    "facing=south,shape=2,part_u=1,part_v=0": {
+      "model": "fantasy_furniture:block/styled_window_multiblock_part"
+    },
+    "facing=south,shape=2,part_u=1,part_v=1": {
+      "model": "fantasy_furniture:block/styled_window_multiblock_part"
+    },
+    "facing=south,shape=2,part_u=1,part_v=2": {
+      "model": "fantasy_furniture:block/styled_window_multiblock_part"
+    },
+    "facing=south,shape=2,part_u=2,part_v=0": {
+      "model": "fantasy_furniture:block/styled_window_multiblock_part"
+    },
+    "facing=south,shape=2,part_u=2,part_v=1": {
+      "model": "fantasy_furniture:block/styled_window_multiblock_part"
+    },
+    "facing=south,shape=2,part_u=2,part_v=2": {
+      "model": "fantasy_furniture:block/styled_window_multiblock_part"
+    },
+    "facing=south,shape=3,part_u=0,part_v=0": {
+      "model": "fantasy_furniture:block/styled_window_3"
+    },
+    "facing=south,shape=3,part_u=0,part_v=1": {
+      "model": "fantasy_furniture:block/styled_window_multiblock_part"
+    },
+    "facing=south,shape=3,part_u=0,part_v=2": {
+      "model": "fantasy_furniture:block/styled_window_multiblock_part"
+    },
+    "facing=south,shape=3,part_u=1,part_v=0": {
+      "model": "fantasy_furniture:block/styled_window_multiblock_part"
+    },
+    "facing=south,shape=3,part_u=1,part_v=1": {
+      "model": "fantasy_furniture:block/styled_window_multiblock_part"
+    },
+    "facing=south,shape=3,part_u=1,part_v=2": {
+      "model": "fantasy_furniture:block/styled_window_multiblock_part"
+    },
+    "facing=south,shape=3,part_u=2,part_v=0": {
+      "model": "fantasy_furniture:block/styled_window_multiblock_part"
+    },
+    "facing=south,shape=3,part_u=2,part_v=1": {
+      "model": "fantasy_furniture:block/styled_window_multiblock_part"
+    },
+    "facing=south,shape=3,part_u=2,part_v=2": {
+      "model": "fantasy_furniture:block/styled_window_multiblock_part"
+    },
+    "facing=east,shape=0,part_u=0,part_v=0": {
+      "model": "fantasy_furniture:block/styled_window_3"
+    },
+    "facing=east,shape=0,part_u=0,part_v=1": {
+      "model": "fantasy_furniture:block/styled_window_multiblock_part"
+    },
+    "facing=east,shape=0,part_u=0,part_v=2": {
+      "model": "fantasy_furniture:block/styled_window_multiblock_part"
+    },
+    "facing=east,shape=0,part_u=1,part_v=0": {
+      "model": "fantasy_furniture:block/styled_window_multiblock_part"
+    },
+    "facing=east,shape=0,part_u=1,part_v=1": {
+      "model": "fantasy_furniture:block/styled_window_multiblock_part"
+    },
+    "facing=east,shape=0,part_u=1,part_v=2": {
+      "model": "fantasy_furniture:block/styled_window_multiblock_part"
+    },
+    "facing=east,shape=0,part_u=2,part_v=0": {
+      "model": "fantasy_furniture:block/styled_window_multiblock_part"
+    },
+    "facing=east,shape=0,part_u=2,part_v=1": {
+      "model": "fantasy_furniture:block/styled_window_multiblock_part"
+    },
+    "facing=east,shape=0,part_u=2,part_v=2": {
+      "model": "fantasy_furniture:block/styled_window_multiblock_part"
+    },
+    "facing=east,shape=1,part_u=0,part_v=0": {
+      "model": "fantasy_furniture:block/styled_window_3"
+    },
+    "facing=east,shape=1,part_u=0,part_v=1": {
+      "model": "fantasy_furniture:block/styled_window_multiblock_part"
+    },
+    "facing=east,shape=1,part_u=0,part_v=2": {
+      "model": "fantasy_furniture:block/styled_window_multiblock_part"
+    },
+    "facing=east,shape=1,part_u=1,part_v=0": {
+      "model": "fantasy_furniture:block/styled_window_multiblock_part"
+    },
+    "facing=east,shape=1,part_u=1,part_v=1": {
+      "model": "fantasy_furniture:block/styled_window_multiblock_part"
+    },
+    "facing=east,shape=1,part_u=1,part_v=2": {
+      "model": "fantasy_furniture:block/styled_window_multiblock_part"
+    },
+    "facing=east,shape=1,part_u=2,part_v=0": {
+      "model": "fantasy_furniture:block/styled_window_multiblock_part"
+    },
+    "facing=east,shape=1,part_u=2,part_v=1": {
+      "model": "fantasy_furniture:block/styled_window_multiblock_part"
+    },
+    "facing=east,shape=1,part_u=2,part_v=2": {
+      "model": "fantasy_furniture:block/styled_window_multiblock_part"
+    },
+    "facing=east,shape=2,part_u=0,part_v=0": {
+      "model": "fantasy_furniture:block/styled_window_3"
+    },
+    "facing=east,shape=2,part_u=0,part_v=1": {
+      "model": "fantasy_furniture:block/styled_window_multiblock_part"
+    },
+    "facing=east,shape=2,part_u=0,part_v=2": {
+      "model": "fantasy_furniture:block/styled_window_multiblock_part"
+    },
+    "facing=east,shape=2,part_u=1,part_v=0": {
+      "model": "fantasy_furniture:block/styled_window_multiblock_part"
+    },
+    "facing=east,shape=2,part_u=1,part_v=1": {
+      "model": "fantasy_furniture:block/styled_window_multiblock_part"
+    },
+    "facing=east,shape=2,part_u=1,part_v=2": {
+      "model": "fantasy_furniture:block/styled_window_multiblock_part"
+    },
+    "facing=east,shape=2,part_u=2,part_v=0": {
+      "model": "fantasy_furniture:block/styled_window_multiblock_part"
+    },
+    "facing=east,shape=2,part_u=2,part_v=1": {
+      "model": "fantasy_furniture:block/styled_window_multiblock_part"
+    },
+    "facing=east,shape=2,part_u=2,part_v=2": {
+      "model": "fantasy_furniture:block/styled_window_multiblock_part"
+    },
+    "facing=east,shape=3,part_u=0,part_v=0": {
+      "model": "fantasy_furniture:block/styled_window_3"
+    },
+    "facing=east,shape=3,part_u=0,part_v=1": {
+      "model": "fantasy_furniture:block/styled_window_multiblock_part"
+    },
+    "facing=east,shape=3,part_u=0,part_v=2": {
+      "model": "fantasy_furniture:block/styled_window_multiblock_part"
+    },
+    "facing=east,shape=3,part_u=1,part_v=0": {
+      "model": "fantasy_furniture:block/styled_window_multiblock_part"
+    },
+    "facing=east,shape=3,part_u=1,part_v=1": {
+      "model": "fantasy_furniture:block/styled_window_multiblock_part"
+    },
+    "facing=east,shape=3,part_u=1,part_v=2": {
+      "model": "fantasy_furniture:block/styled_window_multiblock_part"
+    },
+    "facing=east,shape=3,part_u=2,part_v=0": {
+      "model": "fantasy_furniture:block/styled_window_multiblock_part"
+    },
+    "facing=east,shape=3,part_u=2,part_v=1": {
+      "model": "fantasy_furniture:block/styled_window_multiblock_part"
+    },
+    "facing=east,shape=3,part_u=2,part_v=2": {
+      "model": "fantasy_furniture:block/styled_window_multiblock_part"
+    },
+    "facing=west,shape=0,part_u=0,part_v=0": {
+      "model": "fantasy_furniture:block/styled_window_3"
+    },
+    "facing=west,shape=0,part_u=0,part_v=1": {
+      "model": "fantasy_furniture:block/styled_window_multiblock_part"
+    },
+    "facing=west,shape=0,part_u=0,part_v=2": {
+      "model": "fantasy_furniture:block/styled_window_multiblock_part"
+    },
+    "facing=west,shape=0,part_u=1,part_v=0": {
+      "model": "fantasy_furniture:block/styled_window_multiblock_part"
+    },
+    "facing=west,shape=0,part_u=1,part_v=1": {
+      "model": "fantasy_furniture:block/styled_window_multiblock_part"
+    },
+    "facing=west,shape=0,part_u=1,part_v=2": {
+      "model": "fantasy_furniture:block/styled_window_multiblock_part"
+    },
+    "facing=west,shape=0,part_u=2,part_v=0": {
+      "model": "fantasy_furniture:block/styled_window_multiblock_part"
+    },
+    "facing=west,shape=0,part_u=2,part_v=1": {
+      "model": "fantasy_furniture:block/styled_window_multiblock_part"
+    },
+    "facing=west,shape=0,part_u=2,part_v=2": {
+      "model": "fantasy_furniture:block/styled_window_multiblock_part"
+    },
+    "facing=west,shape=1,part_u=0,part_v=0": {
+      "model": "fantasy_furniture:block/styled_window_3"
+    },
+    "facing=west,shape=1,part_u=0,part_v=1": {
+      "model": "fantasy_furniture:block/styled_window_multiblock_part"
+    },
+    "facing=west,shape=1,part_u=0,part_v=2": {
+      "model": "fantasy_furniture:block/styled_window_multiblock_part"
+    },
+    "facing=west,shape=1,part_u=1,part_v=0": {
+      "model": "fantasy_furniture:block/styled_window_multiblock_part"
+    },
+    "facing=west,shape=1,part_u=1,part_v=1": {
+      "model": "fantasy_furniture:block/styled_window_multiblock_part"
+    },
+    "facing=west,shape=1,part_u=1,part_v=2": {
+      "model": "fantasy_furniture:block/styled_window_multiblock_part"
+    },
+    "facing=west,shape=1,part_u=2,part_v=0": {
+      "model": "fantasy_furniture:block/styled_window_multiblock_part"
+    },
+    "facing=west,shape=1,part_u=2,part_v=1": {
+      "model": "fantasy_furniture:block/styled_window_multiblock_part"
+    },
+    "facing=west,shape=1,part_u=2,part_v=2": {
+      "model": "fantasy_furniture:block/styled_window_multiblock_part"
+    },
+    "facing=west,shape=2,part_u=0,part_v=0": {
+      "model": "fantasy_furniture:block/styled_window_3"
+    },
+    "facing=west,shape=2,part_u=0,part_v=1": {
+      "model": "fantasy_furniture:block/styled_window_multiblock_part"
+    },
+    "facing=west,shape=2,part_u=0,part_v=2": {
+      "model": "fantasy_furniture:block/styled_window_multiblock_part"
+    },
+    "facing=west,shape=2,part_u=1,part_v=0": {
+      "model": "fantasy_furniture:block/styled_window_multiblock_part"
+    },
+    "facing=west,shape=2,part_u=1,part_v=1": {
+      "model": "fantasy_furniture:block/styled_window_multiblock_part"
+    },
+    "facing=west,shape=2,part_u=1,part_v=2": {
+      "model": "fantasy_furniture:block/styled_window_multiblock_part"
+    },
+    "facing=west,shape=2,part_u=2,part_v=0": {
+      "model": "fantasy_furniture:block/styled_window_multiblock_part"
+    },
+    "facing=west,shape=2,part_u=2,part_v=1": {
+      "model": "fantasy_furniture:block/styled_window_multiblock_part"
+    },
+    "facing=west,shape=2,part_u=2,part_v=2": {
+      "model": "fantasy_furniture:block/styled_window_multiblock_part"
+    },
+    "facing=west,shape=3,part_u=0,part_v=0": {
+      "model": "fantasy_furniture:block/styled_window_3"
+    },
+    "facing=west,shape=3,part_u=0,part_v=1": {
+      "model": "fantasy_furniture:block/styled_window_multiblock_part"
+    },
+    "facing=west,shape=3,part_u=0,part_v=2": {
+      "model": "fantasy_furniture:block/styled_window_multiblock_part"
+    },
+    "facing=west,shape=3,part_u=1,part_v=0": {
+      "model": "fantasy_furniture:block/styled_window_multiblock_part"
+    },
+    "facing=west,shape=3,part_u=1,part_v=1": {
+      "model": "fantasy_furniture:block/styled_window_multiblock_part"
+    },
+    "facing=west,shape=3,part_u=1,part_v=2": {
+      "model": "fantasy_furniture:block/styled_window_multiblock_part"
+    },
+    "facing=west,shape=3,part_u=2,part_v=0": {
+      "model": "fantasy_furniture:block/styled_window_multiblock_part"
+    },
+    "facing=west,shape=3,part_u=2,part_v=1": {
+      "model": "fantasy_furniture:block/styled_window_multiblock_part"
+    },
+    "facing=west,shape=3,part_u=2,part_v=2": {
+      "model": "fantasy_furniture:block/styled_window_multiblock_part"
+    }
+  }
+}

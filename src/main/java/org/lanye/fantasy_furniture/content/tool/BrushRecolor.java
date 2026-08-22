@@ -14,6 +14,7 @@ import org.lanye.fantasy_furniture.bootstrap.block.WallpaperBlocks;
 import org.lanye.fantasy_furniture.bootstrap.tag.ModTags;
 import org.lanye.fantasy_furniture.content.furniture.common.state.StyledWindow0MaterialVariant;
 import org.lanye.fantasy_furniture.content.furniture.decor.block.StyledWindow0Block;
+import org.lanye.fantasy_furniture.content.furniture.decor.series.StyledWindowSeriesBlock;
 import org.lanye.fantasy_furniture.content.soap.SoapBarMaterials;
 import org.lanye.fantasy_furniture.content.soap.SoapPaperBagMaterials;
 import org.lanye.fantasy_furniture.content.soap.BodyCreamMaterials;
@@ -63,6 +64,9 @@ public final class BrushRecolor {
                             .defaultBlockState()
                             .setValue(StyledWindow0Block.FACING, state.getValue(StyledWindow0Block.FACING))
                             .setValue(StyledWindow0Block.SHAPE, state.getValue(StyledWindow0Block.SHAPE)));
+        }
+        if (state.getBlock() instanceof StyledWindowSeriesBlock) {
+            return Optional.of(StyledWindowSeriesBlock.nextColorState(state));
         }
         for (CeramicTileBlocks.TileVariant variant : CeramicTileBlocks.TileVariant.values()) {
             if (state.is(variant.entry().block().get())) {
@@ -126,11 +130,19 @@ public final class BrushRecolor {
 
     /** 服务端：写入下一档颜色。 */
     public static boolean apply(Level level, BlockPos pos, BlockState state) {
+        if (state.getBlock() instanceof StyledWindowSeriesBlock) {
+            return StyledWindowSeriesBlock.applyRecolorFootprint(level, pos, state);
+        }
         Optional<BlockState> next = nextColorState(state);
         if (next.isEmpty()) {
             return false;
         }
-        level.setBlock(pos, next.get(), Block.UPDATE_ALL_IMMEDIATE);
+        BlockState nextState = next.get();
+        if (state.getBlock() instanceof StyledWindow0Block) {
+            level.setBlock(pos, nextState, Block.UPDATE_ALL_IMMEDIATE);
+            return true;
+        }
+        level.setBlock(pos, nextState, Block.UPDATE_ALL_IMMEDIATE);
         BlockEntity be = level.getBlockEntity(pos);
         if (be instanceof SoapPaperBagBlockEntity stack) {
             stack.replaceTopMaterial(next.get().getValue(SoapPaperBagBlock.MATERIAL));

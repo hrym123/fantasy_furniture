@@ -1,0 +1,6 @@
+{
+  "parent": "block/block",
+  "textures": {
+    "particle": "fantasy_furniture:block/styled_window_3_0_brown"
+  }
+}
