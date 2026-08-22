@@ -63,6 +63,13 @@ public final class StyledWindowSeriesBlockItem extends GeolibBlockItem {
         WallPlaneFootprint fp = spec.footprint();
         BlockPos origin = fp.originFromClick(facing, context.getClickedPos());
         BlockPlaceContext atOrigin = BlockPlaceContext.at(context, origin, context.getClickedFace());
-        return super.placeBlock(atOrigin, state);
+        if (!super.placeBlock(atOrigin, state)) {
+            return false;
+        }
+        if (!fp.isSingleCell()) {
+            StyledWindowSeriesBlock.placeFootprintSiblings(
+                    context.getLevel(), origin, context.getLevel().getBlockState(origin));
+        }
+        return true;
     }
 }

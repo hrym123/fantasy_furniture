@@ -142,19 +142,83 @@ public class StyledWindowSeriesBlock
         if (!isMaster(state)) {
             return;
         }
-        Direction facing = state.getValue(FACING);
-        WallPlaneFootprint fp = spec().footprint();
-        int shape = state.getValue(SHAPE);
+        BlockPos origin = findMasterOrigin(level, pos, state);
+        if (origin == null) {
+            return;
+        }
+        placeFootprintSiblings(level, origin, level.getBlockState(origin));
+    }
+
+    @Override
+    public void onPlace(
+            BlockState state, Level level, BlockPos pos, BlockState oldState, boolean movedByPiston) {
+        super.onPlace(state, level, pos, oldState, movedByPiston);
+        if (!movedByPiston && isMaster(state)) {
+            placeFootprintSiblings(level, pos, state);
+        }
+    }
+
+    /**
+     * 主格落盘后铺齐足迹副格（可重复调用）。
+     *
+     * <p>{@link StyledWindowSeriesBlockItem} 在 {@code placeBlock} 写到 origin 后也会调用，不依赖
+     * {@link #setPlacedBy} 的坐标。
+     */
+    public static void placeFootprintSiblings(Level level, BlockPos origin, BlockState masterState) {
+        if (!(masterState.getBlock() instanceof StyledWindowSeriesBlock block) || !isMaster(masterState)) {
+            return;
+        }
+        WallPlaneFootprint fp = block.spec().footprint();
+        if (fp.isSingleCell()) {
+            return;
+        }
+        Direction facing = masterState.getValue(FACING);
+        int shape = masterState.getValue(SHAPE);
+        BlockState template = masterState;
         WallPlanePlacement.placeSiblings(
                 level,
-                pos,
+                origin,
                 facing,
                 fp,
-                state,
+                masterState,
                 (u, v) ->
-                        state.setValue(PART_U, u)
-                                .setValue(PART_V, v)
-                                .setValue(SHAPE, shape));
+                        template.setValue(PART_U, u).setValue(PART_V, v).setValue(SHAPE, shape));
+    }
+
+    /**
+     * {@link net.minecraft.world.item.BlockItem} 可能对「点击格」调用 {@link #setPlacedBy}，而主格在
+     * {@code originFromClick}；在足迹各可能 part 上反查真实主格。
+     */
+    @Nullable
+    static BlockPos findMasterOrigin(Level level, BlockPos hint, BlockState masterTemplate) {
+        if (!(masterTemplate.getBlock() instanceof StyledWindowSeriesBlock template) || !isMaster(masterTemplate)) {
+            return null;
+        }
+        Direction facing = masterTemplate.getValue(FACING);
+        WallPlaneFootprint fp = template.spec().footprint();
+        BlockState atHint = level.getBlockState(hint);
+        if (atHint.getBlock() instanceof StyledWindowSeriesBlock && isMaster(atHint) && sameWindow(atHint, masterTemplate)) {
+            return hint;
+        }
+        BlockPos fromClick = fp.originFromClick(facing, hint);
+        BlockState atOrigin = level.getBlockState(fromClick);
+        if (atOrigin.getBlock() instanceof StyledWindowSeriesBlock
+                && isMaster(atOrigin)
+                && sameWindow(atOrigin, masterTemplate)) {
+            return fromClick;
+        }
+        for (int v = 0; v < fp.height(); v++) {
+            for (int u = 0; u < fp.width(); u++) {
+                BlockPos candidate = fp.masterFromPart(hint, facing, u, v);
+                BlockState s = level.getBlockState(candidate);
+                if (s.getBlock() instanceof StyledWindowSeriesBlock
+                        && isMaster(s)
+                        && sameWindow(s, masterTemplate)) {
+                    return candidate;
+                }
+            }
+        }
+        return null;
     }
 
     @Override
@@ -174,7 +238,7 @@ public class StyledWindowSeriesBlock
         return sameWindow(masterState, state) && isMaster(masterState);
     }
 
-    private boolean sameWindow(BlockState a, BlockState b) {
+    static boolean sameWindow(BlockState a, BlockState b) {
         return a.getBlock() instanceof StyledWindowSeriesBlock ba
                 && b.getBlock() instanceof StyledWindowSeriesBlock bb
                 && ba.seriesId == bb.seriesId
@@ -387,7 +451,7 @@ public class StyledWindowSeriesBlock
                     BlockPos cell = fp.cellPos(masterPos, facing, u, v);
                     BlockState cur = level.getBlockState(cell);
                     if (cur.getBlock() instanceof StyledWindowSeriesBlock
-                            && block.sameWindow(cur, masterState)) {
+                            && sameWindow(cur, masterState)) {
                         level.setBlock(
                                 cell,
                                 cur.setValue(SHAPE, shape),
