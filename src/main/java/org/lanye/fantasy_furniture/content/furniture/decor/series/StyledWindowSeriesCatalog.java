@@ -10,6 +10,7 @@ import org.lanye.reverie_core.geolib.multiblock.WallPlaneFootprint;
  * 1～7 号窗户规格表。色表跟 moonstarfish 源槽（七色；7 号三色）。
  *
  * <p>占地为墙面宽×高（深 1）；整模北向碰撞在足迹坐标系（底左原点），含 geoOffset 平移。
+ * 玩法碰撞为足迹外接薄盒（按格切片），非 geo cube 并集（并集切片会碎裂且留空）。
  */
 public final class StyledWindowSeriesCatalog {
 
@@ -161,7 +162,7 @@ public final class StyledWindowSeriesCatalog {
         return out;
     }
 
-    /** 足迹空间：已含 geoOffset；来自 raw AABB。 */
+    /** 足迹空间：已含 geoOffset；单 AABB 供 {@link WallPlanePlacement#sliceNorthToPart} 切片。 */
     private static VoxelShape[] shapes_1() {
         return new VoxelShape[] {
             Block.box(0.0D, 0.0D, 0.0D, 16.0D, 32.0D, 2.0D),
@@ -203,7 +204,7 @@ public final class StyledWindowSeriesCatalog {
         return new VoxelShape[] {s, s, s, s};
     }
 
-    /** raw (−16,0,6)-(32,32,10) + offsetU=1 → (0,0,6)-(48,32,10) */
+    /** raw (16,0,6)-(32,32,10) + offsetU=1 → (0,0,6)-(48,32,10) */
     private static VoxelShape[] shapes_5() {
         return new VoxelShape[] {
             Block.box(0.0D, 0.0D, 6.0D, 48.0D, 32.0D, 10.0D),
@@ -217,7 +218,7 @@ public final class StyledWindowSeriesCatalog {
         return shapes_5();
     }
 
-    /** raw (−16,−16,7)-(32,32,9) + offset (1,1) → (0,0,7)-(48,48,9) */
+    /** raw (16,16,7)-(32,32,9) + offset (1,1) → (0,0,7)-(48,48,9) */
     private static VoxelShape[] shapes_7() {
         return new VoxelShape[] {Block.box(0.0D, 0.0D, 7.0D, 48.0D, 48.0D, 9.0D)};
     }
