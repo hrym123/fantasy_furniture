@@ -163,12 +163,14 @@ public final class StyledWindowSeriesCatalog {
     }
 
     /** 足迹空间：已含 geoOffset；单 AABB 供 {@link WallPlanePlacement#sliceNorthToPart} 切片。 */
+    /** 开档外扩跟 2 号窗一致：加高 Y，不把 Z 拉到 5～9（贴墙行走会像整片厚挡板）。 */
     private static VoxelShape[] shapes_1() {
+        VoxelShape closed = Block.box(0.0D, 0.0D, 0.0D, 16.0D, 32.0D, 2.2D);
         return new VoxelShape[] {
-            Block.box(0.0D, 0.0D, 0.0D, 16.0D, 32.0D, 2.0D),
-            Block.box(0.0D, 0.0D, 0.0D, 16.0D, 32.0D, 2.0D),
-            Block.box(0.0D, 0.0D, 0.0D, 16.0D, 32.0D, 5.15D),
-            Block.box(0.0D, 0.0D, 0.0D, 16.0D, 32.0D, 9.18D)
+            closed,
+            closed,
+            Block.box(0.0D, 0.0D, 0.0D, 16.0D, 32.22D, 2.2D),
+            closed
         };
     }
 
