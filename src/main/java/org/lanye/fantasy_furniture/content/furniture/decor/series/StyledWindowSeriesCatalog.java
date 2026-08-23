@@ -10,9 +10,15 @@ import org.lanye.reverie_core.geolib.multiblock.WallPlaneFootprint;
  * 1～7 号窗户规格表。色表跟 moonstarfish 源槽（七色；7 号三色）。
  *
  * <p>占地为墙面宽×高（深 1）；整模北向碰撞在足迹坐标系（底左原点），含 geoOffset 平移。
- * 玩法碰撞为足迹外接薄盒（按格切片），非 geo cube 并集（并集切片会碎裂且留空）。
+ * 玩法碰撞为足迹外接薄盒（按格切片）：1～4 号 Z 跟 2 号窗（0～2.0）；5～7 号保留 geo 内缩 AABB。
  */
 public final class StyledWindowSeriesCatalog {
+
+    /** 玩法碰撞 Z 上界（跟 2 号窗薄片一致，单位：1/16 格）。 */
+    private static final double WINDOW_COLLISION_Z = 2.0D;
+
+    /** 开档 22.5° 造型仅外扩 Y，不加厚 Z。 */
+    private static final double WINDOW_OPEN_SHAPE_Y_EXTRA = 0.22D;
 
     private static final String[] COLORS_7 = {
         "brown", "dark_green", "white", "black", "light_blue", "light_green", "light_yellow"
@@ -162,16 +168,20 @@ public final class StyledWindowSeriesCatalog {
         return out;
     }
 
-    /** 足迹空间：已含 geoOffset；单 AABB 供 {@link WallPlanePlacement#sliceNorthToPart} 切片。 */
-    /** 开档外扩跟 2 号窗一致：加高 Y，不把 Z 拉到 5～9（贴墙行走会像整片厚挡板）。 */
+    /** 足迹空间单 AABB；供 {@link org.lanye.reverie_core.geolib.multiblock.WallPlanePlacement#sliceNorthToPart} 切片。 */
+    private static VoxelShape windowCollisionBox(double width, double height, double heightMax) {
+        return Block.box(0.0D, 0.0D, 0.0D, width, heightMax, WINDOW_COLLISION_Z);
+    }
+
+    /** 四档造型：跟 2 号窗 — 开档 2 只加高 Y，Z 恒为 {@link #WINDOW_COLLISION_Z}。 */
+    private static VoxelShape[] windowShapesLikeW2(double width, double height) {
+        VoxelShape closed = windowCollisionBox(width, height, height);
+        VoxelShape open22p5 = windowCollisionBox(width, height, height + WINDOW_OPEN_SHAPE_Y_EXTRA);
+        return new VoxelShape[] {closed, closed, open22p5, closed};
+    }
+
     private static VoxelShape[] shapes_1() {
-        VoxelShape closed = Block.box(0.0D, 0.0D, 0.0D, 16.0D, 32.0D, 2.2D);
-        return new VoxelShape[] {
-            closed,
-            closed,
-            Block.box(0.0D, 0.0D, 0.0D, 16.0D, 32.22D, 2.2D),
-            closed
-        };
+        return windowShapesLikeW2(16.0D, 32.0D);
     }
 
     private static VoxelShape[] shapes_1_5() {
@@ -179,31 +189,19 @@ public final class StyledWindowSeriesCatalog {
     }
 
     private static VoxelShape[] shapes_2() {
-        return new VoxelShape[] {
-            Block.box(0.0D, 0.0D, 0.0D, 32.0D, 32.0D, 2.0D),
-            Block.box(0.0D, 0.0D, 0.0D, 32.0D, 32.0D, 2.0D),
-            Block.box(0.0D, 0.0D, 0.0D, 32.0D, 32.22D, 2.0D),
-            Block.box(0.0D, 0.0D, 0.0D, 32.0D, 32.0D, 2.0D)
-        };
+        return windowShapesLikeW2(32.0D, 32.0D);
     }
 
     private static VoxelShape[] shapes_2_5() {
-        return new VoxelShape[] {
-            Block.box(0.0D, 0.0D, 0.0D, 32.0D, 32.0D, 2.0D),
-            Block.box(0.0D, 0.0D, 0.0D, 32.0D, 32.0D, 2.0D),
-            Block.box(0.0D, 0.0D, 0.0D, 32.0D, 32.0D, 2.0D),
-            Block.box(0.0D, 0.0D, 0.0D, 32.0D, 32.0D, 2.0D)
-        };
+        return windowShapesLikeW2(32.0D, 32.0D);
     }
 
     private static VoxelShape[] shapes_3() {
-        VoxelShape s = Block.box(0.0D, 0.0D, 0.0D, 16.0D, 32.0D, 2.2D);
-        return new VoxelShape[] {s, s, s, s};
+        return windowShapesLikeW2(16.0D, 32.0D);
     }
 
     private static VoxelShape[] shapes_4() {
-        VoxelShape s = Block.box(0.0D, 0.0D, 0.0D, 32.0D, 32.0D, 2.2D);
-        return new VoxelShape[] {s, s, s, s};
+        return windowShapesLikeW2(32.0D, 32.0D);
     }
 
     /** raw (16,0,6)-(32,32,10) + offsetU=1 → (0,0,6)-(48,32,10) */
