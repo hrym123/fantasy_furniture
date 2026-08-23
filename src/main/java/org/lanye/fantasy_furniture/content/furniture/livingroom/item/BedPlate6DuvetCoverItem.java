@@ -16,6 +16,8 @@ import net.minecraft.world.level.block.state.properties.BedPart;
 import org.lanye.fantasy_furniture.FantasyFurniture;
 import org.lanye.fantasy_furniture.bootstrap.block.ModBlocks;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.BedPlate6DuvetCoverMaterials;
+import org.lanye.fantasy_furniture.content.furniture.livingroom.BedPlateBedFootPos;
+import org.lanye.fantasy_furniture.content.furniture.livingroom.blockentity.BedPlate2BlockEntity;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.blockentity.BedPlate6BlockEntity;
 
 /**
@@ -57,6 +59,27 @@ public final class BedPlate6DuvetCoverItem extends BedPlate6GeolibDecorItem {
      */
     public static InteractionResult applyToBed(
             Level level, BlockPos pos, BlockState state, Player player, InteractionHand hand) {
+        if (state.is(ModBlocks.BED_PLATE2.block().get())) {
+            BlockPos footPos = BedPlateBedFootPos.footPos(state, pos);
+            BlockEntity be = level.getBlockEntity(footPos);
+            if (!(be instanceof BedPlate2BlockEntity plate)) {
+                return InteractionResult.PASS;
+            }
+            if (!plate.canAddCover()) {
+                return InteractionResult.FAIL;
+            }
+            ItemStack stack = player.getItemInHand(hand);
+            if (!(stack.getItem() instanceof BedPlate6DuvetCoverItem held)) {
+                return InteractionResult.PASS;
+            }
+            if (!level.isClientSide) {
+                plate.setCoverMaterialId(held.getMaterialId());
+                if (!player.getAbilities().instabuild) {
+                    stack.shrink(1);
+                }
+            }
+            return InteractionResult.sidedSuccess(level.isClientSide);
+        }
         if (!state.is(ModBlocks.BED_PLATE6.block().get())) {
             return InteractionResult.PASS;
         }
@@ -100,9 +123,6 @@ public final class BedPlate6DuvetCoverItem extends BedPlate6GeolibDecorItem {
     }
 
     private static BlockPos footPos(BlockState state, BlockPos pos) {
-        if (state.getValue(BedBlock.PART) == BedPart.FOOT) {
-            return pos;
-        }
-        return pos.relative(state.getValue(BedBlock.FACING).getOpposite());
+        return BedPlateBedFootPos.footPos(state, pos);
     }
 }
