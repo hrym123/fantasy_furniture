@@ -13,8 +13,10 @@ import org.lanye.fantasy_furniture.bootstrap.block.StyledWindow0Registration;
 import org.lanye.fantasy_furniture.bootstrap.block.WallpaperBlocks;
 import org.lanye.fantasy_furniture.bootstrap.tag.ModTags;
 import org.lanye.fantasy_furniture.content.furniture.common.state.StyledWindow0MaterialVariant;
+import org.lanye.fantasy_furniture.content.furniture.decor.block.ComputerBlock;
 import org.lanye.fantasy_furniture.content.furniture.decor.block.StyledWindow0Block;
 import org.lanye.fantasy_furniture.content.furniture.decor.series.StyledWindowSeriesBlock;
+import org.lanye.fantasy_furniture.content.furniture.decor.ComputerMaterials;
 import org.lanye.fantasy_furniture.content.soap.SoapBarMaterials;
 import org.lanye.fantasy_furniture.content.soap.SoapPaperBagMaterials;
 import org.lanye.fantasy_furniture.content.soap.BodyCreamMaterials;
@@ -117,6 +119,11 @@ public final class BrushRecolor {
             int current = state.getValue(DisplayCabinetBlock.MATERIAL);
             int next = nextMaterialId(current, SoapPaperBoxMaterials.COUNT);
             return Optional.of(state.setValue(DisplayCabinetBlock.MATERIAL, next));
+        }
+        if (state.getBlock() instanceof ComputerBlock) {
+            int current = state.getValue(ComputerBlock.MATERIAL);
+            int next = nextMaterialId(current, ComputerMaterials.COUNT);
+            return Optional.of(state.setValue(ComputerBlock.MATERIAL, next));
         }
         return Optional.empty();
     }

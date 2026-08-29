@@ -21,7 +21,10 @@ import org.lanye.fantasy_furniture.content.furniture.decor.blockentity.StyledSta
 import org.lanye.fantasy_furniture.content.furniture.decor.blockentity.LotteryMachineBlockEntity;
 import org.lanye.fantasy_furniture.content.sweeper.blockentity.SweeperDockBlockEntity;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.block.BanquetteBlock;
+import org.lanye.fantasy_furniture.content.furniture.decor.item.ComputerBlockItem;
+import org.lanye.fantasy_furniture.content.furniture.decor.block.ComputerBlock;
 import org.lanye.fantasy_furniture.content.furniture.decor.block.LotteryMachineBlock;
+import org.lanye.fantasy_furniture.content.furniture.decor.blockentity.ComputerBlockEntity;
 import org.lanye.fantasy_furniture.content.sweeper.block.SweeperDockBlock;
 import org.lanye.fantasy_furniture.content.soap.block.BodyCreamBlock;
 import org.lanye.fantasy_furniture.content.soap.block.BodyWashBlock;
@@ -226,7 +229,29 @@ public final class FurnitureAnimatedBlocks {
                                                     block,
                                                     props.stacksTo(64),
                                                     SoapSeriesBlockAssets.blockPrimaryTexture(
-                                                            "display_cabinet")))));
+                                                            "display_cabinet"))),
+                            AnimatedBlockRegistration.spec(
+                                    "computer_1",
+                                    FurnitureBlockProperties::metalNoOcclusion,
+                                    props -> new ComputerBlock(props, "computer_1"),
+                                    ComputerBlockEntity::new,
+                                    (block, props) ->
+                                            new ComputerBlockItem(
+                                                    block,
+                                                    props,
+                                                    GeolibItemAssets.blockAsset(
+                                                            FantasyFurniture.MODID, "computer_1"))),
+                            AnimatedBlockRegistration.spec(
+                                    "computer_2",
+                                    FurnitureBlockProperties::metalNoOcclusion,
+                                    props -> new ComputerBlock(props, "computer_2"),
+                                    ComputerBlockEntity::new,
+                                    (block, props) ->
+                                            new ComputerBlockItem(
+                                                    block,
+                                                    props,
+                                                    GeolibItemAssets.blockAsset(
+                                                            FantasyFurniture.MODID, "computer_2")))));
 
     private static final int I_BANQUETTE = 0;
     private static final int I_LOTTERY_MACHINE = 1;
@@ -242,6 +267,8 @@ public final class FurnitureAnimatedBlocks {
     private static final int I_GREEN_SOFA = 11;
     private static final int I_SWEEPER_DOCK = 12;
     private static final int I_DISPLAY_CABINET = 13;
+    private static final int I_COMPUTER_1 = 14;
+    private static final int I_COMPUTER_2 = 15;
 
     @SuppressWarnings("unchecked")
     private static <BE extends BlockEntity> AnimatedBlockEntry<BE> animatedEntry(int index) {
@@ -279,6 +306,10 @@ public final class FurnitureAnimatedBlocks {
 
     public static final AnimatedBlockEntry<DisplayCabinetBlockEntity> DISPLAY_CABINET =
             animatedEntry(I_DISPLAY_CABINET);
+
+    public static final AnimatedBlockEntry<ComputerBlockEntity> COMPUTER_1 = animatedEntry(I_COMPUTER_1);
+
+    public static final AnimatedBlockEntry<ComputerBlockEntity> COMPUTER_2 = animatedEntry(I_COMPUTER_2);
 
     public static final AnimatedBlockEntry<BedPlateBaseBlockEntity> BED_PLATE6 = BedPlate6Registration.mainEntry();
 

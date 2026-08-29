@@ -9,6 +9,7 @@ import net.minecraftforge.registries.RegistryObject;
 import org.lanye.fantasy_furniture.FantasyFurniture;
 import org.lanye.fantasy_furniture.bootstrap.block.BedPlate2Registration;
 import org.lanye.fantasy_furniture.bootstrap.block.BedPlate6Registration;
+import org.lanye.fantasy_furniture.content.furniture.decor.blockentity.ComputerBlockEntity;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.blockentity.BanquetteBlockEntity;
 import org.lanye.reverie_core.geolib.bed.BedPlateBaseBlockEntity;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.blockentity.GreenSofaBlockEntity;
@@ -154,6 +155,10 @@ public final class ModBlocks {
 
     public static final AnimatedBlockEntry<DisplayCabinetBlockEntity> DISPLAY_CABINET =
             FurnitureAnimatedBlocks.DISPLAY_CABINET;
+
+    public static final AnimatedBlockEntry<ComputerBlockEntity> COMPUTER_1 = FurnitureAnimatedBlocks.COMPUTER_1;
+
+    public static final AnimatedBlockEntry<ComputerBlockEntity> COMPUTER_2 = FurnitureAnimatedBlocks.COMPUTER_2;
 
     public static void register(IEventBus modEventBus) {
         BLOCKS.register(modEventBus);
