@@ -3,6 +3,7 @@ package org.lanye.fantasy_furniture.content.furniture.decor.series;
 import java.util.EnumMap;
 import java.util.Map;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import org.lanye.reverie_core.geolib.multiblock.WallPlaneFootprint;
 
@@ -12,11 +13,19 @@ import org.lanye.reverie_core.geolib.multiblock.WallPlaneFootprint;
  * <p>占地为墙面宽×高（深 1）；整模北向碰撞在足迹坐标系（底左原点），含 geoOffset 平移。
  * 玩法碰撞为足迹外接薄盒（按格切片）：1～4 号 Z 跟 2 号窗（0～2.0）；5～7 号保留 geo 内缩 AABB。
  * 各档 {@code shapes_*} 仅 shape 0 参与玩法；开档条目与关档同盒（造型只切 Geo）。
+ * 1/2 号 α 底部挡板碰撞外探（负 Z），不扩大 {@link WallPlaneFootprint}。
  */
 public final class StyledWindowSeriesCatalog {
 
     /** 玩法碰撞 Z 上界（跟 2 号窗薄片一致，单位：1/16 格）。 */
     private static final double WINDOW_COLLISION_Z = 2.0D;
+
+    /**
+     * 1/2 号 α 底部挡板：geo z=-17～-6 → gecko 后 z=-9～2；高 1。
+     * 负 Z 探出足迹格，实体可挡；不占墙面多格副格。
+     */
+    private static final double SILL_Z_MIN = -9.0D;
+    private static final double SILL_Y_MAX = 1.0D;
 
     private static final String[] COLORS_7 = {
         "brown", "dark_green", "white", "black", "light_blue", "light_green", "light_yellow"
@@ -184,16 +193,24 @@ public final class StyledWindowSeriesCatalog {
         return repeatShape(windowCollisionBox(width, height, height), 4);
     }
 
+    /** 框体薄片 ∪ 底部挡板（仅 1/2 号 α）。 */
+    private static VoxelShape[] windowShapesWithFrontSill(double width, double height) {
+        VoxelShape frame = windowCollisionBox(width, height, height);
+        VoxelShape sill =
+                Block.box(0.0D, 0.0D, SILL_Z_MIN, width, SILL_Y_MAX, WINDOW_COLLISION_Z);
+        return repeatShape(Shapes.or(frame, sill), 4);
+    }
+
     private static VoxelShape[] shapes_1() {
-        return windowShapesLikeW2(16.0D, 32.0D);
+        return windowShapesWithFrontSill(16.0D, 32.0D);
     }
 
     private static VoxelShape[] shapes_1_5() {
-        return shapes_1();
+        return windowShapesLikeW2(16.0D, 32.0D);
     }
 
     private static VoxelShape[] shapes_2() {
-        return windowShapesLikeW2(32.0D, 32.0D);
+        return windowShapesWithFrontSill(32.0D, 32.0D);
     }
 
     private static VoxelShape[] shapes_2_5() {
