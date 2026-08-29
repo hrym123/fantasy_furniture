@@ -232,7 +232,7 @@ public final class FurnitureAnimatedBlocks {
                                                             "display_cabinet"))),
                             AnimatedBlockRegistration.spec(
                                     "computer_1",
-                                    FurnitureBlockProperties::metalNoOcclusion,
+                                    FurnitureAnimatedBlocks::computerProperties,
                                     props -> new ComputerBlock(props, "computer_1"),
                                     ComputerBlockEntity::new,
                                     (block, props) ->
@@ -243,7 +243,7 @@ public final class FurnitureAnimatedBlocks {
                                                             FantasyFurniture.MODID, "computer_1"))),
                             AnimatedBlockRegistration.spec(
                                     "computer_2",
-                                    FurnitureBlockProperties::metalNoOcclusion,
+                                    FurnitureAnimatedBlocks::computerProperties,
                                     props -> new ComputerBlock(props, "computer_2"),
                                     ComputerBlockEntity::new,
                                     (block, props) ->
@@ -252,6 +252,12 @@ public final class FurnitureAnimatedBlocks {
                                                     props,
                                                     GeolibItemAssets.blockAsset(
                                                             FantasyFurniture.MODID, "computer_2")))));
+
+    /** 金属电器感；打开态微光（与 {@link ComputerBlock#OPEN} 联动）。 */
+    private static BlockBehaviour.Properties computerProperties() {
+        return FurnitureBlockProperties.metalNoOcclusion()
+                .lightLevel(state -> state.getValue(ComputerBlock.OPEN) ? ComputerBlock.OPEN_LIGHT_LEVEL : 0);
+    }
 
     private static final int I_BANQUETTE = 0;
     private static final int I_LOTTERY_MACHINE = 1;

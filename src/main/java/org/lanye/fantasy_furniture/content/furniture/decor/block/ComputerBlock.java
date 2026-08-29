@@ -30,12 +30,16 @@ import org.lanye.reverie_core.util.VoxelShapeRotation;
 
 /**
  * 电脑（1 型 / 2 型）：四向 + 开合 + 六色材质档；空手右键开合，刷子换色。
+ * 打开态发出微光（光照等级 {@link #OPEN_LIGHT_LEVEL}）。
  */
 public final class ComputerBlock extends GeolibFacingEntityBlockWithFactory<ComputerBlockEntity> {
 
     public static final BooleanProperty OPEN = BooleanProperty.create("open");
     public static final IntegerProperty MATERIAL =
             IntegerProperty.create("material", 1, ComputerMaterials.COUNT);
+
+    /** 打开态方块光照等级（微光）。 */
+    public static final int OPEN_LIGHT_LEVEL = 9;
 
     private final String closedAssetId;
 
@@ -76,9 +80,22 @@ public final class ComputerBlock extends GeolibFacingEntityBlockWithFactory<Comp
     }
 
     @Override
+    public int getLightEmission(BlockState state, BlockGetter level, BlockPos pos) {
+        return state.getValue(OPEN) ? OPEN_LIGHT_LEVEL : 0;
+    }
+
+    @Override
     public void setPlacedBy(Level level, BlockPos pos, BlockState state, LivingEntity placer, ItemStack stack) {
         ComputerAppearance appearance = ComputerAppearance.fromStack(stack);
         level.setBlock(pos, state.setValue(MATERIAL, appearance.materialId()), Block.UPDATE_ALL);
+    }
+
+    /** 中键选取：同色物品（材质档写入 NBT）。 */
+    @Override
+    public ItemStack getCloneItemStack(BlockGetter level, BlockPos pos, BlockState state) {
+        ItemStack stack = super.getCloneItemStack(level, pos, state);
+        ComputerAppearance.writeToStack(stack, new ComputerAppearance(state.getValue(MATERIAL)));
+        return stack;
     }
 
     @Override
