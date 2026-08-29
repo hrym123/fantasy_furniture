@@ -52,6 +52,9 @@ public class StyledWindowSeriesBlock
     public static final IntegerProperty PART_U = WallPlanePartProperties.PART_U;
     public static final IntegerProperty PART_V = WallPlanePartProperties.PART_V;
 
+    /** 玩法/选取/交互体素形恒用关档；造型开合只改 Geo。 */
+    private static final int FIXED_SHAPE_INDEX = 0;
+
     private final StyledWindowSeriesId seriesId;
     private final int colorIndex;
 
@@ -284,28 +287,28 @@ public class StyledWindowSeriesBlock
 
     @Override
     public VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext ctx) {
-        return shapeFor(state);
+        return shapeFor(state, FIXED_SHAPE_INDEX);
     }
 
     @Override
     public VoxelShape getCollisionShape(
             BlockState state, BlockGetter level, BlockPos pos, CollisionContext ctx) {
-        return shapeFor(state);
+        return shapeFor(state, FIXED_SHAPE_INDEX);
     }
 
     @Override
     public VoxelShape getOcclusionShape(BlockState state, BlockGetter level, BlockPos pos) {
-        return shapeFor(state);
+        return shapeFor(state, FIXED_SHAPE_INDEX);
     }
 
     @Override
     public VoxelShape getInteractionShape(BlockState state, BlockGetter level, BlockPos pos) {
-        return shapeFor(state);
+        return shapeFor(state, FIXED_SHAPE_INDEX);
     }
 
-    private VoxelShape shapeFor(BlockState state) {
+    private VoxelShape shapeFor(BlockState state, int shapeIndex) {
         StyledWindowSeriesSpec spec = spec();
-        int s = Mth.clamp(state.getValue(SHAPE), 0, spec.shapeCount() - 1);
+        int s = Mth.clamp(shapeIndex, 0, spec.shapeCount() - 1);
         int u = state.getValue(PART_U);
         int v = state.getValue(PART_V);
         VoxelShape north = spec.shapeNorthForPart(s, u, v);
