@@ -19,6 +19,7 @@ import org.lanye.fantasy_furniture.bootstrap.block.BedPlate6Registration;
 import org.lanye.fantasy_furniture.bootstrap.block.ModBlocks;
 import org.lanye.fantasy_furniture.bootstrap.block.StyledWindow0Registration;
 import org.lanye.fantasy_furniture.bootstrap.block.StyledWindowSeriesRegistration;
+import org.lanye.fantasy_furniture.bootstrap.block.StyledStairsRegistration;
 import org.lanye.fantasy_furniture.content.soap.SoapBarCreativeTab;
 import org.lanye.fantasy_furniture.content.soap.SoapPaperBagCreativeTab;
 import org.lanye.fantasy_furniture.content.soap.SoapBoxCreativeTab;
@@ -78,6 +79,9 @@ public final class ModCreativeTabs {
             list.add(out -> out.accept(ro.get()));
         }
         for (var ro : StyledWindowSeriesRegistration.allItemsInOrder()) {
+            list.add(out -> out.accept(ro.get()));
+        }
+        for (var ro : StyledStairsRegistration.items()) {
             list.add(out -> out.accept(ro.get()));
         }
         return List.copyOf(list);

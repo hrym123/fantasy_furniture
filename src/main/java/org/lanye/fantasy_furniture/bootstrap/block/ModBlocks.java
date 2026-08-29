@@ -13,6 +13,7 @@ import org.lanye.fantasy_furniture.content.furniture.livingroom.blockentity.Banq
 import org.lanye.reverie_core.geolib.bed.BedPlateBaseBlockEntity;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.blockentity.GreenSofaBlockEntity;
 import org.lanye.fantasy_furniture.content.furniture.decor.blockentity.StyledWindow0BlockEntity;
+import org.lanye.fantasy_furniture.content.furniture.decor.blockentity.StyledStairsBlockEntity;
 import org.lanye.fantasy_furniture.content.furniture.decor.blockentity.LotteryMachineBlockEntity;
 import org.lanye.fantasy_furniture.content.sweeper.blockentity.SweeperDockBlockEntity;
 import org.lanye.fantasy_furniture.content.soap.blockentity.SoapBarBlockEntity;
@@ -127,6 +128,9 @@ public final class ModBlocks {
 
     public static final AnimatedBlockEntry<StyledWindow0BlockEntity> STYLED_WINDOW_0 =
             FurnitureAnimatedBlocks.STYLED_WINDOW_0;
+
+    public static final AnimatedBlockEntry<StyledStairsBlockEntity> STYLED_STAIRS =
+            FurnitureAnimatedBlocks.STYLED_STAIRS;
 
     public static final AnimatedBlockEntry<SoapBarBlockEntity> SOAP_BAR = FurnitureAnimatedBlocks.SOAP_BAR;
 

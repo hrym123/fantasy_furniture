@@ -20,6 +20,7 @@ import org.lanye.fantasy_furniture.content.furniture.livingroom.client.model.Ban
 import org.lanye.fantasy_furniture.content.furniture.livingroom.client.renderer.BanquetteGeoBlockRenderer;
 import org.lanye.fantasy_furniture.bootstrap.block.StyledWindowSeriesRegistration;
 import org.lanye.fantasy_furniture.content.furniture.decor.client.renderer.StyledWindow0GeoBlockRenderer;
+import org.lanye.fantasy_furniture.content.furniture.decor.blockentity.StyledStairsBlockEntity;
 import org.lanye.fantasy_furniture.content.furniture.decor.series.StyledWindowSeriesGeoBlockRenderer;
 import org.lanye.fantasy_furniture.content.furniture.decor.series.StyledWindowSeriesId;
 import org.lanye.fantasy_furniture.content.soap.client.SoapBarClient;
@@ -69,6 +70,12 @@ public final class ClientModEvents {
         AnimatedBlockClientRegistration.registerBlockEntityRenderer(
                 ModBlocks.STYLED_WINDOW_0,
                 ReveriePerfRender.wrapBer(ctx -> new StyledWindow0GeoBlockRenderer()));
+        AnimatedBlockClientRegistration.registerBlockEntityRenderer(
+                ModBlocks.STYLED_STAIRS,
+                GeolibAnimatedBlockRenderers.variableTextureGeoRendererProvider(
+                        FantasyFurniture.MODID,
+                        "styled_stairs",
+                        StyledStairsBlockEntity::getTextureLocation));
         for (StyledWindowSeriesId seriesId : StyledWindowSeriesId.values()) {
             AnimatedBlockClientRegistration.registerBlockEntityRenderer(
                     StyledWindowSeriesRegistration.entry(seriesId),

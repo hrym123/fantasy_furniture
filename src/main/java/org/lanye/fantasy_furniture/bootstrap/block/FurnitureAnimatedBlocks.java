@@ -17,6 +17,7 @@ import org.lanye.fantasy_furniture.content.furniture.livingroom.block.GreenSofaB
 import org.lanye.fantasy_furniture.content.furniture.livingroom.blockentity.BanquetteBlockEntity;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.blockentity.GreenSofaBlockEntity;
 import org.lanye.fantasy_furniture.content.furniture.decor.blockentity.StyledWindow0BlockEntity;
+import org.lanye.fantasy_furniture.content.furniture.decor.blockentity.StyledStairsBlockEntity;
 import org.lanye.fantasy_furniture.content.furniture.decor.blockentity.LotteryMachineBlockEntity;
 import org.lanye.fantasy_furniture.content.sweeper.blockentity.SweeperDockBlockEntity;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.block.BanquetteBlock;
@@ -54,6 +55,7 @@ import org.lanye.fantasy_furniture.content.soap.item.BodyCreamBlockItem;
 import org.lanye.fantasy_furniture.content.soap.item.BodyWashBlockItem;
 import org.lanye.fantasy_furniture.content.soap.item.SoapPaperBagBlockItem;
 import org.lanye.fantasy_furniture.bootstrap.block.StyledWindow0Registration;
+import org.lanye.fantasy_furniture.bootstrap.block.StyledStairsRegistration;
 import org.lanye.fantasy_furniture.bootstrap.blockentity.ModBlockEntities;
 import org.lanye.reverie_core.geolib.AnimatedBlockEntry;
 import org.lanye.reverie_core.geolib.AnimatedBlockRegistration;
@@ -283,8 +285,12 @@ public final class FurnitureAnimatedBlocks {
     public static final AnimatedBlockEntry<StyledWindow0BlockEntity> STYLED_WINDOW_0 =
             StyledWindow0Registration.entry();
 
+    public static final AnimatedBlockEntry<StyledStairsBlockEntity> STYLED_STAIRS =
+            StyledStairsRegistration.entry();
+
     static {
         // 触发 1～7 号表驱动注册（DeferredRegister 挂到 ModBlocks）
         StyledWindowSeriesRegistration.bootstrap();
+        StyledStairsRegistration.bootstrap();
     }
 }
