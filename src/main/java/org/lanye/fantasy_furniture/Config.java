@@ -96,7 +96,7 @@ public final class Config {
         b.push("bedPlate6");
         BED_PLATE6_DUVET_COLLISION =
                 b.comment(
-                                "床板 6 已铺被单时，是否将被单薄层并入方块碰撞盒；false 时实体可穿过该层（默认关闭，仅保留床垫等基座碰撞）。")
+                                "床板 6 已铺床单时，是否将床单薄层并入方块碰撞盒；false 时实体可穿过该层（默认关闭，仅保留床垫等基座碰撞）。")
                         .define("duvetCollision", false);
         b.pop();
 
@@ -197,7 +197,7 @@ public final class Config {
         return SWEEPER_RETURN_DOCK_INSURANCE_TICKS.get();
     }
 
-    /** 床板 6 被单是否参与碰撞（默认 false）。 */
+    /** 床板 6 床单是否参与碰撞（默认 false）。 */
     public static boolean bedPlate6DuvetCollision() {
         return BED_PLATE6_DUVET_COLLISION.get();
     }

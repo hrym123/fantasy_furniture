@@ -1,15 +1,99 @@
 {
   "variants": {
-    "facing=east": {
+    "facing=north,part=foot,side=left,occupied=false": {
       "model": "fantasy_furniture:block/bed_plate1_beige"
     },
-    "facing=north": {
+    "facing=north,part=foot,side=left,occupied=true": {
       "model": "fantasy_furniture:block/bed_plate1_beige"
     },
-    "facing=south": {
+    "facing=north,part=foot,side=right,occupied=false": {
       "model": "fantasy_furniture:block/bed_plate1_beige"
     },
-    "facing=west": {
+    "facing=north,part=foot,side=right,occupied=true": {
+      "model": "fantasy_furniture:block/bed_plate1_beige"
+    },
+    "facing=north,part=head,side=left,occupied=false": {
+      "model": "fantasy_furniture:block/bed_plate1_beige"
+    },
+    "facing=north,part=head,side=left,occupied=true": {
+      "model": "fantasy_furniture:block/bed_plate1_beige"
+    },
+    "facing=north,part=head,side=right,occupied=false": {
+      "model": "fantasy_furniture:block/bed_plate1_beige"
+    },
+    "facing=north,part=head,side=right,occupied=true": {
+      "model": "fantasy_furniture:block/bed_plate1_beige"
+    },
+    "facing=south,part=foot,side=left,occupied=false": {
+      "model": "fantasy_furniture:block/bed_plate1_beige"
+    },
+    "facing=south,part=foot,side=left,occupied=true": {
+      "model": "fantasy_furniture:block/bed_plate1_beige"
+    },
+    "facing=south,part=foot,side=right,occupied=false": {
+      "model": "fantasy_furniture:block/bed_plate1_beige"
+    },
+    "facing=south,part=foot,side=right,occupied=true": {
+      "model": "fantasy_furniture:block/bed_plate1_beige"
+    },
+    "facing=south,part=head,side=left,occupied=false": {
+      "model": "fantasy_furniture:block/bed_plate1_beige"
+    },
+    "facing=south,part=head,side=left,occupied=true": {
+      "model": "fantasy_furniture:block/bed_plate1_beige"
+    },
+    "facing=south,part=head,side=right,occupied=false": {
+      "model": "fantasy_furniture:block/bed_plate1_beige"
+    },
+    "facing=south,part=head,side=right,occupied=true": {
+      "model": "fantasy_furniture:block/bed_plate1_beige"
+    },
+    "facing=east,part=foot,side=left,occupied=false": {
+      "model": "fantasy_furniture:block/bed_plate1_beige"
+    },
+    "facing=east,part=foot,side=left,occupied=true": {
+      "model": "fantasy_furniture:block/bed_plate1_beige"
+    },
+    "facing=east,part=foot,side=right,occupied=false": {
+      "model": "fantasy_furniture:block/bed_plate1_beige"
+    },
+    "facing=east,part=foot,side=right,occupied=true": {
+      "model": "fantasy_furniture:block/bed_plate1_beige"
+    },
+    "facing=east,part=head,side=left,occupied=false": {
+      "model": "fantasy_furniture:block/bed_plate1_beige"
+    },
+    "facing=east,part=head,side=left,occupied=true": {
+      "model": "fantasy_furniture:block/bed_plate1_beige"
+    },
+    "facing=east,part=head,side=right,occupied=false": {
+      "model": "fantasy_furniture:block/bed_plate1_beige"
+    },
+    "facing=east,part=head,side=right,occupied=true": {
+      "model": "fantasy_furniture:block/bed_plate1_beige"
+    },
+    "facing=west,part=foot,side=left,occupied=false": {
+      "model": "fantasy_furniture:block/bed_plate1_beige"
+    },
+    "facing=west,part=foot,side=left,occupied=true": {
+      "model": "fantasy_furniture:block/bed_plate1_beige"
+    },
+    "facing=west,part=foot,side=right,occupied=false": {
+      "model": "fantasy_furniture:block/bed_plate1_beige"
+    },
+    "facing=west,part=foot,side=right,occupied=true": {
+      "model": "fantasy_furniture:block/bed_plate1_beige"
+    },
+    "facing=west,part=head,side=left,occupied=false": {
+      "model": "fantasy_furniture:block/bed_plate1_beige"
+    },
+    "facing=west,part=head,side=left,occupied=true": {
+      "model": "fantasy_furniture:block/bed_plate1_beige"
+    },
+    "facing=west,part=head,side=right,occupied=false": {
+      "model": "fantasy_furniture:block/bed_plate1_beige"
+    },
+    "facing=west,part=head,side=right,occupied=true": {
       "model": "fantasy_furniture:block/bed_plate1_beige"
     }
   }

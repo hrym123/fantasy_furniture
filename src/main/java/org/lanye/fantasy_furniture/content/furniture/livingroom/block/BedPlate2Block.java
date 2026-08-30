@@ -6,6 +6,7 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.BedBlock;
 import net.minecraft.world.level.block.Block;
@@ -15,6 +16,8 @@ import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.storage.loot.LootParams;
 import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.shapes.CollisionContext;
+import net.minecraft.world.phys.shapes.VoxelShape;
 import org.lanye.fantasy_furniture.bootstrap.block.ModBlocks;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.BedPlate2DecorStorage;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.BedPlateBedFootPos;
@@ -28,7 +31,9 @@ import org.lanye.reverie_core.geolib.bed.BedPlateBaseBlockEntity;
 import org.lanye.reverie_core.geolib.bed.BedPlateBlock;
 
 /**
- * 床板2型：共用寝具；枕头驱动拼装 1–4 Geo。顺序：被套 → 大号 → 中号 → 小号 → 被单 → 睡眠。
+ * 床板2型：共用寝具；枕头驱动拼装 1–4 Geo。顺序：被套 → 大号 → 中号 → 小号 → 床单 → 睡眠。
+ *
+ * <p>落地弹跳与摔落减免：仅已铺床单时启用（与床板6一致）。空床体碰撞按 {@code bed_plate2.geo.json} 外接轮廓。
  */
 public final class BedPlate2Block extends BedPlateBlock {
 
@@ -38,6 +43,24 @@ public final class BedPlate2Block extends BedPlateBlock {
             BlockBehaviour.Properties properties,
             BlockEntityType.BlockEntitySupplier<? extends BedPlateBaseBlockEntity> entitySupplier) {
         super(properties, entitySupplier);
+    }
+
+    @Override
+    public VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
+        return BedPlateEmptyBedCollision.shapeFor(
+                state, BedPlateEmptyBedCollision.PLATE2_FOOT, BedPlateEmptyBedCollision.PLATE2_HEAD);
+    }
+
+    @Override
+    public VoxelShape getCollisionShape(
+            BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
+        return getShape(state, level, pos, context);
+    }
+
+    @Override
+    protected boolean enablesSoftLanding(BlockGetter level, BlockState state, BlockPos pos) {
+        var be = level.getBlockEntity(bedFootWorldPos(state, pos));
+        return be instanceof BedPlate2BlockEntity plate && plate.hasDuvet();
     }
 
     public static BlockPos bedFootWorldPos(BlockState state, BlockPos anyPartPos) {

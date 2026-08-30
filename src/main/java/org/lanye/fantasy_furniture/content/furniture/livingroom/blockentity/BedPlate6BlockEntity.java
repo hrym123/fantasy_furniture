@@ -49,7 +49,7 @@ public final class BedPlate6BlockEntity extends BedPlateBaseBlockEntity {
     /** 小号枕头材质 1..6；0 表示无。 */
     private static final String NBT_SM_PILLOW = "SmPillow";
 
-    /** 旧版布尔被单标记（仅加载兼容）。 */
+    /** 旧版布尔床单标记（仅加载兼容）。 */
     private static final String NBT_LEGACY_BOOL = "Duvet6";
 
     private int duvetMaterialId;

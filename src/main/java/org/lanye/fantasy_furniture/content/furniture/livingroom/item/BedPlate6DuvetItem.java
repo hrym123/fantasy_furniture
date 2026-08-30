@@ -17,11 +17,13 @@ import org.lanye.fantasy_furniture.FantasyFurniture;
 import org.lanye.fantasy_furniture.bootstrap.block.ModBlocks;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.BedPlate6DuvetMaterials;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.BedPlateBedFootPos;
+import org.lanye.fantasy_furniture.content.furniture.livingroom.block.BedPlate1Block;
+import org.lanye.fantasy_furniture.content.furniture.livingroom.blockentity.BedPlate1BlockEntity;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.blockentity.BedPlate2BlockEntity;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.blockentity.BedPlate6BlockEntity;
 
 /**
- * 床板 6 专用床单（七种材质之一）：仅能对 {@link ModBlocks#BED_PLATE6} 使用，不可放置为方块。
+ * 共用床单（七种材质之一）：可铺在床板1 / 2 / 6 型上；世界外形按床型选 geo，不可放置为方块。
  */
 public final class BedPlate6DuvetItem extends BedPlate6GeolibDecorItem {
 
@@ -59,6 +61,26 @@ public final class BedPlate6DuvetItem extends BedPlate6GeolibDecorItem {
      */
     public static InteractionResult applyToBed(
             Level level, BlockPos pos, BlockState state, Player player, InteractionHand hand) {
+        if (state.getBlock() instanceof BedPlate1Block) {
+            BedPlate1BlockEntity plate = BedPlate1Block.decorEntity(level, state, pos);
+            if (plate == null) {
+                return InteractionResult.PASS;
+            }
+            ItemStack stack = player.getItemInHand(hand);
+            if (!(stack.getItem() instanceof BedPlate6DuvetItem held)) {
+                return InteractionResult.PASS;
+            }
+            if (!plate.canAddDuvet()) {
+                return InteractionResult.FAIL;
+            }
+            if (!level.isClientSide) {
+                plate.setDuvetMaterialId(held.getMaterialId());
+                if (!player.getAbilities().instabuild) {
+                    stack.shrink(1);
+                }
+            }
+            return InteractionResult.sidedSuccess(level.isClientSide);
+        }
         if (state.is(ModBlocks.BED_PLATE2.block().get())) {
             BlockPos footPos = BedPlateBedFootPos.footPos(state, pos);
             BlockEntity be = level.getBlockEntity(footPos);

@@ -25,7 +25,7 @@ import org.lanye.fantasy_furniture.content.furniture.livingroom.item.BedPlate6Sm
  * 床板 6 床品/枕头在「北向基准 geo」下的选取用 {@link VoxelShape}（与 {@link BedPlate6Block#getShape} 合并）。
  *
  * <p>体素由 {@code tools/collision/voxel_pick_from_geo.py --manifest bed_plate6} 导出（每 geo 文件对应床上一只枕/叠放）。
- * <p>枕类用列向+3D；被套/被单仅用 3D，避免列向与传单薄层重叠时在边界闪烁。
+ * <p>枕类用列向+3D；被套/床单仅用 3D，避免列向与传单薄层重叠时在边界闪烁。
  *
  * @see VoxelShapeRotation#rotateYFromNorth
  */
@@ -102,7 +102,7 @@ public final class BedPlate6PickShapesNorth {
   }
 
   /**
-   * 按体素命中解析应对应床品层：在<strong>所有</strong>命中的候选中取 tier 最小者（枕 &gt; 被套 &gt; 被单）。
+   * 按体素命中解析应对应床品层：在<strong>所有</strong>命中的候选中取 tier 最小者（枕 &gt; 被套 &gt; 床单）。
    */
   public static PickedDecorLayer pickLayerByVoxelHit(
       BedPlate6BlockEntity plate, Vec3 hitWorld, BlockPos foot, Direction facing) {
@@ -141,7 +141,7 @@ public final class BedPlate6PickShapesNorth {
   }
 
   /**
-   * 按体素命中解析应对应床品：在<strong>所有</strong>命中的候选中取 tier 最小者（枕 &gt; 被套 &gt; 被单）；无匹配返回 {@code null}。
+   * 按体素命中解析应对应床品：在<strong>所有</strong>命中的候选中取 tier 最小者（枕 &gt; 被套 &gt; 床单）；无匹配返回 {@code null}。
    */
   @Nullable
   public static ItemStack pickStackByVoxelHit(

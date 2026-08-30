@@ -6,44 +6,39 @@ import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.level.block.BedBlock;
-import net.minecraft.world.level.block.state.properties.BedPart;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.lanye.fantasy_furniture.FantasyFurniture;
-import org.lanye.fantasy_furniture.content.furniture.livingroom.BedPlate6DuvetCoverMaterials;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.BedPlate6DuvetMaterials;
-import org.lanye.fantasy_furniture.content.furniture.livingroom.blockentity.BedPlate2BlockEntity;
+import org.lanye.fantasy_furniture.content.furniture.livingroom.block.BedPlate1Block;
+import org.lanye.fantasy_furniture.content.furniture.livingroom.blockentity.BedPlate1BlockEntity;
 import org.lanye.reverie_core.geolib.bed.BedPlateBaseBlockEntity;
+import org.lanye.reverie_core.geolib.client.GeoRenderTier;
+import org.lanye.reverie_core.geolib.client.ReverieGeoBlockRenderer;
 import software.bernie.geckolib.cache.object.BakedGeoModel;
 import software.bernie.geckolib.model.GeoModel;
 import software.bernie.geckolib.renderer.GeoBlockRenderer;
-import org.lanye.reverie_core.geolib.client.GeoRenderTier;
-import org.lanye.reverie_core.geolib.client.ReverieGeoBlockRenderer;
 
 /**
- * 床板2型：拼装床体 Geo + 可选床单/被套（床板2专用模型）；枕头 baked 进拼装 Geo。
+ * 床板1型：2×2 仅床尾右绘床体；可选叠床单（组合 bbmodel 拆出的 {@code bed_plate1_duvet}）。
  */
 @OnlyIn(Dist.CLIENT)
-public final class BedPlate2GeoBlockRenderer implements BlockEntityRenderer<BedPlateBaseBlockEntity> {
+public final class BedPlate1GeoBlockRenderer implements BlockEntityRenderer<BedPlateBaseBlockEntity> {
 
-    private static final ResourceLocation BODY_ANIM = ResourceLocation.fromNamespaceAndPath(
-            FantasyFurniture.MODID, "animations/block/bed_plate2.animation.json");
-    private static final ResourceLocation DUVET_GEO = ResourceLocation.fromNamespaceAndPath(
-            FantasyFurniture.MODID, "geo/block/bed_plate2_duvet.geo.json");
-    private static final ResourceLocation DUVET_ANIM = ResourceLocation.fromNamespaceAndPath(
-            FantasyFurniture.MODID, "animations/block/bed_plate2_duvet.animation.json");
-    private static final ResourceLocation COVER_GEO = ResourceLocation.fromNamespaceAndPath(
-            FantasyFurniture.MODID, "geo/block/bed_plate2_duvet_cover.geo.json");
-    private static final ResourceLocation COVER_ANIM = ResourceLocation.fromNamespaceAndPath(
-            FantasyFurniture.MODID, "animations/block/bed_plate2_duvet_cover.animation.json");
+    private static final ResourceLocation BODY_ANIM =
+            ResourceLocation.fromNamespaceAndPath(
+                    FantasyFurniture.MODID, "animations/block/bed_plate1.animation.json");
+    private static final ResourceLocation DUVET_GEO =
+            ResourceLocation.fromNamespaceAndPath(
+                    FantasyFurniture.MODID, "geo/block/bed_plate1_duvet.geo.json");
+    private static final ResourceLocation DUVET_ANIM =
+            ResourceLocation.fromNamespaceAndPath(
+                    FantasyFurniture.MODID, "animations/block/bed_plate1_duvet.animation.json");
 
-    private final GeoBlockRenderer<BedPlateBaseBlockEntity> bodyRenderer = footOnlyRenderer(
-            this::bodyGeo, this::bodyTexture, BODY_ANIM);
+    private final GeoBlockRenderer<BedPlateBaseBlockEntity> bodyRenderer =
+            anchorOnlyRenderer(this::bodyGeo, this::bodyTexture, BODY_ANIM);
     private final GeoBlockRenderer<BedPlateBaseBlockEntity> duvetRenderer =
-            footOnlyRenderer(ignored -> DUVET_GEO, this::duvetTexture, DUVET_ANIM);
-    private final GeoBlockRenderer<BedPlateBaseBlockEntity> coverRenderer =
-            footOnlyRenderer(ignored -> COVER_GEO, this::coverTexture, COVER_ANIM);
+            anchorOnlyRenderer(ignored -> DUVET_GEO, this::duvetTexture, DUVET_ANIM);
 
     @Override
     public void render(
@@ -53,60 +48,51 @@ public final class BedPlate2GeoBlockRenderer implements BlockEntityRenderer<BedP
             MultiBufferSource bufferSource,
             int packedLight,
             int packedOverlay) {
-        if (!(blockEntity instanceof BedPlate2BlockEntity plate2)) {
+        if (!(blockEntity instanceof BedPlate1BlockEntity)) {
             return;
         }
-        if (blockEntity.getBlockState().getValue(BedBlock.PART) != BedPart.FOOT) {
+        if (!BedPlate1Block.isRenderAnchor(blockEntity.getBlockState())) {
             return;
         }
         bodyRenderer.render(blockEntity, partialTick, poseStack, bufferSource, packedLight, packedOverlay);
-        if (plate2.hasDuvet()) {
+        BedPlate1BlockEntity decor =
+                BedPlate1Block.decorEntity(
+                        blockEntity.getLevel(),
+                        blockEntity.getBlockState(),
+                        blockEntity.getBlockPos());
+        if (decor != null && decor.hasDuvet()) {
             duvetRenderer.render(blockEntity, partialTick, poseStack, bufferSource, packedLight, packedOverlay);
-        }
-        if (plate2.hasCover()) {
-            coverRenderer.render(blockEntity, partialTick, poseStack, bufferSource, packedLight, packedOverlay);
         }
     }
 
     private ResourceLocation bodyGeo(BedPlateBaseBlockEntity entity) {
-        int asm = 0;
-        if (entity instanceof BedPlate2BlockEntity plate2) {
-            asm = plate2.getAssemblyId();
-        }
-        String basename = asm >= 1 && asm <= 4 ? "bed_plate2_assembly_" + asm : "bed_plate2";
-        return ResourceLocation.fromNamespaceAndPath(FantasyFurniture.MODID, "geo/block/" + basename + ".geo.json");
+        return ResourceLocation.fromNamespaceAndPath(
+                FantasyFurniture.MODID, "geo/block/bed_plate1.geo.json");
     }
 
     private ResourceLocation bodyTexture(BedPlateBaseBlockEntity entity) {
-        int asm = 0;
-        if (entity instanceof BedPlate2BlockEntity plate2) {
-            asm = plate2.getAssemblyId();
+        if (entity instanceof BedPlate1BlockEntity plate1) {
+            return plate1.getTextureLocation();
         }
-        String basename = asm >= 1 && asm <= 4 ? "bed_plate2_assembly_" + asm : "bed_plate2";
         return ResourceLocation.fromNamespaceAndPath(
-                FantasyFurniture.MODID, "textures/block/" + basename + ".png");
+                FantasyFurniture.MODID, "textures/block/bed_plate1_beige.png");
     }
 
     private ResourceLocation duvetTexture(BedPlateBaseBlockEntity entity) {
         int m = 1;
-        if (entity instanceof BedPlate2BlockEntity plate2 && BedPlate6DuvetMaterials.isValid(plate2.getDuvetMaterialId())) {
-            m = plate2.getDuvetMaterialId();
+        if (entity.getLevel() != null) {
+            BedPlate1BlockEntity decor =
+                    BedPlate1Block.decorEntity(
+                            entity.getLevel(), entity.getBlockState(), entity.getBlockPos());
+            if (decor != null && BedPlate6DuvetMaterials.isValid(decor.getDuvetMaterialId())) {
+                m = decor.getDuvetMaterialId();
+            }
         }
         return ResourceLocation.fromNamespaceAndPath(
-                FantasyFurniture.MODID, "textures/block/bed_plate2_duvet_" + m + ".png");
+                FantasyFurniture.MODID, "textures/block/bed_plate1_duvet_" + m + ".png");
     }
 
-    private ResourceLocation coverTexture(BedPlateBaseBlockEntity entity) {
-        int m = 1;
-        if (entity instanceof BedPlate2BlockEntity plate2
-                && BedPlate6DuvetCoverMaterials.isValid(plate2.getCoverMaterialId())) {
-            m = plate2.getCoverMaterialId();
-        }
-        return ResourceLocation.fromNamespaceAndPath(
-                FantasyFurniture.MODID, "textures/block/bed_plate2_duvet_cover_" + m + ".png");
-    }
-
-    private static GeoBlockRenderer<BedPlateBaseBlockEntity> footOnlyRenderer(
+    private static GeoBlockRenderer<BedPlateBaseBlockEntity> anchorOnlyRenderer(
             java.util.function.Function<BedPlateBaseBlockEntity, ResourceLocation> geoFn,
             java.util.function.Function<BedPlateBaseBlockEntity, ResourceLocation> textureFn,
             ResourceLocation anim) {
@@ -144,7 +130,7 @@ public final class BedPlate2GeoBlockRenderer implements BlockEntityRenderer<BedP
                     float green,
                     float blue,
                     float alpha) {
-                if (animatable.getBlockState().getValue(BedBlock.PART) != BedPart.FOOT) {
+                if (!BedPlate1Block.isRenderAnchor(animatable.getBlockState())) {
                     return;
                 }
                 super.actuallyRender(

@@ -55,7 +55,7 @@ public final class BedPlate6DecorStorage {
         return stacks;
     }
 
-    /** 清空 BE 中全部寝具层（与 {@link BedPlate6BlockEntity#setDuvetMaterialId(int)} 卸被单一致）。 */
+    /** 清空 BE 中全部寝具层（与 {@link BedPlate6BlockEntity#setDuvetMaterialId(int)} 卸床单一致）。 */
     public static void clearAllStoredDecor(BedPlate6BlockEntity plate) {
         if (plate.hasDuvet()) {
             plate.setDuvetMaterialId(0);

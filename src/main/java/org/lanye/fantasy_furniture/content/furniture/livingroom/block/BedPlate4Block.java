@@ -2,32 +2,27 @@ package org.lanye.fantasy_furniture.content.furniture.livingroom.block;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.BlockGetter;
+import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
-import org.lanye.fantasy_furniture.content.furniture.livingroom.BedPlate3MaterialVariant;
-import org.lanye.fantasy_furniture.content.furniture.livingroom.blockentity.BedPlate3BlockEntity;
+import org.lanye.reverie_core.geolib.bed.BedPlateBaseBlockEntity;
 import org.lanye.reverie_core.geolib.bed.BedPlateBlock;
 
-/** 床板3型：材质档绑定在方块上，共用 geo；碰撞按 {@code bed_plate3.geo.json} 外接轮廓。 */
-public final class BedPlate3Block extends BedPlateBlock {
+/** 床板4型空床体：碰撞按 {@code bed_plate4.geo.json} 外接轮廓。 */
+public final class BedPlate4Block extends BedPlateBlock {
 
-    private final BedPlate3MaterialVariant variant;
-
-    public BedPlate3Block(BlockBehaviour.Properties properties, BedPlate3MaterialVariant variant) {
-        super(properties, BedPlate3BlockEntity::new);
-        this.variant = variant;
-    }
-
-    public BedPlate3MaterialVariant variant() {
-        return variant;
+    public BedPlate4Block(
+            BlockBehaviour.Properties properties,
+            BlockEntityType.BlockEntitySupplier<? extends BedPlateBaseBlockEntity> entitySupplier) {
+        super(properties, entitySupplier);
     }
 
     @Override
     public VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
         return BedPlateEmptyBedCollision.shapeFor(
-                state, BedPlateEmptyBedCollision.PLATE3_FOOT, BedPlateEmptyBedCollision.PLATE3_HEAD);
+                state, BedPlateEmptyBedCollision.PLATE4_FOOT, BedPlateEmptyBedCollision.PLATE4_HEAD);
     }
 
     @Override

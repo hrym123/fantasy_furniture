@@ -2,6 +2,7 @@ package org.lanye.fantasy_furniture.bootstrap.block;
 
 import org.lanye.fantasy_furniture.FantasyFurniture;
 import org.lanye.fantasy_furniture.bootstrap.blockentity.ModBlockEntities;
+import org.lanye.fantasy_furniture.content.furniture.livingroom.block.BedPlate4Block;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.blockentity.BedPlate4BlockEntity;
 import org.lanye.reverie_core.geolib.AnimatedBlockEntry;
 import org.lanye.reverie_core.geolib.AnimatedBlockRegistration;
@@ -30,6 +31,7 @@ public final class BedPlateBasicRegistration {
                         FantasyFurniture.MODID,
                         "bed_plate4",
                         FurnitureBlockProperties::cherryWoodFurnitureNoOcclusion,
+                        BedPlate4Block::new,
                         BedPlate4BlockEntity::new));
     }
 

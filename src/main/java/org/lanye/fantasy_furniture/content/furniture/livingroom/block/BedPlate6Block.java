@@ -3,7 +3,6 @@ package org.lanye.fantasy_furniture.content.furniture.livingroom.block;
 import java.util.List;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.world.entity.Entity;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
@@ -19,7 +18,6 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BedPart;
 import net.minecraft.world.level.storage.loot.LootParams;
 import net.minecraft.world.phys.BlockHitResult;
-import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
@@ -47,7 +45,8 @@ import org.lanye.reverie_core.util.VoxelShapeTranslation;
  *
  * <p>准心/中键/玉 HUD 选取：客户端由 {@link BedPlate6ClientPick} 读 {@link net.minecraft.client.Minecraft#hitResult}（无 Mixin），见 {@link BedPlate6ComponentPick}。
  *
- * <p>落地弹跳与摔落减免：仅当床尾格 {@link BedPlate6BlockEntity#hasDuvet()} 为真时沿用 {@link BedBlock} 行为；裸床垫无被单时按普通方块受伤、不弹起。
+ * <p>落地弹跳与摔落减免：仅当床尾格 {@link BedPlate6BlockEntity#hasDuvet()} 为真时沿用 {@link BedBlock} 行为（见
+ * {@link BedPlateBlock#enablesSoftLanding}）；裸床垫无床单时按普通方块受伤、不弹起。
  *
  * <p>寝具存储：数据在床尾格 {@link BedPlate6BlockEntity}；生存破坏时在床尾格散落全部床品（{@link BedPlate6DecorStorage}）。创造模式破坏不掉落床板方块物品。
  */
@@ -60,7 +59,7 @@ public final class BedPlate6Block extends BedPlateBlock {
     private static final ThreadLocal<Integer> PENDING_PLAYER_ON_REMOVE = new ThreadLocal<>();
 
     /**
-     * 被单薄层外接盒（整格 16×16、床垫顶 y=5 起高约 2/16）：用于床头格 {@link #getShape} 回退、以及 {@link #getCollisionShape}（配置开启时）。
+     * 床单薄层外接盒（整格 16×16、床垫顶 y=5 起高约 2/16）：用于床头格 {@link #getShape} 回退、以及 {@link #getCollisionShape}（配置开启时）。
      * 床尾格选取以 {@link BedPlate6PickShapesNorth} 的 geo 并集为主。被套无碰撞。
      */
     private static final VoxelShape DUVET_OUTER_BOX = Block.box(0, 5, 0, 16, 7, 31);
@@ -77,39 +76,13 @@ public final class BedPlate6Block extends BedPlateBlock {
         return footPos(state, anyPartPos);
     }
 
-    /** 仅当床尾格方块实体已铺被单时，沿用 {@link BedBlock} 的落地弹跳与摔落减免。 */
-    private static boolean duvetEnablesBedLanding(BlockGetter level, BlockState state, BlockPos pos) {
+    @Override
+    protected boolean enablesSoftLanding(BlockGetter level, BlockState state, BlockPos pos) {
         if (!state.is(ModBlocks.BED_PLATE6.block().get())) {
             return false;
         }
         var be = level.getBlockEntity(footPos(state, pos));
         return be instanceof BedPlate6BlockEntity plate && plate.hasDuvet();
-    }
-
-    private static void landLikeOrdinaryBlock(Entity entity) {
-        Vec3 motion = entity.getDeltaMovement();
-        if (motion.y < 0.0D) {
-            entity.setDeltaMovement(motion.x, 0.0D, motion.z);
-        }
-    }
-
-    @Override
-    public void updateEntityAfterFallOn(BlockGetter level, Entity entity) {
-        BlockState onState = level.getBlockState(entity.getOnPos());
-        if (duvetEnablesBedLanding(level, onState, entity.getOnPos())) {
-            super.updateEntityAfterFallOn(level, entity);
-        } else {
-            landLikeOrdinaryBlock(entity);
-        }
-    }
-
-    @Override
-    public void fallOn(Level level, BlockState state, BlockPos pos, Entity entity, float fallDistance) {
-        if (duvetEnablesBedLanding(level, state, pos)) {
-            super.fallOn(level, state, pos, entity, fallDistance);
-        } else {
-            entity.causeFallDamage(fallDistance, 1.0F, level.damageSources().fall());
-        }
     }
 
     public BedPlate6Block(
@@ -183,8 +156,7 @@ public final class BedPlate6Block extends BedPlateBlock {
 
     @Override
     public VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
-        return pickShapeForBedPlate6(
-                state, level, pos, super.getShape(state, level, pos, context), context);
+        return pickShapeForBedPlate6(state, level, pos, mattressBaseShape(state), context);
     }
 
     @Override
@@ -194,12 +166,12 @@ public final class BedPlate6Block extends BedPlateBlock {
                 state,
                 level,
                 pos,
-                super.getCollisionShape(state, level, pos, context),
+                mattressBaseShape(state),
                 Config.bedPlate6DuvetCollision());
     }
 
     /**
-     * 床尾格：床垫 + 由 geo 导出的被单/被套/枕头北向并集，再按朝向旋转（{@link VoxelShapeRotation#rotateYFromNorth}）。
+     * 床尾格：床垫 + 由 geo 导出的床单/被套/枕头北向并集，再按朝向旋转（{@link VoxelShapeRotation#rotateYFromNorth}）。
      * 床头格：与床尾<strong>同一套</strong>选取并集，沿 {@link BedBlock#FACING} 平移 −1 格到床头局部原点，使轮廓 / 射线命中与仅床尾绘制的 Geo 一致（不再仅用 {@link #DUVET_OUTER_BOX} 近似）。
      *
      * <p>{@link #getShape} 始终返回寝具<strong>并集</strong>，供原版射线 {@code Level.clip} 命中最近子件表面；准心黑框单子件由
@@ -232,29 +204,17 @@ public final class BedPlate6Block extends BedPlateBlock {
         return Shapes.or(base, orientedFull);
     }
 
-    /** 床垫 + 床头板，不含寝具（与 {@link org.lanye.reverie_core.geolib.bed.BedPlateBlock} 基类一致）。 */
+    /** 床垫 + 床头外接（按 {@code bed_plate6.geo.json}，不含寝具）。 */
     public static VoxelShape mattressBaseShape(BlockState state) {
-        VoxelShape mattress = Block.box(0, 0, 0, 16, 5, 16);
-        if (state.getValue(BedBlock.PART) == BedPart.FOOT) {
-            return mattress;
-        }
-        Direction facing = state.getValue(BedBlock.FACING);
-        VoxelShape headboard =
-                switch (facing) {
-                    case NORTH -> Block.box(0, 0, 0, 16, 16, 1);
-                    case SOUTH -> Block.box(0, 0, 15, 16, 16, 16);
-                    case WEST -> Block.box(0, 0, 0, 1, 16, 16);
-                    case EAST -> Block.box(15, 0, 0, 16, 16, 16);
-                    default -> Shapes.empty();
-                };
-        return Shapes.or(mattress, headboard);
+        return BedPlateEmptyBedCollision.shapeFor(
+                state, BedPlateEmptyBedCollision.PLATE6_FOOT, BedPlateEmptyBedCollision.PLATE6_HEAD);
     }
 
     private static VoxelShape applyBedPlateFacingToNorthPick(VoxelShape northShape, Direction facing) {
         return BedPlate6PickShapesNorth.orientForBedFacing(northShape, facing);
     }
 
-    /** 可选并入薄被单碰撞盒（配置开启时），与 geo 选取形独立。 */
+    /** 可选并入薄床单碰撞盒（配置开启时），与 geo 选取形独立。 */
     private static VoxelShape shapeWithOptionalDuvetCollision(
             BlockState state, BlockGetter level, BlockPos pos, VoxelShape base, boolean mergeDuvetCollision) {
         if (!mergeDuvetCollision) {

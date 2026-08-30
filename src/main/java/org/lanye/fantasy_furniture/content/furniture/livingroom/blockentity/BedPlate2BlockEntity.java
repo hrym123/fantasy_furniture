@@ -136,7 +136,7 @@ public final class BedPlate2BlockEntity extends BedPlateBaseBlockEntity {
         return hasDuvet() && !hasCover();
     }
 
-    /** 第二只大号仅允许在无被单/被套时放置（拼装 2 路径）。 */
+    /** 第二只大号仅允许在无床单/被套时放置（拼装 2 路径）。 */
     public boolean canAddLargePillow() {
         int count = getLargePillowCount();
         if (count >= 2) {

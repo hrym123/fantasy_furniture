@@ -14,12 +14,12 @@ import org.lanye.fantasy_furniture.content.furniture.livingroom.BedPlate1Materia
 import org.lanye.fantasy_furniture.content.furniture.livingroom.BedPlate1Materials;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.block.BedPlate1Block;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.blockentity.BedPlate1BlockEntity;
+import org.lanye.fantasy_furniture.content.furniture.livingroom.client.renderer.BedPlate1GeoBlockRenderer;
 import org.lanye.reverie_core.geolib.AnimatedBlockEntry;
 import org.lanye.reverie_core.geolib.GeolibItemAssets;
 import org.lanye.reverie_core.geolib.bed.BedPlateBaseBlockEntity;
 import org.lanye.reverie_core.geolib.bed.BedPlateBlockItem;
 import org.lanye.reverie_core.geolib.client.AnimatedBlockClientRegistration;
-import org.lanye.reverie_core.geolib.client.BedPlateGeoBlockRenderer;
 import org.lanye.reverie_core.util.ReveriePerfRender;
 
 /**
@@ -115,13 +115,7 @@ public final class BedPlate1Registration {
 
     public static void registerClientRenderers() {
         AnimatedBlockClientRegistration.registerBlockEntityRenderer(
-                ENTRY,
-                ReveriePerfRender.wrapBer(
-                        ctx ->
-                                new BedPlateGeoBlockRenderer(
-                                        FantasyFurniture.MODID,
-                                        BedPlate1Materials.GEO_STEM,
-                                        be -> ((BedPlate1BlockEntity) be).getTextureLocation())));
+                ENTRY, ReveriePerfRender.wrapBer(ctx -> new BedPlate1GeoBlockRenderer()));
     }
 
     public static void bootstrap() {
