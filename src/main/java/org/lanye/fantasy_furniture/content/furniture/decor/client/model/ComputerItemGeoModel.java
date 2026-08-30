@@ -7,7 +7,7 @@ import org.lanye.fantasy_furniture.content.furniture.decor.client.ComputerItemRe
 import org.lanye.fantasy_furniture.content.furniture.decor.item.ComputerBlockItem;
 import software.bernie.geckolib.model.GeoModel;
 
-/** 物品栏 / 手持：关闭态 geo + 材质档贴图。 */
+/** 物品栏 / 手持：打开态 geo + 材质档贴图（display 见 models/item，取自打开态 bbmodel）。 */
 public final class ComputerItemGeoModel extends GeoModel<ComputerBlockItem> {
 
     private ComputerAppearance appearance() {
@@ -22,7 +22,7 @@ public final class ComputerItemGeoModel extends GeoModel<ComputerBlockItem> {
 
     @Override
     public ResourceLocation getModelResource(ComputerBlockItem animatable) {
-        return ComputerMaterials.geoLocation(closedAssetId(), false);
+        return ComputerMaterials.geoLocation(closedAssetId(), true);
     }
 
     @Override
