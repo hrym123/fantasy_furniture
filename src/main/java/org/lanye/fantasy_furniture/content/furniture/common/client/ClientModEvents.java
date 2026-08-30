@@ -41,7 +41,10 @@ import org.lanye.fantasy_furniture.content.furniture.common.client.renderer.Furn
 import org.lanye.fantasy_furniture.content.sweeper.client.renderer.SweeperRobotRenderer;
 import org.lanye.fantasy_furniture.bootstrap.entity.ModEntities;
 import org.lanye.fantasy_furniture.content.sweeper.menu.ModMenuTypes;
+import org.lanye.fantasy_furniture.bootstrap.block.BedPlate1Registration;
+import org.lanye.fantasy_furniture.bootstrap.block.BedPlateBasicRegistration;
 import org.lanye.fantasy_furniture.bootstrap.block.BedPlate2Registration;
+import org.lanye.fantasy_furniture.bootstrap.block.BedPlate3Registration;
 import org.lanye.fantasy_furniture.bootstrap.block.BedPlate6Registration;
 import org.lanye.reverie_core.geolib.client.AnimatedBlockClientRegistration;
 import org.lanye.reverie_core.geolib.client.GeolibAnimatedBlockRenderers;
@@ -61,7 +64,10 @@ public final class ClientModEvents {
         AnimatedBlockClientRegistration.registerBlockEntityRenderer(
                 ModBlocks.GREEN_SOFA,
                 GeolibAnimatedBlockRenderers.defaultGeoRendererProvider(FantasyFurniture.MODID, "green_sofa"));
+        BedPlate1Registration.registerClientRenderers();
+        BedPlateBasicRegistration.registerClientRenderers();
         BedPlate2Registration.registerClientRenderer();
+        BedPlate3Registration.registerClientRenderers();
         BedPlate6Registration.registerClientRenderer();
         AnimatedBlockClientRegistration.registerBlockEntityRenderer(
                 ModBlocks.BANQUETTE,

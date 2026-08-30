@@ -79,6 +79,7 @@
   "block.fantasy_furniture.sweeper_dock": "Sweeper Dock",
   "block.fantasy_furniture.green_sofa": "Green Sofa",
   "block.fantasy_furniture.bed_plate2": "Bed Plate 2",
+  "block.fantasy_furniture.bed_plate4": "Bed Plate 4",
   "block.fantasy_furniture.bed_plate6": "Bed Plate 6",
   "block.fantasy_furniture.styled_window_0_white": "Window No.0 (White)",
   "block.fantasy_furniture.styled_window_0_black": "Window No.0 (Black)",
@@ -327,5 +328,15 @@
   "block.fantasy_furniture.styled_stairs_black": "Stairs (Black)",
   "item.fantasy_furniture.styled_stairs_black": "Stairs (Black)",
   "block.fantasy_furniture.styled_stairs_white": "Stairs (White)",
-  "item.fantasy_furniture.styled_stairs_white": "Stairs (White)"
+  "item.fantasy_furniture.styled_stairs_white": "Stairs (White)",
+  "block.fantasy_furniture.bed_plate1_beige": "Bed Plate 1 (Beige)",
+  "item.fantasy_furniture.bed_plate1_beige": "Bed Plate 1 (Beige)",
+  "block.fantasy_furniture.bed_plate1_white": "Bed Plate 1 (White)",
+  "item.fantasy_furniture.bed_plate1_white": "Bed Plate 1 (White)",
+  "block.fantasy_furniture.bed_plate1_black": "Bed Plate 1 (Black)",
+  "item.fantasy_furniture.bed_plate1_black": "Bed Plate 1 (Black)",
+  "block.fantasy_furniture.bed_plate3_beige": "Bed Plate 3 (Beige)",
+  "item.fantasy_furniture.bed_plate3_beige": "Bed Plate 3 (Beige)",
+  "block.fantasy_furniture.bed_plate3_white": "Bed Plate 3 (White)",
+  "item.fantasy_furniture.bed_plate3_white": "Bed Plate 3 (White)"
 }

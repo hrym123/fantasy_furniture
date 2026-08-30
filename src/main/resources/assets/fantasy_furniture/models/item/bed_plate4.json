@@ -1,13 +1,13 @@
 {
   "parent": "builtin/entity",
   "textures": {
-    "particle": "fantasy_furniture:block/bed_plate2"
+    "particle": "fantasy_furniture:block/bed_plate4"
   },
   "display": {
     "thirdperson_righthand": {
       "translation": [
         0,
-        -1.25,
+        -0.75,
         0
       ],
       "scale": [
@@ -29,15 +29,20 @@
       ]
     },
     "firstperson_righthand": {
+      "rotation": [
+        0,
+        -180,
+        0
+      ],
       "translation": [
         0,
-        -2.25,
-        -1.75
+        -0.75,
+        0
       ],
       "scale": [
-        0.5,
-        0.5,
-        0.5
+        0.3,
+        0.3,
+        0.3
       ]
     },
     "firstperson_lefthand": {
@@ -48,20 +53,25 @@
       ],
       "translation": [
         0,
-        -1.5,
-        2.5
+        -0.75,
+        0
       ],
       "scale": [
-        0.5,
-        0.5,
-        0.5
+        0.3,
+        0.3,
+        0.3
       ]
     },
     "ground": {
+      "rotation": [
+        0,
+        -180,
+        0
+      ],
       "translation": [
         0,
-        -0.25,
-        -8
+        -0.75,
+        0
       ],
       "scale": [
         0.3,
@@ -72,47 +82,42 @@
     "gui": {
       "rotation": [
         19,
-        143,
+        -14,
         0
       ],
       "translation": [
-        1.75,
-        -2.25,
+        -0.75,
+        -5.25,
         0
       ],
       "scale": [
-        0.4,
-        0.4,
-        -0.4
+        0.5,
+        0.5,
+        -0.5
       ]
     },
     "head": {
       "rotation": [
         0,
-        -90,
+        -180,
         0
       ],
       "translation": [
-        4,
-        -8,
-        3.5
+        0,
+        5.75,
+        2.5
       ],
       "scale": [
-        0.5,
-        0.5,
-        0.5
+        0.3,
+        0.3,
+        0.3
       ]
     },
     "fixed": {
-      "rotation": [
-        0,
-        -90,
-        0
-      ],
       "translation": [
-        2,
-        -3.25,
-        -1.25
+        -3,
+        -2,
+        -6
       ],
       "scale": [
         0.3,
@@ -122,7 +127,7 @@
     }
   },
   "texture_size": [
-    128,
-    128
+    64,
+    64
   ]
 }

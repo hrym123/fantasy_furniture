@@ -79,7 +79,8 @@
   "block.fantasy_furniture.sweeper_dock": "扫地机器人机仓",
   "block.fantasy_furniture.green_sofa": "绿色沙发",
   "block.fantasy_furniture.bed_plate2": "床板2型",
-  "block.fantasy_furniture.bed_plate6": "床板 6",
+  "block.fantasy_furniture.bed_plate4": "床板4型",
+  "block.fantasy_furniture.bed_plate6": "床板6型",
   "item.fantasy_furniture.bed_plate6_disassembly_glove": "拆卸手套",
   "block.fantasy_furniture.styled_window_0_white": "0号窗户（白色）",
   "block.fantasy_furniture.styled_window_0_black": "0号窗户（黑色）",
@@ -327,5 +328,15 @@
   "block.fantasy_furniture.styled_stairs_black": "楼梯（黑色）",
   "item.fantasy_furniture.styled_stairs_black": "楼梯（黑色）",
   "block.fantasy_furniture.styled_stairs_white": "楼梯（白色）",
-  "item.fantasy_furniture.styled_stairs_white": "楼梯（白色）"
+  "item.fantasy_furniture.styled_stairs_white": "楼梯（白色）",
+  "block.fantasy_furniture.bed_plate1_beige": "床板1型（米色）",
+  "item.fantasy_furniture.bed_plate1_beige": "床板1型（米色）",
+  "block.fantasy_furniture.bed_plate1_white": "床板1型（白色）",
+  "item.fantasy_furniture.bed_plate1_white": "床板1型（白色）",
+  "block.fantasy_furniture.bed_plate1_black": "床板1型（黑色）",
+  "item.fantasy_furniture.bed_plate1_black": "床板1型（黑色）",
+  "block.fantasy_furniture.bed_plate3_beige": "床板3型（米色）",
+  "item.fantasy_furniture.bed_plate3_beige": "床板3型（米色）",
+  "block.fantasy_furniture.bed_plate3_white": "床板3型（白色）",
+  "item.fantasy_furniture.bed_plate3_white": "床板3型（白色）"
 }

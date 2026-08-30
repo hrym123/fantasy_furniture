@@ -1,0 +1,16 @@
+{
+  "variants": {
+    "facing=east": {
+      "model": "fantasy_furniture:block/bed_plate1_beige"
+    },
+    "facing=north": {
+      "model": "fantasy_furniture:block/bed_plate1_beige"
+    },
+    "facing=south": {
+      "model": "fantasy_furniture:block/bed_plate1_beige"
+    },
+    "facing=west": {
+      "model": "fantasy_furniture:block/bed_plate1_beige"
+    }
+  }
+}

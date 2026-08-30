@@ -1,0 +1,26 @@
+{
+  "type": "minecraft:block",
+  "pools": [
+    {
+      "rolls": 1,
+      "entries": [
+        {
+          "type": "minecraft:item",
+          "name": "fantasy_furniture:bed_plate3_white"
+        }
+      ],
+      "conditions": [
+        {
+          "condition": "minecraft:survives_explosion"
+        },
+        {
+          "condition": "minecraft:block_state_property",
+          "block": "fantasy_furniture:bed_plate3_white",
+          "properties": {
+            "part": "foot"
+          }
+        }
+      ]
+    }
+  ]
+}

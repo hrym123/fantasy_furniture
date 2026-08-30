@@ -70,7 +70,8 @@ public final class BedPlate6Registration {
                                 new BedPlateBlockItem(
                                         block,
                                         itemProps,
-                                        GeolibItemAssets.blockAsset(FantasyFurniture.MODID, "bed_plate6"))));
+                                        GeolibItemAssets.blockAsset(FantasyFurniture.MODID, "bed_plate6"),
+                                        true)));
     }
 
     private static GeolibFurnitureBundle<BedPlateBaseBlockEntity> buildBundle() {

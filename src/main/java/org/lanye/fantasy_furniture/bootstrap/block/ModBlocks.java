@@ -7,7 +7,10 @@ import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
 import org.lanye.fantasy_furniture.FantasyFurniture;
+import org.lanye.fantasy_furniture.bootstrap.block.BedPlate1Registration;
+import org.lanye.fantasy_furniture.bootstrap.block.BedPlateBasicRegistration;
 import org.lanye.fantasy_furniture.bootstrap.block.BedPlate2Registration;
+import org.lanye.fantasy_furniture.bootstrap.block.BedPlate3Registration;
 import org.lanye.fantasy_furniture.bootstrap.block.BedPlate6Registration;
 import org.lanye.fantasy_furniture.content.furniture.decor.blockentity.ComputerBlockEntity;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.blockentity.BanquetteBlockEntity;
@@ -124,7 +127,10 @@ public final class ModBlocks {
     public static final AnimatedBlockEntry<GreenSofaBlockEntity> GREEN_SOFA = FurnitureAnimatedBlocks.GREEN_SOFA;
     public static final AnimatedBlockEntry<SweeperDockBlockEntity> SWEEPER_DOCK =
             FurnitureAnimatedBlocks.SWEEPER_DOCK;
+    public static final AnimatedBlockEntry<BedPlateBaseBlockEntity> BED_PLATE1 = BedPlate1Registration.entry();
     public static final AnimatedBlockEntry<BedPlateBaseBlockEntity> BED_PLATE2 = BedPlate2Registration.mainEntry();
+    public static final AnimatedBlockEntry<BedPlateBaseBlockEntity> BED_PLATE3 = BedPlate3Registration.entry();
+    public static final AnimatedBlockEntry<BedPlateBaseBlockEntity> BED_PLATE4 = BedPlateBasicRegistration.bedPlate4();
     public static final AnimatedBlockEntry<BedPlateBaseBlockEntity> BED_PLATE6 = BedPlate6Registration.mainEntry();
 
     public static final AnimatedBlockEntry<StyledWindow0BlockEntity> STYLED_WINDOW_0 =
