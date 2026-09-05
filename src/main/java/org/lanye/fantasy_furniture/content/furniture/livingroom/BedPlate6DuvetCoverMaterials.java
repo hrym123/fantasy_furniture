@@ -21,4 +21,14 @@ public final class BedPlate6DuvetCoverMaterials {
     public static boolean isSupportedOnBedPlate1(int materialId) {
         return isValid(materialId);
     }
+
+    /** 床板3 叠层：六档均可。 */
+    public static boolean isSupportedOnBedPlate3(int materialId) {
+        return isValid(materialId);
+    }
+
+    /** 床板4 叠层：六档均可。 */
+    public static boolean isSupportedOnBedPlate4(int materialId) {
+        return isValid(materialId);
+    }
 }

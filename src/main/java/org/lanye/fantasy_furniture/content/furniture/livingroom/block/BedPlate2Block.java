@@ -22,6 +22,7 @@ import org.lanye.fantasy_furniture.bootstrap.block.ModBlocks;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.BedPlate2DecorStorage;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.BedPlateBedFootPos;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.blockentity.BedPlate2BlockEntity;
+import org.lanye.fantasy_furniture.content.furniture.livingroom.client.BedPlateSimpleBeddingClientPick;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.item.BedPlate6DuvetCoverItem;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.item.BedPlate6DuvetItem;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.item.BedPlate6LargePillowItem;
@@ -47,14 +48,25 @@ public final class BedPlate2Block extends BedPlateBlock {
 
     @Override
     public VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
-        return BedPlateEmptyBedCollision.shapeFor(
-                state, BedPlateEmptyBedCollision.PLATE2_FOOT, BedPlateEmptyBedCollision.PLATE2_HEAD);
+        var be = level.getBlockEntity(bedFootWorldPos(state, pos));
+        boolean hasDuvet = be instanceof BedPlate2BlockEntity plate && plate.hasDuvet();
+        boolean hasCover = be instanceof BedPlate2BlockEntity plate && plate.hasCover();
+        return BedPlateSimpleBeddingShapes.pickShapeFor(
+                BedPlateSimpleBeddingShapes.Plate.PLATE2, state, hasDuvet, hasCover);
     }
 
     @Override
     public VoxelShape getCollisionShape(
             BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
-        return getShape(state, level, pos, context);
+        return BedPlateSimpleBeddingShapes.bodyShape(BedPlateSimpleBeddingShapes.Plate.PLATE2, state);
+    }
+
+    @Override
+    public ItemStack getCloneItemStack(BlockGetter level, BlockPos pos, BlockState state) {
+        if (level instanceof Level l) {
+            return BedPlateSimpleBeddingClientPick.resolveCloneItemStack(l, state, pos);
+        }
+        return new ItemStack(this);
     }
 
     @Override
@@ -128,7 +140,7 @@ public final class BedPlate2Block extends BedPlateBlock {
             BlockHitResult hit) {
         if (player.getItemInHand(hand).getItem() instanceof BedPlate6DuvetCoverItem) {
             InteractionResult cover = BedPlate6DuvetCoverItem.applyToBed(level, pos, state, player, hand);
-            if (cover != InteractionResult.PASS) {
+            if (cover.consumesAction() || cover == InteractionResult.FAIL) {
                 return cover;
             }
         }
@@ -152,7 +164,7 @@ public final class BedPlate2Block extends BedPlateBlock {
         }
         if (player.getItemInHand(hand).getItem() instanceof BedPlate6DuvetItem) {
             InteractionResult duvet = BedPlate6DuvetItem.applyToBed(level, pos, state, player, hand);
-            if (duvet.consumesAction()) {
+            if (duvet.consumesAction() || duvet == InteractionResult.FAIL) {
                 return duvet;
             }
         }

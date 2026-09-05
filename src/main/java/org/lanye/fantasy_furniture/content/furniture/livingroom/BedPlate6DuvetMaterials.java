@@ -20,4 +20,17 @@ public final class BedPlate6DuvetMaterials {
     public static boolean isSupportedOnBedPlate1(int materialId) {
         return isValid(materialId) && materialId != CREAM;
     }
+
+    /** 床板3：组合源仅 _1…_6；奶油色禁止。 */
+    public static boolean isSupportedOnBedPlate3(int materialId) {
+        return isValid(materialId) && materialId != CREAM;
+    }
+
+    /**
+     * 床板4：组合源暂无专用床单贴图，暂借板3 六色；奶油色禁止。
+     * 补齐 {@code *_bed_sheet_4} 后应重导替换。
+     */
+    public static boolean isSupportedOnBedPlate4(int materialId) {
+        return isValid(materialId) && materialId != CREAM;
+    }
 }

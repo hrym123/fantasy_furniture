@@ -17,12 +17,15 @@ import org.lanye.fantasy_furniture.bootstrap.block.ModBlocks;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.BedPlate6DuvetMaterials;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.BedPlateBedFootPos;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.block.BedPlate1Block;
+import org.lanye.fantasy_furniture.content.furniture.livingroom.block.BedPlate3Block;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.blockentity.BedPlate1BlockEntity;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.blockentity.BedPlate2BlockEntity;
+import org.lanye.fantasy_furniture.content.furniture.livingroom.blockentity.BedPlate3BlockEntity;
+import org.lanye.fantasy_furniture.content.furniture.livingroom.blockentity.BedPlate4BlockEntity;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.blockentity.BedPlate6BlockEntity;
 
 /**
- * 共用床单（七种材质之一）：可铺在床板1 / 2 / 6 型上；世界外形按床型选 geo，不可放置为方块。
+ * 共用床单（七种材质之一）：可铺在床板1 / 2 / 3 / 4 / 6 型上；世界外形按床型选 geo，不可放置为方块。
  * 物品栏 / 手持为单材质图（{@code textures/item/bed_plate6_duvet_*}）。
  */
 public final class BedPlate6DuvetItem extends Item {
@@ -94,6 +97,56 @@ public final class BedPlate6DuvetItem extends Item {
             ItemStack stack = player.getItemInHand(hand);
             if (!(stack.getItem() instanceof BedPlate6DuvetItem held)) {
                 return InteractionResult.PASS;
+            }
+            if (!plate.canAddDuvet()) {
+                return InteractionResult.FAIL;
+            }
+            if (!level.isClientSide) {
+                plate.setDuvetMaterialId(held.getMaterialId());
+                if (!player.getAbilities().instabuild) {
+                    stack.shrink(1);
+                }
+            }
+            return InteractionResult.sidedSuccess(level.isClientSide);
+        }
+        if (state.getBlock() instanceof BedPlate3Block) {
+            BlockPos footPos = BedPlateBedFootPos.footPos(state, pos);
+            BlockEntity be = level.getBlockEntity(footPos);
+            if (!(be instanceof BedPlate3BlockEntity plate)) {
+                return InteractionResult.PASS;
+            }
+            ItemStack stack = player.getItemInHand(hand);
+            if (!(stack.getItem() instanceof BedPlate6DuvetItem held)) {
+                return InteractionResult.PASS;
+            }
+            if (!BedPlate6DuvetMaterials.isSupportedOnBedPlate3(held.getMaterialId())) {
+                /* 奶油色：板3 无专用贴图，禁止铺上 */
+                return InteractionResult.FAIL;
+            }
+            if (!plate.canAddDuvet()) {
+                return InteractionResult.FAIL;
+            }
+            if (!level.isClientSide) {
+                plate.setDuvetMaterialId(held.getMaterialId());
+                if (!player.getAbilities().instabuild) {
+                    stack.shrink(1);
+                }
+            }
+            return InteractionResult.sidedSuccess(level.isClientSide);
+        }
+        if (state.is(ModBlocks.BED_PLATE4.block().get())) {
+            BlockPos footPos = BedPlateBedFootPos.footPos(state, pos);
+            BlockEntity be = level.getBlockEntity(footPos);
+            if (!(be instanceof BedPlate4BlockEntity plate)) {
+                return InteractionResult.PASS;
+            }
+            ItemStack stack = player.getItemInHand(hand);
+            if (!(stack.getItem() instanceof BedPlate6DuvetItem held)) {
+                return InteractionResult.PASS;
+            }
+            if (!BedPlate6DuvetMaterials.isSupportedOnBedPlate4(held.getMaterialId())) {
+                /* 奶油色：板4 暂借板3 六色，禁止奶油 */
+                return InteractionResult.FAIL;
             }
             if (!plate.canAddDuvet()) {
                 return InteractionResult.FAIL;

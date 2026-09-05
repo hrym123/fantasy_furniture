@@ -4,16 +4,16 @@ import org.lanye.fantasy_furniture.FantasyFurniture;
 import org.lanye.fantasy_furniture.bootstrap.blockentity.ModBlockEntities;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.block.BedPlate4Block;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.blockentity.BedPlate4BlockEntity;
+import org.lanye.fantasy_furniture.content.furniture.livingroom.client.renderer.BedPlate4GeoBlockRenderer;
 import org.lanye.reverie_core.geolib.AnimatedBlockEntry;
 import org.lanye.reverie_core.geolib.AnimatedBlockRegistration;
 import org.lanye.reverie_core.geolib.bed.BedPlateAnimatedSpecs;
 import org.lanye.reverie_core.geolib.bed.BedPlateBaseBlockEntity;
 import org.lanye.reverie_core.geolib.client.AnimatedBlockClientRegistration;
-import org.lanye.reverie_core.geolib.client.BedPlateGeoBlockRenderer;
 import org.lanye.reverie_core.util.ReveriePerfRender;
 
 /**
- * 床板4型空床体（单材质）。床板1/3 见 {@link BedPlate1Registration} / {@link BedPlate3Registration}；
+ * 床板4型（单材质 + 共用床单 / 被套）。床板1/3 见 {@link BedPlate1Registration} / {@link BedPlate3Registration}；
  * 床板2/6 已有完整实装。
  */
 public final class BedPlateBasicRegistration {
@@ -41,8 +41,6 @@ public final class BedPlateBasicRegistration {
 
     public static void registerClientRenderers() {
         AnimatedBlockClientRegistration.registerBlockEntityRenderer(
-                BED_PLATE4,
-                ReveriePerfRender.wrapBer(
-                        ctx -> new BedPlateGeoBlockRenderer(FantasyFurniture.MODID, "bed_plate4")));
+                BED_PLATE4, ReveriePerfRender.wrapBer(ctx -> new BedPlate4GeoBlockRenderer()));
     }
 }
