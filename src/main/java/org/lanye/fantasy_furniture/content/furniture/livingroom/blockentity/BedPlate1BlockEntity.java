@@ -11,6 +11,7 @@ import net.minecraft.world.phys.AABB;
 import org.lanye.fantasy_furniture.bootstrap.block.BedPlate1Registration;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.BedPlate1MaterialVariant;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.BedPlate1Materials;
+import org.lanye.fantasy_furniture.content.furniture.livingroom.BedPlate6DuvetCoverMaterials;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.BedPlate6DuvetMaterials;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.block.BedPlate1Block;
 import org.lanye.reverie_core.geolib.bed.BedPlateBaseBlockEntity;
@@ -21,8 +22,10 @@ import org.lanye.reverie_core.geolib.bed.BedPlateBaseBlockEntity;
 public final class BedPlate1BlockEntity extends BedPlateBaseBlockEntity {
 
     private static final String NBT_DUVET = "DuvetMat";
+    private static final String NBT_COVER = "CoverMat";
 
     private int duvetMaterialId;
+    private int coverMaterialId;
 
     public BedPlate1BlockEntity(BlockPos pos, BlockState state) {
         super(BedPlate1Registration.blockEntityType().get(), pos, state);
@@ -48,19 +51,51 @@ public final class BedPlate1BlockEntity extends BedPlateBaseBlockEntity {
         return !hasDuvet();
     }
 
+    public int getCoverMaterialId() {
+        return coverMaterialId;
+    }
+
+    public boolean hasCover() {
+        return BedPlate6DuvetCoverMaterials.isValid(coverMaterialId);
+    }
+
+    public boolean canAddCover() {
+        return hasDuvet() && !hasCover();
+    }
+
     public void setDuvetMaterialId(int materialId) {
-        if (materialId != 0 && !BedPlate6DuvetMaterials.isValid(materialId)) {
+        if (materialId != 0 && !BedPlate6DuvetMaterials.isSupportedOnBedPlate1(materialId)) {
             return;
         }
         if (materialId != 0 && !canAddDuvet()) {
             return;
         }
         this.duvetMaterialId = materialId;
+        if (materialId == 0) {
+            this.coverMaterialId = 0;
+        }
         syncClients();
     }
 
     public void clearDuvet() {
         this.duvetMaterialId = 0;
+        this.coverMaterialId = 0;
+        syncClients();
+    }
+
+    public void setCoverMaterialId(int materialId) {
+        if (materialId != 0 && !BedPlate6DuvetCoverMaterials.isSupportedOnBedPlate1(materialId)) {
+            return;
+        }
+        if (materialId != 0 && !canAddCover()) {
+            return;
+        }
+        this.coverMaterialId = materialId;
+        syncClients();
+    }
+
+    public void clearCover() {
+        this.coverMaterialId = 0;
         syncClients();
     }
 
@@ -72,6 +107,8 @@ public final class BedPlate1BlockEntity extends BedPlateBaseBlockEntity {
                     getBlockState(),
                     getBlockState(),
                     Block.UPDATE_CLIENTS | Block.UPDATE_IMMEDIATE);
+        } else if (level != null && level.isClientSide) {
+            requestModelDataUpdate();
         }
     }
 
@@ -99,9 +136,8 @@ public final class BedPlate1BlockEntity extends BedPlateBaseBlockEntity {
     @Override
     protected void saveAdditional(CompoundTag tag) {
         super.saveAdditional(tag);
-        if (duvetMaterialId != 0) {
-            tag.putInt(NBT_DUVET, duvetMaterialId);
-        }
+        tag.putInt(NBT_DUVET, duvetMaterialId);
+        tag.putInt(NBT_COVER, coverMaterialId);
     }
 
     @Override
@@ -111,19 +147,25 @@ public final class BedPlate1BlockEntity extends BedPlateBaseBlockEntity {
         if (!BedPlate6DuvetMaterials.isValid(duvetMaterialId)) {
             duvetMaterialId = 0;
         }
+        coverMaterialId = tag.getInt(NBT_COVER);
+        if (!BedPlate6DuvetCoverMaterials.isValid(coverMaterialId) || !hasDuvet()) {
+            coverMaterialId = 0;
+        }
     }
 
     @Override
     public CompoundTag getUpdateTag() {
         CompoundTag tag = super.getUpdateTag();
-        if (duvetMaterialId != 0) {
-            tag.putInt(NBT_DUVET, duvetMaterialId);
-        }
+        tag.putInt(NBT_DUVET, duvetMaterialId);
+        tag.putInt(NBT_COVER, coverMaterialId);
         return tag;
     }
 
     @Override
     public void handleUpdateTag(CompoundTag tag) {
         load(tag);
+        if (level != null && level.isClientSide) {
+            requestModelDataUpdate();
+        }
     }
 }

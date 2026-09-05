@@ -28,7 +28,11 @@ import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.BedPlate1DecorStorage;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.BedPlate1MaterialVariant;
+import org.lanye.fantasy_furniture.content.furniture.livingroom.BedPlate6DecorStorage;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.blockentity.BedPlate1BlockEntity;
+import org.lanye.fantasy_furniture.content.furniture.livingroom.client.BedPlate1ClientPick;
+import org.lanye.fantasy_furniture.content.furniture.livingroom.item.BedPlate6DisassemblyGloveItem;
+import org.lanye.fantasy_furniture.content.furniture.livingroom.item.BedPlate6DuvetCoverItem;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.item.BedPlate6DuvetItem;
 import org.lanye.reverie_core.geolib.bed.BedPlateBlock;
 import org.lanye.reverie_core.geolib.bed.BedPlateSide;
@@ -38,6 +42,7 @@ import org.lanye.reverie_core.geolib.bed.BedPlateSide;
  *
  * <p>放置点击为<strong>床尾左</strong>；Geo 绘在<strong>床尾右</strong>（默认 Gecko 北向 X 镜像后向 −X
  * 覆盖左列，避免改 geo 导致物品 display 与 bbmodel 不一致）。碰撞见 {@link BedPlate1CollisionShapes}。
+ * 准心 / 中键 / 手套按层选中床体或床单（见客户端 {@code BedPlate1ClientPick}）。
  * 左右两列各为独立睡眠床尾。无床单时不弹跳、不减免摔落伤害。
  */
 public final class BedPlate1Block extends BedPlateBlock {
@@ -121,13 +126,24 @@ public final class BedPlate1Block extends BedPlateBlock {
 
     @Override
     public VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
-        return BedPlate1CollisionShapes.shapeFor(state);
+        BedPlate1BlockEntity plate = decorEntity(level, state, pos);
+        boolean hasDuvet = plate != null && plate.hasDuvet();
+        boolean hasCover = plate != null && plate.hasCover();
+        return BedPlate1CollisionShapes.pickShapeFor(state, hasDuvet, hasCover);
     }
 
     @Override
     public VoxelShape getCollisionShape(
             BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
-        return BedPlate1CollisionShapes.shapeFor(state);
+        return BedPlate1CollisionShapes.bodyShape(state);
+    }
+
+    @Override
+    public ItemStack getCloneItemStack(BlockGetter level, BlockPos pos, BlockState state) {
+        if (level instanceof Level l && l.isClientSide()) {
+            return BedPlate1ClientPick.resolveCloneItemStack(l, state, pos);
+        }
+        return new ItemStack(this);
     }
 
     @Override
@@ -230,6 +246,51 @@ public final class BedPlate1Block extends BedPlateBlock {
             Player player,
             InteractionHand hand,
             BlockHitResult hit) {
+        // 拆卸手套：按准心层卸被套或床单（卸床单连带被套）
+        if (hand == InteractionHand.MAIN_HAND
+                && player.getItemInHand(hand).getItem() instanceof BedPlate6DisassemblyGloveItem) {
+            BedPlate1BlockEntity plate = decorEntity(level, state, pos);
+            if (plate == null || !plate.hasDuvet()) {
+                return InteractionResult.PASS;
+            }
+            BedPlate1CollisionShapes.PickedLayer layer =
+                    BedPlate1CollisionShapes.pickLayer(
+                            state, true, plate.hasCover(), hit.getLocation(), pos);
+            if (layer == BedPlate1CollisionShapes.PickedLayer.BODY) {
+                return InteractionResult.PASS;
+            }
+            if (layer == BedPlate1CollisionShapes.PickedLayer.DUVET_COVER) {
+                if (!plate.hasCover()) {
+                    return InteractionResult.PASS;
+                }
+                int coverMat = plate.getCoverMaterialId();
+                clearAllCovers(level, state, pos);
+                if (!level.isClientSide) {
+                    BedPlate6DecorStorage.giveOrDropToPlayer(
+                            player, BedPlate6DuvetCoverItem.stackForRegistry(coverMat));
+                }
+                return InteractionResult.sidedSuccess(level.isClientSide);
+            }
+            /* 床单层：连带被套 */
+            int duvetMat = plate.getDuvetMaterialId();
+            int coverMat = plate.hasCover() ? plate.getCoverMaterialId() : 0;
+            clearAllDuvets(level, state, pos);
+            if (!level.isClientSide) {
+                BedPlate6DecorStorage.giveOrDropToPlayer(
+                        player, BedPlate6DuvetItem.stackForRegistry(duvetMat));
+                if (coverMat != 0) {
+                    BedPlate6DecorStorage.giveOrDropToPlayer(
+                            player, BedPlate6DuvetCoverItem.stackForRegistry(coverMat));
+                }
+            }
+            return InteractionResult.sidedSuccess(level.isClientSide);
+        }
+        if (player.getItemInHand(hand).getItem() instanceof BedPlate6DuvetCoverItem) {
+            InteractionResult cover = BedPlate6DuvetCoverItem.applyToBed(level, pos, state, player, hand);
+            if (cover.consumesAction() || cover == InteractionResult.FAIL) {
+                return cover;
+            }
+        }
         if (player.getItemInHand(hand).getItem() instanceof BedPlate6DuvetItem) {
             InteractionResult duvet = BedPlate6DuvetItem.applyToBed(level, pos, state, player, hand);
             if (duvet.consumesAction() || duvet == InteractionResult.FAIL) {
@@ -257,6 +318,45 @@ public final class BedPlate1Block extends BedPlateBlock {
             }
         }
         super.playerWillDestroy(level, pos, state, player);
+    }
+
+    /** 清掉 2×2 上所有格残留的床单（及连带被套）数据。 */
+    private static void clearAllDuvets(Level level, BlockState state, BlockPos anyPartPos) {
+        forEachDecorPlate(level, state, anyPartPos, BedPlate1BlockEntity::clearDuvet);
+    }
+
+    private static void clearAllCovers(Level level, BlockState state, BlockPos anyPartPos) {
+        forEachDecorPlate(
+                level,
+                state,
+                anyPartPos,
+                plate -> {
+                    if (plate.hasCover()) {
+                        plate.clearCover();
+                    }
+                });
+    }
+
+    private static void forEachDecorPlate(
+            Level level,
+            BlockState state,
+            BlockPos anyPartPos,
+            java.util.function.Consumer<BedPlate1BlockEntity> action) {
+        Direction facing = state.getValue(FACING);
+        Direction right = facing.getClockWise();
+        BlockPos footLeft = footLeftPos(state, anyPartPos);
+        BlockPos[] cells =
+                new BlockPos[] {
+                    footLeft,
+                    footLeft.relative(right),
+                    footLeft.relative(facing),
+                    footLeft.relative(facing).relative(right)
+                };
+        for (BlockPos cell : cells) {
+            if (level.getBlockEntity(cell) instanceof BedPlate1BlockEntity plate) {
+                action.accept(plate);
+            }
+        }
     }
 
     private static void destroySiblings(Level level, BlockPos pos, BlockState state) {

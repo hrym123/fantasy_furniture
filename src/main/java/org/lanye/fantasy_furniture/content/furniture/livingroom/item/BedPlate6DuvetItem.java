@@ -70,6 +70,10 @@ public final class BedPlate6DuvetItem extends BedPlate6GeolibDecorItem {
             if (!(stack.getItem() instanceof BedPlate6DuvetItem held)) {
                 return InteractionResult.PASS;
             }
+            if (!BedPlate6DuvetMaterials.isSupportedOnBedPlate1(held.getMaterialId())) {
+                /* 奶油色：板1 无专用贴图，禁止铺上（见 Opt-021） */
+                return InteractionResult.FAIL;
+            }
             if (!plate.canAddDuvet()) {
                 return InteractionResult.FAIL;
             }

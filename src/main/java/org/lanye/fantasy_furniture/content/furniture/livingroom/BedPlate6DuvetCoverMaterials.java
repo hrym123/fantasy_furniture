@@ -8,9 +8,17 @@ public final class BedPlate6DuvetCoverMaterials {
 
     public static final int COUNT = 6;
 
+    /** 奶油色；床板1 组合源暂无对应贴图，禁止铺上。 */
+    public static final int CREAM = 2;
+
     private BedPlate6DuvetCoverMaterials() {}
 
     public static boolean isValid(int materialId) {
         return materialId >= 1 && materialId <= COUNT;
+    }
+
+    /** 床板1 叠层可用档：缺奶油 {@link #CREAM} 专用贴图。 */
+    public static boolean isSupportedOnBedPlate1(int materialId) {
+        return isValid(materialId) && materialId != CREAM;
     }
 }

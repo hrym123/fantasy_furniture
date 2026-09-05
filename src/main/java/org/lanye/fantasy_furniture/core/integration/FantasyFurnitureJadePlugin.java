@@ -1,5 +1,6 @@
 package org.lanye.fantasy_furniture.core.integration;
 
+import org.lanye.fantasy_furniture.bootstrap.block.BedPlate1Registration;
 import org.lanye.fantasy_furniture.bootstrap.block.ModBlocks;
 import org.lanye.fantasy_furniture.bootstrap.block.StyledWindow0Registration;
 import org.lanye.fantasy_furniture.bootstrap.block.StyledWindowSeriesRegistration;
@@ -31,6 +32,10 @@ public final class FantasyFurnitureJadePlugin implements IWailaPlugin {
         }
         // 床板 6：按击中高度区分床单/被套/枕头，玉标题与床品物品译名一致
         registration.usePickedResult(ModBlocks.BED_PLATE6.block().get());
+        // 床板 1：按准心层区分床体 / 床单
+        for (var blockRo : BedPlate1Registration.blocks()) {
+            registration.usePickedResult(blockRo.get());
+        }
         // 肥皂：方块状态含颜料/磨损，标题与 {@link org.lanye.fantasy_furniture.content.soap.item.SoapBarBlockItem#getName} 一致
         registration.usePickedResult(ModBlocks.SOAP_BAR.block().get());
         registration.usePickedResult(ModBlocks.SOAP_BOX.block().get());

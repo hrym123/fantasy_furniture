@@ -17,11 +17,13 @@ import org.lanye.fantasy_furniture.FantasyFurniture;
 import org.lanye.fantasy_furniture.bootstrap.block.ModBlocks;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.BedPlate6DuvetCoverMaterials;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.BedPlateBedFootPos;
+import org.lanye.fantasy_furniture.content.furniture.livingroom.block.BedPlate1Block;
+import org.lanye.fantasy_furniture.content.furniture.livingroom.blockentity.BedPlate1BlockEntity;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.blockentity.BedPlate2BlockEntity;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.blockentity.BedPlate6BlockEntity;
 
 /**
- * 床板 6 被套（六种材质，与床单色 1..6 对应）：仅能在已铺床单的 {@link ModBlocks#BED_PLATE6} 上使用。
+ * 共用被套（六种材质）：可叠在已铺床单的床板1 / 2 / 6 型上；世界外形按床型选 geo。
  */
 public final class BedPlate6DuvetCoverItem extends BedPlate6GeolibDecorItem {
 
@@ -59,6 +61,29 @@ public final class BedPlate6DuvetCoverItem extends BedPlate6GeolibDecorItem {
      */
     public static InteractionResult applyToBed(
             Level level, BlockPos pos, BlockState state, Player player, InteractionHand hand) {
+        if (state.getBlock() instanceof BedPlate1Block) {
+            BedPlate1BlockEntity plate = BedPlate1Block.decorEntity(level, state, pos);
+            if (plate == null) {
+                return InteractionResult.PASS;
+            }
+            ItemStack stack = player.getItemInHand(hand);
+            if (!(stack.getItem() instanceof BedPlate6DuvetCoverItem held)) {
+                return InteractionResult.PASS;
+            }
+            if (!BedPlate6DuvetCoverMaterials.isSupportedOnBedPlate1(held.getMaterialId())) {
+                return InteractionResult.FAIL;
+            }
+            if (!plate.canAddCover()) {
+                return InteractionResult.FAIL;
+            }
+            if (!level.isClientSide) {
+                plate.setCoverMaterialId(held.getMaterialId());
+                if (!player.getAbilities().instabuild) {
+                    stack.shrink(1);
+                }
+            }
+            return InteractionResult.sidedSuccess(level.isClientSide);
+        }
         if (state.is(ModBlocks.BED_PLATE2.block().get())) {
             BlockPos footPos = BedPlateBedFootPos.footPos(state, pos);
             BlockEntity be = level.getBlockEntity(footPos);
