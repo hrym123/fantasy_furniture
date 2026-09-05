@@ -6,13 +6,12 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.BedBlock;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.block.state.properties.BedPart;
 import org.lanye.fantasy_furniture.FantasyFurniture;
 import org.lanye.fantasy_furniture.bootstrap.block.ModBlocks;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.BedPlate6DuvetCoverMaterials;
@@ -24,8 +23,9 @@ import org.lanye.fantasy_furniture.content.furniture.livingroom.blockentity.BedP
 
 /**
  * 共用被套（六种材质）：可叠在已铺床单的床板1 / 2 / 6 型上；世界外形按床型选 geo。
+ * 物品栏 / 手持为单材质图（{@code textures/item/bed_plate6_duvet_cover_*}）。
  */
-public final class BedPlate6DuvetCoverItem extends BedPlate6GeolibDecorItem {
+public final class BedPlate6DuvetCoverItem extends Item {
 
     private final int materialId;
 

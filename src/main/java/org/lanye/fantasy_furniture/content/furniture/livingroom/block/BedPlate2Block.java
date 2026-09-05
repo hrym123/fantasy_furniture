@@ -33,7 +33,7 @@ import org.lanye.reverie_core.geolib.bed.BedPlateBlock;
 /**
  * 床板2型：共用寝具；枕头驱动拼装 1–4 Geo。顺序：被套 → 大号 → 中号 → 小号 → 床单 → 睡眠。
  *
- * <p>落地弹跳与摔落减免：仅已铺床单时启用（与床板6一致）。空床体碰撞按 {@code bed_plate2.geo.json} 外接轮廓。
+ * <p>落地弹跳与摔落减免：仅已铺床单时启用（与床板6一致）。空床体碰撞见 {@link BedPlateEmptyBedCollision}（按格多盒）。
  */
 public final class BedPlate2Block extends BedPlateBlock {
 

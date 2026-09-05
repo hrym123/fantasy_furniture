@@ -60,16 +60,17 @@ public final class BedPlate1CollisionShapes {
             Block.box(2.00, 4.00, 2.00, 16.00, 7.00, 16.00);
 
     /**
-     * 被套：{@code bed_plate1_duvet_cover} gecko raw (−22.13,6.54,−15)–(9.53,13.39,6) 分格裁切。
+     * 被套：自 {@code 床板1_所有组合位置} 组 {@code bed_plate6_duvet_cover} 导出后 gecko AABB 约
+     * (−10,6.54,−26)–(22.13,12.70,6)，按床垫分格裁切（与床单同脚印）。
      */
     private static final VoxelShape COVER_FOOT_RIGHT =
-            Block.box(0.00, 6.50, 0.00, 9.53, 13.40, 6.00);
+            Block.box(0.00, 6.50, 0.00, 16.00, 12.70, 14.00);
     private static final VoxelShape COVER_FOOT_LEFT =
-            Block.box(0.00, 6.50, 0.00, 16.00, 13.40, 6.00);
+            Block.box(2.00, 6.50, 0.00, 16.00, 12.70, 14.00);
     private static final VoxelShape COVER_HEAD_RIGHT =
-            Block.box(0.00, 6.50, 1.00, 9.53, 13.40, 16.00);
+            Block.box(0.00, 6.50, 2.00, 16.00, 12.70, 16.00);
     private static final VoxelShape COVER_HEAD_LEFT =
-            Block.box(0.00, 6.50, 1.00, 16.00, 13.40, 16.00);
+            Block.box(2.00, 6.50, 2.00, 16.00, 12.70, 16.00);
 
     public static VoxelShape bodyShape(BlockState state) {
         return orient(northBody(state.getValue(BedPlate1Block.PART), state.getValue(BedPlate1Block.SIDE)), state);

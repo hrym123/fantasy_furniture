@@ -276,7 +276,7 @@ public final class BedPlate6Block extends BedPlateBlock {
         }
         if (player.getItemInHand(hand).getItem() instanceof BedPlate6DuvetItem) {
             InteractionResult duvet = BedPlate6DuvetItem.applyToBed(level, pos, state, player, hand);
-            if (duvet.consumesAction()) {
+            if (duvet != InteractionResult.PASS) {
                 return duvet;
             }
         }

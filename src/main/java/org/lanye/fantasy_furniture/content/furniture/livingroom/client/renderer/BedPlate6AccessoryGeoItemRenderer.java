@@ -10,7 +10,7 @@ import org.lanye.fantasy_furniture.content.furniture.livingroom.item.BedPlate6Ge
 import org.lanye.fantasy_furniture.content.furniture.livingroom.item.BedPlate6LargePillowItem;
 import software.bernie.geckolib.renderer.GeoItemRenderer;
 
-/** 床板 6 床单 / 被套 / 枕头在 GUI 与手中的 GeckoLib 渲染。 */
+/** 床板 6 枕头等在 GUI 与手中的 GeckoLib 渲染（床单 / 被套已改单材质图）。 */
 public final class BedPlate6AccessoryGeoItemRenderer extends GeoItemRenderer<BedPlate6GeolibDecorItem> {
 
     public BedPlate6AccessoryGeoItemRenderer() {
