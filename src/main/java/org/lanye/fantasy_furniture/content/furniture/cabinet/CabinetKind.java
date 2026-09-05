@@ -14,7 +14,7 @@ public enum CabinetKind {
             14f / 16f,
             new float[] {12f / 16f, 14f / 16f, 14f / 16f},
             /* 层板顶 Y */ new float[] {2f / 16f, 16f / 16f, 32f / 16f},
-            /* 展品 Z（偏后，少探出柜口） */ 2f / 16f),
+            /* 展品 Z：空腔 z∈[-8,6]/16，中心 -1/16 */ -1f / 16f),
     CABINET_2(
             "cabinet_2",
             1,
@@ -22,16 +22,11 @@ public enum CabinetKind {
             6f / 16f,
             new float[] {4f / 16f, 4f / 16f, 4f / 16f},
             new float[] {1f / 16f, 6f / 16f, 11f / 16f},
-            4f / 16f);
+            /* 贴墙空腔中心偏后 */ 4f / 16f);
 
-    /** 展品外接相对空腔比例（略留边，避免穿框）。 */
-    public static final float INTERIOR_FIT = 0.50f;
+    /** 展品最大外接边约占空腔最小边的比例。 */
+    public static final float INTERIOR_FIT = 0.80f;
     public static final float SHELF_CLEARANCE = 0.04f;
-
-    /**
-     * FIXED 对方块模型约再缩 0.5；外层再乘 {@code 1/FIXED_BLOCK_SCALE} 使视觉边长 ≈ fit。
-     */
-    public static final float FIXED_BLOCK_SCALE = 0.5f;
 
     private final String assetId;
     private final int columnParts;
@@ -86,11 +81,10 @@ public enum CabinetKind {
     }
 
     /**
-     * 展品中心 Y：层板顶 + 间隙 + 半个 fit（直立放在层板上）。
+     * 展品锚点 Y：层板顶面 + 间隙（模型底边落在层板上，再按管线上抬半高或贴底）。
      */
-    public float itemCenterY(CabinetSlot slot) {
-        float fit = fitSize(slot);
-        return shelfTopY(slot) + SHELF_CLEARANCE + fit * 0.5f;
+    public float itemFloorY(CabinetSlot slot) {
+        return shelfTopY(slot) + SHELF_CLEARANCE;
     }
 
     /**

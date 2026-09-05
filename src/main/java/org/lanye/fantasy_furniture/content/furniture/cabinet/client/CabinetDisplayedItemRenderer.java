@@ -14,6 +14,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.AABB;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.lanye.fantasy_furniture.content.furniture.cabinet.CabinetKind;
@@ -21,9 +22,9 @@ import org.lanye.fantasy_furniture.content.furniture.cabinet.CabinetSlot;
 import org.lanye.fantasy_furniture.content.furniture.cabinet.CabinetYaw;
 
 /**
- * 柜内展品：落到槽位中心 → 原地绕竖直轴偏航 → 绘制。
+ * 柜内展品：层板底边正中 → 原地绕竖直轴偏航 → 绘制。
  *
- * <p>优先级：船/矿车/盔甲架等实体模型 → 普通方块网格 → {@link ItemDisplayContext#FIXED}。
+ * <p>缩放按模型包围盒最大边对齐空腔约 {@link CabinetKind#INTERIOR_FIT}；贴底动态算。
  */
 @OnlyIn(Dist.CLIENT)
 final class CabinetDisplayedItemRenderer {
@@ -42,7 +43,7 @@ final class CabinetDisplayedItemRenderer {
         float fit = kind.fitSize(slot);
 
         poseStack.pushPose();
-        poseStack.translate(0f, kind.itemCenterY(slot), kind.itemZ());
+        poseStack.translate(0f, kind.itemFloorY(slot), kind.itemZ());
         poseStack.mulPose(Axis.YP.rotationDegrees(CabinetYaw.degrees(itemYawSteps)));
 
         if (CabinetDisplayEntities.tryDraw(poseStack, bufferSource, light, stack, level, fit)) {
@@ -58,23 +59,20 @@ final class CabinetDisplayedItemRenderer {
         poseStack.popPose();
     }
 
-    /**
-     * @return true 已用方块模型画完
-     */
     private static boolean tryDrawBlockModel(
             PoseStack poseStack, MultiBufferSource bufferSource, int light, ItemStack stack, float fit) {
         if (!(stack.getItem() instanceof BlockItem blockItem)) {
             return false;
         }
         BlockState state = blockItem.getBlock().defaultBlockState();
-        // Geo / 实体动画方块无普通 baked block 网格，交给物品管线
         if (state.getRenderShape() != RenderShape.MODEL) {
             return false;
         }
-        // 1×1×1 方块模型：缩到 fit 并居中到当前原点（槽位中心）
-        poseStack.scale(fit, fit, fit);
-        poseStack.translate(-0.5f, -0.5f, -0.5f);
         BlockRenderDispatcher dispatcher = Minecraft.getInstance().getBlockRenderer();
+        BakedModel model = dispatcher.getBlockModel(state);
+        AABB bounds = CabinetModelBounds.fromModel(model, state);
+        float scale = CabinetModelBounds.scaleToFit(bounds, fit);
+        CabinetModelBounds.translateBlockToFloorCentered(poseStack, bounds, scale);
         dispatcher.renderSingleBlock(state, poseStack, bufferSource, light, OverlayTexture.NO_OVERLAY);
         return true;
     }
@@ -86,10 +84,11 @@ final class CabinetDisplayedItemRenderer {
             ItemStack stack,
             Level level,
             float fit) {
-        float scale = fit / CabinetKind.FIXED_BLOCK_SCALE;
         ItemRenderer itemRenderer = Minecraft.getInstance().getItemRenderer();
         BakedModel model = itemRenderer.getModel(stack, level, null, 0);
-        poseStack.scale(scale, scale, scale);
+        AABB afterFixed = CabinetModelBounds.afterDisplay(model, ItemDisplayContext.FIXED);
+        float scale = CabinetModelBounds.scaleToFit(afterFixed, fit);
+        CabinetModelBounds.translateToFloorCentered(poseStack, afterFixed, scale);
         itemRenderer.render(
                 stack,
                 ItemDisplayContext.FIXED,
