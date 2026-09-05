@@ -67,7 +67,6 @@ public final class CabinetGeoBlockRenderer extends ReverieGeoBlockRenderer<Cabin
             float blue,
             float alpha) {
         if (!isReRender) {
-            // 与 ReverieGeoBlockRenderer STATIC 路径一致，并在同一矩阵下画展品
             poseStack.pushPose();
             poseStack.translate(0.5, 0, 0.5);
             rotateBlock(getFacing(animatable), poseStack);
@@ -119,7 +118,14 @@ public final class CabinetGeoBlockRenderer extends ReverieGeoBlockRenderer<Cabin
                 continue;
             }
             CabinetDisplayedItemRenderer.draw(
-                    poseStack, bufferSource, packedLight, stack, animatable.getLevel(), kind, slot);
+                    poseStack,
+                    bufferSource,
+                    packedLight,
+                    stack,
+                    animatable.getLevel(),
+                    kind,
+                    slot,
+                    animatable.itemYaw(slot));
         }
     }
 }

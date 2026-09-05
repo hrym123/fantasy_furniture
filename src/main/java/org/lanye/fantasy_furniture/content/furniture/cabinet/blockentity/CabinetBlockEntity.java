@@ -19,6 +19,7 @@ import net.minecraft.world.phys.AABB;
 import org.lanye.fantasy_furniture.bootstrap.block.ModBlocks;
 import org.lanye.fantasy_furniture.content.furniture.cabinet.CabinetKind;
 import org.lanye.fantasy_furniture.content.furniture.cabinet.CabinetSlot;
+import org.lanye.fantasy_furniture.content.furniture.cabinet.CabinetYaw;
 import org.lanye.fantasy_furniture.content.furniture.cabinet.block.CabinetBlock;
 import software.bernie.geckolib.animatable.GeoBlockEntity;
 import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
@@ -27,15 +28,18 @@ import software.bernie.geckolib.core.animation.AnimationController;
 import software.bernie.geckolib.core.object.PlayState;
 import software.bernie.geckolib.util.GeckoLibUtil;
 
-/** 柜子：三层各存一件 ItemStack；世界内以 BER FIXED 展示。 */
+/** 柜子：三层各存一件 ItemStack + 展品竖直轴偏航；世界内以 BER FIXED 展示。 */
 public final class CabinetBlockEntity extends BlockEntity implements GeoBlockEntity {
 
     private static final String TAG_ITEMS = "Items";
     private static final String TAG_SLOT = "Slot";
+    private static final String TAG_ITEM_ROT = "Rot";
 
     private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
     private final NonNullList<ItemStack> items =
             NonNullList.withSize(CabinetSlot.COUNT, ItemStack.EMPTY);
+    /** 各层展品绕竖直轴偏航 0～7（步长 45°）。 */
+    private final int[] itemYaw = new int[CabinetSlot.COUNT];
 
     public CabinetBlockEntity(BlockPos pos, BlockState state) {
         super(typeFor(state), pos, state);
@@ -68,12 +72,29 @@ public final class CabinetBlockEntity extends BlockEntity implements GeoBlockEnt
         return getItem(slot).isEmpty();
     }
 
+    /** 展品竖直轴偏航步（0～7）。 */
+    public int itemYaw(CabinetSlot slot) {
+        return CabinetYaw.clamp(itemYaw[slot.index()]);
+    }
+
+    /** 有物槽：展品 +45°；成功返回 true。 */
+    public boolean rotateItem(CabinetSlot slot) {
+        if (isEmpty(slot)) {
+            return false;
+        }
+        itemYaw[slot.index()] = CabinetYaw.next(itemYaw[slot.index()]);
+        setChanged();
+        sync();
+        return true;
+    }
+
     /** 向空槽放入（消耗调用方负责）；成功返回 true。 */
     public boolean placeItem(CabinetSlot slot, ItemStack stack) {
         if (stack.isEmpty() || !isEmpty(slot)) {
             return false;
         }
         items.set(slot.index(), stack.copyWithCount(1));
+        itemYaw[slot.index()] = 0;
         setChanged();
         sync();
         return true;
@@ -86,6 +107,7 @@ public final class CabinetBlockEntity extends BlockEntity implements GeoBlockEnt
             return ItemStack.EMPTY;
         }
         items.set(slot.index(), ItemStack.EMPTY);
+        itemYaw[slot.index()] = 0;
         setChanged();
         sync();
         return stack;
@@ -98,6 +120,7 @@ public final class CabinetBlockEntity extends BlockEntity implements GeoBlockEnt
         Containers.dropContents(level, worldPosition, items);
         for (int i = 0; i < items.size(); i++) {
             items.set(i, ItemStack.EMPTY);
+            itemYaw[i] = 0;
         }
         setChanged();
     }
@@ -119,6 +142,10 @@ public final class CabinetBlockEntity extends BlockEntity implements GeoBlockEnt
             }
             CompoundTag entry = new CompoundTag();
             entry.putByte(TAG_SLOT, (byte) slot.index());
+            int yaw = itemYaw[slot.index()];
+            if (yaw != 0) {
+                entry.putByte(TAG_ITEM_ROT, (byte) yaw);
+            }
             stack.save(entry);
             list.add(entry);
         }
@@ -130,6 +157,7 @@ public final class CabinetBlockEntity extends BlockEntity implements GeoBlockEnt
         super.load(tag);
         for (int i = 0; i < items.size(); i++) {
             items.set(i, ItemStack.EMPTY);
+            itemYaw[i] = 0;
         }
         ListTag list = tag.getList(TAG_ITEMS, Tag.TAG_COMPOUND);
         for (int i = 0; i < list.size(); i++) {
@@ -137,6 +165,9 @@ public final class CabinetBlockEntity extends BlockEntity implements GeoBlockEnt
             int slot = entry.getByte(TAG_SLOT) & 0xFF;
             if (slot >= 0 && slot < items.size()) {
                 items.set(slot, ItemStack.of(entry));
+                itemYaw[slot] = entry.contains(TAG_ITEM_ROT, Tag.TAG_BYTE)
+                        ? CabinetYaw.clamp(entry.getByte(TAG_ITEM_ROT))
+                        : 0;
             }
         }
     }

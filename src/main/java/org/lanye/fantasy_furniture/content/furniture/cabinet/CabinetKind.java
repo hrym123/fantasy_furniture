@@ -1,22 +1,15 @@
 package org.lanye.fantasy_furniture.content.furniture.cabinet;
 
-import java.util.Optional;
-import net.minecraft.core.BlockPos;
-import net.minecraft.util.Mth;
-import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.phys.AABB;
-import net.minecraft.world.phys.Vec3;
-
 /**
  * 柜子型号：三层槽位布局（北向模型空间，原点在方块底心）。
  *
- * <p>点选：视线与整柜 AABB 求交后按高度三等分（不依赖命中面）。
+ * <p>点选：相对底格（master）的命中高度，取距层腔中心最近的一层（点哪里放哪里）。
  * <p>渲染：C020 常量表 + FIXED；缩放使外接约空腔 {@link #INTERIOR_FIT}。
  */
 public enum CabinetKind {
     CABINET_1(
             "cabinet_1",
-            3.0,
+            3,
             /* 内宽/深/各层腔高（格） */ 12f / 16f,
             14f / 16f,
             new float[] {12f / 16f, 14f / 16f, 14f / 16f},
@@ -24,7 +17,7 @@ public enum CabinetKind {
             /* 展品 Z（偏后，少探出柜口） */ 2f / 16f),
     CABINET_2(
             "cabinet_2",
-            1.0,
+            1,
             14f / 16f,
             6f / 16f,
             new float[] {4f / 16f, 4f / 16f, 4f / 16f},
@@ -40,7 +33,7 @@ public enum CabinetKind {
     public static final float FIXED_BLOCK_SCALE = 0.5f;
 
     private final String assetId;
-    private final double heightBlocks;
+    private final int columnParts;
     private final float cavityWidth;
     private final float cavityDepth;
     private final float[] cavityHeight;
@@ -49,14 +42,14 @@ public enum CabinetKind {
 
     CabinetKind(
             String assetId,
-            double heightBlocks,
+            int columnParts,
             float cavityWidth,
             float cavityDepth,
             float[] cavityHeight,
             float[] shelfTopY,
             float itemZ) {
         this.assetId = assetId;
-        this.heightBlocks = heightBlocks;
+        this.columnParts = columnParts;
         this.cavityWidth = cavityWidth;
         this.cavityDepth = cavityDepth;
         this.cavityHeight = cavityHeight;
@@ -68,8 +61,13 @@ public enum CabinetKind {
         return assetId;
     }
 
+    /** 竖向占地格数（柜子1型=3，柜子2型=1）。 */
+    public int columnParts() {
+        return columnParts;
+    }
+
     public double heightBlocks() {
-        return heightBlocks;
+        return columnParts;
     }
 
     public float itemZ() {
@@ -95,22 +93,21 @@ public enum CabinetKind {
     }
 
     /**
-     * 视线与整柜外包盒求交，按高度三等分得到槽位（稳定，不依赖点到顶/侧面）。
+     * 相对底格的命中高度 → 最近层腔（点哪里放哪里）。
+     *
+     * @param localY 命中点 Y − master 底格 Y（格）
      */
-    public CabinetSlot slotFromLook(BlockPos pos, Player player) {
-        Vec3 eye = player.getEyePosition(1f);
-        Vec3 end = eye.add(player.getViewVector(1f).scale(8.0));
-        AABB box =
-                new AABB(
-                        pos.getX(),
-                        pos.getY(),
-                        pos.getZ(),
-                        pos.getX() + 1.0,
-                        pos.getY() + heightBlocks,
-                        pos.getZ() + 1.0);
-        Optional<Vec3> hit = box.clip(eye, end);
-        double localY = hit.map(v -> v.y - pos.getY()).orElse(heightBlocks * 0.5);
-        double t = Mth.clamp(localY / heightBlocks, 0.0, 0.999);
-        return CabinetSlot.byIndex((int) (t * CabinetSlot.COUNT));
+    public CabinetSlot slotFromLocalY(double localY) {
+        int best = 0;
+        double bestDist = Double.MAX_VALUE;
+        for (int i = 0; i < CabinetSlot.COUNT; i++) {
+            double center = shelfTopY[i] + cavityHeight[i] * 0.5;
+            double d = Math.abs(localY - center);
+            if (d < bestDist) {
+                bestDist = d;
+                best = i;
+            }
+        }
+        return CabinetSlot.byIndex(best);
     }
 }
