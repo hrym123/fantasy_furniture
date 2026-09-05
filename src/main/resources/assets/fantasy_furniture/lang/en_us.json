@@ -66,6 +66,8 @@
   "block.fantasy_furniture.lottery_machine": "Lottery Machine",
   "block.fantasy_furniture.computer_1": "Computer Type 1",
   "block.fantasy_furniture.computer_2": "Computer Type 2",
+  "block.fantasy_furniture.cabinet_1": "Cabinet Type 1",
+  "block.fantasy_furniture.cabinet_2": "Cabinet Type 2",
   "item.fantasy_furniture.computer_1.named": "Computer Type 1 (%s)",
   "item.fantasy_furniture.computer_2.named": "Computer Type 2 (%s)",
   "block.fantasy_furniture.computer_1.named": "Computer Type 1 (%s)",

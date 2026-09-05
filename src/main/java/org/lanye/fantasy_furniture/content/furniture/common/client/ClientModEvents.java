@@ -16,6 +16,7 @@ import org.lanye.fantasy_furniture.content.soap.SoapFlatLiquidMaterials;
 import org.lanye.fantasy_furniture.content.soap.client.SoapDissolveParticle;
 import org.lanye.fantasy_furniture.content.sweeper.blockentity.SweeperDockBlockEntity;
 import org.lanye.fantasy_furniture.bootstrap.block.ModBlocks;
+import org.lanye.fantasy_furniture.content.furniture.cabinet.client.CabinetGeoBlockRenderer;
 import org.lanye.fantasy_furniture.content.furniture.decor.client.model.ComputerGeoModel;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.client.model.BanquetteBlockGeoModel;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.client.renderer.BanquetteGeoBlockRenderer;
@@ -118,6 +119,12 @@ public final class ClientModEvents {
                 ModBlocks.COMPUTER_2,
                 ReveriePerfRender.wrapBer(
                         ctx -> new ReverieGeoBlockRenderer<>(new ComputerGeoModel(), GeoRenderTier.STATIC)));
+        AnimatedBlockClientRegistration.registerBlockEntityRenderer(
+                ModBlocks.CABINET_1,
+                ReveriePerfRender.wrapBer(ctx -> new CabinetGeoBlockRenderer()));
+        AnimatedBlockClientRegistration.registerBlockEntityRenderer(
+                ModBlocks.CABINET_2,
+                ReveriePerfRender.wrapBer(ctx -> new CabinetGeoBlockRenderer()));
     }
 
     @SubscribeEvent

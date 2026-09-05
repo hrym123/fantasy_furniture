@@ -1,0 +1,16 @@
+{
+  "variants": {
+    "facing=east": {
+      "model": "fantasy_furniture:block/cabinet_2"
+    },
+    "facing=north": {
+      "model": "fantasy_furniture:block/cabinet_2"
+    },
+    "facing=south": {
+      "model": "fantasy_furniture:block/cabinet_2"
+    },
+    "facing=west": {
+      "model": "fantasy_furniture:block/cabinet_2"
+    }
+  }
+}

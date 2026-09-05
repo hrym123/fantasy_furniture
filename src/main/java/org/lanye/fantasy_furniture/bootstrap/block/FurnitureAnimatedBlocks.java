@@ -21,6 +21,9 @@ import org.lanye.fantasy_furniture.content.furniture.decor.blockentity.StyledSta
 import org.lanye.fantasy_furniture.content.furniture.decor.blockentity.LotteryMachineBlockEntity;
 import org.lanye.fantasy_furniture.content.sweeper.blockentity.SweeperDockBlockEntity;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.block.BanquetteBlock;
+import org.lanye.fantasy_furniture.content.furniture.cabinet.CabinetKind;
+import org.lanye.fantasy_furniture.content.furniture.cabinet.block.CabinetBlock;
+import org.lanye.fantasy_furniture.content.furniture.cabinet.blockentity.CabinetBlockEntity;
 import org.lanye.fantasy_furniture.content.furniture.decor.item.ComputerBlockItem;
 import org.lanye.fantasy_furniture.content.furniture.decor.block.ComputerBlock;
 import org.lanye.fantasy_furniture.content.furniture.decor.block.LotteryMachineBlock;
@@ -251,7 +254,29 @@ public final class FurnitureAnimatedBlocks {
                                                     block,
                                                     props,
                                                     GeolibItemAssets.blockAsset(
-                                                            FantasyFurniture.MODID, "computer_2")))));
+                                                            FantasyFurniture.MODID, "computer_2"))),
+                            AnimatedBlockRegistration.spec(
+                                    "cabinet_1",
+                                    FurnitureBlockProperties::woodCabinetNoOcclusion,
+                                    props -> new CabinetBlock(props, CabinetKind.CABINET_1),
+                                    CabinetBlockEntity::new,
+                                    (block, props) ->
+                                            new GeolibBlockItem(
+                                                    block,
+                                                    props,
+                                                    GeolibItemAssets.blockAsset(
+                                                            FantasyFurniture.MODID, "cabinet_1"))),
+                            AnimatedBlockRegistration.spec(
+                                    "cabinet_2",
+                                    FurnitureBlockProperties::woodCabinetNoOcclusion,
+                                    props -> new CabinetBlock(props, CabinetKind.CABINET_2),
+                                    CabinetBlockEntity::new,
+                                    (block, props) ->
+                                            new GeolibBlockItem(
+                                                    block,
+                                                    props,
+                                                    GeolibItemAssets.blockAsset(
+                                                            FantasyFurniture.MODID, "cabinet_2")))));
 
     /** 金属电器感；打开态微光（与 {@link ComputerBlock#OPEN} 联动）。 */
     private static BlockBehaviour.Properties computerProperties() {
@@ -275,6 +300,8 @@ public final class FurnitureAnimatedBlocks {
     private static final int I_DISPLAY_CABINET = 13;
     private static final int I_COMPUTER_1 = 14;
     private static final int I_COMPUTER_2 = 15;
+    private static final int I_CABINET_1 = 16;
+    private static final int I_CABINET_2 = 17;
 
     @SuppressWarnings("unchecked")
     private static <BE extends BlockEntity> AnimatedBlockEntry<BE> animatedEntry(int index) {
@@ -316,6 +343,10 @@ public final class FurnitureAnimatedBlocks {
     public static final AnimatedBlockEntry<ComputerBlockEntity> COMPUTER_1 = animatedEntry(I_COMPUTER_1);
 
     public static final AnimatedBlockEntry<ComputerBlockEntity> COMPUTER_2 = animatedEntry(I_COMPUTER_2);
+
+    public static final AnimatedBlockEntry<CabinetBlockEntity> CABINET_1 = animatedEntry(I_CABINET_1);
+
+    public static final AnimatedBlockEntry<CabinetBlockEntity> CABINET_2 = animatedEntry(I_CABINET_2);
 
     public static final AnimatedBlockEntry<BedPlateBaseBlockEntity> BED_PLATE6 = BedPlate6Registration.mainEntry();
 

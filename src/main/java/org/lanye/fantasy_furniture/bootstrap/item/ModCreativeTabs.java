@@ -73,6 +73,8 @@ public final class ModCreativeTabs {
         }
         list.add(out -> out.accept(ModBlocks.LOTTERY_MACHINE.item().get()));
         ComputerCreativeTab.appendEntries(list);
+        list.add(out -> out.accept(ModBlocks.CABINET_1.item().get()));
+        list.add(out -> out.accept(ModBlocks.CABINET_2.item().get()));
         list.add(out -> out.accept(ModBlocks.SWEEPER_DOCK.item().get()));
         list.add(out -> out.accept(ModBlocks.GREEN_SOFA.item().get()));
         for (var ro : BedPlate1Registration.items()) {

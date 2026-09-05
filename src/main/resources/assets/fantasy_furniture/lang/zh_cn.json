@@ -66,6 +66,8 @@
   "block.fantasy_furniture.lottery_machine": "抽奖机",
   "block.fantasy_furniture.computer_1": "电脑1型",
   "block.fantasy_furniture.computer_2": "电脑2型",
+  "block.fantasy_furniture.cabinet_1": "柜子1型",
+  "block.fantasy_furniture.cabinet_2": "柜子2型",
   "item.fantasy_furniture.computer_1.named": "电脑1型（%s）",
   "item.fantasy_furniture.computer_2.named": "电脑2型（%s）",
   "block.fantasy_furniture.computer_1.named": "电脑1型（%s）",
