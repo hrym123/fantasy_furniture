@@ -11,6 +11,7 @@ import net.minecraft.world.phys.shapes.VoxelShape;
 public final class CabinetCollisionShapes {
 
     private static final VoxelShape CABINET_1_CELL = Block.box(0.0, 0.0, 0.0, 16.0, 16.0, 16.0);
+    /** 与柜子2 geo 一致：中心相对 z∈[1,8]/16 → 方块像素 z 9..16。 */
     private static final VoxelShape CABINET_2 = Block.box(0.0, 0.0, 9.0, 16.0, 16.0, 16.0);
 
     private CabinetCollisionShapes() {}

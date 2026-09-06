@@ -37,14 +37,14 @@ import org.lanye.reverie_core.geolib.GeolibFacingEntityBlockWithFactory;
 import org.lanye.reverie_core.util.VoxelShapeRotation;
 
 /**
- * 柜子：四向放置；三层各可放入一件任意物品（展示框式）。
+ * 柜子：四向放置；各槽可放入一件任意物品（展示框式）。
  *
  * <ul>
  *   <li>持物右击空槽 → 放入 1 件
  *   <li>空手右击有物槽 → 展品绕竖直轴 +45°（类似展示框）
  *   <li>潜行空手右击有物槽 → 取出
  *   <li>柜子1型：geo 高 48 → 竖向三格 {@link #PART}（0 底/BE+Geo，1/2 仅碰撞）；点哪格进哪层
- *   <li>柜子2型：单格，按命中高度映射层腔
+ *   <li>柜子2型：单格；3×3 九槽，按命中点映射最近格
  * </ul>
  */
 public final class CabinetBlock extends GeolibFacingEntityBlockWithFactory<CabinetBlockEntity> {
@@ -196,7 +196,7 @@ public final class CabinetBlock extends GeolibFacingEntityBlockWithFactory<Cabin
         if (be == null) {
             return InteractionResult.FAIL;
         }
-        CabinetSlot slot = resolveSlot(state, master, hit);
+        int slot = resolveSlot(state, master, player, hit);
         ItemStack held = player.getItemInHand(hand);
 
         if (held.isEmpty()) {
@@ -232,14 +232,19 @@ public final class CabinetBlock extends GeolibFacingEntityBlockWithFactory<Cabin
     }
 
     /**
-     * 柜子1型：竖向三格与三层一一对应（点哪格进哪层）。
-     * 柜子2型：单格内按命中高度选最近层腔。
+     * 柜子1型：竖向三格与 {@code PART} 一一对应（勿改）。
+     * 柜子2型：正面命中 XY / 射线拾取九格。
      */
-    private CabinetSlot resolveSlot(BlockState state, BlockPos master, BlockHitResult hit) {
+    private int resolveSlot(BlockState state, BlockPos master, Player player, BlockHitResult hit) {
         if (kind.columnParts() > 1) {
-            return CabinetSlot.byIndex(state.getValue(PART));
+            return CabinetSlot.clampIndex(state.getValue(PART), kind.slotCount());
         }
-        return kind.slotFromLocalY(hit.getLocation().y - master.getY());
+        return kind.slotFromHit(
+                master,
+                state.getValue(FACING),
+                hit,
+                player.getEyePosition(1.0f),
+                player.getViewVector(1.0f));
     }
 
     @Override

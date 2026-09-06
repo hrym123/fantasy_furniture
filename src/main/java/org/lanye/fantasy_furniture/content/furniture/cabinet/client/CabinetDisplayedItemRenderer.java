@@ -18,7 +18,6 @@ import net.minecraft.world.phys.AABB;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.lanye.fantasy_furniture.content.furniture.cabinet.CabinetKind;
-import org.lanye.fantasy_furniture.content.furniture.cabinet.CabinetSlot;
 import org.lanye.fantasy_furniture.content.furniture.cabinet.CabinetYaw;
 
 /**
@@ -38,12 +37,12 @@ final class CabinetDisplayedItemRenderer {
             ItemStack stack,
             Level level,
             CabinetKind kind,
-            CabinetSlot slot,
+            int slot,
             int itemYawSteps) {
         float fit = kind.fitSize(slot);
 
         poseStack.pushPose();
-        poseStack.translate(0f, kind.itemFloorY(slot), kind.itemZ());
+        poseStack.translate(kind.itemX(slot), kind.itemFloorY(slot), kind.itemZ());
         poseStack.mulPose(Axis.YP.rotationDegrees(CabinetYaw.degrees(itemYawSteps)));
 
         if (CabinetDisplayEntities.tryDraw(poseStack, bufferSource, light, stack, level, fit)) {

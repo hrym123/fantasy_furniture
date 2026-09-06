@@ -10,7 +10,6 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.lanye.fantasy_furniture.FantasyFurniture;
 import org.lanye.fantasy_furniture.content.furniture.cabinet.CabinetKind;
-import org.lanye.fantasy_furniture.content.furniture.cabinet.CabinetSlot;
 import org.lanye.fantasy_furniture.content.furniture.cabinet.blockentity.CabinetBlockEntity;
 import org.lanye.reverie_core.geolib.client.GeoRenderTier;
 import org.lanye.reverie_core.geolib.client.ReverieGeoBlockRenderer;
@@ -112,7 +111,8 @@ public final class CabinetGeoBlockRenderer extends ReverieGeoBlockRenderer<Cabin
             MultiBufferSource bufferSource,
             int packedLight) {
         CabinetKind kind = animatable.kind();
-        for (CabinetSlot slot : CabinetSlot.values()) {
+        int n = kind.slotCount();
+        for (int slot = 0; slot < n; slot++) {
             ItemStack stack = animatable.getItem(slot);
             if (stack.isEmpty()) {
                 continue;
