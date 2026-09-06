@@ -25,9 +25,12 @@ import org.lanye.fantasy_furniture.content.furniture.cabinet.CabinetKind;
 import org.lanye.fantasy_furniture.content.furniture.cabinet.block.CabinetBlock;
 import org.lanye.fantasy_furniture.content.furniture.cabinet.blockentity.CabinetBlockEntity;
 import org.lanye.fantasy_furniture.content.furniture.decor.item.ComputerBlockItem;
+import org.lanye.fantasy_furniture.content.furniture.decor.item.DrinkwareBlockItem;
 import org.lanye.fantasy_furniture.content.furniture.decor.block.ComputerBlock;
+import org.lanye.fantasy_furniture.content.furniture.decor.block.DrinkwareBlock;
 import org.lanye.fantasy_furniture.content.furniture.decor.block.LotteryMachineBlock;
 import org.lanye.fantasy_furniture.content.furniture.decor.blockentity.ComputerBlockEntity;
+import org.lanye.fantasy_furniture.content.furniture.decor.blockentity.DrinkwareBlockEntity;
 import org.lanye.fantasy_furniture.content.sweeper.block.SweeperDockBlock;
 import org.lanye.fantasy_furniture.content.soap.block.BodyCreamBlock;
 import org.lanye.fantasy_furniture.content.soap.block.BodyWashBlock;
@@ -276,7 +279,18 @@ public final class FurnitureAnimatedBlocks {
                                                     block,
                                                     props,
                                                     GeolibItemAssets.blockAsset(
-                                                            FantasyFurniture.MODID, "cabinet_2")))));
+                                                            FantasyFurniture.MODID, "cabinet_2"))),
+                            AnimatedBlockRegistration.spec(
+                                    "drinkware",
+                                    () -> FurnitureBlockProperties.bathroomSmallDecor(MapColor.QUARTZ),
+                                    DrinkwareBlock::new,
+                                    DrinkwareBlockEntity::new,
+                                    (block, props) ->
+                                            new DrinkwareBlockItem(
+                                                    block,
+                                                    props.stacksTo(64),
+                                                    GeolibItemAssets.blockAsset(
+                                                            FantasyFurniture.MODID, "drinkware")))));
 
     /** 金属电器感；打开态微光（与 {@link ComputerBlock#OPEN} 联动）。 */
     private static BlockBehaviour.Properties computerProperties() {
@@ -302,6 +316,7 @@ public final class FurnitureAnimatedBlocks {
     private static final int I_COMPUTER_2 = 15;
     private static final int I_CABINET_1 = 16;
     private static final int I_CABINET_2 = 17;
+    private static final int I_DRINKWARE = 18;
 
     @SuppressWarnings("unchecked")
     private static <BE extends BlockEntity> AnimatedBlockEntry<BE> animatedEntry(int index) {
@@ -347,6 +362,8 @@ public final class FurnitureAnimatedBlocks {
     public static final AnimatedBlockEntry<CabinetBlockEntity> CABINET_1 = animatedEntry(I_CABINET_1);
 
     public static final AnimatedBlockEntry<CabinetBlockEntity> CABINET_2 = animatedEntry(I_CABINET_2);
+
+    public static final AnimatedBlockEntry<DrinkwareBlockEntity> DRINKWARE = animatedEntry(I_DRINKWARE);
 
     public static final AnimatedBlockEntry<BedPlateBaseBlockEntity> BED_PLATE6 = BedPlate6Registration.mainEntry();
 

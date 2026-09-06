@@ -1,0 +1,50 @@
+{
+  "parent": "builtin/entity",
+  "textures": {
+    "particle": "fantasy_furniture:block/drinkware"
+  },
+  "display": {
+    "firstperson_righthand": {
+      "translation": [
+        0,
+        0,
+        2
+      ]
+    },
+    "firstperson_lefthand": {
+      "translation": [
+        0,
+        0,
+        2
+      ]
+    },
+    "gui": {
+      "rotation": [
+        19,
+        -14,
+        0
+      ],
+      "translation": [
+        0.25,
+        -3.25,
+        0
+      ],
+      "scale": [
+        2,
+        2,
+        -2
+      ]
+    },
+    "head": {
+      "translation": [
+        0,
+        6.25,
+        0
+      ]
+    }
+  },
+  "texture_size": [
+    16,
+    16
+  ]
+}

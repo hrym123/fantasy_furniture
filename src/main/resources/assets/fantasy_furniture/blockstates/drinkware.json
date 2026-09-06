@@ -1,0 +1,16 @@
+{
+  "variants": {
+    "facing=east": {
+      "model": "fantasy_furniture:block/drinkware"
+    },
+    "facing=north": {
+      "model": "fantasy_furniture:block/drinkware"
+    },
+    "facing=south": {
+      "model": "fantasy_furniture:block/drinkware"
+    },
+    "facing=west": {
+      "model": "fantasy_furniture:block/drinkware"
+    }
+  }
+}
