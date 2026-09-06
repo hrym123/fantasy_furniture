@@ -25,7 +25,7 @@ import org.lanye.fantasy_furniture.content.furniture.livingroom.blockentity.BedP
 import org.lanye.fantasy_furniture.content.furniture.livingroom.blockentity.BedPlate6BlockEntity;
 
 /**
- * 共用床单（七种材质之一）：可铺在床板1 / 2 / 3 / 4 / 6 型上；世界外形按床型选 geo，不可放置为方块。
+ * 共用床单（八种材质之一）：可铺在床板1 / 2 / 3 / 4 / 6 型上；世界外形按床型选 geo，不可放置为方块。
  * 物品栏 / 手持为单材质图（{@code textures/item/bed_plate6_duvet_*}）。
  */
 public final class BedPlate6DuvetItem extends Item {
@@ -74,7 +74,6 @@ public final class BedPlate6DuvetItem extends Item {
                 return InteractionResult.PASS;
             }
             if (!BedPlate6DuvetMaterials.isSupportedOnBedPlate1(held.getMaterialId())) {
-                /* 奶油色：板1 无专用贴图，禁止铺上（见 Opt-021） */
                 return InteractionResult.FAIL;
             }
             if (!plate.canAddDuvet()) {
@@ -120,7 +119,6 @@ public final class BedPlate6DuvetItem extends Item {
                 return InteractionResult.PASS;
             }
             if (!BedPlate6DuvetMaterials.isSupportedOnBedPlate3(held.getMaterialId())) {
-                /* 奶油色：板3 无专用贴图，禁止铺上 */
                 return InteractionResult.FAIL;
             }
             if (!plate.canAddDuvet()) {
@@ -145,7 +143,6 @@ public final class BedPlate6DuvetItem extends Item {
                 return InteractionResult.PASS;
             }
             if (!BedPlate6DuvetMaterials.isSupportedOnBedPlate4(held.getMaterialId())) {
-                /* 奶油色：板4 暂借板3 六色，禁止奶油 */
                 return InteractionResult.FAIL;
             }
             if (!plate.canAddDuvet()) {
