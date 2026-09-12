@@ -25,6 +25,8 @@ import javax.annotation.Nullable;
 import software.bernie.geckolib.cache.object.BakedGeoModel;
 import software.bernie.geckolib.cache.object.GeoBone;
 import software.bernie.geckolib.cache.object.GeoCube;
+import software.bernie.geckolib.cache.object.GeoQuad;
+import software.bernie.geckolib.cache.object.GeoVertex;
 import software.bernie.geckolib.model.GeoModel;
 
 /**
@@ -166,18 +168,32 @@ public final class CabinetGeoBlockRenderer extends ReverieGeoBlockRenderer<Cabin
     }
 
     /**
-     * 柜子1 拼装 geo 无 {@code shelf_*} 骨：按立方体厚度与中心 Y 对齐 {@link CabinetKind#shelfLocalAabb}。
+     * 柜子1 拼装 geo 无 {@code shelf_*} 骨：按立方体厚度（像素）与顶点 Y（方块）对齐
+     * {@link CabinetKind#shelfLocalAabb}。注意 GeckoLib 的 {@link GeoCube#size()} 为像素，不是 /16。
      */
     private static boolean shouldHideCabinet1Cube(GeoCube cube, CabinetBlockEntity be) {
-        Vec3 size = cube.size();
+        Vec3 sizePx = cube.size();
         // 隔板约 2px 厚；侧/背板更高
-        if (size.y < 1.5 / 16.0 || size.y > 2.5 / 16.0) {
+        if (sizePx.y < 1.5 || sizePx.y > 2.5) {
             return false;
         }
-        if (size.x < 10.0 / 16.0 || size.z < 12.0 / 16.0) {
+        // 开口隔板约 12×14；2S 顶盖略宽 13
+        if (sizePx.x < 10.0 || sizePx.z < 12.0) {
             return false;
         }
-        double centerY = cube.pivot().y;
+        double minY = Double.POSITIVE_INFINITY;
+        double maxY = Double.NEGATIVE_INFINITY;
+        for (GeoQuad quad : cube.quads()) {
+            for (GeoVertex vertex : quad.vertices()) {
+                float y = vertex.position().y;
+                minY = Math.min(minY, y);
+                maxY = Math.max(maxY, y);
+            }
+        }
+        if (!(minY < maxY)) {
+            return false;
+        }
+        double centerY = (minY + maxY) * 0.5;
         CabinetSegment segment = be.segment();
         for (int shelf = 0; shelf < CabinetKind.SHELF_COUNT; shelf++) {
             if (shelf == 2) {
