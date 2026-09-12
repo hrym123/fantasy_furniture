@@ -309,4 +309,39 @@ public final class BedPlate2BlockEntity extends BedPlateBaseBlockEntity {
             large2MaterialId = 0;
         }
     }
+
+    /** 客户端叠层渲染依赖此包；缺省则服务端已铺、客户端仍无床单/枕头。 */
+    @Override
+    public CompoundTag getUpdateTag() {
+        CompoundTag tag = super.getUpdateTag();
+        if (duvetMaterialId != 0) {
+            tag.putInt(NBT_DUVET, duvetMaterialId);
+        }
+        if (coverMaterialId != 0) {
+            tag.putInt(NBT_COVER, coverMaterialId);
+        }
+        if (large1StyleId != 0) {
+            tag.putInt(NBT_LG1_STYLE, large1StyleId);
+            tag.putInt(NBT_LG1_MAT, large1MaterialId);
+        }
+        if (large2StyleId != 0) {
+            tag.putInt(NBT_LG2_STYLE, large2StyleId);
+            tag.putInt(NBT_LG2_MAT, large2MaterialId);
+        }
+        if (mediumPillowMat != 0) {
+            tag.putInt(NBT_MEDIUM, mediumPillowMat);
+        }
+        if (smallPillowMat != 0) {
+            tag.putInt(NBT_SMALL, smallPillowMat);
+        }
+        return tag;
+    }
+
+    @Override
+    public void handleUpdateTag(CompoundTag tag) {
+        load(tag);
+        if (level != null && level.isClientSide) {
+            requestModelDataUpdate();
+        }
+    }
 }
