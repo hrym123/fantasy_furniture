@@ -138,3 +138,9 @@ tools/.form_history.json
 # 误生成于仓库根目录的第三方/编译产物目录
 /org/
 /software/
+
+# 本地临时/反编译产物，不入库
+/net/
+*.bak*
+*_bak_*/
+**/*_bak_*/
