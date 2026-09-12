@@ -87,13 +87,17 @@ final class CabinetModelBounds {
                 fitD);
     }
 
-    /** 已知内容外接尺寸时的三轴拟合统一缩放。 */
+    /**
+     * 已知内容外接尺寸时的三轴拟合统一缩放。
+     *
+     * <p>只缩小、不放大：超过空腔才压到能塞进格；原本就小于空腔的保持 1（方块原尺寸）。
+     */
     static float uniformScaleToFit(
             float sizeX, float sizeY, float sizeZ, float fitW, float fitH, float fitD) {
         float sx = fitW / Math.max(0.01f, sizeX);
         float sy = fitH / Math.max(0.01f, sizeY);
         float sz = fitD / Math.max(0.01f, sizeZ);
-        return Math.min(sx, Math.min(sy, sz));
+        return Math.min(1.0f, Math.min(sx, Math.min(sy, sz)));
     }
 
     static float maxExtent(AABB bounds) {
