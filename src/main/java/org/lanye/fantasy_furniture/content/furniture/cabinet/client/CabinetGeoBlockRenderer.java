@@ -13,7 +13,12 @@ import org.lanye.fantasy_furniture.content.furniture.cabinet.CabinetKind;
 import org.lanye.fantasy_furniture.content.furniture.cabinet.blockentity.CabinetBlockEntity;
 import org.lanye.reverie_core.geolib.client.GeoRenderTier;
 import org.lanye.reverie_core.geolib.client.ReverieGeoBlockRenderer;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import software.bernie.geckolib.cache.object.BakedGeoModel;
+import software.bernie.geckolib.cache.object.GeoBone;
 import software.bernie.geckolib.model.GeoModel;
 
 /**
@@ -65,10 +70,31 @@ public final class CabinetGeoBlockRenderer extends ReverieGeoBlockRenderer<Cabin
             float green,
             float blue,
             float alpha) {
-        if (!isReRender) {
-            poseStack.pushPose();
-            poseStack.translate(0.5, 0, 0.5);
-            rotateBlock(getFacing(animatable), poseStack);
+        Map<GeoBone, Boolean> oldHidden = applyShelfBoneVisibility(model, animatable);
+        try {
+            if (!isReRender) {
+                poseStack.pushPose();
+                poseStack.translate(0.5, 0, 0.5);
+                rotateBlock(getFacing(animatable), poseStack);
+                super.actuallyRender(
+                        poseStack,
+                        animatable,
+                        model,
+                        renderType,
+                        bufferSource,
+                        buffer,
+                        true,
+                        partialTick,
+                        packedLight,
+                        packedOverlay,
+                        red,
+                        green,
+                        blue,
+                        alpha);
+                renderDisplayedItems(poseStack, animatable, bufferSource, packedLight);
+                poseStack.popPose();
+                return;
+            }
             super.actuallyRender(
                     poseStack,
                     animatable,
@@ -84,25 +110,52 @@ public final class CabinetGeoBlockRenderer extends ReverieGeoBlockRenderer<Cabin
                     green,
                     blue,
                     alpha);
-            renderDisplayedItems(poseStack, animatable, bufferSource, packedLight);
-            poseStack.popPose();
-            return;
+        } finally {
+            restoreBoneVisibility(oldHidden);
         }
-        super.actuallyRender(
-                poseStack,
-                animatable,
-                model,
-                renderType,
-                bufferSource,
-                buffer,
-                true,
-                partialTick,
-                packedLight,
-                packedOverlay,
-                red,
-                green,
-                blue,
-                alpha);
+    }
+
+    private static Map<GeoBone, Boolean> applyShelfBoneVisibility(
+            BakedGeoModel model, CabinetBlockEntity animatable) {
+        Map<GeoBone, Boolean> oldHidden = new HashMap<>();
+        for (GeoBone bone : flattenBones(model)) {
+            String name = bone.getName();
+            if (name == null || !name.startsWith("shelf_")) {
+                continue;
+            }
+            int idx;
+            try {
+                idx = Integer.parseInt(name.substring("shelf_".length()));
+            } catch (NumberFormatException ex) {
+                continue;
+            }
+            boolean hide = !animatable.isShelfPresent(idx);
+            if (!hide) {
+                continue;
+            }
+            oldHidden.put(bone, bone.isHidden());
+            bone.setHidden(true);
+        }
+        return oldHidden;
+    }
+
+    private static void restoreBoneVisibility(Map<GeoBone, Boolean> oldHidden) {
+        oldHidden.forEach(GeoBone::setHidden);
+    }
+
+    private static List<GeoBone> flattenBones(BakedGeoModel model) {
+        List<GeoBone> result = new ArrayList<>();
+        for (GeoBone top : model.topLevelBones()) {
+            collectBones(top, result);
+        }
+        return result;
+    }
+
+    private static void collectBones(GeoBone current, List<GeoBone> out) {
+        out.add(current);
+        for (GeoBone child : current.getChildBones()) {
+            collectBones(child, out);
+        }
     }
 
     private void renderDisplayedItems(
@@ -123,7 +176,7 @@ public final class CabinetGeoBlockRenderer extends ReverieGeoBlockRenderer<Cabin
                     packedLight,
                     stack,
                     animatable.getLevel(),
-                    kind,
+                    animatable,
                     slot,
                     animatable.itemYaw(slot));
         }

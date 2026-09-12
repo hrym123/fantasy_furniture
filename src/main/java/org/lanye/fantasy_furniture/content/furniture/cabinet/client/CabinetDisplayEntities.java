@@ -62,6 +62,38 @@ final class CabinetDisplayEntities {
         return true;
     }
 
+    /**
+     * Scaled content height matching {@link #tryDraw} / armor / vehicle paths.
+     * @return height, or {@code -1} if this stack is not drawn as a display entity
+     */
+    static float measureRenderedHeight(
+            ItemStack stack, Level level, float fitW, float fitH, float fitD) {
+        EquipmentSlot armorSlot = armorEquipmentSlot(stack);
+        if (armorSlot != null) {
+            float[] ySpan = armorLocalY(armorSlot);
+            float contentH = Math.max(0.05f, ySpan[1] - ySpan[0]);
+            float contentW = armorLocalWidth(armorSlot);
+            float contentD = contentW * 0.75f;
+            final float ARMOR_CONTENT_PAD = 1.12f;
+            float scale = CabinetModelBounds.uniformScaleToFit(
+                    contentW * ARMOR_CONTENT_PAD,
+                    contentH * ARMOR_CONTENT_PAD,
+                    contentD * ARMOR_CONTENT_PAD,
+                    fitW,
+                    fitH,
+                    fitD);
+            return contentH * scale;
+        }
+        Entity entity = getOrCreateVehicle(stack, level);
+        if (entity == null) {
+            return -1f;
+        }
+        float w = Math.max(0.01f, entity.getBbWidth());
+        float h = Math.max(0.01f, entity.getBbHeight());
+        float scale = CabinetModelBounds.uniformScaleToFit(w, h, w, fitW, fitH, fitD);
+        return h * scale;
+    }
+
     /** 盔甲 / 鞘翅：穿在隐形盔甲架上；按该槽位盔甲外接缩放约 fit，底边贴层板。 */
     private static boolean tryDrawWornArmor(
             PoseStack poseStack,

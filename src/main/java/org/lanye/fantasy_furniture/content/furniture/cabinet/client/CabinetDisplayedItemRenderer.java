@@ -26,6 +26,7 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.lanye.fantasy_furniture.content.furniture.cabinet.CabinetKind;
 import org.lanye.fantasy_furniture.content.furniture.cabinet.CabinetYaw;
+import org.lanye.fantasy_furniture.content.furniture.cabinet.blockentity.CabinetBlockEntity;
 import org.lanye.reverie_core.geolib.GeolibBlockItem;
 
 /**
@@ -34,6 +35,9 @@ import org.lanye.reverie_core.geolib.GeolibBlockItem;
  * <p>MODEL blocks scale from occupancy (VoxelShape), floor-aligned with model AABB.
  * Only {@link GeolibBlockItem} uses GEO_FIXED; other ENTITYBLOCK_ANIMATED (chests etc.)
  * scale from occupancy and floor-align with FIXED afterDisplay.
+ *
+ * <p>When a supporting shelf is missing, floor Y and fit height come from
+ * {@link CabinetStackLayout} so items in the same column stack flush.
  */
 @OnlyIn(Dist.CLIENT)
 final class CabinetDisplayedItemRenderer {
@@ -59,16 +63,18 @@ final class CabinetDisplayedItemRenderer {
             int light,
             ItemStack stack,
             Level level,
-            CabinetKind kind,
+            CabinetBlockEntity be,
             int slot,
             int itemYawSteps) {
-        CabinetKind.CavityFit cavity = kind.cavityFit(slot);
+        CabinetKind kind = be.kind();
+        CabinetKind.CavityFit cavity = CabinetStackLayout.cavityFitStacked(be, slot);
         float fitW = cavity.width();
         float fitH = cavity.height();
         float fitD = cavity.depth();
+        float floorY = CabinetStackLayout.floorY(be, slot);
 
         poseStack.pushPose();
-        poseStack.translate(kind.itemX(slot), kind.itemFloorY(slot), kind.itemZ());
+        poseStack.translate(kind.itemX(slot), floorY, kind.itemZ());
         poseStack.mulPose(Axis.YP.rotationDegrees(CabinetYaw.degrees(itemYawSteps)));
 
         if (CabinetDisplayEntities.tryDraw(poseStack, bufferSource, light, stack, level, fitW, fitH, fitD)) {
@@ -86,6 +92,48 @@ final class CabinetDisplayedItemRenderer {
 
         drawFixedItem(poseStack, bufferSource, light, stack, level, fitW, fitH, fitD);
         poseStack.popPose();
+    }
+
+    /**
+     * Scaled content height after the same AABB/scale path as {@link #draw}, for stack floors.
+     * Caller already chose stacked fit W/H/D.
+     */
+    static float measureRenderedHeight(ItemStack stack, Level level, float fitW, float fitH, float fitD) {
+        float entityH = CabinetDisplayEntities.measureRenderedHeight(stack, level, fitW, fitH, fitD);
+        if (entityH >= 0f) {
+            return entityH;
+        }
+        if (stack.getItem() instanceof BlockItem blockItem) {
+            BlockState state = blockItem.getBlock().defaultBlockState();
+            if (state.getRenderShape() == RenderShape.MODEL) {
+                BlockRenderDispatcher dispatcher = Minecraft.getInstance().getBlockRenderer();
+                BakedModel model = dispatcher.getBlockModel(state);
+                AABB modelBounds = CabinetModelBounds.fromModel(model, state);
+                AABB occupancy = occupancyBounds(state);
+                AABB scaleBounds = maxExtentBounds(occupancy, modelBounds);
+                float scale = CabinetModelBounds.scaleToFit3D(scaleBounds, fitW, fitH, fitD);
+                return (float) modelBounds.getYsize() * scale;
+            }
+            if (state.getRenderShape() == RenderShape.ENTITYBLOCK_ANIMATED) {
+                BlockState facing = northFacingItemState(state);
+                if (stack.getItem() instanceof GeolibBlockItem) {
+                    AABB blockBounds = occupancyBounds(facing);
+                    float scale = CabinetModelBounds.scaleToFit3D(blockBounds, fitW, fitH, fitD);
+                    return (float) blockBounds.getYsize() * scale;
+                }
+                AABB occupancy = occupancyBounds(facing);
+                float scale = CabinetModelBounds.scaleToFit3D(occupancy, fitW, fitH, fitD);
+                ItemRenderer itemRenderer = Minecraft.getInstance().getItemRenderer();
+                BakedModel model = itemRenderer.getModel(stack, level, null, 0);
+                AABB afterFixed = CabinetModelBounds.afterDisplay(model, ItemDisplayContext.FIXED);
+                return (float) afterFixed.getYsize() * scale;
+            }
+        }
+        ItemRenderer itemRenderer = Minecraft.getInstance().getItemRenderer();
+        BakedModel model = itemRenderer.getModel(stack, level, null, 0);
+        AABB afterFixed = CabinetModelBounds.afterDisplay(model, ItemDisplayContext.FIXED);
+        float scale = CabinetModelBounds.scaleToFit3D(afterFixed, fitW, fitH, fitD);
+        return (float) afterFixed.getYsize() * scale;
     }
 
     private static boolean tryDrawBlockModel(

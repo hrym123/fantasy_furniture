@@ -33,6 +33,8 @@ import org.lanye.fantasy_furniture.content.furniture.cabinet.CabinetCollisionSha
 import org.lanye.fantasy_furniture.content.furniture.cabinet.CabinetKind;
 import org.lanye.fantasy_furniture.content.furniture.cabinet.CabinetSlot;
 import org.lanye.fantasy_furniture.content.furniture.cabinet.blockentity.CabinetBlockEntity;
+import org.lanye.fantasy_furniture.content.furniture.cabinet.CabinetShelfDebugActions;
+import org.lanye.reverie_core.content.fantasy_core.item.FantasyDebugStickItem;
 import org.lanye.reverie_core.geolib.GeolibFacingEntityBlockWithFactory;
 import org.lanye.reverie_core.util.VoxelShapeRotation;
 
@@ -196,8 +198,18 @@ public final class CabinetBlock extends GeolibFacingEntityBlockWithFactory<Cabin
         if (be == null) {
             return InteractionResult.FAIL;
         }
-        int slot = resolveSlot(state, master, player, hit);
         ItemStack held = player.getItemInHand(hand);
+        if (held.getItem() instanceof FantasyDebugStickItem) {
+            var msg = CabinetShelfDebugActions.tryRemoveShelf(
+                    level, pos, player, hit, player.isShiftKeyDown());
+            if (msg.isPresent()) {
+                player.displayClientMessage(msg.get(), true);
+                return InteractionResult.CONSUME;
+            }
+            // 持调试棒时不放置/旋转展品
+            return InteractionResult.FAIL;
+        }
+        int slot = resolveSlot(state, master, player, hit);
 
         if (held.isEmpty()) {
             if (be.isEmpty(slot)) {

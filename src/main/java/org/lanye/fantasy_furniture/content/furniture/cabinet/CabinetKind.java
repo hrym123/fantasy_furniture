@@ -1,5 +1,7 @@
 package org.lanye.fantasy_furniture.content.furniture.cabinet;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -7,6 +9,8 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.phys.shapes.Shapes;
+import net.minecraft.world.phys.shapes.VoxelShape;
 
 /**
  * 柜子型号：槽位布局（北向模型空间，原点在方块底心）。
@@ -287,5 +291,117 @@ public enum CabinetKind {
             case EAST -> new Vec3(-z, y, x);
             default -> new Vec3(x, y, z);
         };
+    }
+
+    public static final int SHELF_COUNT = 4;
+
+    public int shelfCount() {
+        return SHELF_COUNT;
+    }
+
+    /**
+     * 北向局部隔板 AABB（原点：底心；与 geo cube origin/size /16 一致）。
+     * index 0..3 自下而上。
+     */
+    public AABB shelfLocalAabb(int shelf) {
+        int i = Math.floorMod(shelf, SHELF_COUNT);
+        return switch (this) {
+            case CABINET_1 -> switch (i) {
+                case 0 -> aabbPx(-6, 0, -8, 12, 2, 14);
+                case 1 -> aabbPx(-6, 14, -8, 12, 2, 14);
+                case 2 -> aabbPx(-6, 30, -8, 12, 2, 14);
+                default -> aabbPx(-6, 46, -8, 12, 2, 14);
+            };
+            case CABINET_2 -> switch (i) {
+                case 0 -> aabbPx(-8, 0, 1, 16, 1, 6);
+                case 1 -> aabbPx(-7, 5, 1, 14, 1, 6);
+                case 2 -> aabbPx(-7, 10, 1, 14, 1, 6);
+                default -> aabbPx(-7, 15, 1, 14, 1, 6);
+            };
+        };
+    }
+
+    /** 北向局部 → 方块体素坐标（+0.5 XZ）的隔板形，供描边。 */
+    public VoxelShape shelfNorthShape(int shelf) {
+        AABB local = shelfLocalAabb(shelf);
+        return Shapes.create(
+                local.minX + 0.5,
+                local.minY,
+                local.minZ + 0.5,
+                local.maxX + 0.5,
+                local.maxY,
+                local.maxZ + 0.5);
+    }
+
+    private static AABB aabbPx(double ox, double oy, double oz, double sx, double sy, double sz) {
+        return new AABB(ox / 16.0, oy / 16.0, oz / 16.0, (ox + sx) / 16.0, (oy + sy) / 16.0, (oz + sz) / 16.0);
+    }
+
+    /**
+     * 射线拾取最近隔板。{@code presentMask} bit i = 隔板存在；{@code includeAbsent} 为 true 时也拾取已拆除隔板。
+     *
+     * @return 隔板 index，未命中为 -1
+     */
+    public int pickShelf(
+            BlockPos master,
+            Direction facing,
+            Vec3 eyeWorld,
+            Vec3 lookWorld,
+            int presentMask,
+            boolean includeAbsent) {
+        Vec3 eye = toNorthLocal(master, facing, eyeWorld);
+        Vec3 look = lookToNorth(facing, lookWorld);
+        double lenSq = look.lengthSqr();
+        if (lenSq < 1.0e-8) {
+            return -1;
+        }
+        Vec3 dir = look.scale(1.0 / Math.sqrt(lenSq));
+        Vec3 end = eye.add(dir.scale(12.0));
+        int best = -1;
+        double bestDist = Double.MAX_VALUE;
+        for (int i = 0; i < SHELF_COUNT; i++) {
+            boolean present = (presentMask & (1 << i)) != 0;
+            if (!present && !includeAbsent) {
+                continue;
+            }
+            Optional<Vec3> pt = shelfLocalAabb(i).clip(eye, end);
+            if (pt.isEmpty()) {
+                continue;
+            }
+            double d = eye.distanceToSqr(pt.get());
+            if (d < bestDist) {
+                bestDist = d;
+                best = i;
+            }
+        }
+        return best;
+    }
+
+    /** 拆除隔板 {@code shelf} 时应掉落/清空的槽位列表。 */
+    public List<Integer> slotsOnShelf(int shelf) {
+        int i = Math.floorMod(shelf, SHELF_COUNT);
+        List<Integer> out = new ArrayList<>(cols);
+        if (this == CABINET_1) {
+            if (i >= 0 && i < rows) {
+                out.add(i);
+            }
+            return out;
+        }
+        // CABINET_2: shelf i → row i（0..2）；shelf_3 顶盖无展品
+        if (i >= 0 && i < rows) {
+            for (int c = 0; c < cols; c++) {
+                out.add(i * cols + c);
+            }
+        }
+        return out;
+    }
+
+    /** 槽位所依赖的隔板 index；无依赖（不应发生）返回 -1。 */
+    public int shelfSupportingSlot(int slot) {
+        int r = rowOf(CabinetSlot.clampIndex(slot, slotCount()));
+        if (this == CABINET_1 || this == CABINET_2) {
+            return r;
+        }
+        return -1;
     }
 }

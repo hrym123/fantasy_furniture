@@ -34,12 +34,16 @@ public final class CabinetBlockEntity extends BlockEntity implements GeoBlockEnt
     private static final String TAG_ITEMS = "Items";
     private static final String TAG_SLOT = "Slot";
     private static final String TAG_ITEM_ROT = "Rot";
+    private static final String TAG_SHELVES = "Shelves";
+    /** bit i = shelf_i present; default all four present (0b1111). */
+    private static final int SHELVES_ALL = (1 << CabinetKind.SHELF_COUNT) - 1;
 
     private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
     private final NonNullList<ItemStack> items =
             NonNullList.withSize(CabinetSlot.MAX, ItemStack.EMPTY);
     /** 各槽展品绕竖直轴偏航 0～7（步长 45°）。 */
     private final int[] itemYaw = new int[CabinetSlot.MAX];
+    private int shelvesPresent = SHELVES_ALL;
 
     public CabinetBlockEntity(BlockPos pos, BlockState state) {
         super(typeFor(state), pos, state);
@@ -139,6 +143,47 @@ public final class CabinetBlockEntity extends BlockEntity implements GeoBlockEnt
         setChanged();
     }
 
+
+    public int shelvesMask() {
+        return shelvesPresent & SHELVES_ALL;
+    }
+
+    public boolean isShelfPresent(int shelf) {
+        int i = Math.floorMod(shelf, CabinetKind.SHELF_COUNT);
+        return (shelvesPresent & (1 << i)) != 0;
+    }
+
+    public boolean isSlotShelfPresent(int slot) {
+        int shelf = kind().shelfSupportingSlot(slot);
+        return shelf < 0 || isShelfPresent(shelf);
+    }
+
+    /**
+     * 移除隔层：仅清除隔层位并同步；展品保留以便同列堆叠显示。已不存在则返回 false。
+     */
+    public boolean removeShelf(int shelf) {
+        int i = Math.floorMod(shelf, CabinetKind.SHELF_COUNT);
+        if (!isShelfPresent(i)) {
+            return false;
+        }
+        shelvesPresent &= ~(1 << i);
+        setChanged();
+        sync();
+        return true;
+    }
+
+    /** 恢复隔板；已存在返回 false。 */
+    public boolean restoreShelf(int shelf) {
+        int i = Math.floorMod(shelf, CabinetKind.SHELF_COUNT);
+        if (isShelfPresent(i)) {
+            return false;
+        }
+        shelvesPresent |= (1 << i);
+        setChanged();
+        sync();
+        return true;
+    }
+
     private void sync() {
         if (level != null && !level.isClientSide) {
             level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), Block.UPDATE_CLIENTS);
@@ -165,6 +210,7 @@ public final class CabinetBlockEntity extends BlockEntity implements GeoBlockEnt
             list.add(entry);
         }
         tag.put(TAG_ITEMS, list);
+        tag.putByte(TAG_SHELVES, (byte) shelvesMask());
     }
 
     @Override
@@ -174,6 +220,9 @@ public final class CabinetBlockEntity extends BlockEntity implements GeoBlockEnt
             items.set(i, ItemStack.EMPTY);
             itemYaw[i] = 0;
         }
+        shelvesPresent = tag.contains(TAG_SHELVES, Tag.TAG_BYTE)
+                ? (tag.getByte(TAG_SHELVES) & SHELVES_ALL)
+                : SHELVES_ALL;
         ListTag list = tag.getList(TAG_ITEMS, Tag.TAG_COMPOUND);
         int n = Math.min(slotCount(), CabinetSlot.MAX);
         for (int i = 0; i < list.size(); i++) {

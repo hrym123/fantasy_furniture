@@ -352,5 +352,7 @@
   "block.fantasy_furniture.bed_plate3_beige": "床板3型（米色）",
   "item.fantasy_furniture.bed_plate3_beige": "床板3型（米色）",
   "block.fantasy_furniture.bed_plate3_white": "床板3型（白色）",
-  "item.fantasy_furniture.bed_plate3_white": "床板3型（白色）"
+  "item.fantasy_furniture.bed_plate3_white": "床板3型（白色）",
+  "debug.fantasy_furniture.cabinet.shelf_removed": "已拆除柜隔板 %s",
+  "debug.fantasy_furniture.cabinet.shelf_restored": "已恢复柜隔板 %s"
 }
