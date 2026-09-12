@@ -152,19 +152,13 @@ public final class CabinetJointShelfPick {
     }
 
     /**
-     * 描边用：与 geo 一致，Y 裁到本格 [0,1]（跨格 1px 不画进上格）。
+     * 描边用：与 geo 连接板完全一致（可跨本格顶面伸入上格 1px）。
      */
     public static AABB jointOutlineLocal() {
-        return new AABB(
-                JOINT_GEO_LOCAL.minX,
-                JOINT_GEO_LOCAL.minY,
-                JOINT_GEO_LOCAL.minZ,
-                JOINT_GEO_LOCAL.maxX,
-                Math.min(JOINT_GEO_LOCAL.maxY, 1.0),
-                JOINT_GEO_LOCAL.maxZ);
+        return JOINT_GEO_LOCAL;
     }
 
-    /** @deprecated 勿用加厚盒；请用 {@link #jointOutlineLocal()} / 射线精确盒 */
+    /** @deprecated 使用 {@link #jointOutlineLocal()} */
     @Deprecated
     public static AABB jointPickAabb() {
         return jointOutlineLocal();
