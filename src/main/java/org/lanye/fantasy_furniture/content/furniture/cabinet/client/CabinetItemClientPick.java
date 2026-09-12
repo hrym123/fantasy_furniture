@@ -17,6 +17,7 @@ import net.minecraft.world.phys.shapes.VoxelShape;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.lanye.fantasy_furniture.content.furniture.cabinet.Cabinet1OpenColumn;
+import org.lanye.fantasy_furniture.content.furniture.cabinet.CabinetAppearance;
 import org.lanye.fantasy_furniture.content.furniture.cabinet.CabinetItemPicks;
 import org.lanye.fantasy_furniture.content.furniture.cabinet.CabinetKind;
 import org.lanye.fantasy_furniture.content.furniture.cabinet.CabinetSlot;
@@ -32,6 +33,10 @@ public final class CabinetItemClientPick {
 
     public static ItemStack resolveCloneItemStack(Level level, BlockState state, BlockPos pos) {
         ItemStack cabinet = new ItemStack(state.getBlock().asItem());
+        if (state.hasProperty(CabinetBlock.MATERIAL)) {
+            CabinetAppearance.writeToStack(
+                    cabinet, new CabinetAppearance(state.getValue(CabinetBlock.MATERIAL)));
+        }
         Minecraft mc = Minecraft.getInstance();
         HitResult hit = mc.hitResult;
         if (!(hit instanceof BlockHitResult bhr) || hit.getType() != HitResult.Type.BLOCK) {

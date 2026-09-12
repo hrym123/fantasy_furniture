@@ -13,6 +13,8 @@ import org.lanye.fantasy_furniture.bootstrap.block.StyledWindow0Registration;
 import org.lanye.fantasy_furniture.bootstrap.block.WallpaperBlocks;
 import org.lanye.fantasy_furniture.bootstrap.tag.ModTags;
 import org.lanye.fantasy_furniture.content.furniture.common.state.StyledWindow0MaterialVariant;
+import org.lanye.fantasy_furniture.content.furniture.cabinet.CabinetMaterials;
+import org.lanye.fantasy_furniture.content.furniture.cabinet.block.CabinetBlock;
 import org.lanye.fantasy_furniture.content.furniture.decor.block.ComputerBlock;
 import org.lanye.fantasy_furniture.content.furniture.decor.block.DrinkwareBlock;
 import org.lanye.fantasy_furniture.content.furniture.decor.block.StyledWindow0Block;
@@ -127,6 +129,11 @@ public final class BrushRecolor {
             int next = nextMaterialId(current, ComputerMaterials.COUNT);
             return Optional.of(state.setValue(ComputerBlock.MATERIAL, next));
         }
+        if (state.getBlock() instanceof CabinetBlock cabinet) {
+            int current = state.getValue(CabinetBlock.MATERIAL);
+            int next = nextMaterialId(current, CabinetMaterials.count(cabinet.kind()));
+            return Optional.of(state.setValue(CabinetBlock.MATERIAL, next));
+        }
         if (state.getBlock() instanceof DrinkwareBlock) {
             int current = state.getValue(DrinkwareBlock.MATERIAL);
             int next = nextMaterialId(current, DrinkwareMaterials.COUNT);
@@ -154,6 +161,10 @@ public final class BrushRecolor {
         BlockState nextState = next.get();
         if (state.getBlock() instanceof StyledWindow0Block) {
             level.setBlock(pos, nextState, Block.UPDATE_ALL_IMMEDIATE);
+            return true;
+        }
+        if (state.getBlock() instanceof CabinetBlock cabinet) {
+            cabinet.applyMaterialRecolor(level, pos, nextState);
             return true;
         }
         level.setBlock(pos, nextState, Block.UPDATE_ALL_IMMEDIATE);

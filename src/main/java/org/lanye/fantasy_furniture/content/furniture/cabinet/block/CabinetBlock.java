@@ -24,20 +24,25 @@ import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.EnumProperty;
+import net.minecraft.world.level.block.state.properties.IntegerProperty;
 import net.minecraft.world.level.storage.loot.LootParams;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import org.lanye.fantasy_furniture.content.furniture.cabinet.Cabinet1OpenColumn;
+import org.lanye.fantasy_furniture.content.furniture.cabinet.CabinetAppearance;
 import org.lanye.fantasy_furniture.content.furniture.cabinet.CabinetCollisionShapes;
 import org.lanye.fantasy_furniture.content.furniture.cabinet.CabinetItemPicks;
 import org.lanye.fantasy_furniture.content.furniture.cabinet.CabinetKind;
+import org.lanye.fantasy_furniture.content.furniture.cabinet.CabinetMaterials;
 import org.lanye.fantasy_furniture.content.furniture.cabinet.CabinetStackFloors;
 import org.lanye.fantasy_furniture.content.furniture.cabinet.blockentity.CabinetBlockEntity;
 import org.lanye.fantasy_furniture.content.furniture.cabinet.CabinetShelfDebugActions;
 import org.lanye.fantasy_furniture.content.furniture.cabinet.client.CabinetItemClientPick;
+import org.lanye.fantasy_furniture.content.furniture.cabinet.item.CabinetBlockItem;
 import org.lanye.fantasy_furniture.content.furniture.cabinet.state.CabinetSegment;
+import org.lanye.fantasy_furniture.content.tool.BrushRecolor;
 import org.lanye.reverie_core.content.fantasy_core.item.FantasyDebugStickItem;
 import org.lanye.reverie_core.geolib.GeolibFacingEntityBlockWithFactory;
 import org.lanye.reverie_core.util.VoxelShapeRotation;
@@ -60,12 +65,19 @@ public final class CabinetBlock extends GeolibFacingEntityBlockWithFactory<Cabin
     public static final EnumProperty<CabinetSegment> SEGMENT =
             EnumProperty.create("segment", CabinetSegment.class);
 
+    /** 材质档（1～{@link CabinetMaterials#MAX_COUNT}；按 kind 钳制有效色数）。 */
+    public static final IntegerProperty MATERIAL =
+            IntegerProperty.create("material", 1, CabinetMaterials.MAX_COUNT);
+
     private final CabinetKind kind;
 
     public CabinetBlock(BlockBehaviour.Properties properties, CabinetKind kind) {
         super(properties, CabinetBlockEntity::new);
         this.kind = kind;
-        registerDefaultState(defaultBlockState().setValue(SEGMENT, CabinetSegment.ALONE));
+        registerDefaultState(
+                defaultBlockState()
+                        .setValue(SEGMENT, CabinetSegment.ALONE)
+                        .setValue(MATERIAL, CabinetMaterials.DEFAULT));
     }
 
     public CabinetKind kind() {
@@ -84,7 +96,7 @@ public final class CabinetBlock extends GeolibFacingEntityBlockWithFactory<Cabin
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
         super.createBlockStateDefinition(builder);
-        builder.add(SEGMENT);
+        builder.add(SEGMENT, MATERIAL);
     }
 
     @Override
@@ -99,28 +111,39 @@ public final class CabinetBlock extends GeolibFacingEntityBlockWithFactory<Cabin
         if (!level.getWorldBorder().isWithinBounds(pos) || !level.getBlockState(pos).canBeReplaced(context)) {
             return null;
         }
+        int material =
+                CabinetMaterials.clamp(
+                        kind, CabinetAppearance.fromStack(context.getItemInHand(), kind).materialId());
+        base = base.setValue(MATERIAL, material);
         Direction facing = base.getValue(FACING);
         if (kind == CabinetKind.CABINET_1) {
             BlockState below = level.getBlockState(pos.below());
             if (below.getBlock() instanceof CabinetBlock belowCab && belowCab.kind == CabinetKind.CABINET_1) {
-                // 续放：强制继承下方朝向，避免玩家朝向不一致拆柱
+                // 续放：强制继承下方朝向，避免玩家朝向不一致拆柱；异色不成柱
                 facing = below.getValue(FACING);
                 base = base.setValue(FACING, facing);
-                if (!canStackAt(level, pos, facing)) {
+                if (below.getValue(MATERIAL) != material || !canStackAt(level, pos, facing, material)) {
                     return null;
                 }
             }
         }
-        return base.setValue(SEGMENT, computeSegment(level, pos, facing));
+        return base.setValue(SEGMENT, computeSegment(level, pos, facing, material));
     }
 
     @Override
     public void setPlacedBy(
             Level level, BlockPos pos, BlockState state, @Nullable LivingEntity placer, ItemStack stack) {
+        int material =
+                CabinetMaterials.clamp(kind, CabinetAppearance.fromStack(stack, kind).materialId());
+        BlockState colored = state.setValue(MATERIAL, material);
+        if (colored != state) {
+            level.setBlock(pos, colored, Block.UPDATE_ALL);
+            state = colored;
+        }
         if (level.isClientSide() || kind != CabinetKind.CABINET_1) {
             return;
         }
-        refreshSegmentNeighbors(level, pos, state.getValue(FACING));
+        refreshSegmentNeighbors(level, pos, state.getValue(FACING), material);
     }
 
     @Override
@@ -139,7 +162,8 @@ public final class CabinetBlock extends GeolibFacingEntityBlockWithFactory<Cabin
         if (kind != CabinetKind.CABINET_1 || direction.getAxis() != Direction.Axis.Y) {
             return super.updateShape(state, direction, neighborState, level, currentPos, neighborPos);
         }
-        CabinetSegment next = computeSegment(level, currentPos, state.getValue(FACING));
+        CabinetSegment next =
+                computeSegment(level, currentPos, state.getValue(FACING), state.getValue(MATERIAL));
         if (state.getValue(SEGMENT) != next) {
             return state.setValue(SEGMENT, next);
         }
@@ -157,37 +181,40 @@ public final class CabinetBlock extends GeolibFacingEntityBlockWithFactory<Cabin
         return RenderShape.ENTITYBLOCK_ANIMATED;
     }
 
-    /** 下方同朝向柱高（含将放置格）是否 ≤ 上限。 */
-    private boolean canStackAt(LevelReader level, BlockPos placePos, Direction facing) {
+    /** 下方同朝向同色柱高（含将放置格）是否 ≤ 上限。 */
+    private boolean canStackAt(LevelReader level, BlockPos placePos, Direction facing, int material) {
         BlockPos below = placePos.below();
-        if (!isSameColumnCell(level, below, facing)) {
+        if (!isSameColumnCell(level, below, facing, material)) {
             return true;
         }
-        int belowHeight = contiguousHeightDown(level, below, facing);
+        int belowHeight = contiguousHeightDown(level, below, facing, material);
         return belowHeight + 1 <= CabinetKind.CABINET_1_MAX_STACK;
     }
 
-    private static int contiguousHeightDown(LevelReader level, BlockPos from, Direction facing) {
+    private static int contiguousHeightDown(
+            LevelReader level, BlockPos from, Direction facing, int material) {
         int h = 0;
         BlockPos p = from;
-        while (h < CabinetKind.CABINET_1_MAX_STACK + 2 && isSameColumnCell(level, p, facing)) {
+        while (h < CabinetKind.CABINET_1_MAX_STACK + 2 && isSameColumnCell(level, p, facing, material)) {
             h++;
             p = p.below();
         }
         return h;
     }
 
-    private static boolean isSameColumnCell(LevelReader level, BlockPos pos, Direction facing) {
+    private static boolean isSameColumnCell(
+            LevelReader level, BlockPos pos, Direction facing, int material) {
         BlockState state = level.getBlockState(pos);
         if (!(state.getBlock() instanceof CabinetBlock cabinet) || cabinet.kind != CabinetKind.CABINET_1) {
             return false;
         }
-        return state.getValue(FACING) == facing;
+        return state.getValue(FACING) == facing && state.getValue(MATERIAL) == material;
     }
 
-    private static CabinetSegment computeSegment(LevelReader level, BlockPos pos, Direction facing) {
-        boolean above = isSameColumnCell(level, pos.above(), facing);
-        boolean below = isSameColumnCell(level, pos.below(), facing);
+    private static CabinetSegment computeSegment(
+            LevelReader level, BlockPos pos, Direction facing, int material) {
+        boolean above = isSameColumnCell(level, pos.above(), facing, material);
+        boolean below = isSameColumnCell(level, pos.below(), facing, material);
         if (!above && !below) {
             return CabinetSegment.ALONE;
         }
@@ -201,10 +228,10 @@ public final class CabinetBlock extends GeolibFacingEntityBlockWithFactory<Cabin
     }
 
     /** 放置后刷新本格与上下邻格 SEGMENT（触发对方 updateShape）。 */
-    private void refreshSegmentNeighbors(Level level, BlockPos pos, Direction facing) {
+    private void refreshSegmentNeighbors(Level level, BlockPos pos, Direction facing, int material) {
         BlockState self = level.getBlockState(pos);
         if (self.is(this)) {
-            CabinetSegment seg = computeSegment(level, pos, facing);
+            CabinetSegment seg = computeSegment(level, pos, facing, material);
             if (self.getValue(SEGMENT) != seg) {
                 level.setBlock(pos, self.setValue(SEGMENT, seg), Block.UPDATE_ALL);
             }
@@ -212,13 +239,29 @@ public final class CabinetBlock extends GeolibFacingEntityBlockWithFactory<Cabin
         for (Direction dir : new Direction[] {Direction.UP, Direction.DOWN}) {
             BlockPos n = pos.relative(dir);
             BlockState ns = level.getBlockState(n);
-            if (ns.is(this) && ns.getValue(FACING) == facing) {
-                CabinetSegment seg = computeSegment(level, n, facing);
+            if (ns.is(this)
+                    && ns.getValue(FACING) == facing
+                    && ns.getValue(MATERIAL) == material) {
+                CabinetSegment seg = computeSegment(level, n, facing, material);
                 if (ns.getValue(SEGMENT) != seg) {
                     level.setBlock(n, ns.setValue(SEGMENT, seg), Block.UPDATE_ALL);
                 }
             }
         }
+    }
+
+    /** 刷子换色后：按新材质重算 SEGMENT 并刷新同色邻格。 */
+    public void applyMaterialRecolor(Level level, BlockPos pos, BlockState recolored) {
+        if (kind != CabinetKind.CABINET_1) {
+            level.setBlock(pos, recolored, Block.UPDATE_ALL_IMMEDIATE);
+            return;
+        }
+        Direction facing = recolored.getValue(FACING);
+        int material = recolored.getValue(MATERIAL);
+        CabinetSegment seg = computeSegment(level, pos, facing, material);
+        BlockState local = recolored.setValue(SEGMENT, seg);
+        level.setBlock(pos, local, Block.UPDATE_ALL_IMMEDIATE);
+        refreshSegmentNeighbors(level, pos, facing, material);
     }
 
     /**
@@ -235,8 +278,14 @@ public final class CabinetBlock extends GeolibFacingEntityBlockWithFactory<Cabin
         if (!held.is(asItem())) {
             return null;
         }
+        int heldMat =
+                CabinetMaterials.clamp(kind, CabinetAppearance.fromStack(held, kind).materialId());
+        int material = state.getValue(MATERIAL);
+        if (heldMat != material) {
+            return null;
+        }
         Direction facing = state.getValue(FACING);
-        int height = contiguousHeightDown(level, pos, facing);
+        int height = contiguousHeightDown(level, pos, facing, material);
         if (height >= CabinetKind.CABINET_1_MAX_STACK) {
             if (!level.isClientSide()) {
                 player.displayClientMessage(
@@ -271,6 +320,9 @@ public final class CabinetBlock extends GeolibFacingEntityBlockWithFactory<Cabin
     @Override
     protected InteractionResult onUseClient(
             BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+        if (BrushRecolor.defersBlockUse(player, hand, state)) {
+            return InteractionResult.SUCCESS;
+        }
         InteractionResult defer = tryDeferStackPlace(state, level, pos, player, hand, hit);
         if (defer != null) {
             return defer;
@@ -282,6 +334,9 @@ public final class CabinetBlock extends GeolibFacingEntityBlockWithFactory<Cabin
     protected InteractionResult onUseServer(
             BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
         if (hand != InteractionHand.MAIN_HAND) {
+            return InteractionResult.PASS;
+        }
+        if (BrushRecolor.defersBlockUse(player, hand, state)) {
             return InteractionResult.PASS;
         }
         InteractionResult defer = tryDeferStackPlace(state, level, pos, player, hand, hit);
@@ -678,7 +733,14 @@ public final class CabinetBlock extends GeolibFacingEntityBlockWithFactory<Cabin
 
     @Override
     public List<ItemStack> getDrops(BlockState state, LootParams.Builder params) {
-        return super.getDrops(state, params);
+        List<ItemStack> drops = super.getDrops(state, params);
+        for (ItemStack stack : drops) {
+            if (stack.getItem() instanceof CabinetBlockItem) {
+                CabinetAppearance.writeToStack(
+                        stack, new CabinetAppearance(state.getValue(MATERIAL)));
+            }
+        }
+        return drops;
     }
 
     @Override
@@ -686,7 +748,9 @@ public final class CabinetBlock extends GeolibFacingEntityBlockWithFactory<Cabin
         if (level instanceof Level l && l.isClientSide()) {
             return CabinetItemClientPick.resolveCloneItemStack(l, state, pos);
         }
-        return new ItemStack(this);
+        ItemStack stack = new ItemStack(this);
+        CabinetAppearance.writeToStack(stack, new CabinetAppearance(state.getValue(MATERIAL)));
+        return stack;
     }
 
     @Override
@@ -698,12 +762,14 @@ public final class CabinetBlock extends GeolibFacingEntityBlockWithFactory<Cabin
             }
             if (!level.isClientSide() && kind == CabinetKind.CABINET_1) {
                 Direction facing = state.getValue(FACING);
-                // 邻格 SEGMENT 由 updateShape 在破坏后刷新；此处主动推一次更稳
+                int material = state.getValue(MATERIAL);
                 for (Direction dir : new Direction[] {Direction.UP, Direction.DOWN}) {
                     BlockPos n = pos.relative(dir);
                     BlockState ns = level.getBlockState(n);
-                    if (ns.is(this) && ns.getValue(FACING) == facing) {
-                        CabinetSegment seg = computeSegment(level, n, facing);
+                    if (ns.is(this)
+                            && ns.getValue(FACING) == facing
+                            && ns.getValue(MATERIAL) == material) {
+                        CabinetSegment seg = computeSegment(level, n, facing, material);
                         if (ns.getValue(SEGMENT) != seg) {
                             level.setBlock(n, ns.setValue(SEGMENT, seg), Block.UPDATE_ALL);
                         }

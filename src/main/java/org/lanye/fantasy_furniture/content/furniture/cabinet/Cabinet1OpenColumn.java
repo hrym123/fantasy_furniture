@@ -36,10 +36,11 @@ public final class Cabinet1OpenColumn {
             return out;
         }
         Direction facing = state.getValue(CabinetBlock.FACING);
+        int material = state.getValue(CabinetBlock.MATERIAL);
         BlockPos bottom = origin;
         while (true) {
             BlockPos below = bottom.below();
-            if (!isSameColumnCell(level, below, facing)) {
+            if (!isSameColumnCell(level, below, facing, material)) {
                 break;
             }
             CabinetBlockEntity lower = cabinetBe(level, below);
@@ -56,7 +57,7 @@ public final class Cabinet1OpenColumn {
             }
             out.add(be);
             BlockPos above = p.above();
-            if (!isSameColumnCell(level, above, facing) || !jointOpen(be)) {
+            if (!isSameColumnCell(level, above, facing, material) || !jointOpen(be)) {
                 break;
             }
             p = above;
@@ -336,13 +337,15 @@ public final class Cabinet1OpenColumn {
         return true;
     }
 
-    private static boolean isSameColumnCell(LevelReader level, BlockPos pos, Direction facing) {
+    private static boolean isSameColumnCell(
+            LevelReader level, BlockPos pos, Direction facing, int material) {
         BlockState state = level.getBlockState(pos);
         if (!(state.getBlock() instanceof CabinetBlock cabinet)
                 || cabinet.kind() != CabinetKind.CABINET_1) {
             return false;
         }
-        return state.getValue(CabinetBlock.FACING) == facing;
+        return state.getValue(CabinetBlock.FACING) == facing
+                && state.getValue(CabinetBlock.MATERIAL) == material;
     }
 
     @Nullable

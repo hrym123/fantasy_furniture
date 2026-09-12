@@ -24,6 +24,7 @@ import org.lanye.fantasy_furniture.content.furniture.livingroom.block.BanquetteB
 import org.lanye.fantasy_furniture.content.furniture.cabinet.CabinetKind;
 import org.lanye.fantasy_furniture.content.furniture.cabinet.block.CabinetBlock;
 import org.lanye.fantasy_furniture.content.furniture.cabinet.blockentity.CabinetBlockEntity;
+import org.lanye.fantasy_furniture.content.furniture.cabinet.item.CabinetBlockItem;
 import org.lanye.fantasy_furniture.content.furniture.decor.item.ComputerBlockItem;
 import org.lanye.fantasy_furniture.content.furniture.decor.item.DrinkwareBlockItem;
 import org.lanye.fantasy_furniture.content.furniture.decor.block.ComputerBlock;
@@ -264,25 +265,27 @@ public final class FurnitureAnimatedBlocks {
                                     props -> new CabinetBlock(props, CabinetKind.CABINET_1),
                                     CabinetBlockEntity::new,
                                     (block, props) ->
-                                            new GeolibBlockItem(
+                                            new CabinetBlockItem(
                                                     block,
                                                     props,
-                                                    // 物品栏/手持用单格 geo；贴图仍 cabinet_1.png
+                                                    // 物品栏/手持用单格 geo；贴图由材质档决定
                                                     GeolibItemAssets.blockAssetWithTexture(
                                                             FantasyFurniture.MODID,
                                                             "cabinet_1_cell",
-                                                            "cabinet_1"))),
+                                                            "white_cabinet_1"))),
                             AnimatedBlockRegistration.spec(
                                     "cabinet_2",
                                     FurnitureBlockProperties::woodCabinetNoOcclusion,
                                     props -> new CabinetBlock(props, CabinetKind.CABINET_2),
                                     CabinetBlockEntity::new,
                                     (block, props) ->
-                                            new GeolibBlockItem(
+                                            new CabinetBlockItem(
                                                     block,
                                                     props,
-                                                    GeolibItemAssets.blockAsset(
-                                                            FantasyFurniture.MODID, "cabinet_2"))),
+                                                    GeolibItemAssets.blockAssetWithTexture(
+                                                            FantasyFurniture.MODID,
+                                                            "cabinet_2",
+                                                            "white_cabinet_2"))),
                             AnimatedBlockRegistration.spec(
                                     "drinkware",
                                     () -> FurnitureBlockProperties.bathroomSmallDecor(MapColor.QUARTZ),

@@ -26,6 +26,7 @@ import org.lanye.fantasy_furniture.content.soap.SoapBarCreativeTab;
 import org.lanye.fantasy_furniture.content.soap.SoapPaperBagCreativeTab;
 import org.lanye.fantasy_furniture.content.soap.SoapBoxCreativeTab;
 import org.lanye.fantasy_furniture.content.soap.SoapSeriesCreativeTab;
+import org.lanye.fantasy_furniture.content.furniture.cabinet.CabinetCreativeTab;
 import org.lanye.fantasy_furniture.content.furniture.decor.ComputerCreativeTab;
 import org.lanye.fantasy_furniture.content.furniture.decor.DrinkwareCreativeTab;
 import org.lanye.fantasy_furniture.content.debug.DevelopmentMode;
@@ -74,8 +75,7 @@ public final class ModCreativeTabs {
         }
         list.add(out -> out.accept(ModBlocks.LOTTERY_MACHINE.item().get()));
         ComputerCreativeTab.appendEntries(list);
-        list.add(out -> out.accept(ModBlocks.CABINET_1.item().get()));
-        list.add(out -> out.accept(ModBlocks.CABINET_2.item().get()));
+        CabinetCreativeTab.appendEntries(list);
         DrinkwareCreativeTab.appendEntries(list);
         list.add(out -> out.accept(ModBlocks.SWEEPER_DOCK.item().get()));
         list.add(out -> out.accept(ModBlocks.GREEN_SOFA.item().get()));

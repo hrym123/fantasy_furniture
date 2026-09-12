@@ -12,6 +12,7 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.lanye.fantasy_furniture.FantasyFurniture;
 import org.lanye.fantasy_furniture.content.furniture.cabinet.CabinetKind;
+import org.lanye.fantasy_furniture.content.furniture.cabinet.CabinetMaterials;
 import org.lanye.fantasy_furniture.content.furniture.cabinet.block.CabinetBlock;
 import org.lanye.fantasy_furniture.content.furniture.cabinet.blockentity.CabinetBlockEntity;
 import org.lanye.fantasy_furniture.content.furniture.cabinet.state.CabinetSegment;
@@ -50,10 +51,12 @@ public final class CabinetGeoBlockRenderer extends ReverieGeoBlockRenderer<Cabin
 
                     @Override
                     public ResourceLocation getTextureResource(CabinetBlockEntity animatable) {
-                        // 拼装变体暂共用 cabinet_1.png
-                        return ResourceLocation.fromNamespaceAndPath(
-                                FantasyFurniture.MODID,
-                                "textures/block/" + animatable.kind().assetId() + ".png");
+                        int material = CabinetMaterials.DEFAULT;
+                        var state = animatable.getBlockState();
+                        if (state.hasProperty(CabinetBlock.MATERIAL)) {
+                            material = state.getValue(CabinetBlock.MATERIAL);
+                        }
+                        return CabinetMaterials.textureLocation(animatable.kind(), material);
                     }
 
                     @Override

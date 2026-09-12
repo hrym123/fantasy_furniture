@@ -207,10 +207,25 @@ public enum CabinetKind {
                 8f / 16f);
     }
 
+    /**
+     * 东/西朝向：命中面局部 X 与目视左右相反，需取反；北/南朝向与 geo 列一致，勿取反。
+     */
+    private static boolean mirrorPickColumns(Direction facing) {
+        return facing.getAxis() == Direction.Axis.X;
+    }
+
+    private int flipColumnSlot(int slot) {
+        int r = rowOf(slot);
+        int c = (cols - 1) - colOf(slot);
+        return r * cols + c;
+    }
+
     /** 北向局部 XY → 槽位（柜子2）。按 geo 分隔中线划分，并钳制到外框内。 */
-    public int slotFromLocal(double localX, double localY) {
-        // 命中面 XY 与 Gecko 模型 +X 左右相反，点选时取反以与目视一致
-        localX = Mth.clamp(-localX, -7f / 16f, 7f / 16f);
+    public int slotFromLocal(double localX, double localY, Direction facing) {
+        if (mirrorPickColumns(facing)) {
+            localX = -localX;
+        }
+        localX = Mth.clamp(localX, -7f / 16f, 7f / 16f);
         localY = Mth.clamp(localY, 1f / 16f, 15f / 16f);
         int col = localX < -2.5f / 16f ? 0 : (localX < 2.5f / 16f ? 1 : 2);
         int row = localY < 5.5f / 16f ? 0 : (localY < 10.5f / 16f ? 1 : 2);
@@ -234,7 +249,7 @@ public enum CabinetKind {
             Vec3 lookWorld) {
         if (hit.getDirection() == facing) {
             Vec3 local = toNorthLocal(master, facing, hit.getLocation());
-            return slotFromLocal(local.x, local.y);
+            return slotFromLocal(local.x, local.y, facing);
         }
 
         Vec3 eye = toNorthLocal(master, facing, eyeWorld);
@@ -242,7 +257,7 @@ public enum CabinetKind {
         double lenSq = look.lengthSqr();
         if (lenSq < 1.0e-8) {
             Vec3 local = toNorthLocal(master, facing, hit.getLocation());
-            return slotFromLocal(local.x, local.y);
+            return slotFromLocal(local.x, local.y, facing);
         }
         Vec3 dir = look.scale(1.0 / Math.sqrt(lenSq));
         Vec3 end = eye.add(dir.scale(12.0));
@@ -261,18 +276,18 @@ public enum CabinetKind {
             }
         }
         if (best >= 0) {
-            // pickVolume 与 toNorthLocal 同属北向局部，槽位索引已与 geo 列一致，勿再左右翻转
-            return best;
+            // 东/西：射线格索引与目视列相反，与 slotFromLocal 同侧翻转
+            return mirrorPickColumns(facing) ? flipColumnSlot(best) : best;
         }
 
         if (Math.abs(dir.z) > 1.0e-4) {
             double t = (C2_Z_MIN - eye.z) / dir.z;
             if (t > 0.0 && t < 64.0) {
-                return slotFromLocal(eye.x + dir.x * t, eye.y + dir.y * t);
+                return slotFromLocal(eye.x + dir.x * t, eye.y + dir.y * t, facing);
             }
         }
         Vec3 local = toNorthLocal(master, facing, hit.getLocation());
-        return slotFromLocal(local.x, local.y);
+        return slotFromLocal(local.x, local.y, facing);
     }
 
     /** 柜子2 设计格描边（北向局部 → 方块体素 +0.5 XZ）。 */
