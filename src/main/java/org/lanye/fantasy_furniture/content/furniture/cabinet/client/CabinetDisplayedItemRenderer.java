@@ -16,9 +16,14 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.EmptyBlockGetter;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.BedBlock;
+import net.minecraft.world.level.block.DoorBlock;
+import net.minecraft.world.level.block.DoublePlantBlock;
 import net.minecraft.world.level.block.HorizontalDirectionalBlock;
 import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.properties.BlockStateProperties;
+import net.minecraft.world.level.block.state.properties.DoubleBlockHalf;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
@@ -34,6 +39,8 @@ import org.lanye.reverie_core.geolib.GeolibBlockItem;
  * Cabinet displayed items: shelf floor origin then offset then scale.
  *
  * <p>MODEL blocks scale from occupancy (VoxelShape), floor-aligned with model AABB.
+ * Doors / tall plants render both halves so the miniature keeps full-item proportions.
+ * Beds use FIXED + BEWLR with full head+foot bounds (not foot-only occupancy).
  * Only {@link GeolibBlockItem} uses GEO_FIXED; other ENTITYBLOCK_ANIMATED (chests etc.)
  * scale from occupancy and floor-align with FIXED afterDisplay.
  *
@@ -55,6 +62,12 @@ final class CabinetDisplayedItemRenderer {
     private static final double GEO_FIXED_DZ = -0.5;
 
     private static final AABB UNIT = new AABB(0.0, 0.0, 0.0, 1.0, 1.0, 1.0);
+
+    /**
+     * Bed BEWLR (no level): head at z=0 + foot at z=-1 after {@code BedRenderer#renderPiece}.
+     * Passed through FIXED + (-0.5) like {@link ItemRenderer}.
+     */
+    private static final AABB BED_ITEM_BOUNDS = new AABB(0.0, 0.1875, -1.0, 1.0, 0.5625, 1.0);
 
     private CabinetDisplayedItemRenderer() {}
 
@@ -79,6 +92,10 @@ final class CabinetDisplayedItemRenderer {
         poseStack.mulPose(Axis.YP.rotationDegrees(CabinetYaw.degrees(itemYawSteps)));
 
         if (CabinetDisplayEntities.tryDraw(poseStack, bufferSource, light, stack, level, fitW, fitH, fitD)) {
+            poseStack.popPose();
+            return;
+        }
+        if (tryDrawCompositeBlockModel(poseStack, bufferSource, light, stack, fitW, fitH, fitD)) {
             poseStack.popPose();
             return;
         }
@@ -111,6 +128,10 @@ final class CabinetDisplayedItemRenderer {
             return entity;
         }
         if (stack.getItem() instanceof BlockItem blockItem) {
+            CabinetItemPicks.Size composite = measureCompositeBlockSize(blockItem, fitW, fitH, fitD);
+            if (composite != null) {
+                return composite;
+            }
             BlockState state = blockItem.getBlock().defaultBlockState();
             if (state.getRenderShape() == RenderShape.MODEL) {
                 BlockRenderDispatcher dispatcher = Minecraft.getInstance().getBlockRenderer();
@@ -127,6 +148,14 @@ final class CabinetDisplayedItemRenderer {
                     AABB blockBounds = occupancyBounds(facing);
                     float scale = CabinetModelBounds.scaleToFit3D(blockBounds, fitW, fitH, fitD);
                     return sizeOf(blockBounds, scale);
+                }
+                if (blockItem.getBlock() instanceof BedBlock) {
+                    ItemRenderer itemRenderer = Minecraft.getInstance().getItemRenderer();
+                    BakedModel model = itemRenderer.getModel(stack, level, null, 0);
+                    AABB afterFixed =
+                            CabinetModelBounds.afterDisplay(model, ItemDisplayContext.FIXED, BED_ITEM_BOUNDS);
+                    float scale = CabinetModelBounds.scaleToFit3D(afterFixed, fitW, fitH, fitD);
+                    return sizeOf(afterFixed, scale);
                 }
                 AABB occupancy = occupancyBounds(facing);
                 float scale = CabinetModelBounds.scaleToFit3D(occupancy, fitW, fitH, fitD);
@@ -159,6 +188,9 @@ final class CabinetDisplayedItemRenderer {
             float fitH,
             float fitD) {
         if (!(stack.getItem() instanceof BlockItem blockItem)) {
+            return false;
+        }
+        if (isCompositeBlockItem(blockItem)) {
             return false;
         }
         BlockState state = blockItem.getBlock().defaultBlockState();
@@ -234,14 +266,101 @@ final class CabinetDisplayedItemRenderer {
             float fitW,
             float fitH,
             float fitD) {
-        AABB occupancy = occupancyBounds(state);
-        float scale = CabinetModelBounds.scaleToFit3D(occupancy, fitW, fitH, fitD);
         ItemRenderer itemRenderer = Minecraft.getInstance().getItemRenderer();
         BakedModel model = itemRenderer.getModel(stack, level, null, 0);
+        // Beds: BEWLR draws head+foot; scale from full item bounds, not foot-only occupancy.
+        if (state.getBlock() instanceof BedBlock) {
+            AABB afterFixed =
+                    CabinetModelBounds.afterDisplay(model, ItemDisplayContext.FIXED, BED_ITEM_BOUNDS);
+            float scale = CabinetModelBounds.scaleToFit3D(afterFixed, fitW, fitH, fitD);
+            CabinetModelBounds.translateToFloorCentered(poseStack, afterFixed, scale);
+            renderFixed(poseStack, bufferSource, light, stack, level);
+            return true;
+        }
+        AABB occupancy = occupancyBounds(state);
+        float scale = CabinetModelBounds.scaleToFit3D(occupancy, fitW, fitH, fitD);
         AABB afterFixed = CabinetModelBounds.afterDisplay(model, ItemDisplayContext.FIXED);
         CabinetModelBounds.translateToFloorCentered(poseStack, afterFixed, scale);
         renderFixed(poseStack, bufferSource, light, stack, level);
         return true;
+    }
+
+    /**
+     * Doors / double plants: default state is only the lower half, which looks like a squat
+     * flat panel. Draw both halves and scale from the combined 1x2 footprint.
+     */
+    private static boolean tryDrawCompositeBlockModel(
+            PoseStack poseStack,
+            MultiBufferSource bufferSource,
+            int light,
+            ItemStack stack,
+            float fitW,
+            float fitH,
+            float fitD) {
+        if (!(stack.getItem() instanceof BlockItem blockItem) || !isCompositeBlockItem(blockItem)) {
+            return false;
+        }
+        BlockState lower = compositeLowerState(blockItem);
+        BlockState upper = lower.setValue(BlockStateProperties.DOUBLE_BLOCK_HALF, DoubleBlockHalf.UPPER);
+        BlockRenderDispatcher dispatcher = Minecraft.getInstance().getBlockRenderer();
+        BakedModel lowerModel = dispatcher.getBlockModel(lower);
+        BakedModel upperModel = dispatcher.getBlockModel(upper);
+        AABB lowerBounds = CabinetModelBounds.fromModel(lowerModel, lower);
+        AABB upperBounds = CabinetModelBounds.fromModel(upperModel, upper).move(0.0, 1.0, 0.0);
+        AABB modelBounds = encompass(lowerBounds, upperBounds);
+        AABB occupancy = encompass(occupancyBounds(lower), occupancyBounds(upper).move(0.0, 1.0, 0.0));
+        AABB scaleBounds = maxExtentBounds(occupancy, modelBounds);
+        float scale = CabinetModelBounds.scaleToFit3D(scaleBounds, fitW, fitH, fitD);
+        CabinetModelBounds.translateBlockToFloorCentered(poseStack, modelBounds, scale);
+        dispatcher.renderSingleBlock(lower, poseStack, bufferSource, light, OverlayTexture.NO_OVERLAY);
+        poseStack.pushPose();
+        poseStack.translate(0.0, 1.0, 0.0);
+        dispatcher.renderSingleBlock(upper, poseStack, bufferSource, light, OverlayTexture.NO_OVERLAY);
+        poseStack.popPose();
+        return true;
+    }
+
+    @javax.annotation.Nullable
+    private static CabinetItemPicks.Size measureCompositeBlockSize(
+            BlockItem blockItem, float fitW, float fitH, float fitD) {
+        if (!isCompositeBlockItem(blockItem)) {
+            return null;
+        }
+        BlockState lower = compositeLowerState(blockItem);
+        BlockState upper = lower.setValue(BlockStateProperties.DOUBLE_BLOCK_HALF, DoubleBlockHalf.UPPER);
+        BlockRenderDispatcher dispatcher = Minecraft.getInstance().getBlockRenderer();
+        BakedModel lowerModel = dispatcher.getBlockModel(lower);
+        BakedModel upperModel = dispatcher.getBlockModel(upper);
+        AABB lowerBounds = CabinetModelBounds.fromModel(lowerModel, lower);
+        AABB upperBounds = CabinetModelBounds.fromModel(upperModel, upper).move(0.0, 1.0, 0.0);
+        AABB modelBounds = encompass(lowerBounds, upperBounds);
+        AABB occupancy = encompass(occupancyBounds(lower), occupancyBounds(upper).move(0.0, 1.0, 0.0));
+        AABB scaleBounds = maxExtentBounds(occupancy, modelBounds);
+        float scale = CabinetModelBounds.scaleToFit3D(scaleBounds, fitW, fitH, fitD);
+        return sizeOf(modelBounds, scale);
+    }
+
+    private static boolean isCompositeBlockItem(BlockItem blockItem) {
+        return blockItem.getBlock() instanceof DoorBlock
+                || blockItem.getBlock() instanceof DoublePlantBlock;
+    }
+
+    private static BlockState compositeLowerState(BlockItem blockItem) {
+        BlockState state = northFacingItemState(blockItem.getBlock().defaultBlockState());
+        if (state.hasProperty(BlockStateProperties.DOUBLE_BLOCK_HALF)) {
+            state = state.setValue(BlockStateProperties.DOUBLE_BLOCK_HALF, DoubleBlockHalf.LOWER);
+        }
+        return state;
+    }
+
+    private static AABB encompass(AABB a, AABB b) {
+        return new AABB(
+                Math.min(a.minX, b.minX),
+                Math.min(a.minY, b.minY),
+                Math.min(a.minZ, b.minZ),
+                Math.max(a.maxX, b.maxX),
+                Math.max(a.maxY, b.maxY),
+                Math.max(a.maxZ, b.maxZ));
     }
 
     /** Block occupancy: non-empty VoxelShape.bounds(), else unit cube (same class as grass). */

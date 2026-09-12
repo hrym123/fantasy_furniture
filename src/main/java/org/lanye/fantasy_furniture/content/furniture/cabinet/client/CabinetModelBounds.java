@@ -55,7 +55,14 @@ final class CabinetModelBounds {
      * 展品严重偏出槽位。
      */
     static AABB afterDisplay(BakedModel model, ItemDisplayContext context) {
-        AABB raw = fromModel(model);
+        return afterDisplay(model, context, fromModel(model));
+    }
+
+    /**
+     * Like {@link #afterDisplay(BakedModel, ItemDisplayContext)} but with an explicit raw AABB
+     * (e.g. bed BEWLR mesh has no baked quads).
+     */
+    static AABB afterDisplay(BakedModel model, ItemDisplayContext context, AABB raw) {
         ItemTransform transform = model.getTransforms().getTransform(context);
         PoseStack probe = new PoseStack();
         transform.apply(false, probe);
