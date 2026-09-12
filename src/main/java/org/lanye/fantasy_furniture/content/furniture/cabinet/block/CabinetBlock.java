@@ -29,6 +29,7 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
+import org.lanye.fantasy_furniture.content.furniture.cabinet.Cabinet1OpenColumn;
 import org.lanye.fantasy_furniture.content.furniture.cabinet.CabinetCollisionShapes;
 import org.lanye.fantasy_furniture.content.furniture.cabinet.CabinetItemPicks;
 import org.lanye.fantasy_furniture.content.furniture.cabinet.CabinetKind;
@@ -305,42 +306,66 @@ public final class CabinetBlock extends GeolibFacingEntityBlockWithFactory<Cabin
         }
         // Shift + crosshair on displayed item → take (empty or holding).
         if (player.isShiftKeyDown()) {
-            int aimedItem = CabinetItemPicks.pickOccupiedSlot(
-                    be, state.getValue(FACING), player.getEyePosition(1.0f), player.getViewVector(1.0f));
-            if (aimedItem >= 0) {
-                ItemStack taken = be.takeItem(aimedItem);
+            Cabinet1OpenColumn.Aimed aimedTake = pickAimedExhibit(level, state, pos, be, player);
+            if (aimedTake != null) {
+                ItemStack taken = aimedTake.be().takeItem(aimedTake.slot());
                 if (taken.isEmpty()) {
                     return InteractionResult.FAIL;
                 }
                 if (!player.getInventory().add(taken)) {
                     player.drop(taken, false);
                 }
-                level.playSound(null, master, SoundEvents.ITEM_FRAME_REMOVE_ITEM, SoundSource.BLOCKS, 0.8f, 1.0f);
+                level.playSound(
+                        null,
+                        aimedTake.be().getBlockPos(),
+                        SoundEvents.ITEM_FRAME_REMOVE_ITEM,
+                        SoundSource.BLOCKS,
+                        0.8f,
+                        1.0f);
                 return InteractionResult.CONSUME;
             }
         }
 
         if (held.isEmpty()) {
-            int slot = resolveSlot(state, master, player, hit, be);
-            if (be.isEmpty(slot)) {
+            Cabinet1OpenColumn.Aimed aimedEmpty = pickAimedExhibit(level, state, pos, be, player);
+            if (aimedEmpty == null) {
+                int slot = resolveSlot(state, master, player, hit, be);
+                if (be.isEmpty(slot)) {
+                    return InteractionResult.FAIL;
+                }
+                aimedEmpty = new Cabinet1OpenColumn.Aimed(be, slot);
+            }
+            if (aimedEmpty.be().isEmpty(aimedEmpty.slot())) {
                 return InteractionResult.FAIL;
             }
             // Empty + Shift without aimed exhibit: take via grid/slot fallback (legacy).
             if (player.isShiftKeyDown()) {
-                ItemStack taken = be.takeItem(slot);
+                ItemStack taken = aimedEmpty.be().takeItem(aimedEmpty.slot());
                 if (taken.isEmpty()) {
                     return InteractionResult.FAIL;
                 }
                 if (!player.getInventory().add(taken)) {
                     player.drop(taken, false);
                 }
-                level.playSound(null, master, SoundEvents.ITEM_FRAME_REMOVE_ITEM, SoundSource.BLOCKS, 0.8f, 1.0f);
+                level.playSound(
+                        null,
+                        aimedEmpty.be().getBlockPos(),
+                        SoundEvents.ITEM_FRAME_REMOVE_ITEM,
+                        SoundSource.BLOCKS,
+                        0.8f,
+                        1.0f);
                 return InteractionResult.CONSUME;
             }
-            if (!be.rotateItem(slot)) {
+            if (!aimedEmpty.be().rotateItem(aimedEmpty.slot())) {
                 return InteractionResult.FAIL;
             }
-            level.playSound(null, master, SoundEvents.ITEM_FRAME_ROTATE_ITEM, SoundSource.BLOCKS, 0.8f, 1.0f);
+            level.playSound(
+                    null,
+                    aimedEmpty.be().getBlockPos(),
+                    SoundEvents.ITEM_FRAME_ROTATE_ITEM,
+                    SoundSource.BLOCKS,
+                    0.8f,
+                    1.0f);
             return InteractionResult.CONSUME;
         }
 
@@ -348,6 +373,10 @@ public final class CabinetBlock extends GeolibFacingEntityBlockWithFactory<Cabin
         // (or clicking an open cavity that already has a stack) -> free-stack ON TOP if remaining
         // height fits at design-cell size. Occupied shelved single-cell -> reject (no dump).
         // Rejects must CONSUME so BlockItem does not fall through to vanilla world place.
+        // 柜子1：拆中隔后开口腔柱跨格叠放。
+        if (kind == CabinetKind.CABINET_1) {
+            return tryPlaceCabinet1Column(level, state, pos, be, held, player);
+        }
         int aimedItem = CabinetItemPicks.pickOccupiedSlot(
                 be, state.getValue(FACING), player.getEyePosition(1.0f), player.getViewVector(1.0f));
         if (aimedItem < 0) {
@@ -366,6 +395,54 @@ public final class CabinetBlock extends GeolibFacingEntityBlockWithFactory<Cabin
             return rejectNoCapacity(player);
         }
         return tryPlaceHeld(be, free, held, player, level, master);
+    }
+
+    @Nullable
+    private static Cabinet1OpenColumn.Aimed pickAimedExhibit(
+            Level level, BlockState state, BlockPos pos, CabinetBlockEntity be, Player player) {
+        Direction facing = state.getValue(CabinetBlock.FACING);
+        if (be.kind() == CabinetKind.CABINET_1) {
+            return Cabinet1OpenColumn.pickOccupied(
+                    level, pos, facing, player.getEyePosition(1.0f), player.getViewVector(1.0f));
+        }
+        int slot =
+                CabinetItemPicks.pickOccupiedSlot(
+                        be, facing, player.getEyePosition(1.0f), player.getViewVector(1.0f));
+        return slot < 0 ? null : new Cabinet1OpenColumn.Aimed(be, slot);
+    }
+
+    private InteractionResult tryPlaceCabinet1Column(
+            Level level,
+            BlockState state,
+            BlockPos pos,
+            CabinetBlockEntity hitBe,
+            ItemStack held,
+            Player player) {
+        Direction facing = state.getValue(FACING);
+        var cells = Cabinet1OpenColumn.cellsBottomToTop(level, pos);
+        Cabinet1OpenColumn.Aimed aimed =
+                Cabinet1OpenColumn.pickOccupied(
+                        level, pos, facing, player.getEyePosition(1.0f), player.getViewVector(1.0f));
+        if (aimed == null) {
+            float hintWorld =
+                    pos.getY()
+                            + hitBe.kind().shelfTopY(0)
+                            + CabinetKind.SHELF_CLEARANCE;
+            aimed = Cabinet1OpenColumn.topOccupied(cells, hintWorld, CabinetBlock::estimatedStackHeight);
+            if (aimed == null) {
+                CabinetBlockEntity placeBe = cells.isEmpty() ? hitBe : cells.get(0);
+                if (!placeBe.isEmpty(0)) {
+                    return rejectNoCapacity(player);
+                }
+                return tryPlaceHeld(placeBe, 0, held, player, level, placeBe.getBlockPos());
+            }
+        }
+        Cabinet1OpenColumn.Aimed free =
+                Cabinet1OpenColumn.nextOpenStackAbove(aimed, CabinetBlock::estimatedStackHeight);
+        if (free == null) {
+            return rejectNoCapacity(player);
+        }
+        return tryPlaceHeld(free.be(), free.slot(), held, player, level, free.be().getBlockPos());
     }
 
     private static InteractionResult tryPlaceHeld(

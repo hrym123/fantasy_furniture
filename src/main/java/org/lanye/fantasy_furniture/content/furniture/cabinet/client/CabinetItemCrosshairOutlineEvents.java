@@ -62,11 +62,14 @@ public final class CabinetItemCrosshairOutlineEvents {
         VoxelShape outline = CabinetItemClientPick.aimedItemShape(mc.level, state, pos, bhr);
         if (outline == null || outline.isEmpty()) {
             outline = cabinetShellOutline(mc.level.getBlockEntity(master), cabinet.kind(), state);
-        }
-        if (outline == null || outline.isEmpty()) {
+            if (outline == null || outline.isEmpty()) {
+                return;
+            }
+            CompositeCrosshairOutlines.renderPartOutline(event, master, outline);
             return;
         }
-        CompositeCrosshairOutlines.renderPartOutline(event, master, outline);
+        BlockPos origin = CabinetItemClientPick.outlineOrigin(mc.level, state, pos, bhr);
+        CompositeCrosshairOutlines.renderPartOutline(event, origin, outline);
     }
 
     private static VoxelShape cabinetShellOutline(BlockEntity raw, CabinetKind kind, BlockState state) {

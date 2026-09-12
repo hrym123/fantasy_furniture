@@ -5,6 +5,7 @@ import org.lanye.fantasy_furniture.content.furniture.cabinet.blockentity.Cabinet
 /**
  * 同列堆叠底标高 / 可用腔高：隔板在则贴层板，隔板拆掉则落在下方展品或下层板顶。
  *
+ * <p>柜子1 开口腔柱（拆中隔）委托 {@link Cabinet1OpenColumn}。
  * <p>高度回调由调用方提供：客户端用模型实测（与 BER 一致），服务端用占位估计。
  */
 public final class CabinetStackFloors {
@@ -20,6 +21,14 @@ public final class CabinetStackFloors {
     private CabinetStackFloors() {}
 
     public static SlotPose pose(CabinetBlockEntity be, int slot, HeightFn heights) {
+        if (be.kind() == CabinetKind.CABINET_1) {
+            return Cabinet1OpenColumn.pose(be, slot, heights);
+        }
+        return poseSingle(be, slot, heights);
+    }
+
+    /** 单柜（或柜子2）密排姿态；柜子1 开口腔请走 {@link #pose}。 */
+    public static SlotPose poseSingle(CabinetBlockEntity be, int slot, HeightFn heights) {
         CabinetKind kind = be.kind();
         int cols = Math.max(1, kind.cols());
         int levels = Math.max(1, be.maxLevelsPerColumn());
@@ -75,8 +84,15 @@ public final class CabinetStackFloors {
         return pose(be, slot, heights).floorY();
     }
 
-    /** 下一层现存且对本段有效的隔板底面，否则顶盖。 */
+    /** 下一层现存且对本段有效的隔板底面，否则顶盖（柜子1 开口腔柱见 {@link Cabinet1OpenColumn}）。 */
     public static float ceilingAbove(CabinetBlockEntity be, CabinetKind kind, float floorY) {
+        if (kind == CabinetKind.CABINET_1) {
+            return Cabinet1OpenColumn.ceilingAboveLocal(be, floorY, (b, s, h) -> 0f);
+        }
+        return ceilingAboveSingle(be, kind, floorY);
+    }
+
+    public static float ceilingAboveSingle(CabinetBlockEntity be, CabinetKind kind, float floorY) {
         float ceiling = (float) kind.shelfLocalAabb(CabinetKind.SHELF_COUNT - 1).minY;
         for (int si = 0; si < CabinetKind.SHELF_COUNT; si++) {
             if (!be.isShelfActive(si)) {
