@@ -255,42 +255,53 @@ public final class CabinetBlock extends GeolibFacingEntityBlockWithFactory<Cabin
         }
 
         // Holding: empty aimed design-grid cell -> place there; aiming at an existing exhibit
-        // in an undivided/open column -> free-stack ON TOP if remaining height fits at design-cell
-        // size. Occupied shelved single-cell (present shelf between) -> FAIL (no dump to other cells).
+        // (or clicking an open cavity that already has a stack) -> free-stack ON TOP if remaining
+        // height fits at design-cell size. Occupied shelved single-cell -> reject (no dump).
+        // Rejects must CONSUME so BlockItem does not fall through to vanilla world place.
         int aimedItem = CabinetItemPicks.pickOccupiedSlot(
                 be, state.getValue(FACING), player.getEyePosition(1.0f), player.getViewVector(1.0f));
-        final int placeSlot;
-        if (aimedItem >= 0) {
-            int col = kind.columnOfStorage(aimedItem);
-            int free = be.nextFreeSlotInColumn(col);
-            if (free < 0) {
-                player.displayClientMessage(
-                        Component.translatable("message.fantasy_furniture.cabinet.no_capacity"), true);
-                return InteractionResult.FAIL;
-            }
-            if (!isOpenStackAbove(be, aimedItem, free)) {
-                // Shelved compartment already occupied; do not redirect to another cell.
-                return InteractionResult.FAIL;
-            }
-            placeSlot = free;
-        } else {
-            placeSlot = resolveDesignGridSlot(state, master, player, hit);
-            if (!be.isEmpty(placeSlot)) {
-                return InteractionResult.FAIL;
+        if (aimedItem < 0) {
+            int designSlot = resolveDesignGridSlot(state, master, player, hit);
+            int cavityTop = topOccupiedInSameOpenCavity(be, designSlot);
+            if (cavityTop >= 0) {
+                aimedItem = cavityTop;
+            } else if (be.isEmpty(designSlot)) {
+                return tryPlaceHeld(be, designSlot, held, player, level, master);
+            } else {
+                return rejectNoCapacity(player);
             }
         }
+        int free = nextOpenStackSlotAbove(be, aimedItem);
+        if (free < 0) {
+            return rejectNoCapacity(player);
+        }
+        return tryPlaceHeld(be, free, held, player, level, master);
+    }
+
+    private static InteractionResult tryPlaceHeld(
+            CabinetBlockEntity be,
+            int placeSlot,
+            ItemStack held,
+            Player player,
+            Level level,
+            BlockPos master) {
         if (!canFreeStackPlace(be, placeSlot, held)) {
-            player.displayClientMessage(
-                    Component.translatable("message.fantasy_furniture.cabinet.no_capacity"), true);
-            return InteractionResult.FAIL;
+            return rejectNoCapacity(player);
         }
         if (!be.placeItem(placeSlot, held)) {
-            return InteractionResult.FAIL;
+            return rejectNoCapacity(player);
         }
         if (!player.getAbilities().instabuild) {
             held.shrink(1);
         }
         level.playSound(null, master, SoundEvents.ITEM_FRAME_ADD_ITEM, SoundSource.BLOCKS, 0.8f, 1.0f);
+        return InteractionResult.CONSUME;
+    }
+
+    /** Capacity / occupied reject: show tip and consume so vanilla BlockItem cannot place. */
+    private static InteractionResult rejectNoCapacity(Player player) {
+        player.displayClientMessage(
+                Component.translatable("message.fantasy_furniture.cabinet.no_capacity"), true);
         return InteractionResult.CONSUME;
     }
 
@@ -332,8 +343,92 @@ public final class CabinetBlock extends GeolibFacingEntityBlockWithFactory<Cabin
     }
 
     /**
-     * Whether {@code freeSlot} lies in the same undivided vertical cavity above {@code aimedSlot}
-     * (no present shelf between them). Free-stack-on-exhibit must not dump into another shelved cell.
+     * Topmost occupied exhibit in the same undivided cavity as {@code slotHint} (design grid or
+     * storage). Used when the crosshair misses exhibit AABBs but hits the cabinet PART / cell.
+     */
+    private static int topOccupiedInSameOpenCavity(CabinetBlockEntity be, int slotHint) {
+        CabinetKind kind = be.kind();
+        int col = kind.columnOfStorage(slotHint);
+        float hintY = cavityHintY(be, kind, slotHint);
+        int top = -1;
+        float topY = Float.NEGATIVE_INFINITY;
+        int levels = be.maxLevelsPerColumn();
+        for (int lvl = 0; lvl < levels; lvl++) {
+            int s = kind.slotAt(col, lvl);
+            if (be.isEmpty(s)) {
+                continue;
+            }
+            CabinetStackFloors.SlotPose pose =
+                    CabinetStackFloors.pose(be, s, CabinetBlock::estimatedStackHeight);
+            float mid = pose.floorY() + Math.max(0f, pose.renderedH()) * 0.5f;
+            if (!sameOpenCavityY(be, kind, hintY, mid)) {
+                continue;
+            }
+            float at = pose.floorY() + Math.max(0f, pose.renderedH());
+            if (at > topY) {
+                topY = at;
+                top = s;
+            }
+        }
+        return top;
+    }
+
+    /** Y inside the cavity that contains {@code slotHint} (occupied mid, or design shelf line). */
+    private static float cavityHintY(CabinetBlockEntity be, CabinetKind kind, int slotHint) {
+        if (!be.isEmpty(slotHint)) {
+            CabinetStackFloors.SlotPose pose =
+                    CabinetStackFloors.pose(be, slotHint, CabinetBlock::estimatedStackHeight);
+            return pose.floorY() + Math.max(0f, pose.renderedH()) * 0.5f;
+        }
+        int row = Math.min(Math.max(0, kind.rowOf(slotHint)), Math.max(0, kind.rows() - 1));
+        return kind.shelfTopY(kind.slotAt(kind.columnOfStorage(slotHint), row))
+                + CabinetKind.SHELF_CLEARANCE;
+    }
+
+    /** True when no present shelf bottom lies strictly between {@code y1} and {@code y2}. */
+    private static boolean sameOpenCavityY(CabinetBlockEntity be, CabinetKind kind, float y1, float y2) {
+        float lo = Math.min(y1, y2);
+        float hi = Math.max(y1, y2);
+        for (int si = 0; si < CabinetKind.SHELF_COUNT; si++) {
+            if (!be.isShelfPresent(si)) {
+                continue;
+            }
+            float minY = (float) kind.shelfLocalAabb(si).minY;
+            if (minY > lo + 1.0e-4f && minY < hi - 1.0e-4f) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Next empty storage slot in the same undivided cavity above {@code aimedSlot}, skipping
+     * design cells that still sit on a present shelf (those are other compartments).
+     */
+    private static int nextOpenStackSlotAbove(CabinetBlockEntity be, int aimedSlot) {
+        CabinetKind kind = be.kind();
+        int cols = Math.max(1, kind.cols());
+        int col = kind.columnOfStorage(aimedSlot);
+        int levels = be.maxLevelsPerColumn();
+        for (int lvl = 0; lvl < levels; lvl++) {
+            int free = kind.slotAt(col, lvl);
+            if (!be.isEmpty(free)) {
+                continue;
+            }
+            if (isOpenStackAbove(be, aimedSlot, free)) {
+                return free;
+            }
+        }
+        return -1;
+    }
+
+    /**
+     * Whether {@code freeSlot} lies in the same undivided vertical cavity above {@code aimedSlot}.
+     *
+     * <p>Uses shelf geometry (not design-row index): a present supporting shelf for {@code freeSlot}
+     * whose floor is above the aimed exhibit means a different compartment — skip that slot and use
+     * a denser free-stack level instead. Otherwise reject only if a present shelf bottom sits
+     * strictly between aimed top and free floor.
      */
     private static boolean isOpenStackAbove(CabinetBlockEntity be, int aimedSlot, int freeSlot) {
         CabinetKind kind = be.kind();
@@ -346,11 +441,28 @@ public final class CabinetBlock extends GeolibFacingEntityBlockWithFactory<Cabin
         if (freeLevel <= aimedLevel) {
             return false;
         }
-        int col = kind.columnOfStorage(aimedSlot);
-        for (int lvl = aimedLevel + 1; lvl <= freeLevel; lvl++) {
-            int s = kind.slotAt(col, lvl);
-            int shelf = kind.shelfSupportingSlot(s);
-            if (shelf >= 0 && be.isShelfPresent(shelf)) {
+
+        CabinetStackFloors.SlotPose aimedPose =
+                CabinetStackFloors.pose(be, aimedSlot, CabinetBlock::estimatedStackHeight);
+        float aimedTop = aimedPose.floorY() + Math.max(0f, aimedPose.renderedH());
+
+        int freeShelf = kind.shelfSupportingSlot(freeSlot);
+        if (freeShelf >= 0 && be.isShelfPresent(freeShelf)) {
+            // Empty design cell on a present shelf above the aimed stack → other compartment.
+            if (kind.itemFloorY(freeSlot) > aimedTop + 1.0e-3f) {
+                return false;
+            }
+        }
+
+        CabinetStackFloors.SlotPose freePose =
+                CabinetStackFloors.pose(be, freeSlot, CabinetBlock::estimatedStackHeight);
+        float freeFloor = freePose.floorY();
+        for (int si = 0; si < CabinetKind.SHELF_COUNT; si++) {
+            if (!be.isShelfPresent(si)) {
+                continue;
+            }
+            float minY = (float) kind.shelfLocalAabb(si).minY;
+            if (minY > aimedTop + 1.0e-4f && minY < freeFloor - 1.0e-4f) {
                 return false;
             }
         }
