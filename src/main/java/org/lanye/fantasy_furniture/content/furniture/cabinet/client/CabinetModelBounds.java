@@ -64,11 +64,36 @@ final class CabinetModelBounds {
     }
 
     /**
-     * 使包围盒最大边缩放到 {@code targetMax}（柜内目标外接边长）。
+     * 使包围盒最大边缩放到 {@code targetMax}（柜内目标外接边长；优先用 {@link #scaleToFit3D}）。
      */
     static float scaleToFit(AABB bounds, float targetMax) {
         float extent = maxExtent(bounds);
         return targetMax / Math.max(0.01f, extent);
+    }
+
+    /**
+     * 统一缩放：按空腔可用宽/高/深分别拟合后取最小比，保证不撑破格。
+     */
+    /** Block/FIXED/Geo AABB often underestimates mesh → pad sizes so scale stays under cubby. */
+    private static final float MODEL_CONTENT_PAD = 1.12f;
+
+    static float scaleToFit3D(AABB bounds, float fitW, float fitH, float fitD) {
+        return uniformScaleToFit(
+                (float) bounds.getXsize() * MODEL_CONTENT_PAD,
+                (float) bounds.getYsize() * MODEL_CONTENT_PAD,
+                (float) bounds.getZsize() * MODEL_CONTENT_PAD,
+                fitW,
+                fitH,
+                fitD);
+    }
+
+    /** 已知内容外接尺寸时的三轴拟合统一缩放。 */
+    static float uniformScaleToFit(
+            float sizeX, float sizeY, float sizeZ, float fitW, float fitH, float fitD) {
+        float sx = fitW / Math.max(0.01f, sizeX);
+        float sy = fitH / Math.max(0.01f, sizeY);
+        float sz = fitD / Math.max(0.01f, sizeZ);
+        return Math.min(sx, Math.min(sy, sz));
     }
 
     static float maxExtent(AABB bounds) {
@@ -80,6 +105,7 @@ final class CabinetModelBounds {
      * 纯物品：先按 display 后包围盒贴底并水平居中，再统一缩放。
      *
      * <p>顺序：{@code scale(S)} → {@code translate(-midX, -minY, -midZ)} → 内部再施加 FIXED。
+     * 贴底：缩放后内容 minY → 0（层板原点由调用方 {@code itemFloorY} 提供）。
      */
     static void translateToFloorCentered(PoseStack poseStack, AABB afterDisplay, float uniformScale) {
         double midX = (afterDisplay.minX + afterDisplay.maxX) * 0.5;

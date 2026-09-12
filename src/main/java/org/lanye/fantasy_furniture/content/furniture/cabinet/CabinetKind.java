@@ -54,6 +54,17 @@ public enum CabinetKind {
     public static final float INTERIOR_FIT = 0.80f;
     public static final float SHELF_CLEARANCE = 0.02f;
 
+    /**
+     * 格内可用外接尺寸（已乘 {@link #INTERIOR_FIT}；高度已扣 {@link #SHELF_CLEARANCE}）。
+     * 展品应按 W/H/D 分别拟合后取统一缩放 {@code min(fitW/sx, fitH/sy, fitD/sz)}。
+     */
+    public record CavityFit(float width, float height, float depth) {
+        /** 三轴中的最小边，供仍只需标量 fit 的调用方。 */
+        public float min() {
+            return Math.min(width, Math.min(height, depth));
+        }
+    }
+
     private final String assetId;
     private final int columnParts;
     private final int rows;
@@ -137,18 +148,37 @@ public enum CabinetKind {
         return 0f;
     }
 
-    public float fitSize(int slot) {
+    /** 该格可用外接 W/H/D（已乘 INTERIOR_FIT）。 */
+    public CavityFit cavityFit(int slot) {
         if (this == CABINET_2) {
             int c = colOf(slot);
             int r = rowOf(slot);
-            float w = C2_COL_MAX[c] - C2_COL_MIN[c];
-            float h = Math.max(0.05f, C2_ROW_MAX[r] - C2_ROW_MIN[r] - SHELF_CLEARANCE);
-            float d = C2_Z_MAX - C2_Z_MIN;
-            return Math.min(w, Math.min(h, d)) * INTERIOR_FIT;
+            float w = (C2_COL_MAX[c] - C2_COL_MIN[c]) * INTERIOR_FIT;
+            float h = Math.max(0.05f, C2_ROW_MAX[r] - C2_ROW_MIN[r] - SHELF_CLEARANCE) * INTERIOR_FIT;
+            float d = (C2_Z_MAX - C2_Z_MIN) * INTERIOR_FIT;
+            return new CavityFit(w, h, d);
         }
-        float cellW = cavityWidth / Math.max(1, cols);
-        float h = Math.max(0.05f, cavityHeight[rowOf(slot)] - SHELF_CLEARANCE);
-        return Math.min(cellW, Math.min(h, cavityDepth)) * INTERIOR_FIT;
+        float cellW = (cavityWidth / Math.max(1, cols)) * INTERIOR_FIT;
+        float h = Math.max(0.05f, cavityHeight[rowOf(slot)] - SHELF_CLEARANCE) * INTERIOR_FIT;
+        float d = cavityDepth * INTERIOR_FIT;
+        return new CavityFit(cellW, h, d);
+    }
+
+    public float cavityFitWidth(int slot) {
+        return cavityFit(slot).width();
+    }
+
+    public float cavityFitHeight(int slot) {
+        return cavityFit(slot).height();
+    }
+
+    public float cavityFitDepth(int slot) {
+        return cavityFit(slot).depth();
+    }
+
+    /** 三轴可用尺寸之最小边（兼容旧调用）。 */
+    public float fitSize(int slot) {
+        return cavityFit(slot).min();
     }
 
     public float itemFloorY(int slot) {

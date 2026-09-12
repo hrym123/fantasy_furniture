@@ -37,6 +37,9 @@ final class CabinetDisplayEntities {
     @Nullable
     private static ArmorStand armorMannequin;
 
+    /** Tiny lift only; must not push into shelf. */
+    private static final float FLOOR_ZFIGHT_LIFT = 0.001f;
+
     private CabinetDisplayEntities() {}
 
     static boolean tryDraw(
@@ -45,15 +48,17 @@ final class CabinetDisplayEntities {
             int light,
             ItemStack stack,
             Level level,
-            float fit) {
-        if (tryDrawWornArmor(poseStack, bufferSource, light, stack, level, fit)) {
+            float fitW,
+            float fitH,
+            float fitD) {
+        if (tryDrawWornArmor(poseStack, bufferSource, light, stack, level, fitW, fitH, fitD)) {
             return true;
         }
         Entity entity = getOrCreateVehicle(stack, level);
         if (entity == null) {
             return false;
         }
-        renderEntity(poseStack, bufferSource, light, entity, fit);
+        renderEntity(poseStack, bufferSource, light, entity, fitW, fitH, fitD);
         return true;
     }
 
@@ -64,7 +69,9 @@ final class CabinetDisplayEntities {
             int light,
             ItemStack stack,
             Level level,
-            float fit) {
+            float fitW,
+            float fitH,
+            float fitD) {
         EquipmentSlot slot = armorEquipmentSlot(stack);
         if (slot == null) {
             return false;
@@ -81,13 +88,18 @@ final class CabinetDisplayEntities {
         float contentH = Math.max(0.05f, ySpan[1] - ySpan[0]);
         float contentW = armorLocalWidth(slot);
         float contentD = contentW * 0.75f;
-        float maxDim = Math.max(contentW, Math.max(contentH, contentD));
-        float scale = fit / maxDim;
+        // Mesh AABB estimates run small → pad content so uniformScale cannot overflow cubby.
+        // Mild pad only (keep armor size similar to approved look; no aggressive shrink).
+        final float ARMOR_CONTENT_PAD = 1.12f;
+        float padW = contentW * ARMOR_CONTENT_PAD;
+        float padH = contentH * ARMOR_CONTENT_PAD;
+        float padD = contentD * ARMOR_CONTENT_PAD;
+        float scale = CabinetModelBounds.uniformScaleToFit(padW, padH, padD, fitW, fitH, fitD);
 
         poseStack.pushPose();
         poseStack.scale(scale, scale, scale);
         // 把该件盔甲底边落到层板（略多压一点，避免头盔等看起来悬在腔中）
-        poseStack.translate(0.0, -ySpan[0] - armorFloorBias(slot), 0.0);
+        poseStack.translate(0.0, -ySpan[0] + FLOOR_ZFIGHT_LIFT, 0.0);
 
         EntityRenderDispatcher dispatcher = Minecraft.getInstance().getEntityRenderDispatcher();
         dispatcher.setRenderShadow(false);
@@ -103,10 +115,10 @@ final class CabinetDisplayEntities {
     /** 盔甲架局部空间中该槽位盔甲大致 Y 范围 [min, max]。 */
     private static float[] armorLocalY(EquipmentSlot slot) {
         return switch (slot) {
-            case HEAD -> new float[] {1.35f, 2.05f};
-            case CHEST -> new float[] {0.75f, 1.55f};
-            case LEGS -> new float[] {0.20f, 0.95f};
-            case FEET -> new float[] {0.00f, 0.55f};
+            case HEAD -> new float[] {1.15f, 2.25f};
+            case CHEST -> new float[] {0.45f, 1.85f};
+            case LEGS -> new float[] {0.05f, 1.15f};
+            case FEET -> new float[] {0.00f, 0.65f};
             default -> new float[] {0.00f, 2.00f};
         };
     }
@@ -118,15 +130,6 @@ final class CabinetDisplayEntities {
             case LEGS -> 0.55f;
             case FEET -> 0.78f;
             default -> 0.60f;
-        };
-    }
-
-    /** 额外下压（盔甲架局部单位），头盔等视觉底边往往高于包围估计。 */
-    private static float armorFloorBias(EquipmentSlot slot) {
-        return switch (slot) {
-            case HEAD -> 0.12f;
-            case CHEST -> 0.04f;
-            default -> 0.0f;
         };
     }
 
@@ -183,15 +186,23 @@ final class CabinetDisplayEntities {
     private static final float BOAT_RENDER_Y_LIFT = 0.375f;
 
     private static void renderEntity(
-            PoseStack poseStack, MultiBufferSource bufferSource, int light, Entity entity, float fit) {
+            PoseStack poseStack,
+            MultiBufferSource bufferSource,
+            int light,
+            Entity entity,
+            float fitW,
+            float fitH,
+            float fitD) {
         float w = Math.max(0.01f, entity.getBbWidth());
         float h = Math.max(0.01f, entity.getBbHeight());
-        float scale = fit / Math.max(w, h);
+        float scale = CabinetModelBounds.uniformScaleToFit(w, h, w, fitW, fitH, fitD);
 
         poseStack.pushPose();
         poseStack.scale(scale, scale, scale);
         if (entity instanceof Boat) {
-            poseStack.translate(0.0, -BOAT_RENDER_Y_LIFT, 0.0);
+            poseStack.translate(0.0, -BOAT_RENDER_Y_LIFT + FLOOR_ZFIGHT_LIFT, 0.0);
+        } else {
+            poseStack.translate(0.0, FLOOR_ZFIGHT_LIFT, 0.0);
         }
 
         EntityRenderDispatcher dispatcher = Minecraft.getInstance().getEntityRenderDispatcher();
