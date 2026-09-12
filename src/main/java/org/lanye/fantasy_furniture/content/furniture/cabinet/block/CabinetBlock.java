@@ -18,13 +18,12 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.LevelReader;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
-import net.minecraft.world.level.block.state.properties.IntegerProperty;
+import net.minecraft.world.level.block.state.properties.EnumProperty;
 import net.minecraft.world.level.storage.loot.LootParams;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
@@ -33,11 +32,11 @@ import net.minecraft.world.phys.shapes.VoxelShape;
 import org.lanye.fantasy_furniture.content.furniture.cabinet.CabinetCollisionShapes;
 import org.lanye.fantasy_furniture.content.furniture.cabinet.CabinetItemPicks;
 import org.lanye.fantasy_furniture.content.furniture.cabinet.CabinetKind;
-import org.lanye.fantasy_furniture.content.furniture.cabinet.CabinetSlot;
 import org.lanye.fantasy_furniture.content.furniture.cabinet.CabinetStackFloors;
 import org.lanye.fantasy_furniture.content.furniture.cabinet.blockentity.CabinetBlockEntity;
 import org.lanye.fantasy_furniture.content.furniture.cabinet.CabinetShelfDebugActions;
 import org.lanye.fantasy_furniture.content.furniture.cabinet.client.CabinetItemClientPick;
+import org.lanye.fantasy_furniture.content.furniture.cabinet.state.CabinetSegment;
 import org.lanye.reverie_core.content.fantasy_core.item.FantasyDebugStickItem;
 import org.lanye.reverie_core.geolib.GeolibFacingEntityBlockWithFactory;
 import org.lanye.reverie_core.util.VoxelShapeRotation;
@@ -49,41 +48,42 @@ import org.lanye.reverie_core.util.VoxelShapeRotation;
  *   <li>持物右击空槽 → 放入 1 件
  *   <li>空手右击有物槽 → 展品绕竖直轴 +45°（类似展示框）
  *   <li>潜行空手右击有物槽 → 取出
- *   <li>柜子1型：geo 高 48 → 竖向三格 {@link #PART}（0 底/BE+Geo，1/2 仅碰撞）；点哪格进哪层
- *   <li>柜子2型：单格；3×3 九槽，按命中点映射最近格
+ *   <li>柜子1型：每次放 1 格；对准同朝向顶面向上续放，整柱最多 {@link CabinetKind#CABINET_1_MAX_STACK}；
+ *       {@link #SEGMENT} 由上下邻接刷新（alone/2x/2z/2s）
+ *   <li>柜子2型：单格；3×3 九槽，按命中点映射最近格；{@link #SEGMENT} 恒 alone
  * </ul>
  */
 public final class CabinetBlock extends GeolibFacingEntityBlockWithFactory<CabinetBlockEntity> {
 
-    /** 竖向分格：0=底格（BE + Geo），1/2=上层碰撞格（仅柜子1型使用）。 */
-    public static final IntegerProperty PART = IntegerProperty.create("part", 0, 2);
-
-    private static final ThreadLocal<Boolean> SUPPRESS_SIBLING_BREAK = ThreadLocal.withInitial(() -> false);
+    /** 竖向拼装角色（柜子1 邻接刷新；柜子2 恒 alone）。 */
+    public static final EnumProperty<CabinetSegment> SEGMENT =
+            EnumProperty.create("segment", CabinetSegment.class);
 
     private final CabinetKind kind;
 
     public CabinetBlock(BlockBehaviour.Properties properties, CabinetKind kind) {
         super(properties, CabinetBlockEntity::new);
         this.kind = kind;
-        registerDefaultState(defaultBlockState().setValue(PART, 0));
+        registerDefaultState(defaultBlockState().setValue(SEGMENT, CabinetSegment.ALONE));
     }
 
     public CabinetKind kind() {
         return kind;
     }
 
+    /** 每格独立 BE；兼容旧调用名，恒返回本格。 */
     public static BlockPos masterPos(BlockState state, BlockPos pos) {
-        return pos.below(state.getValue(PART));
+        return pos;
     }
 
     public static boolean isMaster(BlockState state) {
-        return state.getValue(PART) == 0;
+        return true;
     }
 
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
         super.createBlockStateDefinition(builder);
-        builder.add(PART);
+        builder.add(SEGMENT);
     }
 
     @Override
@@ -95,42 +95,36 @@ public final class CabinetBlock extends GeolibFacingEntityBlockWithFactory<Cabin
         }
         Level level = context.getLevel();
         BlockPos pos = context.getClickedPos();
-        var border = level.getWorldBorder();
-        int parts = kind.columnParts();
-        for (int i = 0; i < parts; i++) {
-            BlockPos p = pos.above(i);
-            if (!border.isWithinBounds(p) || !level.getBlockState(p).canBeReplaced(context)) {
-                return null;
+        if (!level.getWorldBorder().isWithinBounds(pos) || !level.getBlockState(pos).canBeReplaced(context)) {
+            return null;
+        }
+        Direction facing = base.getValue(FACING);
+        if (kind == CabinetKind.CABINET_1) {
+            BlockState below = level.getBlockState(pos.below());
+            if (below.getBlock() instanceof CabinetBlock belowCab && belowCab.kind == CabinetKind.CABINET_1) {
+                // 续放：强制继承下方朝向，避免玩家朝向不一致拆柱
+                facing = below.getValue(FACING);
+                base = base.setValue(FACING, facing);
+                if (!canStackAt(level, pos, facing)) {
+                    return null;
+                }
             }
         }
-        return base.setValue(PART, 0);
+        return base.setValue(SEGMENT, computeSegment(level, pos, facing));
     }
 
     @Override
     public void setPlacedBy(
             Level level, BlockPos pos, BlockState state, @Nullable LivingEntity placer, ItemStack stack) {
-        if (!isMaster(state)) {
+        if (level.isClientSide() || kind != CabinetKind.CABINET_1) {
             return;
         }
-        int parts = kind.columnParts();
-        for (int i = 1; i < parts; i++) {
-            level.setBlock(pos.above(i), state.setValue(PART, i), Block.UPDATE_ALL);
-        }
+        refreshSegmentNeighbors(level, pos, state.getValue(FACING));
     }
 
     @Override
     public boolean canSurvive(BlockState state, LevelReader level, BlockPos pos) {
-        int part = state.getValue(PART);
-        if (part == 0) {
-            return true;
-        }
-        if (part >= kind.columnParts()) {
-            return false;
-        }
-        BlockState below = level.getBlockState(pos.below());
-        return below.is(this)
-                && below.getValue(FACING) == state.getValue(FACING)
-                && below.getValue(PART) == part - 1;
+        return true;
     }
 
     @Override
@@ -141,27 +135,115 @@ public final class CabinetBlock extends GeolibFacingEntityBlockWithFactory<Cabin
             LevelAccessor level,
             BlockPos currentPos,
             BlockPos neighborPos) {
-        if (!state.canSurvive(level, currentPos)) {
-            if (!level.isClientSide() && !SUPPRESS_SIBLING_BREAK.get()) {
-                destroyColumn(level, state, currentPos);
-            }
-            return Blocks.AIR.defaultBlockState();
+        if (kind != CabinetKind.CABINET_1 || direction.getAxis() != Direction.Axis.Y) {
+            return super.updateShape(state, direction, neighborState, level, currentPos, neighborPos);
         }
-        return super.updateShape(state, direction, neighborState, level, currentPos, neighborPos);
+        CabinetSegment next = computeSegment(level, currentPos, state.getValue(FACING));
+        if (state.getValue(SEGMENT) != next) {
+            return state.setValue(SEGMENT, next);
+        }
+        return state;
     }
 
     @Nullable
     @Override
     public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
-        if (!isMaster(state)) {
-            return null;
-        }
         return super.newBlockEntity(pos, state);
     }
 
     @Override
     public RenderShape getRenderShape(BlockState state) {
-        return isMaster(state) ? RenderShape.ENTITYBLOCK_ANIMATED : RenderShape.INVISIBLE;
+        return RenderShape.ENTITYBLOCK_ANIMATED;
+    }
+
+    /** 下方同朝向柱高（含将放置格）是否 ≤ 上限。 */
+    private boolean canStackAt(LevelReader level, BlockPos placePos, Direction facing) {
+        BlockPos below = placePos.below();
+        if (!isSameColumnCell(level, below, facing)) {
+            return true;
+        }
+        int belowHeight = contiguousHeightDown(level, below, facing);
+        return belowHeight + 1 <= CabinetKind.CABINET_1_MAX_STACK;
+    }
+
+    private static int contiguousHeightDown(LevelReader level, BlockPos from, Direction facing) {
+        int h = 0;
+        BlockPos p = from;
+        while (h < CabinetKind.CABINET_1_MAX_STACK + 2 && isSameColumnCell(level, p, facing)) {
+            h++;
+            p = p.below();
+        }
+        return h;
+    }
+
+    private static boolean isSameColumnCell(LevelReader level, BlockPos pos, Direction facing) {
+        BlockState state = level.getBlockState(pos);
+        if (!(state.getBlock() instanceof CabinetBlock cabinet) || cabinet.kind != CabinetKind.CABINET_1) {
+            return false;
+        }
+        return state.getValue(FACING) == facing;
+    }
+
+    private static CabinetSegment computeSegment(LevelReader level, BlockPos pos, Direction facing) {
+        boolean above = isSameColumnCell(level, pos.above(), facing);
+        boolean below = isSameColumnCell(level, pos.below(), facing);
+        if (!above && !below) {
+            return CabinetSegment.ALONE;
+        }
+        if (!below && above) {
+            return CabinetSegment.BOTTOM;
+        }
+        if (below && !above) {
+            return CabinetSegment.TOP;
+        }
+        return CabinetSegment.MIDDLE;
+    }
+
+    /** 放置后刷新本格与上下邻格 SEGMENT（触发对方 updateShape）。 */
+    private void refreshSegmentNeighbors(Level level, BlockPos pos, Direction facing) {
+        BlockState self = level.getBlockState(pos);
+        if (self.is(this)) {
+            CabinetSegment seg = computeSegment(level, pos, facing);
+            if (self.getValue(SEGMENT) != seg) {
+                level.setBlock(pos, self.setValue(SEGMENT, seg), Block.UPDATE_ALL);
+            }
+        }
+        for (Direction dir : new Direction[] {Direction.UP, Direction.DOWN}) {
+            BlockPos n = pos.relative(dir);
+            BlockState ns = level.getBlockState(n);
+            if (ns.is(this) && ns.getValue(FACING) == facing) {
+                CabinetSegment seg = computeSegment(level, n, facing);
+                if (ns.getValue(SEGMENT) != seg) {
+                    level.setBlock(n, ns.setValue(SEGMENT, seg), Block.UPDATE_ALL);
+                }
+            }
+        }
+    }
+
+    /**
+     * 持本柜物品点顶面 → 交给 BlockItem 向上续放；已达 3 格则消费并提示。
+     * 返回 null 表示不 defer，继续柜内交互。
+     */
+    @Nullable
+    private InteractionResult tryDeferStackPlace(
+            BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+        if (kind != CabinetKind.CABINET_1 || hit.getDirection() != Direction.UP) {
+            return null;
+        }
+        ItemStack held = player.getItemInHand(hand);
+        if (!held.is(asItem())) {
+            return null;
+        }
+        Direction facing = state.getValue(FACING);
+        int height = contiguousHeightDown(level, pos, facing);
+        if (height >= CabinetKind.CABINET_1_MAX_STACK) {
+            if (!level.isClientSide()) {
+                player.displayClientMessage(
+                        Component.translatable("message.fantasy_furniture.cabinet.no_capacity"), true);
+            }
+            return InteractionResult.CONSUME;
+        }
+        return InteractionResult.PASS;
     }
 
     private VoxelShape shape(BlockState state) {
@@ -188,6 +270,10 @@ public final class CabinetBlock extends GeolibFacingEntityBlockWithFactory<Cabin
     @Override
     protected InteractionResult onUseClient(
             BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+        InteractionResult defer = tryDeferStackPlace(state, level, pos, player, hand, hit);
+        if (defer != null) {
+            return defer;
+        }
         return InteractionResult.SUCCESS;
     }
 
@@ -196,6 +282,10 @@ public final class CabinetBlock extends GeolibFacingEntityBlockWithFactory<Cabin
             BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
         if (hand != InteractionHand.MAIN_HAND) {
             return InteractionResult.PASS;
+        }
+        InteractionResult defer = tryDeferStackPlace(state, level, pos, player, hand, hit);
+        if (defer != null) {
+            return defer;
         }
         BlockPos master = masterPos(state, pos);
         CabinetBlockEntity be = blockEntity(level, master);
@@ -306,7 +396,7 @@ public final class CabinetBlock extends GeolibFacingEntityBlockWithFactory<Cabin
     }
 
     /**
-     * Prefer aimed displayed item (any storage slot); else design-grid hit (PART / slotFromHit).
+     * Prefer aimed displayed item (any storage slot); else design-grid hit.
      */
     private int resolveSlot(
             BlockState state, BlockPos master, Player player, BlockHitResult hit, CabinetBlockEntity be) {
@@ -329,10 +419,10 @@ public final class CabinetBlock extends GeolibFacingEntityBlockWithFactory<Cabin
         return resolveDesignGridSlot(state, master, player, hit);
     }
 
-    /** PART / slotFromHit only — never prefers an occupied exhibit AABB. */
+    /** Design grid：柜子1 单格恒槽 0；柜子2 用 slotFromHit。 */
     private int resolveDesignGridSlot(BlockState state, BlockPos master, Player player, BlockHitResult hit) {
-        if (kind.columnParts() > 1) {
-            return CabinetSlot.clampIndex(state.getValue(PART), kind.slotCount());
+        if (kind == CabinetKind.CABINET_1) {
+            return 0;
         }
         return kind.slotFromHit(
                 master,
@@ -504,63 +594,11 @@ public final class CabinetBlock extends GeolibFacingEntityBlockWithFactory<Cabin
 
     @Override
     public void playerWillDestroy(Level level, BlockPos pos, BlockState state, Player player) {
-        if (!level.isClientSide) {
-            BlockPos master = masterPos(state, pos);
-            if (!isMaster(state) && !player.isCreative()) {
-                Block.popResource(level, master, new ItemStack(this));
-            }
-            destroyColumnSiblings(level, state, pos, player);
-        }
         super.playerWillDestroy(level, pos, state, player);
-    }
-
-    private void destroyColumnSiblings(Level level, BlockState state, BlockPos brokenPos, @Nullable Player player) {
-        boolean was = SUPPRESS_SIBLING_BREAK.get();
-        SUPPRESS_SIBLING_BREAK.set(true);
-        try {
-            BlockPos master = masterPos(state, brokenPos);
-            int parts = kind.columnParts();
-            for (int i = 0; i < parts; i++) {
-                BlockPos p = master.above(i);
-                if (p.equals(brokenPos)) {
-                    continue;
-                }
-                BlockState other = level.getBlockState(p);
-                if (other.is(this)) {
-                    level.setBlock(p, Blocks.AIR.defaultBlockState(), 35);
-                    if (player != null) {
-                        level.levelEvent(player, 2001, p, Block.getId(other));
-                    }
-                }
-            }
-        } finally {
-            SUPPRESS_SIBLING_BREAK.set(was);
-        }
-    }
-
-    private void destroyColumn(LevelAccessor level, BlockState state, BlockPos anyPos) {
-        boolean was = SUPPRESS_SIBLING_BREAK.get();
-        SUPPRESS_SIBLING_BREAK.set(true);
-        try {
-            BlockPos master = masterPos(state, anyPos);
-            int parts = kind.columnParts();
-            for (int i = 0; i < parts; i++) {
-                BlockPos p = master.above(i);
-                BlockState other = level.getBlockState(p);
-                if (other.is(this)) {
-                    level.destroyBlock(p, false);
-                }
-            }
-        } finally {
-            SUPPRESS_SIBLING_BREAK.set(was);
-        }
     }
 
     @Override
     public List<ItemStack> getDrops(BlockState state, LootParams.Builder params) {
-        if (!isMaster(state)) {
-            return List.of();
-        }
         return super.getDrops(state, params);
     }
 
@@ -574,10 +612,24 @@ public final class CabinetBlock extends GeolibFacingEntityBlockWithFactory<Cabin
 
     @Override
     public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean isMoving) {
-        if (!state.is(newState.getBlock()) && isMaster(state)) {
+        if (!state.is(newState.getBlock())) {
             CabinetBlockEntity be = blockEntity(level, pos);
             if (be != null) {
                 be.dropContents();
+            }
+            if (!level.isClientSide() && kind == CabinetKind.CABINET_1) {
+                Direction facing = state.getValue(FACING);
+                // 邻格 SEGMENT 由 updateShape 在破坏后刷新；此处主动推一次更稳
+                for (Direction dir : new Direction[] {Direction.UP, Direction.DOWN}) {
+                    BlockPos n = pos.relative(dir);
+                    BlockState ns = level.getBlockState(n);
+                    if (ns.is(this) && ns.getValue(FACING) == facing) {
+                        CabinetSegment seg = computeSegment(level, n, facing);
+                        if (ns.getValue(SEGMENT) != seg) {
+                            level.setBlock(n, ns.setValue(SEGMENT, seg), Block.UPDATE_ALL);
+                        }
+                    }
+                }
             }
         }
         super.onRemove(state, level, pos, newState, isMoving);

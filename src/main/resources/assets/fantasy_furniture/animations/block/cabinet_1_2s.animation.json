@@ -1,0 +1,10 @@
+{
+	"format_version": "1.8.0",
+	"animations": {
+		"animation.cabinet_1_2s.idle": {
+			"loop": true,
+			"animation_length": 1,
+			"bones": {}
+		}
+	}
+}

@@ -15,19 +15,19 @@ import net.minecraft.world.phys.shapes.VoxelShape;
 /**
  * 柜子型号：槽位布局（北向模型空间，原点在方块底心）。
  *
- * <p>柜子1型：竖向 3 格 × 1 列；柜子2型：单格内 3×3（与 geo 分隔条对齐）。
- * <p>点选：柜子1 用 {@code PART}（勿改）；柜子2 优先用方块命中面 XY，否则准心落开口平面。
+ * <p>柜子1型：单格可竖向拼装（最多 3），每格独立 BE；柜子2型：单格内 3×3。
+ * <p>点选：柜子1 恒设计槽 0；柜子2 按命中面 XY / 准心落开口平面。
  */
 public enum CabinetKind {
     CABINET_1(
             "cabinet_1",
-            3,
-            3,
+            1,
+            1,
             1,
             /* 内宽/深 */ 12f / 16f,
             14f / 16f,
-            /* 各行腔高 */ new float[] {12f / 16f, 14f / 16f, 14f / 16f},
-            /* 层板顶 Y */ new float[] {2f / 16f, 16f / 16f, 32f / 16f},
+            /* 单格腔高 */ new float[] {12f / 16f},
+            /* 层板顶 Y */ new float[] {2f / 16f},
             /* 展品 Z */ -1f / 16f),
     CABINET_2(
             "cabinet_2",
@@ -39,6 +39,9 @@ public enum CabinetKind {
             /* geo 腔高 4px */ new float[] {4f / 16f, 4f / 16f, 4f / 16f},
             new float[] {1f / 16f, 6f / 16f, 11f / 16f},
             4f / 16f);
+
+    /** 柜子1型竖向拼装上限（含本格）。 */
+    public static final int CABINET_1_MAX_STACK = 3;
 
     /**
      * 柜子2 geo 真实空腔（像素）：列 [-7,-3]/[-2,2]/[3,7]，行 [1,5]/[6,10]/[11,15]，深 [1,7]。
@@ -308,10 +311,11 @@ public enum CabinetKind {
         int i = Math.floorMod(shelf, SHELF_COUNT);
         return switch (this) {
             case CABINET_1 -> switch (i) {
+                // 单格：底 / 可选中隔×2 / 顶盖（与旧通高比例压缩到 16px）
                 case 0 -> aabbPx(-6, 0, -8, 12, 2, 14);
-                case 1 -> aabbPx(-6, 14, -8, 12, 2, 14);
-                case 2 -> aabbPx(-6, 30, -8, 12, 2, 14);
-                default -> aabbPx(-6, 46, -8, 12, 2, 14);
+                case 1 -> aabbPx(-6, 5, -8, 12, 2, 14);
+                case 2 -> aabbPx(-6, 10, -8, 12, 2, 14);
+                default -> aabbPx(-6, 14, -8, 12, 2, 14);
             };
             case CABINET_2 -> switch (i) {
                 case 0 -> aabbPx(-8, 0, 1, 16, 1, 6);
@@ -383,8 +387,9 @@ public enum CabinetKind {
         int i = Math.floorMod(shelf, SHELF_COUNT);
         List<Integer> out = new ArrayList<>(cols);
         if (this == CABINET_1) {
-            if (i >= 0 && i < rows) {
-                out.add(i);
+            // 单格：仅底板承载设计槽 0；中隔/顶盖无独立展品槽
+            if (i == 0) {
+                out.add(0);
             }
             return out;
         }

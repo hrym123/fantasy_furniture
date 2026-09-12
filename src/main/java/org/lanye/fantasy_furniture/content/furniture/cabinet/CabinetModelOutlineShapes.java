@@ -20,19 +20,19 @@ public final class CabinetModelOutlineShapes {
     }
 
     private static VoxelShape cabinet1(int shelvesMask) {
-        // group3 walls — geo origin/size → Block.box（原点底心：+8 XZ）
+        // 单格外壳（竖向拼装每格独立；高 16）
         VoxelShape shell =
                 Shapes.or(
-                        px(-8, 0, 6, 16, 48, 2), // back
-                        px(-8, 0, -8, 2, 48, 14), // left
-                        px(6, 0, -8, 2, 48, 14)); // right
-        // shelf_0..3
+                        px(-8, 0, 6, 16, 16, 2), // back
+                        px(-8, 0, -8, 2, 16, 14), // left
+                        px(6, 0, -8, 2, 16, 14)); // right
+        // 底板 / 可选中隔×2 / 顶盖
         VoxelShape[] shelves =
                 new VoxelShape[] {
                     px(-6, 0, -8, 12, 2, 14),
-                    px(-6, 14, -8, 12, 2, 14),
-                    px(-6, 30, -8, 12, 2, 14),
-                    px(-6, 46, -8, 12, 2, 14)
+                    px(-6, 5, -8, 12, 2, 14),
+                    px(-6, 10, -8, 12, 2, 14),
+                    px(-6, 14, -8, 12, 2, 14)
                 };
         for (int i = 0; i < shelves.length; i++) {
             if ((shelvesMask & (1 << i)) != 0) {

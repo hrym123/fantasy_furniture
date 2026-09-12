@@ -4,9 +4,7 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.phys.shapes.VoxelShape;
 
 /**
- * 柜子北向碰撞：每格一份（柜子1型竖向三格；柜子2型单格薄片）。
- *
- * <p>柜子1型 geo 仍自底格绘出 0..48；上层格仅提供可点选碰撞，无 BE。
+ * 柜子北向碰撞：每格一份（柜子1型单格可竖向拼装；柜子2型单格薄片）。
  */
 public final class CabinetCollisionShapes {
 

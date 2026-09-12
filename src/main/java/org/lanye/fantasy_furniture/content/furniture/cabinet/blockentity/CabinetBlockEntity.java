@@ -47,6 +47,15 @@ public final class CabinetBlockEntity extends BlockEntity implements GeoBlockEnt
 
     public CabinetBlockEntity(BlockPos pos, BlockState state) {
         super(typeFor(state), pos, state);
+        shelvesPresent = defaultShelvesMask();
+    }
+
+    /** 柜子1单格：默认仅底板+顶盖；柜子2：四层全在。 */
+    private int defaultShelvesMask() {
+        if (kind() == CabinetKind.CABINET_1) {
+            return (1 << 0) | (1 << 3);
+        }
+        return SHELVES_ALL;
     }
 
     private static BlockEntityType<?> typeFor(BlockState state) {
@@ -248,7 +257,7 @@ public final class CabinetBlockEntity extends BlockEntity implements GeoBlockEnt
         }
         shelvesPresent = tag.contains(TAG_SHELVES, Tag.TAG_BYTE)
                 ? (tag.getByte(TAG_SHELVES) & SHELVES_ALL)
-                : SHELVES_ALL;
+                : defaultShelvesMask();
         ListTag list = tag.getList(TAG_ITEMS, Tag.TAG_COMPOUND);
         int n = storageSlotCount();
         for (int i = 0; i < list.size(); i++) {
@@ -284,7 +293,7 @@ public final class CabinetBlockEntity extends BlockEntity implements GeoBlockEnt
         return this.cache;
     }
 
-    /** 三格高柜需扩大渲染包围盒，否则上层展品会被裁掉。 */
+    /** 单格柜渲染包围盒（略放宽防裁切）。 */
     @Override
     public AABB getRenderBoundingBox() {
         double h = kind().heightBlocks();

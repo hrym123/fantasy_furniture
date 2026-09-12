@@ -10,7 +10,9 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.lanye.fantasy_furniture.FantasyFurniture;
 import org.lanye.fantasy_furniture.content.furniture.cabinet.CabinetKind;
+import org.lanye.fantasy_furniture.content.furniture.cabinet.block.CabinetBlock;
 import org.lanye.fantasy_furniture.content.furniture.cabinet.blockentity.CabinetBlockEntity;
+import org.lanye.fantasy_furniture.content.furniture.cabinet.state.CabinetSegment;
 import org.lanye.reverie_core.geolib.client.GeoRenderTier;
 import org.lanye.reverie_core.geolib.client.ReverieGeoBlockRenderer;
 import java.util.ArrayList;
@@ -23,6 +25,7 @@ import software.bernie.geckolib.model.GeoModel;
 
 /**
  * 柜体与展品共用同一套 {@code translate(0.5)+rotateBlock}，避免自写朝向与 Gecko 不一致。
+ * 柜子1型按 {@link CabinetSegment} 切换 cell/2x/2z/2s geo。
  */
 @OnlyIn(Dist.CLIENT)
 public final class CabinetGeoBlockRenderer extends ReverieGeoBlockRenderer<CabinetBlockEntity> {
@@ -33,12 +36,12 @@ public final class CabinetGeoBlockRenderer extends ReverieGeoBlockRenderer<Cabin
                     @Override
                     public ResourceLocation getModelResource(CabinetBlockEntity animatable) {
                         return ResourceLocation.fromNamespaceAndPath(
-                                FantasyFurniture.MODID,
-                                "geo/block/" + animatable.kind().assetId() + ".geo.json");
+                                FantasyFurniture.MODID, "geo/block/" + geoStem(animatable) + ".geo.json");
                     }
 
                     @Override
                     public ResourceLocation getTextureResource(CabinetBlockEntity animatable) {
+                        // 拼装变体暂共用 cabinet_1.png
                         return ResourceLocation.fromNamespaceAndPath(
                                 FantasyFurniture.MODID,
                                 "textures/block/" + animatable.kind().assetId() + ".png");
@@ -48,7 +51,19 @@ public final class CabinetGeoBlockRenderer extends ReverieGeoBlockRenderer<Cabin
                     public ResourceLocation getAnimationResource(CabinetBlockEntity animatable) {
                         return ResourceLocation.fromNamespaceAndPath(
                                 FantasyFurniture.MODID,
-                                "animations/block/" + animatable.kind().assetId() + ".animation.json");
+                                "animations/block/" + geoStem(animatable) + ".animation.json");
+                    }
+
+                    private static String geoStem(CabinetBlockEntity animatable) {
+                        if (animatable.kind() != CabinetKind.CABINET_1) {
+                            return animatable.kind().assetId();
+                        }
+                        CabinetSegment segment = CabinetSegment.ALONE;
+                        var state = animatable.getBlockState();
+                        if (state.hasProperty(CabinetBlock.SEGMENT)) {
+                            segment = state.getValue(CabinetBlock.SEGMENT);
+                        }
+                        return segment.cabinet1GeoStem();
                     }
                 },
                 GeoRenderTier.STATIC);

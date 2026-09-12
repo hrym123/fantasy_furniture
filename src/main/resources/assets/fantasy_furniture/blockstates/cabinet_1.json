@@ -1,40 +1,52 @@
 {
   "variants": {
-    "facing=east,part=0": {
+    "facing=east,segment=alone": {
       "model": "fantasy_furniture:block/cabinet_1"
     },
-    "facing=north,part=0": {
+    "facing=north,segment=alone": {
       "model": "fantasy_furniture:block/cabinet_1"
     },
-    "facing=south,part=0": {
+    "facing=south,segment=alone": {
       "model": "fantasy_furniture:block/cabinet_1"
     },
-    "facing=west,part=0": {
+    "facing=west,segment=alone": {
       "model": "fantasy_furniture:block/cabinet_1"
     },
-    "facing=east,part=1": {
-      "model": "fantasy_furniture:block/cabinet_column_extension"
+    "facing=east,segment=bottom": {
+      "model": "fantasy_furniture:block/cabinet_1"
     },
-    "facing=north,part=1": {
-      "model": "fantasy_furniture:block/cabinet_column_extension"
+    "facing=north,segment=bottom": {
+      "model": "fantasy_furniture:block/cabinet_1"
     },
-    "facing=south,part=1": {
-      "model": "fantasy_furniture:block/cabinet_column_extension"
+    "facing=south,segment=bottom": {
+      "model": "fantasy_furniture:block/cabinet_1"
     },
-    "facing=west,part=1": {
-      "model": "fantasy_furniture:block/cabinet_column_extension"
+    "facing=west,segment=bottom": {
+      "model": "fantasy_furniture:block/cabinet_1"
     },
-    "facing=east,part=2": {
-      "model": "fantasy_furniture:block/cabinet_column_extension"
+    "facing=east,segment=middle": {
+      "model": "fantasy_furniture:block/cabinet_1"
     },
-    "facing=north,part=2": {
-      "model": "fantasy_furniture:block/cabinet_column_extension"
+    "facing=north,segment=middle": {
+      "model": "fantasy_furniture:block/cabinet_1"
     },
-    "facing=south,part=2": {
-      "model": "fantasy_furniture:block/cabinet_column_extension"
+    "facing=south,segment=middle": {
+      "model": "fantasy_furniture:block/cabinet_1"
     },
-    "facing=west,part=2": {
-      "model": "fantasy_furniture:block/cabinet_column_extension"
+    "facing=west,segment=middle": {
+      "model": "fantasy_furniture:block/cabinet_1"
+    },
+    "facing=east,segment=top": {
+      "model": "fantasy_furniture:block/cabinet_1"
+    },
+    "facing=north,segment=top": {
+      "model": "fantasy_furniture:block/cabinet_1"
+    },
+    "facing=south,segment=top": {
+      "model": "fantasy_furniture:block/cabinet_1"
+    },
+    "facing=west,segment=top": {
+      "model": "fantasy_furniture:block/cabinet_1"
     }
   }
 }

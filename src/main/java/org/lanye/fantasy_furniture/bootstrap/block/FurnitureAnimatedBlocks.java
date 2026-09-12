@@ -267,8 +267,11 @@ public final class FurnitureAnimatedBlocks {
                                             new GeolibBlockItem(
                                                     block,
                                                     props,
-                                                    GeolibItemAssets.blockAsset(
-                                                            FantasyFurniture.MODID, "cabinet_1"))),
+                                                    // 物品栏/手持用单格 geo；贴图仍 cabinet_1.png
+                                                    GeolibItemAssets.blockAssetWithTexture(
+                                                            FantasyFurniture.MODID,
+                                                            "cabinet_1_cell",
+                                                            "cabinet_1"))),
                             AnimatedBlockRegistration.spec(
                                     "cabinet_2",
                                     FurnitureBlockProperties::woodCabinetNoOcclusion,
