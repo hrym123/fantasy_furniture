@@ -56,7 +56,7 @@ public final class CabinetStackFloors {
                     }
                 }
                 if (Float.isNaN(resolved)) {
-                    resolved = kind.itemFloorY(kind.slotAt(col, 0));
+                    resolved = be.cavityBaseFloorY();
                     for (int br = r - 1; br >= 0; br--) {
                         int below = kind.slotAt(col, br);
                         int belowShelf = kind.shelfSupportingSlot(below);

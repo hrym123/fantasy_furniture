@@ -169,7 +169,7 @@ public final class Cabinet1OpenColumn {
                     }
                 }
                 if (Float.isNaN(resolved)) {
-                    resolved = (float) (base + kind.itemFloorY(kind.slotAt(0, 0)));
+                    resolved = (float) (base + key.be().cavityBaseFloorY());
                     for (int br = r - 1; br >= 0; br--) {
                         Key below = seq.get(br);
                         int belowSlot = kind.slotAt(0, below.level());

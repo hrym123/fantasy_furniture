@@ -17,6 +17,7 @@ import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import org.lanye.fantasy_furniture.bootstrap.block.ModBlocks;
+import org.lanye.fantasy_furniture.content.furniture.cabinet.CabinetJointShelfPick;
 import org.lanye.fantasy_furniture.content.furniture.cabinet.CabinetKind;
 import org.lanye.fantasy_furniture.content.furniture.cabinet.CabinetSlot;
 import org.lanye.fantasy_furniture.content.furniture.cabinet.CabinetYaw;
@@ -200,6 +201,34 @@ public final class CabinetBlockEntity extends BlockEntity implements GeoBlockEnt
             return state.getValue(CabinetBlock.SEGMENT);
         }
         return CabinetSegment.ALONE;
+    }
+
+    /**
+     * 本格空腔底标高（北向局部）。alone/bottom 贴底板顶；top/middle 贴下方连接板顶（局部 1/16），
+     * 避免仍按 alone 的 2/16 底板线导致上格展品悬空。
+     */
+    public float cavityBaseFloorY() {
+        CabinetKind kind = kind();
+        if (kind != CabinetKind.CABINET_1) {
+            return kind.itemFloorY(0);
+        }
+        CabinetSegment seg = segment();
+        if (seg == CabinetSegment.ALONE || seg == CabinetSegment.BOTTOM) {
+            if (isShelfActive(0)) {
+                return kind.itemFloorY(0);
+            }
+            return CabinetKind.SHELF_CLEARANCE;
+        }
+        // TOP / MIDDLE：连接板在下格 Y15–17，伸入本格 0–1/16
+        if (level != null) {
+            BlockPos below = worldPosition.below();
+            if (level.getBlockEntity(below) instanceof CabinetBlockEntity lower
+                    && lower.kind() == CabinetKind.CABINET_1
+                    && lower.isShelfActive(CabinetJointShelfPick.JOINT_SHELF)) {
+                return 1f / 16f + CabinetKind.SHELF_CLEARANCE;
+            }
+        }
+        return CabinetKind.SHELF_CLEARANCE;
     }
 
     public boolean isSlotShelfPresent(int slot) {

@@ -424,10 +424,7 @@ public final class CabinetBlock extends GeolibFacingEntityBlockWithFactory<Cabin
                 Cabinet1OpenColumn.pickOccupied(
                         level, pos, facing, player.getEyePosition(1.0f), player.getViewVector(1.0f));
         if (aimed == null) {
-            float hintWorld =
-                    pos.getY()
-                            + hitBe.kind().shelfTopY(0)
-                            + CabinetKind.SHELF_CLEARANCE;
+            float hintWorld = pos.getY() + hitBe.cavityBaseFloorY();
             aimed = Cabinet1OpenColumn.topOccupied(cells, hintWorld, CabinetBlock::estimatedStackHeight);
             if (aimed == null) {
                 CabinetBlockEntity placeBe = cells.isEmpty() ? hitBe : cells.get(0);
