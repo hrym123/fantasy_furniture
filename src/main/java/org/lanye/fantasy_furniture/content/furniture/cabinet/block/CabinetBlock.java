@@ -30,10 +30,12 @@ import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import org.lanye.fantasy_furniture.content.furniture.cabinet.CabinetCollisionShapes;
+import org.lanye.fantasy_furniture.content.furniture.cabinet.CabinetItemPicks;
 import org.lanye.fantasy_furniture.content.furniture.cabinet.CabinetKind;
 import org.lanye.fantasy_furniture.content.furniture.cabinet.CabinetSlot;
 import org.lanye.fantasy_furniture.content.furniture.cabinet.blockentity.CabinetBlockEntity;
 import org.lanye.fantasy_furniture.content.furniture.cabinet.CabinetShelfDebugActions;
+import org.lanye.fantasy_furniture.content.furniture.cabinet.client.CabinetItemClientPick;
 import org.lanye.reverie_core.content.fantasy_core.item.FantasyDebugStickItem;
 import org.lanye.reverie_core.geolib.GeolibFacingEntityBlockWithFactory;
 import org.lanye.reverie_core.util.VoxelShapeRotation;
@@ -209,7 +211,7 @@ public final class CabinetBlock extends GeolibFacingEntityBlockWithFactory<Cabin
             // 持调试棒时不放置/旋转展品
             return InteractionResult.FAIL;
         }
-        int slot = resolveSlot(state, master, player, hit);
+        int slot = resolveSlot(state, master, player, hit, be);
 
         if (held.isEmpty()) {
             if (be.isEmpty(slot)) {
@@ -247,7 +249,13 @@ public final class CabinetBlock extends GeolibFacingEntityBlockWithFactory<Cabin
      * 柜子1型：竖向三格与 {@code PART} 一一对应（勿改）。
      * 柜子2型：正面命中 XY / 射线拾取九格。
      */
-    private int resolveSlot(BlockState state, BlockPos master, Player player, BlockHitResult hit) {
+    private int resolveSlot(
+            BlockState state, BlockPos master, Player player, BlockHitResult hit, CabinetBlockEntity be) {
+        int aimedItem = CabinetItemPicks.pickOccupiedSlot(
+                be, state.getValue(FACING), player.getEyePosition(1.0f), player.getViewVector(1.0f));
+        if (aimedItem >= 0) {
+            return aimedItem;
+        }
         if (kind.columnParts() > 1) {
             return CabinetSlot.clampIndex(state.getValue(PART), kind.slotCount());
         }
@@ -323,6 +331,9 @@ public final class CabinetBlock extends GeolibFacingEntityBlockWithFactory<Cabin
 
     @Override
     public ItemStack getCloneItemStack(BlockState state, HitResult target, BlockGetter level, BlockPos pos, Player player) {
+        if (level instanceof Level l && l.isClientSide()) {
+            return CabinetItemClientPick.resolveCloneItemStack(l, state, pos);
+        }
         return new ItemStack(this);
     }
 

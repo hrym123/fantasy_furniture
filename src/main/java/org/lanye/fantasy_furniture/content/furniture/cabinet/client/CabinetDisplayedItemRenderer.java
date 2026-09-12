@@ -24,6 +24,7 @@ import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+import org.lanye.fantasy_furniture.content.furniture.cabinet.CabinetItemPicks;
 import org.lanye.fantasy_furniture.content.furniture.cabinet.CabinetKind;
 import org.lanye.fantasy_furniture.content.furniture.cabinet.CabinetYaw;
 import org.lanye.fantasy_furniture.content.furniture.cabinet.blockentity.CabinetBlockEntity;
@@ -99,9 +100,15 @@ final class CabinetDisplayedItemRenderer {
      * Caller already chose stacked fit W/H/D.
      */
     static float measureRenderedHeight(ItemStack stack, Level level, float fitW, float fitH, float fitD) {
-        float entityH = CabinetDisplayEntities.measureRenderedHeight(stack, level, fitW, fitH, fitD);
-        if (entityH >= 0f) {
-            return entityH;
+        return measureRenderedSize(stack, level, fitW, fitH, fitD).height();
+    }
+
+    /** Scaled W/H/D after the same AABB/scale path as {@link #draw}. */
+    static CabinetItemPicks.Size measureRenderedSize(
+            ItemStack stack, Level level, float fitW, float fitH, float fitD) {
+        CabinetItemPicks.Size entity = CabinetDisplayEntities.measureRenderedSize(stack, level, fitW, fitH, fitD);
+        if (entity != null) {
+            return entity;
         }
         if (stack.getItem() instanceof BlockItem blockItem) {
             BlockState state = blockItem.getBlock().defaultBlockState();
@@ -112,28 +119,35 @@ final class CabinetDisplayedItemRenderer {
                 AABB occupancy = occupancyBounds(state);
                 AABB scaleBounds = maxExtentBounds(occupancy, modelBounds);
                 float scale = CabinetModelBounds.scaleToFit3D(scaleBounds, fitW, fitH, fitD);
-                return (float) modelBounds.getYsize() * scale;
+                return sizeOf(modelBounds, scale);
             }
             if (state.getRenderShape() == RenderShape.ENTITYBLOCK_ANIMATED) {
                 BlockState facing = northFacingItemState(state);
                 if (stack.getItem() instanceof GeolibBlockItem) {
                     AABB blockBounds = occupancyBounds(facing);
                     float scale = CabinetModelBounds.scaleToFit3D(blockBounds, fitW, fitH, fitD);
-                    return (float) blockBounds.getYsize() * scale;
+                    return sizeOf(blockBounds, scale);
                 }
                 AABB occupancy = occupancyBounds(facing);
                 float scale = CabinetModelBounds.scaleToFit3D(occupancy, fitW, fitH, fitD);
                 ItemRenderer itemRenderer = Minecraft.getInstance().getItemRenderer();
                 BakedModel model = itemRenderer.getModel(stack, level, null, 0);
                 AABB afterFixed = CabinetModelBounds.afterDisplay(model, ItemDisplayContext.FIXED);
-                return (float) afterFixed.getYsize() * scale;
+                return sizeOf(afterFixed, scale);
             }
         }
         ItemRenderer itemRenderer = Minecraft.getInstance().getItemRenderer();
         BakedModel model = itemRenderer.getModel(stack, level, null, 0);
         AABB afterFixed = CabinetModelBounds.afterDisplay(model, ItemDisplayContext.FIXED);
         float scale = CabinetModelBounds.scaleToFit3D(afterFixed, fitW, fitH, fitD);
-        return (float) afterFixed.getYsize() * scale;
+        return sizeOf(afterFixed, scale);
+    }
+
+    private static CabinetItemPicks.Size sizeOf(AABB bounds, float scale) {
+        return new CabinetItemPicks.Size(
+                (float) bounds.getXsize() * scale,
+                (float) bounds.getYsize() * scale,
+                (float) bounds.getZsize() * scale);
     }
 
     private static boolean tryDrawBlockModel(

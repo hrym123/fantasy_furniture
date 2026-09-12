@@ -24,6 +24,7 @@ import net.minecraft.world.item.MinecartItem;
 import net.minecraft.world.level.Level;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+import org.lanye.fantasy_furniture.content.furniture.cabinet.CabinetItemPicks;
 
 /**
  * 柜内实体类展品：船 / 矿车 / 盔甲架，以及盔甲（穿在隐形盔甲架上的穿戴模型）。
@@ -68,6 +69,16 @@ final class CabinetDisplayEntities {
      */
     static float measureRenderedHeight(
             ItemStack stack, Level level, float fitW, float fitH, float fitD) {
+        CabinetItemPicks.Size size = measureRenderedSize(stack, level, fitW, fitH, fitD);
+        return size == null ? -1f : size.height();
+    }
+
+    /**
+     * Scaled W/H/D matching {@link #tryDraw}. {@code null} if this stack is not a display entity.
+     */
+    @Nullable
+    static CabinetItemPicks.Size measureRenderedSize(
+            ItemStack stack, Level level, float fitW, float fitH, float fitD) {
         EquipmentSlot armorSlot = armorEquipmentSlot(stack);
         if (armorSlot != null) {
             float[] ySpan = armorLocalY(armorSlot);
@@ -82,16 +93,16 @@ final class CabinetDisplayEntities {
                     fitW,
                     fitH,
                     fitD);
-            return contentH * scale;
+            return new CabinetItemPicks.Size(contentW * scale, contentH * scale, contentD * scale);
         }
         Entity entity = getOrCreateVehicle(stack, level);
         if (entity == null) {
-            return -1f;
+            return null;
         }
         float w = Math.max(0.01f, entity.getBbWidth());
         float h = Math.max(0.01f, entity.getBbHeight());
         float scale = CabinetModelBounds.uniformScaleToFit(w, h, w, fitW, fitH, fitD);
-        return h * scale;
+        return new CabinetItemPicks.Size(w * scale, h * scale, w * scale);
     }
 
     /** 盔甲 / 鞘翅：穿在隐形盔甲架上；按该槽位盔甲外接缩放约 fit，底边贴层板。 */

@@ -4,8 +4,10 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+import org.lanye.fantasy_furniture.content.furniture.cabinet.CabinetItemPicks;
 import org.lanye.fantasy_furniture.content.furniture.cabinet.CabinetKind;
 import org.lanye.fantasy_furniture.content.furniture.cabinet.CabinetSlot;
+import org.lanye.fantasy_furniture.content.furniture.cabinet.CabinetStackFloors;
 import org.lanye.fantasy_furniture.content.furniture.cabinet.blockentity.CabinetBlockEntity;
 
 /**
@@ -20,113 +22,52 @@ final class CabinetStackLayout {
     private CabinetStackLayout() {}
 
     static float floorY(CabinetBlockEntity be, int slot) {
-        return layout(be, slot).floorY;
+        return pose(be, slot).floorY();
     }
 
     static CabinetKind.CavityFit cavityFitStacked(CabinetBlockEntity be, int slot) {
-        SlotLayout s = layout(be, slot);
+        CabinetStackFloors.SlotPose s = pose(be, slot);
         CabinetKind kind = be.kind();
         int i = CabinetSlot.clampIndex(slot, kind.slotCount());
         CabinetKind.CavityFit base = kind.cavityFit(i);
-        return new CabinetKind.CavityFit(base.width(), s.fitH, base.depth());
+        return new CabinetKind.CavityFit(base.width(), s.fitH(), base.depth());
     }
 
     /**
      * Scaled AABB height matching {@link CabinetDisplayedItemRenderer#draw} for this slot's
-     * current stack fit. Empty → 0.
+     * current stack fit. Empty -> 0.
      */
     static float renderedHeight(CabinetBlockEntity be, int slot, ItemStack stack, Level level) {
-        if (stack == null || stack.isEmpty()) {
+        CabinetItemPicks.Size size = renderedSize(be, slot, stack, level);
+        return size.height();
+    }
+
+    static CabinetItemPicks.Size renderedSize(CabinetBlockEntity be, int slot, ItemStack stack, Level level) {
+        if (stack == null || stack.isEmpty() || level == null) {
+            return new CabinetItemPicks.Size(0f, 0f, 0f);
+        }
+        CabinetStackFloors.SlotPose s = pose(be, slot);
+        CabinetKind kind = be.kind();
+        int i = CabinetSlot.clampIndex(slot, kind.slotCount());
+        CabinetKind.CavityFit base = kind.cavityFit(i);
+        return CabinetDisplayedItemRenderer.measureRenderedSize(
+                stack, level, base.width(), s.fitH(), base.depth());
+    }
+
+    private static CabinetStackFloors.SlotPose pose(CabinetBlockEntity be, int slot) {
+        return CabinetStackFloors.pose(be, slot, CabinetStackLayout::measuredHeight);
+    }
+
+    private static float measuredHeight(CabinetBlockEntity be, int slot, float fitH) {
+        ItemStack stack = be.getItem(slot);
+        Level level = be.getLevel();
+        if (stack.isEmpty() || level == null) {
             return 0f;
         }
-        SlotLayout s = layout(be, slot);
         CabinetKind kind = be.kind();
         int i = CabinetSlot.clampIndex(slot, kind.slotCount());
         CabinetKind.CavityFit base = kind.cavityFit(i);
         return CabinetDisplayedItemRenderer.measureRenderedHeight(
-                stack, level, base.width(), s.fitH, base.depth());
+                stack, level, base.width(), fitH, base.depth());
     }
-
-    private static SlotLayout layout(CabinetBlockEntity be, int slot) {
-        CabinetKind kind = be.kind();
-        int i = CabinetSlot.clampIndex(slot, kind.slotCount());
-        int col = kind.colOf(i);
-        int rows = kind.rows();
-        int cols = kind.cols();
-        Level level = be.getLevel();
-
-        float[] floors = new float[rows];
-        float[] fitHs = new float[rows];
-        float[] rendHs = new float[rows];
-
-        for (int r = 0; r < rows; r++) {
-            int s = r * cols + col;
-            int supporting = kind.shelfSupportingSlot(s);
-
-            if (supporting >= 0 && be.isShelfPresent(supporting)) {
-                floors[r] = kind.itemFloorY(s);
-            } else {
-                float resolved = Float.NaN;
-                for (int br = r - 1; br >= 0; br--) {
-                    int below = br * cols + col;
-                    if (!be.getItem(below).isEmpty()) {
-                        resolved = floors[br] + rendHs[br];
-                        break;
-                    }
-                }
-                if (Float.isNaN(resolved)) {
-                    // Sit on nearest lower present shelf, else cabinet bottom (row 0).
-                    resolved = kind.itemFloorY(col);
-                    for (int br = r - 1; br >= 0; br--) {
-                        int below = br * cols + col;
-                        int belowShelf = kind.shelfSupportingSlot(below);
-                        if (belowShelf >= 0 && be.isShelfPresent(belowShelf)) {
-                            resolved = kind.itemFloorY(below);
-                            break;
-                        }
-                    }
-                }
-                floors[r] = resolved;
-            }
-
-            float ceiling = ceilingAbove(be, kind, floors[r]);
-            float rawH = Math.max(0.05f, ceiling - floors[r] - CabinetKind.SHELF_CLEARANCE);
-            fitHs[r] = rawH * CabinetKind.INTERIOR_FIT;
-
-            // When the supporting shelf is present, keep the original per-row cavity height
-            // so restored shelves match prior visuals exactly.
-            if (supporting >= 0 && be.isShelfPresent(supporting)) {
-                fitHs[r] = kind.cavityFit(s).height();
-            }
-
-            ItemStack stack = be.getItem(s);
-            if (stack.isEmpty() || level == null) {
-                rendHs[r] = 0f;
-            } else {
-                CabinetKind.CavityFit base = kind.cavityFit(s);
-                rendHs[r] = CabinetDisplayedItemRenderer.measureRenderedHeight(
-                        stack, level, base.width(), fitHs[r], base.depth());
-            }
-        }
-
-        int row = kind.rowOf(i);
-        return new SlotLayout(floors[row], fitHs[row], rendHs[row]);
-    }
-
-    /** Underside of the next present shelf above {@code floorY}, else lid / interior ceiling. */
-    private static float ceilingAbove(CabinetBlockEntity be, CabinetKind kind, float floorY) {
-        float ceiling = (float) kind.shelfLocalAabb(CabinetKind.SHELF_COUNT - 1).minY;
-        for (int si = 0; si < CabinetKind.SHELF_COUNT; si++) {
-            if (!be.isShelfPresent(si)) {
-                continue;
-            }
-            float minY = (float) kind.shelfLocalAabb(si).minY;
-            if (minY > floorY + 1.0e-4f) {
-                return minY;
-            }
-        }
-        return ceiling;
-    }
-
-    private record SlotLayout(float floorY, float fitH, float renderedH) {}
 }
