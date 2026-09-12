@@ -49,8 +49,8 @@ public final class CabinetItemCrosshairOutlineEvents {
             if (shelf != null && !shelf.isEmpty()) {
                 return;
             }
-        } else {
-            // 普通准心：柜子1仅两格之间的连接中隔可单独选中
+        } else if (cabinet.kind() == CabinetKind.CABINET_1) {
+            // 普通准心：柜子1仅两格之间的连接中隔可单独选中（柜子2勿描整层隔板）
             VoxelShape shelf = CabinetShelfClientPick.aimedShelfShape(mc.level, state, pos, bhr);
             if (shelf != null && !shelf.isEmpty()) {
                 BlockPos origin = CabinetShelfClientPick.outlineOrigin(mc.level, state, pos, bhr, false);
@@ -59,7 +59,16 @@ public final class CabinetItemCrosshairOutlineEvents {
             }
         }
         BlockPos master = CabinetBlock.masterPos(state, pos);
-        VoxelShape outline = CabinetItemClientPick.aimedItemShape(mc.level, state, pos, bhr);
+        VoxelShape outline;
+        BlockPos origin;
+        if (cabinet.kind() == CabinetKind.CABINET_2) {
+            // 柜子2：准心始终描设计格（3×3），勿用整层隔板或邻格展品外接抢选
+            outline = CabinetItemClientPick.aimedDesignCellShape(mc.level, state, pos, bhr);
+            origin = master;
+        } else {
+            outline = CabinetItemClientPick.aimedItemShape(mc.level, state, pos, bhr);
+            origin = CabinetItemClientPick.outlineOrigin(mc.level, state, pos, bhr);
+        }
         if (outline == null || outline.isEmpty()) {
             outline = cabinetShellOutline(mc.level.getBlockEntity(master), cabinet.kind(), state);
             if (outline == null || outline.isEmpty()) {
@@ -68,7 +77,6 @@ public final class CabinetItemCrosshairOutlineEvents {
             CompositeCrosshairOutlines.renderPartOutline(event, master, outline);
             return;
         }
-        BlockPos origin = CabinetItemClientPick.outlineOrigin(mc.level, state, pos, bhr);
         CompositeCrosshairOutlines.renderPartOutline(event, origin, outline);
     }
 

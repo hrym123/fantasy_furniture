@@ -22,6 +22,7 @@ import org.lanye.fantasy_furniture.content.furniture.cabinet.CabinetKind;
 import org.lanye.fantasy_furniture.content.furniture.cabinet.CabinetSlot;
 import org.lanye.fantasy_furniture.content.furniture.cabinet.block.CabinetBlock;
 import org.lanye.fantasy_furniture.content.furniture.cabinet.blockentity.CabinetBlockEntity;
+import org.lanye.reverie_core.util.VoxelShapeRotation;
 
 /** 柜子展品客户端准心 / 中键（读 {@link Minecraft#hitResult}）。 */
 @OnlyIn(Dist.CLIENT)
@@ -66,6 +67,35 @@ public final class CabinetItemClientPick {
         }
         Direction facing = state.getValue(CabinetBlock.FACING);
         return CabinetItemPicks.orientedOutline(local, facing);
+    }
+
+    /** 柜子2：准心所对设计格描边（非隔板横条）。 */
+    @Nullable
+    public static VoxelShape aimedDesignCellShape(
+            Level level, BlockState state, BlockPos hitPos, BlockHitResult bhr) {
+        if (!(state.getBlock() instanceof CabinetBlock cabinet) || cabinet.kind() != CabinetKind.CABINET_2) {
+            return null;
+        }
+        Minecraft mc = Minecraft.getInstance();
+        Player player = mc.player;
+        if (player == null) {
+            return null;
+        }
+        BlockPos master = CabinetBlock.masterPos(state, hitPos);
+        int slot =
+                cabinet.kind()
+                        .slotFromHit(
+                                master,
+                                state.getValue(CabinetBlock.FACING),
+                                bhr,
+                                player.getEyePosition(1.0f),
+                                player.getViewVector(1.0f));
+        if (slot < 0) {
+            return null;
+        }
+        VoxelShape north = cabinet.kind().designCellNorthShape(slot);
+        return VoxelShapeRotation.rotateYFromNorthLikeGeckoBlockRenderer(
+                north, state.getValue(CabinetBlock.FACING));
     }
 
     public static BlockPos outlineOrigin(Level level, BlockState state, BlockPos hitPos, BlockHitResult bhr) {

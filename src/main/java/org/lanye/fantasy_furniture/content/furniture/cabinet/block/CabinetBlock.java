@@ -369,32 +369,37 @@ public final class CabinetBlock extends GeolibFacingEntityBlockWithFactory<Cabin
             return InteractionResult.CONSUME;
         }
 
-        // Holding: empty aimed design-grid cell -> place there; aiming at an existing exhibit
-        // (or clicking an open cavity that already has a stack) -> free-stack ON TOP if remaining
-        // height fits at design-cell size. Occupied shelved single-cell -> reject (no dump).
-        // Rejects must CONSUME so BlockItem does not fall through to vanilla world place.
-        // 柜子1：拆中隔后开口腔柱跨格叠放。
+        // Holding: 柜子1 开口腔自由叠；柜子2 准心格空则放一件，已占则静默拒绝（不叠、无容积提示）。
         if (kind == CabinetKind.CABINET_1) {
             return tryPlaceCabinet1Column(level, state, pos, be, held, player);
         }
-        int aimedItem = CabinetItemPicks.pickOccupiedSlot(
-                be, state.getValue(FACING), player.getEyePosition(1.0f), player.getViewVector(1.0f));
-        if (aimedItem < 0) {
-            int designSlot = resolveDesignGridSlot(state, master, player, hit);
-            int cavityTop = topOccupiedInSameOpenCavity(be, designSlot);
-            if (cavityTop >= 0) {
-                aimedItem = cavityTop;
-            } else if (be.isEmpty(designSlot)) {
-                return tryPlaceHeld(be, designSlot, held, player, level, master);
-            } else {
-                return rejectNoCapacity(player);
-            }
+        return tryPlaceCabinet2Cell(level, state, master, be, held, player, hit);
+    }
+
+    /** 柜子2：每设计格仅一件；已占 / 未命中格 → CONSUME 且无提示（防方块落到世界）。 */
+    private InteractionResult tryPlaceCabinet2Cell(
+            Level level,
+            BlockState state,
+            BlockPos master,
+            CabinetBlockEntity be,
+            ItemStack held,
+            Player player,
+            BlockHitResult hit) {
+        int designSlot = resolveDesignGridSlot(state, master, player, hit);
+        if (designSlot < 0 || designSlot >= be.slotCount()) {
+            return InteractionResult.CONSUME;
         }
-        int free = nextOpenStackSlotAbove(be, aimedItem);
-        if (free < 0) {
-            return rejectNoCapacity(player);
+        if (!be.isEmpty(designSlot)) {
+            return InteractionResult.CONSUME;
         }
-        return tryPlaceHeld(be, free, held, player, level, master);
+        if (!be.placeItem(designSlot, held)) {
+            return InteractionResult.CONSUME;
+        }
+        if (!player.getAbilities().instabuild) {
+            held.shrink(1);
+        }
+        level.playSound(null, master, SoundEvents.ITEM_FRAME_ADD_ITEM, SoundSource.BLOCKS, 0.8f, 1.0f);
+        return InteractionResult.CONSUME;
     }
 
     @Nullable

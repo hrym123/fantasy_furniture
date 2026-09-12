@@ -261,10 +261,8 @@ public enum CabinetKind {
             }
         }
         if (best >= 0) {
-            int row = best / cols;
-            int col = best % cols;
-            // 与 slotFromLocal 相同：点选左右相对模型取反
-            return row * cols + (cols - 1 - col);
+            // pickVolume 与 toNorthLocal 同属北向局部，槽位索引已与 geo 列一致，勿再左右翻转
+            return best;
         }
 
         if (Math.abs(dir.z) > 1.0e-4) {
@@ -275,6 +273,20 @@ public enum CabinetKind {
         }
         Vec3 local = toNorthLocal(master, facing, hit.getLocation());
         return slotFromLocal(local.x, local.y);
+    }
+
+    /** 柜子2 设计格描边（北向局部 → 方块体素 +0.5 XZ）。 */
+    public VoxelShape designCellNorthShape(int slot) {
+        int i = Math.floorMod(slot, slotCount());
+        int c = colOf(i);
+        int r = rowOf(i);
+        return Shapes.create(
+                C2_COL_MIN[c] + 0.5,
+                C2_ROW_MIN[r],
+                C2_Z_MIN + 0.5,
+                C2_COL_MAX[c] + 0.5,
+                C2_ROW_MAX[r],
+                C2_Z_MAX + 0.5);
     }
 
     public static Vec3 toNorthLocal(BlockPos master, Direction facing, Vec3 hit) {
