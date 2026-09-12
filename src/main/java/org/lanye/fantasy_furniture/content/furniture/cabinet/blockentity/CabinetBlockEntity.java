@@ -21,6 +21,7 @@ import org.lanye.fantasy_furniture.content.furniture.cabinet.CabinetKind;
 import org.lanye.fantasy_furniture.content.furniture.cabinet.CabinetSlot;
 import org.lanye.fantasy_furniture.content.furniture.cabinet.CabinetYaw;
 import org.lanye.fantasy_furniture.content.furniture.cabinet.block.CabinetBlock;
+import org.lanye.fantasy_furniture.content.furniture.cabinet.state.CabinetSegment;
 import software.bernie.geckolib.animatable.GeoBlockEntity;
 import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
 import software.bernie.geckolib.core.animation.AnimatableManager;
@@ -50,10 +51,10 @@ public final class CabinetBlockEntity extends BlockEntity implements GeoBlockEnt
         shelvesPresent = defaultShelvesMask();
     }
 
-    /** 柜子1单格：默认仅底板+顶盖；柜子2：四层全在。 */
+    /** 柜子1单格：默认底板 + 连接中隔 + 顶盖；实际可点选由 {@link CabinetKind#shelfInSegment} 按 SEGMENT 过滤。 */
     private int defaultShelvesMask() {
         if (kind() == CabinetKind.CABINET_1) {
-            return (1 << 0) | (1 << 3);
+            return (1 << 0) | (1 << 1) | (1 << 3);
         }
         return SHELVES_ALL;
     }
@@ -186,6 +187,19 @@ public final class CabinetBlockEntity extends BlockEntity implements GeoBlockEnt
     public boolean isShelfPresent(int shelf) {
         int i = Math.floorMod(shelf, CabinetKind.SHELF_COUNT);
         return (shelvesPresent & (1 << i)) != 0;
+    }
+
+    /** 现存且属于当前 SEGMENT 几何的隔板（alone 忽略连接中隔 bit）。 */
+    public boolean isShelfActive(int shelf) {
+        return isShelfPresent(shelf) && kind().shelfInSegment(shelf, segment());
+    }
+
+    public CabinetSegment segment() {
+        BlockState state = getBlockState();
+        if (state.hasProperty(CabinetBlock.SEGMENT)) {
+            return state.getValue(CabinetBlock.SEGMENT);
+        }
+        return CabinetSegment.ALONE;
     }
 
     public boolean isSlotShelfPresent(int slot) {

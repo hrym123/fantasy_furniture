@@ -17,6 +17,7 @@ import org.lanye.fantasy_furniture.content.furniture.cabinet.CabinetKind;
 import org.lanye.fantasy_furniture.content.furniture.cabinet.CabinetModelOutlineShapes;
 import org.lanye.fantasy_furniture.content.furniture.cabinet.block.CabinetBlock;
 import org.lanye.fantasy_furniture.content.furniture.cabinet.blockentity.CabinetBlockEntity;
+import org.lanye.fantasy_furniture.content.furniture.cabinet.state.CabinetSegment;
 import org.lanye.reverie_core.composite.client.CompositeCrosshairOutlines;
 import org.lanye.reverie_core.util.VoxelShapeRotation;
 
@@ -42,8 +43,18 @@ public final class CabinetItemCrosshairOutlineEvents {
             return;
         }
         if (CabinetShelfClientPick.holdingDebugStick(mc.player)) {
+            boolean includeAbsent = mc.player != null && mc.player.isShiftKeyDown();
+            VoxelShape shelf =
+                    CabinetShelfClientPick.aimedShelfShapeForDebug(mc.level, state, pos, bhr, includeAbsent);
+            if (shelf != null && !shelf.isEmpty()) {
+                return;
+            }
+        } else {
+            // 普通准心：柜子1仅两格之间的连接中隔可单独选中
             VoxelShape shelf = CabinetShelfClientPick.aimedShelfShape(mc.level, state, pos, bhr);
             if (shelf != null && !shelf.isEmpty()) {
+                BlockPos origin = CabinetShelfClientPick.outlineOrigin(mc.level, state, pos, bhr, false);
+                CompositeCrosshairOutlines.renderPartOutline(event, origin, shelf);
                 return;
             }
         }
@@ -63,7 +74,11 @@ public final class CabinetItemCrosshairOutlineEvents {
         if (raw instanceof CabinetBlockEntity be) {
             mask = be.shelvesMask();
         }
-        VoxelShape north = CabinetModelOutlineShapes.northShell(kind, mask);
+        CabinetSegment segment = CabinetSegment.ALONE;
+        if (state.hasProperty(CabinetBlock.SEGMENT)) {
+            segment = state.getValue(CabinetBlock.SEGMENT);
+        }
+        VoxelShape north = CabinetModelOutlineShapes.northShell(kind, mask, segment);
         Direction facing = state.getValue(CabinetBlock.FACING);
         return VoxelShapeRotation.rotateYFromNorthLikeGeckoBlockRenderer(north, facing);
     }

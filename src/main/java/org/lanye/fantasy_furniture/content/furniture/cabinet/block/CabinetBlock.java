@@ -480,7 +480,7 @@ public final class CabinetBlock extends GeolibFacingEntityBlockWithFactory<Cabin
         float lo = Math.min(y1, y2);
         float hi = Math.max(y1, y2);
         for (int si = 0; si < CabinetKind.SHELF_COUNT; si++) {
-            if (!be.isShelfPresent(si)) {
+            if (!be.isShelfActive(si)) {
                 continue;
             }
             float minY = (float) kind.shelfLocalAabb(si).minY;
@@ -537,7 +537,7 @@ public final class CabinetBlock extends GeolibFacingEntityBlockWithFactory<Cabin
         float aimedTop = aimedPose.floorY() + Math.max(0f, aimedPose.renderedH());
 
         int freeShelf = kind.shelfSupportingSlot(freeSlot);
-        if (freeShelf >= 0 && be.isShelfPresent(freeShelf)) {
+        if (freeShelf >= 0 && be.isShelfActive(freeShelf)) {
             // Empty design cell on a present shelf above the aimed stack → other compartment.
             if (kind.itemFloorY(freeSlot) > aimedTop + 1.0e-3f) {
                 return false;
@@ -548,7 +548,7 @@ public final class CabinetBlock extends GeolibFacingEntityBlockWithFactory<Cabin
                 CabinetStackFloors.pose(be, freeSlot, CabinetBlock::estimatedStackHeight);
         float freeFloor = freePose.floorY();
         for (int si = 0; si < CabinetKind.SHELF_COUNT; si++) {
-            if (!be.isShelfPresent(si)) {
+            if (!be.isShelfActive(si)) {
                 continue;
             }
             float minY = (float) kind.shelfLocalAabb(si).minY;

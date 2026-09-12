@@ -11,6 +11,7 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
+import org.lanye.fantasy_furniture.content.furniture.cabinet.state.CabinetSegment;
 
 /**
  * 柜子型号：槽位布局（北向模型空间，原点在方块底心）。
@@ -311,10 +312,10 @@ public enum CabinetKind {
         int i = Math.floorMod(shelf, SHELF_COUNT);
         return switch (this) {
             case CABINET_1 -> switch (i) {
-                // 单格：底 / 可选中隔×2 / 顶盖（与旧通高比例压缩到 16px）
+                // 底板 / 连接中隔（对齐 2X·2Z geo） / 保留位 / 顶盖
                 case 0 -> aabbPx(-6, 0, -8, 12, 2, 14);
-                case 1 -> aabbPx(-6, 5, -8, 12, 2, 14);
-                case 2 -> aabbPx(-6, 10, -8, 12, 2, 14);
+                case 1 -> aabbPx(-6, 15, -8, 12, 2, 14);
+                case 2 -> aabbPx(-6, 15, -8, 12, 2, 14);
                 default -> aabbPx(-6, 14, -8, 12, 2, 14);
             };
             case CABINET_2 -> switch (i) {
@@ -326,8 +327,34 @@ public enum CabinetKind {
         };
     }
 
-    /** 北向局部 → 方块体素坐标（+0.5 XZ）的隔板形，供描边。 */
+    /**
+     * 该隔板是否属于当前拼装段的几何（alone 无连接中隔；bottom/middle 有中隔等）。
+     */
+    public boolean shelfInSegment(int shelf, CabinetSegment segment) {
+        if (this != CABINET_1) {
+            return true;
+        }
+        int i = Math.floorMod(shelf, SHELF_COUNT);
+        return switch (segment) {
+            case ALONE -> i == 0 || i == 3;
+            case BOTTOM -> i == 0 || i == 1;
+            case MIDDLE -> i == 1;
+            case TOP -> i == 3;
+        };
+    }
+
+    /** 北向局部 → 方块体素坐标（+0.5 XZ）的隔板形，供描边（须贴合 geo，勿用加厚点选盒）。 */
     public VoxelShape shelfNorthShape(int shelf) {
+        if (this == CABINET_1 && Math.floorMod(shelf, SHELF_COUNT) == CabinetJointShelfPick.JOINT_SHELF) {
+            AABB local = CabinetJointShelfPick.jointOutlineLocal();
+            return Shapes.create(
+                    local.minX + 0.5,
+                    local.minY,
+                    local.minZ + 0.5,
+                    local.maxX + 0.5,
+                    local.maxY,
+                    local.maxZ + 0.5);
+        }
         AABB local = shelfLocalAabb(shelf);
         return Shapes.create(
                 local.minX + 0.5,
@@ -354,6 +381,17 @@ public enum CabinetKind {
             Vec3 lookWorld,
             int presentMask,
             boolean includeAbsent) {
+        return pickShelf(master, facing, eyeWorld, lookWorld, presentMask, includeAbsent, CabinetSegment.ALONE);
+    }
+
+    public int pickShelf(
+            BlockPos master,
+            Direction facing,
+            Vec3 eyeWorld,
+            Vec3 lookWorld,
+            int presentMask,
+            boolean includeAbsent,
+            CabinetSegment segment) {
         Vec3 eye = toNorthLocal(master, facing, eyeWorld);
         Vec3 look = lookToNorth(facing, lookWorld);
         double lenSq = look.lengthSqr();
@@ -365,6 +403,13 @@ public enum CabinetKind {
         int best = -1;
         double bestDist = Double.MAX_VALUE;
         for (int i = 0; i < SHELF_COUNT; i++) {
+            if (!shelfInSegment(i, segment)) {
+                continue;
+            }
+            // 柜子1：index 2 与中隔同盒，跳过避免双命中
+            if (this == CABINET_1 && i == 2) {
+                continue;
+            }
             boolean present = (presentMask & (1 << i)) != 0;
             if (!present && !includeAbsent) {
                 continue;

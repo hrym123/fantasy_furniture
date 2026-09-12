@@ -35,7 +35,7 @@ public final class CabinetStackFloors {
             int s = kind.slotAt(col, r);
             int supporting = kind.shelfSupportingSlot(s);
 
-            if (supporting >= 0 && be.isShelfPresent(supporting)) {
+            if (supporting >= 0 && be.isShelfActive(supporting)) {
                 floors[r] = kind.itemFloorY(s);
             } else {
                 float resolved = Float.NaN;
@@ -51,7 +51,7 @@ public final class CabinetStackFloors {
                     for (int br = r - 1; br >= 0; br--) {
                         int below = kind.slotAt(col, br);
                         int belowShelf = kind.shelfSupportingSlot(below);
-                        if (belowShelf >= 0 && be.isShelfPresent(belowShelf)) {
+                        if (belowShelf >= 0 && be.isShelfActive(belowShelf)) {
                             resolved = kind.itemFloorY(below);
                             break;
                         }
@@ -75,11 +75,11 @@ public final class CabinetStackFloors {
         return pose(be, slot, heights).floorY();
     }
 
-    /** 下一层现存隔板底面，否则顶盖。 */
+    /** 下一层现存且对本段有效的隔板底面，否则顶盖。 */
     public static float ceilingAbove(CabinetBlockEntity be, CabinetKind kind, float floorY) {
         float ceiling = (float) kind.shelfLocalAabb(CabinetKind.SHELF_COUNT - 1).minY;
         for (int si = 0; si < CabinetKind.SHELF_COUNT; si++) {
-            if (!be.isShelfPresent(si)) {
+            if (!be.isShelfActive(si)) {
                 continue;
             }
             float minY = (float) kind.shelfLocalAabb(si).minY;

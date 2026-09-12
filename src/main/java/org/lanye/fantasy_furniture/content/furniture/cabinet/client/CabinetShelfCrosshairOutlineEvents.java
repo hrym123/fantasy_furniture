@@ -8,6 +8,7 @@ import net.minecraft.world.phys.shapes.VoxelShape;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.event.RenderHighlightEvent;
+import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import org.lanye.fantasy_furniture.FantasyFurniture;
@@ -21,7 +22,7 @@ public final class CabinetShelfCrosshairOutlineEvents {
 
     private CabinetShelfCrosshairOutlineEvents() {}
 
-    @SubscribeEvent
+    @SubscribeEvent(priority = EventPriority.HIGH)
     public static void onBlockHighlight(RenderHighlightEvent.Block event) {
         Minecraft mc = Minecraft.getInstance();
         if (mc.level == null || !CabinetShelfClientPick.holdingDebugStick(mc.player)) {
@@ -33,11 +34,13 @@ public final class CabinetShelfCrosshairOutlineEvents {
         if (!(state.getBlock() instanceof CabinetBlock)) {
             return;
         }
-        VoxelShape outline = CabinetShelfClientPick.aimedShelfShape(mc.level, state, pos, bhr);
+        boolean includeAbsent = mc.player != null && mc.player.isShiftKeyDown();
+        VoxelShape outline =
+                CabinetShelfClientPick.aimedShelfShapeForDebug(mc.level, state, pos, bhr, includeAbsent);
         if (outline == null || outline.isEmpty()) {
             return;
         }
-        BlockPos origin = CabinetShelfClientPick.outlineOrigin(state, pos);
+        BlockPos origin = CabinetShelfClientPick.outlineOrigin(mc.level, state, pos, bhr, includeAbsent);
         CompositeCrosshairOutlines.renderPartOutline(event, origin, outline);
     }
 }
