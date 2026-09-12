@@ -11,6 +11,7 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.BlockGetter;
@@ -54,8 +55,9 @@ import org.lanye.reverie_core.util.VoxelShapeRotation;
  *   <li>持物右击空槽 → 放入 1 件
  *   <li>空手右击有物槽 → 展品绕竖直轴 +45°（类似展示框）
  *   <li>潜行空手右击有物槽 → 取出
- *   <li>柜子1型：每次放 1 格；对准同朝向顶面向上续放，整柱最多 {@link CabinetKind#CABINET_1_MAX_STACK}；
- *       {@link #SEGMENT} 由上下邻接刷新（alone/2x/2z/2s）
+ *   <li>潜行持方块右击（未对准展品）→ 不放展品，回退原版放置
+ *   <li>柜子1型：每次放 1 格；对准同朝向顶面向上续放，同柱最多 {@link CabinetKind#CABINET_1_MAX_STACK} 格相连；
+ *       超出后新格正常放置为新柱起点；{@link #SEGMENT} 由上下邻接刷新（alone/2x/2z/2s）
  *   <li>柜子2型：单格；3×3 九槽，按命中点映射最近格；{@link #SEGMENT} 恒 alone
  * </ul>
  */
@@ -119,15 +121,12 @@ public final class CabinetBlock extends GeolibFacingEntityBlockWithFactory<Cabin
         if (kind == CabinetKind.CABINET_1) {
             BlockState below = level.getBlockState(pos.below());
             if (below.getBlock() instanceof CabinetBlock belowCab && belowCab.kind == CabinetKind.CABINET_1) {
-                // 续放：强制继承下方朝向，避免玩家朝向不一致拆柱；异色不成柱
+                // 续放：强制继承下方朝向；若下方柱已满 3 格，本格仍可放置但不成柱相连
                 facing = below.getValue(FACING);
                 base = base.setValue(FACING, facing);
-                if (below.getValue(MATERIAL) != material || !canStackAt(level, pos, facing, material)) {
-                    return null;
-                }
             }
         }
-        return base.setValue(SEGMENT, computeSegment(level, pos, facing, material));
+        return base.setValue(SEGMENT, computeSegment(level, pos, facing));
     }
 
     @Override
@@ -143,7 +142,7 @@ public final class CabinetBlock extends GeolibFacingEntityBlockWithFactory<Cabin
         if (level.isClientSide() || kind != CabinetKind.CABINET_1) {
             return;
         }
-        refreshSegmentNeighbors(level, pos, state.getValue(FACING), material);
+        refreshSegmentNeighbors(level, pos, state.getValue(FACING));
     }
 
     @Override
@@ -162,8 +161,7 @@ public final class CabinetBlock extends GeolibFacingEntityBlockWithFactory<Cabin
         if (kind != CabinetKind.CABINET_1 || direction.getAxis() != Direction.Axis.Y) {
             return super.updateShape(state, direction, neighborState, level, currentPos, neighborPos);
         }
-        CabinetSegment next =
-                computeSegment(level, currentPos, state.getValue(FACING), state.getValue(MATERIAL));
+        CabinetSegment next = computeSegment(level, currentPos, state.getValue(FACING));
         if (state.getValue(SEGMENT) != next) {
             return state.setValue(SEGMENT, next);
         }
@@ -181,40 +179,53 @@ public final class CabinetBlock extends GeolibFacingEntityBlockWithFactory<Cabin
         return RenderShape.ENTITYBLOCK_ANIMATED;
     }
 
-    /** 下方同朝向同色柱高（含将放置格）是否 ≤ 上限。 */
-    private boolean canStackAt(LevelReader level, BlockPos placePos, Direction facing, int material) {
-        BlockPos below = placePos.below();
-        if (!isSameColumnCell(level, below, facing, material)) {
-            return true;
-        }
-        int belowHeight = contiguousHeightDown(level, below, facing, material);
-        return belowHeight + 1 <= CabinetKind.CABINET_1_MAX_STACK;
-    }
-
-    private static int contiguousHeightDown(
-            LevelReader level, BlockPos from, Direction facing, int material) {
-        int h = 0;
-        BlockPos p = from;
-        while (h < CabinetKind.CABINET_1_MAX_STACK + 2 && isSameColumnCell(level, p, facing, material)) {
-            h++;
-            p = p.below();
-        }
-        return h;
-    }
-
-    private static boolean isSameColumnCell(
-            LevelReader level, BlockPos pos, Direction facing, int material) {
+    /** 下方同朝向柜体（材质可不同）；用于物理邻接探测。 */
+    private static boolean isSameColumnCell(LevelReader level, BlockPos pos, Direction facing) {
         BlockState state = level.getBlockState(pos);
         if (!(state.getBlock() instanceof CabinetBlock cabinet) || cabinet.kind != CabinetKind.CABINET_1) {
             return false;
         }
-        return state.getValue(FACING) == facing && state.getValue(MATERIAL) == material;
+        return state.getValue(FACING) == facing;
     }
 
-    private static CabinetSegment computeSegment(
-            LevelReader level, BlockPos pos, Direction facing, int material) {
-        boolean above = isSameColumnCell(level, pos.above(), facing, material);
-        boolean below = isSameColumnCell(level, pos.below(), facing, material);
+    /**
+     * 自连续同朝向柱底向上的 0-based 序号；非本柱格返回 -1。
+     * 每 {@link CabinetKind#CABINET_1_MAX_STACK} 格为一节，第四节起属新柱。
+     */
+    private static int columnRankFromBottom(LevelReader level, BlockPos pos, Direction facing) {
+        if (!isSameColumnCell(level, pos, facing)) {
+            return -1;
+        }
+        int rank = 0;
+        BlockPos p = pos.below();
+        while (isSameColumnCell(level, p, facing)) {
+            rank++;
+            p = p.below();
+        }
+        return rank;
+    }
+
+    /**
+     * 两格是否属于同一节竖柱（同朝向且自底起落在同一 3 格分组内）。
+     * 供 SEGMENT / 开口腔柱使用；满三格后再叠的邻格不相连。
+     */
+    public static boolean areLinkedInStack(
+            LevelReader level, BlockPos pos, BlockPos neighbor, Direction facing) {
+        if (!isSameColumnCell(level, neighbor, facing)) {
+            return false;
+        }
+        int a = columnRankFromBottom(level, pos, facing);
+        int b = columnRankFromBottom(level, neighbor, facing);
+        if (a < 0 || b < 0) {
+            return false;
+        }
+        int max = CabinetKind.CABINET_1_MAX_STACK;
+        return a / max == b / max;
+    }
+
+    private static CabinetSegment computeSegment(LevelReader level, BlockPos pos, Direction facing) {
+        boolean above = areLinkedInStack(level, pos, pos.above(), facing);
+        boolean below = areLinkedInStack(level, pos, pos.below(), facing);
         if (!above && !below) {
             return CabinetSegment.ALONE;
         }
@@ -228,10 +239,10 @@ public final class CabinetBlock extends GeolibFacingEntityBlockWithFactory<Cabin
     }
 
     /** 放置后刷新本格与上下邻格 SEGMENT（触发对方 updateShape）。 */
-    private void refreshSegmentNeighbors(Level level, BlockPos pos, Direction facing, int material) {
+    private void refreshSegmentNeighbors(Level level, BlockPos pos, Direction facing) {
         BlockState self = level.getBlockState(pos);
         if (self.is(this)) {
-            CabinetSegment seg = computeSegment(level, pos, facing, material);
+            CabinetSegment seg = computeSegment(level, pos, facing);
             if (self.getValue(SEGMENT) != seg) {
                 level.setBlock(pos, self.setValue(SEGMENT, seg), Block.UPDATE_ALL);
             }
@@ -239,10 +250,8 @@ public final class CabinetBlock extends GeolibFacingEntityBlockWithFactory<Cabin
         for (Direction dir : new Direction[] {Direction.UP, Direction.DOWN}) {
             BlockPos n = pos.relative(dir);
             BlockState ns = level.getBlockState(n);
-            if (ns.is(this)
-                    && ns.getValue(FACING) == facing
-                    && ns.getValue(MATERIAL) == material) {
-                CabinetSegment seg = computeSegment(level, n, facing, material);
+            if (ns.is(this) && ns.getValue(FACING) == facing) {
+                CabinetSegment seg = computeSegment(level, n, facing);
                 if (ns.getValue(SEGMENT) != seg) {
                     level.setBlock(n, ns.setValue(SEGMENT, seg), Block.UPDATE_ALL);
                 }
@@ -250,22 +259,21 @@ public final class CabinetBlock extends GeolibFacingEntityBlockWithFactory<Cabin
         }
     }
 
-    /** 刷子换色后：按新材质重算 SEGMENT 并刷新同色邻格。 */
+    /** 刷子换色后：重算 SEGMENT 并刷新同朝向邻格（材质不影响成柱）。 */
     public void applyMaterialRecolor(Level level, BlockPos pos, BlockState recolored) {
         if (kind != CabinetKind.CABINET_1) {
             level.setBlock(pos, recolored, Block.UPDATE_ALL_IMMEDIATE);
             return;
         }
         Direction facing = recolored.getValue(FACING);
-        int material = recolored.getValue(MATERIAL);
-        CabinetSegment seg = computeSegment(level, pos, facing, material);
+        CabinetSegment seg = computeSegment(level, pos, facing);
         BlockState local = recolored.setValue(SEGMENT, seg);
         level.setBlock(pos, local, Block.UPDATE_ALL_IMMEDIATE);
-        refreshSegmentNeighbors(level, pos, facing, material);
+        refreshSegmentNeighbors(level, pos, facing);
     }
 
     /**
-     * 持本柜物品点顶面 → 交给 BlockItem 向上续放；已达 3 格则消费并提示。
+     * 持本柜物品点顶面 → 交给 BlockItem 向上续放（含已满 3 格时另起新柱）。
      * 返回 null 表示不 defer，继续柜内交互。
      */
     @Nullable
@@ -277,21 +285,6 @@ public final class CabinetBlock extends GeolibFacingEntityBlockWithFactory<Cabin
         ItemStack held = player.getItemInHand(hand);
         if (!held.is(asItem())) {
             return null;
-        }
-        int heldMat =
-                CabinetMaterials.clamp(kind, CabinetAppearance.fromStack(held, kind).materialId());
-        int material = state.getValue(MATERIAL);
-        if (heldMat != material) {
-            return null;
-        }
-        Direction facing = state.getValue(FACING);
-        int height = contiguousHeightDown(level, pos, facing, material);
-        if (height >= CabinetKind.CABINET_1_MAX_STACK) {
-            if (!level.isClientSide()) {
-                player.displayClientMessage(
-                        Component.translatable("message.fantasy_furniture.cabinet.no_capacity"), true);
-            }
-            return InteractionResult.CONSUME;
         }
         return InteractionResult.PASS;
     }
@@ -317,6 +310,21 @@ public final class CabinetBlock extends GeolibFacingEntityBlockWithFactory<Cabin
         return shape(state);
     }
 
+    /**
+     * 准心是否对准柜内展品（供潜行交互：持方块时决定强制取出还是放行原版放置）。
+     */
+    public static boolean hasAimedExhibit(Level level, BlockState state, BlockPos pos, Player player) {
+        if (!(state.getBlock() instanceof CabinetBlock)) {
+            return false;
+        }
+        BlockPos master = masterPos(state, pos);
+        CabinetBlockEntity be = blockEntity(level, master);
+        if (be == null) {
+            return false;
+        }
+        return pickAimedExhibit(level, state, pos, be, player) != null;
+    }
+
     @Override
     protected InteractionResult onUseClient(
             BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
@@ -326,6 +334,13 @@ public final class CabinetBlock extends GeolibFacingEntityBlockWithFactory<Cabin
         InteractionResult defer = tryDeferStackPlace(state, level, pos, player, hand, hit);
         if (defer != null) {
             return defer;
+        }
+        ItemStack held = player.getItemInHand(hand);
+        // 潜行持方块且未对准展品：放行客户端放置预测
+        if (player.isShiftKeyDown()
+                && held.getItem() instanceof BlockItem
+                && !hasAimedExhibit(level, state, pos, player)) {
+            return InteractionResult.PASS;
         }
         return InteractionResult.SUCCESS;
     }
@@ -378,6 +393,10 @@ public final class CabinetBlock extends GeolibFacingEntityBlockWithFactory<Cabin
                         0.8f,
                         1.0f);
                 return InteractionResult.CONSUME;
+            }
+            // 潜行持方块且未对准展品：不放展品，回退原版放置
+            if (held.getItem() instanceof BlockItem) {
+                return InteractionResult.PASS;
             }
         }
 
@@ -762,14 +781,11 @@ public final class CabinetBlock extends GeolibFacingEntityBlockWithFactory<Cabin
             }
             if (!level.isClientSide() && kind == CabinetKind.CABINET_1) {
                 Direction facing = state.getValue(FACING);
-                int material = state.getValue(MATERIAL);
                 for (Direction dir : new Direction[] {Direction.UP, Direction.DOWN}) {
                     BlockPos n = pos.relative(dir);
                     BlockState ns = level.getBlockState(n);
-                    if (ns.is(this)
-                            && ns.getValue(FACING) == facing
-                            && ns.getValue(MATERIAL) == material) {
-                        CabinetSegment seg = computeSegment(level, n, facing, material);
+                    if (ns.is(this) && ns.getValue(FACING) == facing) {
+                        CabinetSegment seg = computeSegment(level, n, facing);
                         if (ns.getValue(SEGMENT) != seg) {
                             level.setBlock(n, ns.setValue(SEGMENT, seg), Block.UPDATE_ALL);
                         }
