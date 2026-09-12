@@ -213,11 +213,29 @@ public final class CabinetBlock extends GeolibFacingEntityBlockWithFactory<Cabin
             // 持调试棒时不放置/旋转展品
             return InteractionResult.FAIL;
         }
+        // Shift + crosshair on displayed item → take (empty or holding).
+        if (player.isShiftKeyDown()) {
+            int aimedItem = CabinetItemPicks.pickOccupiedSlot(
+                    be, state.getValue(FACING), player.getEyePosition(1.0f), player.getViewVector(1.0f));
+            if (aimedItem >= 0) {
+                ItemStack taken = be.takeItem(aimedItem);
+                if (taken.isEmpty()) {
+                    return InteractionResult.FAIL;
+                }
+                if (!player.getInventory().add(taken)) {
+                    player.drop(taken, false);
+                }
+                level.playSound(null, master, SoundEvents.ITEM_FRAME_REMOVE_ITEM, SoundSource.BLOCKS, 0.8f, 1.0f);
+                return InteractionResult.CONSUME;
+            }
+        }
+
         if (held.isEmpty()) {
             int slot = resolveSlot(state, master, player, hit, be);
             if (be.isEmpty(slot)) {
                 return InteractionResult.FAIL;
             }
+            // Empty + Shift without aimed exhibit: take via grid/slot fallback (legacy).
             if (player.isShiftKeyDown()) {
                 ItemStack taken = be.takeItem(slot);
                 if (taken.isEmpty()) {
@@ -236,28 +254,37 @@ public final class CabinetBlock extends GeolibFacingEntityBlockWithFactory<Cabin
             return InteractionResult.CONSUME;
         }
 
-        // Shift: design-grid slot placement (PART / slotFromHit / aimed grid item).
-        if (player.isShiftKeyDown()) {
-            int slot = resolveGridSlot(state, master, player, hit, be);
-            if (!be.placeItem(slot, held)) {
+        // Holding: empty aimed design-grid cell -> place there; aiming at an existing exhibit
+        // in an undivided/open column -> free-stack ON TOP if remaining height fits at design-cell
+        // size. Occupied shelved single-cell (present shelf between) -> FAIL (no dump to other cells).
+        int aimedItem = CabinetItemPicks.pickOccupiedSlot(
+                be, state.getValue(FACING), player.getEyePosition(1.0f), player.getViewVector(1.0f));
+        final int placeSlot;
+        if (aimedItem >= 0) {
+            int col = kind.columnOfStorage(aimedItem);
+            int free = be.nextFreeSlotInColumn(col);
+            if (free < 0) {
+                player.displayClientMessage(
+                        Component.translatable("message.fantasy_furniture.cabinet.no_capacity"), true);
                 return InteractionResult.FAIL;
             }
-            if (!player.getAbilities().instabuild) {
-                held.shrink(1);
+            if (!isOpenStackAbove(be, aimedItem, free)) {
+                // Shelved compartment already occupied; do not redirect to another cell.
+                return InteractionResult.FAIL;
             }
-            level.playSound(null, master, SoundEvents.ITEM_FRAME_ADD_ITEM, SoundSource.BLOCKS, 0.8f, 1.0f);
-            return InteractionResult.CONSUME;
+            placeSlot = free;
+        } else {
+            placeSlot = resolveDesignGridSlot(state, master, player, hit);
+            if (!be.isEmpty(placeSlot)) {
+                return InteractionResult.FAIL;
+            }
         }
-
-        // Free stack: append onto aimed column (item top or cabinet front hit).
-        int col = resolveColumn(state, master, player, hit, be);
-        int free = be.nextFreeSlotInColumn(col);
-        if (free < 0 || !canFreeStackPlace(be, free, held)) {
+        if (!canFreeStackPlace(be, placeSlot, held)) {
             player.displayClientMessage(
                     Component.translatable("message.fantasy_furniture.cabinet.no_capacity"), true);
             return InteractionResult.FAIL;
         }
-        if (!be.placeItem(free, held)) {
+        if (!be.placeItem(placeSlot, held)) {
             return InteractionResult.FAIL;
         }
         if (!player.getAbilities().instabuild) {
@@ -280,14 +307,19 @@ public final class CabinetBlock extends GeolibFacingEntityBlockWithFactory<Cabin
         return resolveGridSlot(state, master, player, hit, be);
     }
 
-    /** Design-grid slot only (Shift place / empty-hand fallback). Clamped to {@link CabinetKind#slotCount()}. */
+    /** Design-grid slot only (empty-hand fallback). Clamped to {@link CabinetKind#slotCount()}. */
     private int resolveGridSlot(
             BlockState state, BlockPos master, Player player, BlockHitResult hit, CabinetBlockEntity be) {
-        int aimedItem = CabinetItemPicks.pickOccupiedSlot(
+        int aimed = CabinetItemPicks.pickOccupiedSlot(
                 be, state.getValue(FACING), player.getEyePosition(1.0f), player.getViewVector(1.0f));
-        if (aimedItem >= 0 && aimedItem < kind.slotCount()) {
-            return aimedItem;
+        if (aimed >= 0 && aimed < kind.slotCount()) {
+            return aimed;
         }
+        return resolveDesignGridSlot(state, master, player, hit);
+    }
+
+    /** PART / slotFromHit only — never prefers an occupied exhibit AABB. */
+    private int resolveDesignGridSlot(BlockState state, BlockPos master, Player player, BlockHitResult hit) {
         if (kind.columnParts() > 1) {
             return CabinetSlot.clampIndex(state.getValue(PART), kind.slotCount());
         }
@@ -300,21 +332,29 @@ public final class CabinetBlock extends GeolibFacingEntityBlockWithFactory<Cabin
     }
 
     /**
-     * Free-stack column: aimed occupied item column, else front hit mapped to column
-     * (cabinet_1 always 0; cabinet_2 from slotFromHit).
+     * Whether {@code freeSlot} lies in the same undivided vertical cavity above {@code aimedSlot}
+     * (no present shelf between them). Free-stack-on-exhibit must not dump into another shelved cell.
      */
-    private int resolveColumn(
-            BlockState state, BlockPos master, Player player, BlockHitResult hit, CabinetBlockEntity be) {
-        int aimedItem = CabinetItemPicks.pickOccupiedSlot(
-                be, state.getValue(FACING), player.getEyePosition(1.0f), player.getViewVector(1.0f));
-        if (aimedItem >= 0) {
-            return kind.columnOfStorage(aimedItem);
+    private static boolean isOpenStackAbove(CabinetBlockEntity be, int aimedSlot, int freeSlot) {
+        CabinetKind kind = be.kind();
+        int cols = Math.max(1, kind.cols());
+        if (kind.columnOfStorage(aimedSlot) != kind.columnOfStorage(freeSlot)) {
+            return false;
         }
-        if (kind.cols() <= 1) {
-            return 0;
+        int aimedLevel = Math.floorDiv(aimedSlot, cols);
+        int freeLevel = Math.floorDiv(freeSlot, cols);
+        if (freeLevel <= aimedLevel) {
+            return false;
         }
-        int grid = resolveGridSlot(state, master, player, hit, be);
-        return kind.columnOfStorage(grid);
+        int col = kind.columnOfStorage(aimedSlot);
+        for (int lvl = aimedLevel + 1; lvl <= freeLevel; lvl++) {
+            int s = kind.slotAt(col, lvl);
+            int shelf = kind.shelfSupportingSlot(s);
+            if (shelf >= 0 && be.isShelfPresent(shelf)) {
+                return false;
+            }
+        }
+        return true;
     }
 
     /**
