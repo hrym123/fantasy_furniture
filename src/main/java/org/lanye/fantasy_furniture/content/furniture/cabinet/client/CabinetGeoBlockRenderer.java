@@ -163,8 +163,7 @@ public final class CabinetGeoBlockRenderer extends ReverieGeoBlockRenderer<Cabin
             CabinetBlockEntity animatable,
             MultiBufferSource bufferSource,
             int packedLight) {
-        CabinetKind kind = animatable.kind();
-        int n = kind.slotCount();
+        int n = animatable.storageSlotCount();
         for (int slot = 0; slot < n; slot++) {
             ItemStack stack = animatable.getItem(slot);
             if (stack.isEmpty()) {

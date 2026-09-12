@@ -137,16 +137,17 @@ public enum CabinetKind {
     }
 
     public float shelfTopY(int slot) {
+        int r = Math.min(Math.max(0, rowOf(slot)), rows - 1);
         if (this == CABINET_2) {
-            return C2_ROW_MIN[rowOf(slot)];
+            return C2_ROW_MIN[r];
         }
-        return shelfTopY[rowOf(slot)];
+        return shelfTopY[r];
     }
 
     /** 该格水平中心 X（北向；柜子2 对齐 geo 空腔中心）。 */
     public float itemX(int slot) {
         if (this == CABINET_2) {
-            int c = colOf(slot);
+            int c = Math.floorMod(colOf(slot), cols);
             return (C2_COL_MIN[c] + C2_COL_MAX[c]) * 0.5f;
         }
         return 0f;
@@ -154,16 +155,16 @@ public enum CabinetKind {
 
     /** 该格可用外接 W/H/D（已乘 INTERIOR_FIT）。 */
     public CavityFit cavityFit(int slot) {
+        int c = Math.floorMod(colOf(slot), cols);
+        int r = Math.min(Math.max(0, rowOf(slot)), rows - 1);
         if (this == CABINET_2) {
-            int c = colOf(slot);
-            int r = rowOf(slot);
             float w = (C2_COL_MAX[c] - C2_COL_MIN[c]) * INTERIOR_FIT;
             float h = Math.max(0.05f, C2_ROW_MAX[r] - C2_ROW_MIN[r] - SHELF_CLEARANCE) * INTERIOR_FIT;
             float d = (C2_Z_MAX - C2_Z_MIN) * INTERIOR_FIT;
             return new CavityFit(w, h, d);
         }
         float cellW = (cavityWidth / Math.max(1, cols)) * INTERIOR_FIT;
-        float h = Math.max(0.05f, cavityHeight[rowOf(slot)] - SHELF_CLEARANCE) * INTERIOR_FIT;
+        float h = Math.max(0.05f, cavityHeight[r] - SHELF_CLEARANCE) * INTERIOR_FIT;
         float d = cavityDepth * INTERIOR_FIT;
         return new CavityFit(cellW, h, d);
     }
@@ -398,10 +399,24 @@ public enum CabinetKind {
 
     /** 槽位所依赖的隔板 index；无依赖（不应发生）返回 -1。 */
     public int shelfSupportingSlot(int slot) {
-        int r = rowOf(CabinetSlot.clampIndex(slot, slotCount()));
+        int r = rowOf(slot);
+        if (r < 0 || r >= rows) {
+            return -1;
+        }
         if (this == CABINET_1 || this == CABINET_2) {
             return r;
         }
         return -1;
+    }
+
+    /** Storage slot index for column {@code col} at stack level {@code level} (0 = bottom). */
+    public int slotAt(int col, int level) {
+        int c = Math.floorMod(col, cols);
+        return level * cols + c;
+    }
+
+    /** Column of a storage slot (works for free-stack levels beyond design rows). */
+    public int columnOfStorage(int slot) {
+        return Math.floorMod(slot, cols);
     }
 }

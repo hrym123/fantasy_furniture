@@ -354,5 +354,6 @@
   "block.fantasy_furniture.bed_plate3_white": "Bed Plate 3 (White)",
   "item.fantasy_furniture.bed_plate3_white": "Bed Plate 3 (White)",
   "debug.fantasy_furniture.cabinet.shelf_removed": "Removed cabinet shelf %s",
-  "debug.fantasy_furniture.cabinet.shelf_restored": "Restored cabinet shelf %s"
+  "debug.fantasy_furniture.cabinet.shelf_restored": "Restored cabinet shelf %s",
+  "message.fantasy_furniture.cabinet.no_capacity": "Not enough space in the cabinet."
 }

@@ -102,7 +102,7 @@ public final class CabinetItemPicks {
         Vec3 end = eye.add(dir.scale(12.0));
         int best = -1;
         double bestDist = Double.MAX_VALUE;
-        int n = be.slotCount();
+        int n = be.storageSlotCount();
         for (int i = 0; i < n; i++) {
             if (be.isEmpty(i)) {
                 continue;
@@ -135,7 +135,7 @@ public final class CabinetItemPicks {
             return null;
         }
         CabinetKind kind = be.kind();
-        int i = CabinetSlot.clampIndex(slot, kind.slotCount());
+        int i = CabinetSlot.clampIndex(slot, be.storageSlotCount());
         CabinetKind.CavityFit base = kind.cavityFit(i);
         Size size = estimateSize(stack, new CabinetKind.CavityFit(base.width(), pose.fitH(), base.depth()))
                 .atLeast(MIN_EXTENT);
@@ -197,7 +197,7 @@ public final class CabinetItemPicks {
             return 0f;
         }
         CabinetKind kind = be.kind();
-        int i = CabinetSlot.clampIndex(slot, kind.slotCount());
+        int i = CabinetSlot.clampIndex(slot, be.storageSlotCount());
         CabinetKind.CavityFit base = kind.cavityFit(i);
         return estimateSize(stack, new CabinetKind.CavityFit(base.width(), fitH, base.depth())).height();
     }

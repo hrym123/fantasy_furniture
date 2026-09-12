@@ -21,17 +21,18 @@ public final class CabinetStackFloors {
 
     public static SlotPose pose(CabinetBlockEntity be, int slot, HeightFn heights) {
         CabinetKind kind = be.kind();
-        int i = CabinetSlot.clampIndex(slot, kind.slotCount());
-        int col = kind.colOf(i);
-        int rows = kind.rows();
-        int cols = kind.cols();
+        int cols = Math.max(1, kind.cols());
+        int levels = Math.max(1, be.maxLevelsPerColumn());
+        int i = CabinetSlot.clampIndex(slot, be.storageSlotCount());
+        int col = kind.columnOfStorage(i);
+        int levelOfSlot = i / cols;
 
-        float[] floors = new float[rows];
-        float[] fitHs = new float[rows];
-        float[] rendHs = new float[rows];
+        float[] floors = new float[levels];
+        float[] fitHs = new float[levels];
+        float[] rendHs = new float[levels];
 
-        for (int r = 0; r < rows; r++) {
-            int s = r * cols + col;
+        for (int r = 0; r < levels; r++) {
+            int s = kind.slotAt(col, r);
             int supporting = kind.shelfSupportingSlot(s);
 
             if (supporting >= 0 && be.isShelfPresent(supporting)) {
@@ -39,16 +40,16 @@ public final class CabinetStackFloors {
             } else {
                 float resolved = Float.NaN;
                 for (int br = r - 1; br >= 0; br--) {
-                    int below = br * cols + col;
+                    int below = kind.slotAt(col, br);
                     if (!be.getItem(below).isEmpty()) {
                         resolved = floors[br] + rendHs[br];
                         break;
                     }
                 }
                 if (Float.isNaN(resolved)) {
-                    resolved = kind.itemFloorY(col);
+                    resolved = kind.itemFloorY(kind.slotAt(col, 0));
                     for (int br = r - 1; br >= 0; br--) {
-                        int below = br * cols + col;
+                        int below = kind.slotAt(col, br);
                         int belowShelf = kind.shelfSupportingSlot(below);
                         if (belowShelf >= 0 && be.isShelfPresent(belowShelf)) {
                             resolved = kind.itemFloorY(below);
@@ -59,19 +60,15 @@ public final class CabinetStackFloors {
                 floors[r] = resolved;
             }
 
-            float ceiling = ceilingAbove(be, kind, floors[r]);
-            float rawH = Math.max(0.05f, ceiling - floors[r] - CabinetKind.SHELF_CLEARANCE);
-            fitHs[r] = rawH * CabinetKind.INTERIOR_FIT;
-
-            if (supporting >= 0 && be.isShelfPresent(supporting)) {
-                fitHs[r] = kind.cavityFit(s).height();
-            }
+            // Display scale is always the design cell (same as a shelved single compartment).
+            // Remaining height to the next shelf/lid is a placement budget only — never a shrink target.
+            fitHs[r] = kind.cavityFit(s).height();
 
             rendHs[r] = heights.rendered(be, s, fitHs[r]);
         }
 
-        int row = kind.rowOf(i);
-        return new SlotPose(floors[row], fitHs[row], rendHs[row]);
+        int lvl = Math.min(levelOfSlot, levels - 1);
+        return new SlotPose(floors[lvl], fitHs[lvl], rendHs[lvl]);
     }
 
     public static float floorY(CabinetBlockEntity be, int slot, HeightFn heights) {

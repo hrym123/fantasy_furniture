@@ -13,8 +13,9 @@ import org.lanye.fantasy_furniture.content.furniture.cabinet.blockentity.Cabinet
 /**
  * Per-column stack layout when supporting shelves are removed.
  *
- * <p>Bottom→top: each slot's floor sits on its shelf, or on the item/shelf below;
- * fit height reaches the next present shelf underside (or lid).
+ * <p>Bottom→top: each slot's floor sits on its shelf, or on the item/shelf below.
+ * Display fit W/H/D is the design cell (same as a shelved single compartment),
+ * not remaining-to-lid.
  */
 @OnlyIn(Dist.CLIENT)
 final class CabinetStackLayout {
@@ -28,7 +29,7 @@ final class CabinetStackLayout {
     static CabinetKind.CavityFit cavityFitStacked(CabinetBlockEntity be, int slot) {
         CabinetStackFloors.SlotPose s = pose(be, slot);
         CabinetKind kind = be.kind();
-        int i = CabinetSlot.clampIndex(slot, kind.slotCount());
+        int i = CabinetSlot.clampIndex(slot, be.storageSlotCount());
         CabinetKind.CavityFit base = kind.cavityFit(i);
         return new CabinetKind.CavityFit(base.width(), s.fitH(), base.depth());
     }
@@ -48,7 +49,7 @@ final class CabinetStackLayout {
         }
         CabinetStackFloors.SlotPose s = pose(be, slot);
         CabinetKind kind = be.kind();
-        int i = CabinetSlot.clampIndex(slot, kind.slotCount());
+        int i = CabinetSlot.clampIndex(slot, be.storageSlotCount());
         CabinetKind.CavityFit base = kind.cavityFit(i);
         return CabinetDisplayedItemRenderer.measureRenderedSize(
                 stack, level, base.width(), s.fitH(), base.depth());
@@ -65,7 +66,7 @@ final class CabinetStackLayout {
             return 0f;
         }
         CabinetKind kind = be.kind();
-        int i = CabinetSlot.clampIndex(slot, kind.slotCount());
+        int i = CabinetSlot.clampIndex(slot, be.storageSlotCount());
         CabinetKind.CavityFit base = kind.cavityFit(i);
         return CabinetDisplayedItemRenderer.measureRenderedHeight(
                 stack, level, base.width(), fitH, base.depth());

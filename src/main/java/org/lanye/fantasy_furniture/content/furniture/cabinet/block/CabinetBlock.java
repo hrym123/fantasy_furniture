@@ -3,6 +3,7 @@ package org.lanye.fantasy_furniture.content.furniture.cabinet.block;
 import java.util.List;
 import javax.annotation.Nullable;
 import net.minecraft.core.BlockPos;
+import net.minecraft.network.chat.Component;
 import net.minecraft.core.Direction;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
@@ -33,6 +34,7 @@ import org.lanye.fantasy_furniture.content.furniture.cabinet.CabinetCollisionSha
 import org.lanye.fantasy_furniture.content.furniture.cabinet.CabinetItemPicks;
 import org.lanye.fantasy_furniture.content.furniture.cabinet.CabinetKind;
 import org.lanye.fantasy_furniture.content.furniture.cabinet.CabinetSlot;
+import org.lanye.fantasy_furniture.content.furniture.cabinet.CabinetStackFloors;
 import org.lanye.fantasy_furniture.content.furniture.cabinet.blockentity.CabinetBlockEntity;
 import org.lanye.fantasy_furniture.content.furniture.cabinet.CabinetShelfDebugActions;
 import org.lanye.fantasy_furniture.content.furniture.cabinet.client.CabinetItemClientPick;
@@ -211,9 +213,8 @@ public final class CabinetBlock extends GeolibFacingEntityBlockWithFactory<Cabin
             // 持调试棒时不放置/旋转展品
             return InteractionResult.FAIL;
         }
-        int slot = resolveSlot(state, master, player, hit, be);
-
         if (held.isEmpty()) {
+            int slot = resolveSlot(state, master, player, hit, be);
             if (be.isEmpty(slot)) {
                 return InteractionResult.FAIL;
             }
@@ -235,7 +236,28 @@ public final class CabinetBlock extends GeolibFacingEntityBlockWithFactory<Cabin
             return InteractionResult.CONSUME;
         }
 
-        if (!be.placeItem(slot, held)) {
+        // Shift: design-grid slot placement (PART / slotFromHit / aimed grid item).
+        if (player.isShiftKeyDown()) {
+            int slot = resolveGridSlot(state, master, player, hit, be);
+            if (!be.placeItem(slot, held)) {
+                return InteractionResult.FAIL;
+            }
+            if (!player.getAbilities().instabuild) {
+                held.shrink(1);
+            }
+            level.playSound(null, master, SoundEvents.ITEM_FRAME_ADD_ITEM, SoundSource.BLOCKS, 0.8f, 1.0f);
+            return InteractionResult.CONSUME;
+        }
+
+        // Free stack: append onto aimed column (item top or cabinet front hit).
+        int col = resolveColumn(state, master, player, hit, be);
+        int free = be.nextFreeSlotInColumn(col);
+        if (free < 0 || !canFreeStackPlace(be, free, held)) {
+            player.displayClientMessage(
+                    Component.translatable("message.fantasy_furniture.cabinet.no_capacity"), true);
+            return InteractionResult.FAIL;
+        }
+        if (!be.placeItem(free, held)) {
             return InteractionResult.FAIL;
         }
         if (!player.getAbilities().instabuild) {
@@ -246,14 +268,24 @@ public final class CabinetBlock extends GeolibFacingEntityBlockWithFactory<Cabin
     }
 
     /**
-     * 柜子1型：竖向三格与 {@code PART} 一一对应（勿改）。
-     * 柜子2型：正面命中 XY / 射线拾取九格。
+     * Prefer aimed displayed item (any storage slot); else design-grid hit (PART / slotFromHit).
      */
     private int resolveSlot(
             BlockState state, BlockPos master, Player player, BlockHitResult hit, CabinetBlockEntity be) {
         int aimedItem = CabinetItemPicks.pickOccupiedSlot(
                 be, state.getValue(FACING), player.getEyePosition(1.0f), player.getViewVector(1.0f));
         if (aimedItem >= 0) {
+            return aimedItem;
+        }
+        return resolveGridSlot(state, master, player, hit, be);
+    }
+
+    /** Design-grid slot only (Shift place / empty-hand fallback). Clamped to {@link CabinetKind#slotCount()}. */
+    private int resolveGridSlot(
+            BlockState state, BlockPos master, Player player, BlockHitResult hit, CabinetBlockEntity be) {
+        int aimedItem = CabinetItemPicks.pickOccupiedSlot(
+                be, state.getValue(FACING), player.getEyePosition(1.0f), player.getViewVector(1.0f));
+        if (aimedItem >= 0 && aimedItem < kind.slotCount()) {
             return aimedItem;
         }
         if (kind.columnParts() > 1) {
@@ -266,6 +298,57 @@ public final class CabinetBlock extends GeolibFacingEntityBlockWithFactory<Cabin
                 player.getEyePosition(1.0f),
                 player.getViewVector(1.0f));
     }
+
+    /**
+     * Free-stack column: aimed occupied item column, else front hit mapped to column
+     * (cabinet_1 always 0; cabinet_2 from slotFromHit).
+     */
+    private int resolveColumn(
+            BlockState state, BlockPos master, Player player, BlockHitResult hit, CabinetBlockEntity be) {
+        int aimedItem = CabinetItemPicks.pickOccupiedSlot(
+                be, state.getValue(FACING), player.getEyePosition(1.0f), player.getViewVector(1.0f));
+        if (aimedItem >= 0) {
+            return kind.columnOfStorage(aimedItem);
+        }
+        if (kind.cols() <= 1) {
+            return 0;
+        }
+        int grid = resolveGridSlot(state, master, player, hit, be);
+        return kind.columnOfStorage(grid);
+    }
+
+    /**
+     * Capacity: item at design-cell (shelved single-compartment) size must fit under the
+     * next present shelf / lid above the free slot floor. Remaining height is a reject
+     * budget, not a shrink target.
+     */
+    private static boolean canFreeStackPlace(CabinetBlockEntity be, int freeSlot, ItemStack held) {
+        CabinetKind kind = be.kind();
+        CabinetStackFloors.SlotPose pose =
+                CabinetStackFloors.pose(be, freeSlot, CabinetBlock::estimatedStackHeight);
+        float floorY = pose.floorY();
+        float ceiling = CabinetStackFloors.ceilingAbove(be, kind, floorY);
+        float remaining = ceiling - floorY - CabinetKind.SHELF_CLEARANCE;
+        if (remaining <= CabinetItemPicks.MIN_EXTENT) {
+            return false;
+        }
+        CabinetKind.CavityFit base = kind.cavityFit(freeSlot);
+        CabinetItemPicks.Size size = CabinetItemPicks.estimateSize(held, base);
+        return size.height() <= remaining + 1.0e-3f;
+    }
+
+    private static float estimatedStackHeight(CabinetBlockEntity be, int slot, float fitH) {
+        ItemStack stack = be.getItem(slot);
+        if (stack.isEmpty()) {
+            return 0f;
+        }
+        CabinetKind kind = be.kind();
+        CabinetKind.CavityFit base = kind.cavityFit(slot);
+        return CabinetItemPicks.estimateSize(
+                        stack, new CabinetKind.CavityFit(base.width(), fitH, base.depth()))
+                .height();
+    }
+
 
     @Override
     public void playerWillDestroy(Level level, BlockPos pos, BlockState state, Player player) {

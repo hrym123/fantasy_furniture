@@ -112,7 +112,7 @@ public final class CabinetItemClientPick {
             return null;
         }
         CabinetKind kind = be.kind();
-        int i = CabinetSlot.clampIndex(slot, kind.slotCount());
+        int i = CabinetSlot.clampIndex(slot, be.storageSlotCount());
         float floorY = CabinetStackLayout.floorY(be, i);
         CabinetKind.CavityFit cavity = CabinetStackLayout.cavityFitStacked(be, i);
         CabinetItemPicks.Size size = CabinetDisplayedItemRenderer.measureRenderedSize(

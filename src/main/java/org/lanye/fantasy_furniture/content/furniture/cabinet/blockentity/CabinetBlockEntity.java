@@ -72,8 +72,34 @@ public final class CabinetBlockEntity extends BlockEntity implements GeoBlockEnt
         return kind().slotCount();
     }
 
+    /** Fixed storage length for free-stack packing (always {@link CabinetSlot#MAX}). */
+    public int storageSlotCount() {
+        return Math.min(CabinetSlot.MAX, items.size());
+    }
+
+    /** Max dense stack levels per column. */
+    public int maxLevelsPerColumn() {
+        int cols = Math.max(1, kind().cols());
+        return storageSlotCount() / cols;
+    }
+
+    /** First empty slot in column {@code col} (bottom to top), or -1 if full. */
+    public int nextFreeSlotInColumn(int col) {
+        CabinetKind kind = kind();
+        int cols = Math.max(1, kind.cols());
+        int c = Math.floorMod(col, cols);
+        int levels = maxLevelsPerColumn();
+        for (int k = 0; k < levels; k++) {
+            int s = k * cols + c;
+            if (items.get(s).isEmpty()) {
+                return s;
+            }
+        }
+        return -1;
+    }
+
     public ItemStack getItem(int slot) {
-        int i = CabinetSlot.clampIndex(slot, slotCount());
+        int i = CabinetSlot.clampIndex(slot, storageSlotCount());
         return items.get(i);
     }
 
@@ -83,13 +109,13 @@ public final class CabinetBlockEntity extends BlockEntity implements GeoBlockEnt
 
     /** 展品竖直轴偏航步（0～7）。 */
     public int itemYaw(int slot) {
-        int i = CabinetSlot.clampIndex(slot, slotCount());
+        int i = CabinetSlot.clampIndex(slot, storageSlotCount());
         return CabinetYaw.clamp(itemYaw[i]);
     }
 
     /** 有物槽：展品 +45°；成功返回 true。 */
     public boolean rotateItem(int slot) {
-        int i = CabinetSlot.clampIndex(slot, slotCount());
+        int i = CabinetSlot.clampIndex(slot, storageSlotCount());
         if (items.get(i).isEmpty()) {
             return false;
         }
@@ -101,7 +127,7 @@ public final class CabinetBlockEntity extends BlockEntity implements GeoBlockEnt
 
     /** 向空槽放入（消耗调用方负责）；成功返回 true。 */
     public boolean placeItem(int slot, ItemStack stack) {
-        int i = CabinetSlot.clampIndex(slot, slotCount());
+        int i = CabinetSlot.clampIndex(slot, storageSlotCount());
         if (stack.isEmpty() || !items.get(i).isEmpty()) {
             return false;
         }
@@ -114,7 +140,7 @@ public final class CabinetBlockEntity extends BlockEntity implements GeoBlockEnt
 
     /** 取出槽内整件；空槽返回 EMPTY。 */
     public ItemStack takeItem(int slot) {
-        int i = CabinetSlot.clampIndex(slot, slotCount());
+        int i = CabinetSlot.clampIndex(slot, storageSlotCount());
         ItemStack stack = items.get(i);
         if (stack.isEmpty()) {
             return ItemStack.EMPTY;
@@ -130,7 +156,7 @@ public final class CabinetBlockEntity extends BlockEntity implements GeoBlockEnt
         if (level == null || level.isClientSide) {
             return;
         }
-        int n = slotCount();
+        int n = storageSlotCount();
         NonNullList<ItemStack> drop = NonNullList.withSize(n, ItemStack.EMPTY);
         for (int i = 0; i < n; i++) {
             drop.set(i, items.get(i));
@@ -194,7 +220,7 @@ public final class CabinetBlockEntity extends BlockEntity implements GeoBlockEnt
     protected void saveAdditional(CompoundTag tag) {
         super.saveAdditional(tag);
         ListTag list = new ListTag();
-        int n = slotCount();
+        int n = storageSlotCount();
         for (int i = 0; i < n; i++) {
             ItemStack stack = items.get(i);
             if (stack.isEmpty()) {
@@ -224,7 +250,7 @@ public final class CabinetBlockEntity extends BlockEntity implements GeoBlockEnt
                 ? (tag.getByte(TAG_SHELVES) & SHELVES_ALL)
                 : SHELVES_ALL;
         ListTag list = tag.getList(TAG_ITEMS, Tag.TAG_COMPOUND);
-        int n = Math.min(slotCount(), CabinetSlot.MAX);
+        int n = storageSlotCount();
         for (int i = 0; i < list.size(); i++) {
             CompoundTag entry = list.getCompound(i);
             int slot = entry.getByte(TAG_SLOT) & 0xFF;
