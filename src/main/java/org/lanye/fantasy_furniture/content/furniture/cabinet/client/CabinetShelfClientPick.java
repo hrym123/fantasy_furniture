@@ -17,7 +17,7 @@ import org.lanye.fantasy_furniture.content.furniture.cabinet.block.CabinetBlock;
 import org.lanye.reverie_core.content.fantasy_core.item.FantasyDebugStickItem;
 import org.lanye.reverie_core.util.VoxelShapeRotation;
 
-/** 柜子隔板准心拾取 / 描边形。柜子1仅两格之间的连接中隔可单独选中。 */
+/** 柜子隔板准心拾取 / 描边形。普通准心柜子1仅连接中隔；调试棒可点选本段全部隔板。 */
 @OnlyIn(Dist.CLIENT)
 public final class CabinetShelfClientPick {
 
@@ -36,7 +36,7 @@ public final class CabinetShelfClientPick {
     @Nullable
     public static VoxelShape aimedShelfShapeForDebug(
             Level level, BlockState state, BlockPos hitPos, BlockHitResult bhr, boolean includeAbsent) {
-        return shapeFor(aimedHit(level, state, hitPos, bhr, includeAbsent), state);
+        return shapeFor(aimedDebugHit(level, state, hitPos, bhr, includeAbsent), state);
     }
 
     @Nullable
@@ -68,9 +68,30 @@ public final class CabinetShelfClientPick {
                 includeAbsent);
     }
 
+    @Nullable
+    public static CabinetJointShelfPick.Hit aimedDebugHit(
+            Level level, BlockState state, BlockPos hitPos, @Nullable BlockHitResult bhr, boolean includeAbsent) {
+        Minecraft mc = Minecraft.getInstance();
+        Player player = mc.player;
+        if (player == null) {
+            return null;
+        }
+        return CabinetJointShelfPick.pickAnyShelf(
+                level,
+                hitPos,
+                state,
+                player.getEyePosition(1.0f),
+                player.getViewVector(1.0f),
+                bhr != null ? bhr.getLocation() : null,
+                includeAbsent);
+    }
+
     public static BlockPos outlineOrigin(
             Level level, BlockState state, BlockPos hitPos, @Nullable BlockHitResult bhr, boolean includeAbsent) {
-        CabinetJointShelfPick.Hit hit = aimedHit(level, state, hitPos, bhr, includeAbsent);
+        CabinetJointShelfPick.Hit hit =
+                holdingDebugStick(Minecraft.getInstance().player)
+                        ? aimedDebugHit(level, state, hitPos, bhr, includeAbsent)
+                        : aimedHit(level, state, hitPos, bhr, includeAbsent);
         if (hit != null) {
             return hit.ownerPos();
         }

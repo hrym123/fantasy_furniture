@@ -14,7 +14,7 @@ import org.lanye.fantasy_furniture.content.furniture.cabinet.block.CabinetBlock;
 import org.lanye.fantasy_furniture.content.furniture.cabinet.blockentity.CabinetBlockEntity;
 
 /**
- * 幻想调试棒：按准心拆除/恢复柜子隔板（柜子1仅连接中隔）。
+ * 幻想调试棒：按准心拆除/恢复柜子隔板（柜子1 可拆本段底板/连接中隔/顶盖）。
  */
 public final class CabinetShelfDebugActions {
 
@@ -31,7 +31,7 @@ public final class CabinetShelfDebugActions {
             return Optional.empty();
         }
         CabinetJointShelfPick.Hit shelfHit =
-                CabinetJointShelfPick.pick(
+                CabinetJointShelfPick.pickAnyShelf(
                         level,
                         hitPos,
                         state,

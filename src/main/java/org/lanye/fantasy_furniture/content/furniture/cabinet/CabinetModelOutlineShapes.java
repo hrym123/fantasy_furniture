@@ -28,9 +28,9 @@ public final class CabinetModelOutlineShapes {
     private static VoxelShape cabinet1(CabinetSegment segment, int shelvesMask) {
         return switch (segment) {
             case ALONE -> cabinet1Cell(shelvesMask);
-            case BOTTOM -> cabinet1Bottom();
-            case MIDDLE -> cabinet1Middle();
-            case TOP -> cabinet1Top();
+            case BOTTOM -> cabinet1Bottom(shelvesMask);
+            case MIDDLE -> cabinet1Middle(shelvesMask);
+            case TOP -> cabinet1Top(shelvesMask);
         };
     }
 
@@ -49,18 +49,21 @@ public final class CabinetModelOutlineShapes {
         return shell.optimize();
     }
 
-    /** {@code cabinet_1_2x}：只描本格内外壳（底板+侧背）；上沿连接板跨格，不描以免接缝横线。 */
-    private static VoxelShape cabinet1Bottom() {
-        return Shapes.or(
-                        px(-6, 0, -8, 12, 2, 14), // floor
+    /** {@code cabinet_1_2x}：只描本格内外壳；上沿连接板跨格，不描以免接缝横线。 */
+    private static VoxelShape cabinet1Bottom(int shelvesMask) {
+        VoxelShape shell =
+                Shapes.or(
                         px(-8, 0, 6, 16, 16, 2), // back
                         px(-8, 0, -8, 2, 16, 14), // left
-                        px(6, 0, -8, 2, 16, 14)) // right
-                .optimize();
+                        px(6, 0, -8, 2, 16, 14)); // right
+        if ((shelvesMask & (1 << 0)) != 0) {
+            shell = Shapes.or(shell, px(-6, 0, -8, 12, 2, 14)); // floor
+        }
+        return shell.optimize();
     }
 
     /** {@code cabinet_1_2z}：只描本格内侧背；连接板跨格不描。 */
-    private static VoxelShape cabinet1Middle() {
+    private static VoxelShape cabinet1Middle(int shelvesMask) {
         return Shapes.or(
                         px(-8, 0, 6, 16, 16, 2), // back
                         px(-8, 0, -8, 2, 16, 14), // left
@@ -69,13 +72,16 @@ public final class CabinetModelOutlineShapes {
     }
 
     /** {@code cabinet_1_2s}：无底，有顶盖。 */
-    private static VoxelShape cabinet1Top() {
-        return Shapes.or(
+    private static VoxelShape cabinet1Top(int shelvesMask) {
+        VoxelShape shell =
+                Shapes.or(
                         px(-8, 0, -8, 2, 16, 14), // left
-                        px(-7, 14, -8, 13, 2, 14), // lid（与 geo 一致略偏）
                         px(-8, 0, 6, 16, 16, 2), // back
-                        px(6, 0, -8, 2, 16, 14)) // right
-                .optimize();
+                        px(6, 0, -8, 2, 16, 14)); // right
+        if ((shelvesMask & (1 << 3)) != 0) {
+            shell = Shapes.or(shell, px(-7, 14, -8, 13, 2, 14)); // lid（与 geo 一致略偏）
+        }
+        return shell.optimize();
     }
 
     private static VoxelShape cabinet2(int shelvesMask) {

@@ -6,6 +6,8 @@ import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.lanye.fantasy_furniture.FantasyFurniture;
@@ -19,16 +21,21 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import javax.annotation.Nullable;
 import software.bernie.geckolib.cache.object.BakedGeoModel;
 import software.bernie.geckolib.cache.object.GeoBone;
+import software.bernie.geckolib.cache.object.GeoCube;
 import software.bernie.geckolib.model.GeoModel;
 
 /**
  * 柜体与展品共用同一套 {@code translate(0.5)+rotateBlock}，避免自写朝向与 Gecko 不一致。
- * 柜子1型按 {@link CabinetSegment} 切换 cell/2x/2z/2s geo。
+ * 柜子1型按 {@link CabinetSegment} 切换 cell/2x/2z/2s geo；拆除隔板按立方体 Y 带隐藏（无 shelf_* 骨）。
  */
 @OnlyIn(Dist.CLIENT)
 public final class CabinetGeoBlockRenderer extends ReverieGeoBlockRenderer<CabinetBlockEntity> {
+
+    @Nullable
+    private CabinetBlockEntity shelfHideAnimatable;
 
     public CabinetGeoBlockRenderer() {
         super(
@@ -86,6 +93,8 @@ public final class CabinetGeoBlockRenderer extends ReverieGeoBlockRenderer<Cabin
             float blue,
             float alpha) {
         Map<GeoBone, Boolean> oldHidden = applyShelfBoneVisibility(model, animatable);
+        CabinetBlockEntity prevHide = shelfHideAnimatable;
+        shelfHideAnimatable = animatable;
         try {
             if (!isReRender) {
                 poseStack.pushPose();
@@ -126,8 +135,63 @@ public final class CabinetGeoBlockRenderer extends ReverieGeoBlockRenderer<Cabin
                     blue,
                     alpha);
         } finally {
+            shelfHideAnimatable = prevHide;
             restoreBoneVisibility(oldHidden);
         }
+    }
+
+    @Override
+    public void renderCubesOfBone(
+            PoseStack poseStack,
+            GeoBone bone,
+            VertexConsumer buffer,
+            int packedLight,
+            int packedOverlay,
+            float red,
+            float green,
+            float blue,
+            float alpha) {
+        if (bone.isHidden()) {
+            return;
+        }
+        CabinetBlockEntity be = shelfHideAnimatable;
+        for (GeoCube cube : bone.getCubes()) {
+            if (be != null && be.kind() == CabinetKind.CABINET_1 && shouldHideCabinet1Cube(cube, be)) {
+                continue;
+            }
+            poseStack.pushPose();
+            renderCube(poseStack, cube, buffer, packedLight, packedOverlay, red, green, blue, alpha);
+            poseStack.popPose();
+        }
+    }
+
+    /**
+     * 柜子1 拼装 geo 无 {@code shelf_*} 骨：按立方体厚度与中心 Y 对齐 {@link CabinetKind#shelfLocalAabb}。
+     */
+    private static boolean shouldHideCabinet1Cube(GeoCube cube, CabinetBlockEntity be) {
+        Vec3 size = cube.size();
+        // 隔板约 2px 厚；侧/背板更高
+        if (size.y < 1.5 / 16.0 || size.y > 2.5 / 16.0) {
+            return false;
+        }
+        if (size.x < 10.0 / 16.0 || size.z < 12.0 / 16.0) {
+            return false;
+        }
+        double centerY = cube.pivot().y;
+        CabinetSegment segment = be.segment();
+        for (int shelf = 0; shelf < CabinetKind.SHELF_COUNT; shelf++) {
+            if (shelf == 2) {
+                continue;
+            }
+            if (!be.kind().shelfInSegment(shelf, segment) || be.isShelfPresent(shelf)) {
+                continue;
+            }
+            AABB box = be.kind().shelfLocalAabb(shelf);
+            if (centerY >= box.minY - 0.02 && centerY <= box.maxY + 0.02) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static Map<GeoBone, Boolean> applyShelfBoneVisibility(
