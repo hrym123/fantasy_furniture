@@ -89,7 +89,11 @@ public final class CabinetItemCrosshairOutlineEvents {
         if (state.hasProperty(CabinetBlock.SEGMENT)) {
             segment = state.getValue(CabinetBlock.SEGMENT);
         }
-        VoxelShape north = CabinetModelOutlineShapes.northShell(kind, mask, segment);
+        boolean openNeg =
+                state.hasProperty(CabinetBlock.SIDE_OPEN_NEG) && state.getValue(CabinetBlock.SIDE_OPEN_NEG);
+        boolean openPos =
+                state.hasProperty(CabinetBlock.SIDE_OPEN_POS) && state.getValue(CabinetBlock.SIDE_OPEN_POS);
+        VoxelShape north = CabinetModelOutlineShapes.northShell(kind, mask, segment, openNeg, openPos);
         Direction facing = state.getValue(CabinetBlock.FACING);
         return VoxelShapeRotation.rotateYFromNorthLikeGeckoBlockRenderer(north, facing);
     }

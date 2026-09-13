@@ -40,13 +40,26 @@ public final class CabinetShelfClientPick {
     }
 
     @Nullable
-    private static VoxelShape shapeFor(@Nullable CabinetJointShelfPick.Hit hit, BlockState state) {
-        if (hit == null || !(state.getBlock() instanceof CabinetBlock cabinet)) {
+    private static VoxelShape shapeFor(@Nullable CabinetJointShelfPick.Hit hit, BlockState hitState) {
+        if (hit == null || !(hitState.getBlock() instanceof CabinetBlock)) {
             return null;
         }
-        CabinetKind kind = cabinet.kind();
+        // 描边贴合拥有者格的 open 变体（准心可能打在上/下邻格）
+        BlockState ownerState = hitState;
+        Level level = Minecraft.getInstance().level;
+        if (level != null) {
+            ownerState = level.getBlockState(hit.ownerPos());
+        }
+        boolean openNeg =
+                ownerState.hasProperty(CabinetBlock.SIDE_OPEN_NEG)
+                        && ownerState.getValue(CabinetBlock.SIDE_OPEN_NEG);
+        boolean openPos =
+                ownerState.hasProperty(CabinetBlock.SIDE_OPEN_POS)
+                        && ownerState.getValue(CabinetBlock.SIDE_OPEN_POS);
+        CabinetKind kind =
+                ownerState.getBlock() instanceof CabinetBlock cab ? cab.kind() : CabinetKind.CABINET_1;
         Direction facing = hit.facing();
-        VoxelShape north = kind.shelfNorthShape(hit.shelf());
+        VoxelShape north = kind.shelfNorthShape(hit.shelf(), openNeg, openPos);
         return VoxelShapeRotation.rotateYFromNorthLikeGeckoBlockRenderer(north, facing);
     }
 

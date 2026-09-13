@@ -32,7 +32,8 @@ import software.bernie.geckolib.model.GeoModel;
 
 /**
  * 柜体与展品共用同一套 {@code translate(0.5)+rotateBlock}，避免自写朝向与 Gecko 不一致。
- * 柜子1型按 {@link CabinetSegment} 切换 cell/2x/2z/2s geo；拆除隔板按立方体 Y 带隐藏（无 shelf_* 骨）。
+ * 柜子1型按 {@link CabinetSegment} 与 {@link CabinetBlock#SIDE_OPEN_NEG}/{@link CabinetBlock#SIDE_OPEN_POS}
+ * 切换 cell/2x/2z/2s 或 open / open_px / open_both；拆除隔板按立方体 Y 带隐藏（无 shelf_* 骨）。
  */
 @OnlyIn(Dist.CLIENT)
 public final class CabinetGeoBlockRenderer extends ReverieGeoBlockRenderer<CabinetBlockEntity> {
@@ -71,11 +72,19 @@ public final class CabinetGeoBlockRenderer extends ReverieGeoBlockRenderer<Cabin
                             return animatable.kind().assetId();
                         }
                         CabinetSegment segment = CabinetSegment.ALONE;
+                        boolean openNeg = false;
+                        boolean openPos = false;
                         var state = animatable.getBlockState();
                         if (state.hasProperty(CabinetBlock.SEGMENT)) {
                             segment = state.getValue(CabinetBlock.SEGMENT);
                         }
-                        return segment.cabinet1GeoStem();
+                        if (state.hasProperty(CabinetBlock.SIDE_OPEN_NEG)) {
+                            openNeg = state.getValue(CabinetBlock.SIDE_OPEN_NEG);
+                        }
+                        if (state.hasProperty(CabinetBlock.SIDE_OPEN_POS)) {
+                            openPos = state.getValue(CabinetBlock.SIDE_OPEN_POS);
+                        }
+                        return segment.cabinet1GeoStem(openNeg, openPos);
                     }
                 },
                 GeoRenderTier.STATIC);

@@ -24,6 +24,7 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
+import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.level.block.state.properties.EnumProperty;
 import net.minecraft.world.level.block.state.properties.IntegerProperty;
 import net.minecraft.world.level.storage.loot.LootParams;
@@ -57,7 +58,9 @@ import org.lanye.reverie_core.util.VoxelShapeRotation;
  *   <li>潜行空手右击有物槽 → 取出
  *   <li>潜行持方块右击（未对准展品）→ 不放展品，回退原版放置
  *   <li>柜子1型：每次放 1 格；对准同朝向顶面向上续放，同柱最多 {@link CabinetKind#CABINET_1_MAX_STACK} 格相连；
- *       超出后新格正常放置为新柱起点；{@link #SEGMENT} 由上下邻接刷新（alone/2x/2z/2s）
+ *       超出后新格正常放置为新柱起点；{@link #SEGMENT} 由上下邻接刷新（alone/2x/2z/2s）；
+ *       {@link #SIDE_OPEN_NEG}/{@link #SIDE_OPEN_POS}：局部 −X/+X 有同朝向邻柜时去该侧隔板，
+ *       两柱并排时双方都变，开口相对相连
  *   <li>柜子2型：单格；3×3 九槽，按命中点映射最近格；{@link #SEGMENT} 恒 alone
  * </ul>
  */
@@ -66,6 +69,18 @@ public final class CabinetBlock extends GeolibFacingEntityBlockWithFactory<Cabin
     /** 竖向拼装角色（柜子1 邻接刷新；柜子2 恒 alone）。 */
     public static final EnumProperty<CabinetSegment> SEGMENT =
             EnumProperty.create("segment", CabinetSegment.class);
+
+    /**
+     * 去侧面：北向局部 −X（{@link Direction#getCounterClockWise()}）有同朝向邻柜。
+     * 使用 {@code cabinet_1_open_*}（缺 −X）。柜子2 恒 false。
+     */
+    public static final BooleanProperty SIDE_OPEN_NEG = BooleanProperty.create("side_open_neg");
+
+    /**
+     * 去侧面：北向局部 +X（{@link Direction#getClockWise()}）有同朝向邻柜。
+     * 使用 {@code cabinet_1_open_px_*}（缺 +X）。柜子2 恒 false。
+     */
+    public static final BooleanProperty SIDE_OPEN_POS = BooleanProperty.create("side_open_pos");
 
     /** 材质档（1～{@link CabinetMaterials#MAX_COUNT}；按 kind 钳制有效色数）。 */
     public static final IntegerProperty MATERIAL =
@@ -79,6 +94,8 @@ public final class CabinetBlock extends GeolibFacingEntityBlockWithFactory<Cabin
         registerDefaultState(
                 defaultBlockState()
                         .setValue(SEGMENT, CabinetSegment.ALONE)
+                        .setValue(SIDE_OPEN_NEG, false)
+                        .setValue(SIDE_OPEN_POS, false)
                         .setValue(MATERIAL, CabinetMaterials.DEFAULT));
     }
 
@@ -98,7 +115,7 @@ public final class CabinetBlock extends GeolibFacingEntityBlockWithFactory<Cabin
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
         super.createBlockStateDefinition(builder);
-        builder.add(SEGMENT, MATERIAL);
+        builder.add(SEGMENT, SIDE_OPEN_NEG, SIDE_OPEN_POS, MATERIAL);
     }
 
     @Override
@@ -125,8 +142,13 @@ public final class CabinetBlock extends GeolibFacingEntityBlockWithFactory<Cabin
                 facing = below.getValue(FACING);
                 base = base.setValue(FACING, facing);
             }
+            return base.setValue(SEGMENT, computeSegment(level, pos, facing))
+                    .setValue(SIDE_OPEN_NEG, hasSideNeighbor(level, pos, facing.getCounterClockWise(), facing))
+                    .setValue(SIDE_OPEN_POS, hasSideNeighbor(level, pos, facing.getClockWise(), facing));
         }
-        return base.setValue(SEGMENT, computeSegment(level, pos, facing));
+        return base.setValue(SEGMENT, CabinetSegment.ALONE)
+                .setValue(SIDE_OPEN_NEG, false)
+                .setValue(SIDE_OPEN_POS, false);
     }
 
     @Override
@@ -142,7 +164,7 @@ public final class CabinetBlock extends GeolibFacingEntityBlockWithFactory<Cabin
         if (level.isClientSide() || kind != CabinetKind.CABINET_1) {
             return;
         }
-        refreshSegmentNeighbors(level, pos, state.getValue(FACING));
+        refreshCabinetNeighbors(level, pos, state.getValue(FACING));
     }
 
     @Override
@@ -158,14 +180,28 @@ public final class CabinetBlock extends GeolibFacingEntityBlockWithFactory<Cabin
             LevelAccessor level,
             BlockPos currentPos,
             BlockPos neighborPos) {
-        if (kind != CabinetKind.CABINET_1 || direction.getAxis() != Direction.Axis.Y) {
+        if (kind != CabinetKind.CABINET_1) {
             return super.updateShape(state, direction, neighborState, level, currentPos, neighborPos);
         }
-        CabinetSegment next = computeSegment(level, currentPos, state.getValue(FACING));
-        if (state.getValue(SEGMENT) != next) {
-            return state.setValue(SEGMENT, next);
+        Direction facing = state.getValue(FACING);
+        BlockState next = state;
+        if (direction.getAxis() == Direction.Axis.Y) {
+            CabinetSegment seg = computeSegment(level, currentPos, facing);
+            if (next.getValue(SEGMENT) != seg) {
+                next = next.setValue(SEGMENT, seg);
+            }
         }
-        return state;
+        if (direction.getAxis().isHorizontal()) {
+            boolean openNeg = hasSideNeighbor(level, currentPos, facing.getCounterClockWise(), facing);
+            boolean openPos = hasSideNeighbor(level, currentPos, facing.getClockWise(), facing);
+            if (next.getValue(SIDE_OPEN_NEG) != openNeg) {
+                next = next.setValue(SIDE_OPEN_NEG, openNeg);
+            }
+            if (next.getValue(SIDE_OPEN_POS) != openPos) {
+                next = next.setValue(SIDE_OPEN_POS, openPos);
+            }
+        }
+        return next;
     }
 
     @Nullable
@@ -223,6 +259,12 @@ public final class CabinetBlock extends GeolibFacingEntityBlockWithFactory<Cabin
         return a / max == b / max;
     }
 
+    /** 指定世界方向上一格是否为同朝向柜子1。 */
+    private static boolean hasSideNeighbor(
+            LevelReader level, BlockPos pos, Direction side, Direction facing) {
+        return isSameColumnCell(level, pos.relative(side), facing);
+    }
+
     private static CabinetSegment computeSegment(LevelReader level, BlockPos pos, Direction facing) {
         boolean above = areLinkedInStack(level, pos, pos.above(), facing);
         boolean below = areLinkedInStack(level, pos, pos.below(), facing);
@@ -238,28 +280,41 @@ public final class CabinetBlock extends GeolibFacingEntityBlockWithFactory<Cabin
         return CabinetSegment.MIDDLE;
     }
 
-    /** 放置后刷新本格与上下邻格 SEGMENT（触发对方 updateShape）。 */
-    private void refreshSegmentNeighbors(Level level, BlockPos pos, Direction facing) {
+    /** 写入本格 SEGMENT + 双侧 SIDE_OPEN（若已是本柜）。 */
+    private void applyComputedLinks(Level level, BlockPos pos, Direction facing) {
         BlockState self = level.getBlockState(pos);
-        if (self.is(this)) {
-            CabinetSegment seg = computeSegment(level, pos, facing);
-            if (self.getValue(SEGMENT) != seg) {
-                level.setBlock(pos, self.setValue(SEGMENT, seg), Block.UPDATE_ALL);
-            }
+        if (!self.is(this) || self.getValue(FACING) != facing) {
+            return;
         }
-        for (Direction dir : new Direction[] {Direction.UP, Direction.DOWN}) {
-            BlockPos n = pos.relative(dir);
-            BlockState ns = level.getBlockState(n);
-            if (ns.is(this) && ns.getValue(FACING) == facing) {
-                CabinetSegment seg = computeSegment(level, n, facing);
-                if (ns.getValue(SEGMENT) != seg) {
-                    level.setBlock(n, ns.setValue(SEGMENT, seg), Block.UPDATE_ALL);
-                }
-            }
+        CabinetSegment seg = computeSegment(level, pos, facing);
+        boolean openNeg = hasSideNeighbor(level, pos, facing.getCounterClockWise(), facing);
+        boolean openPos = hasSideNeighbor(level, pos, facing.getClockWise(), facing);
+        BlockState next = self;
+        if (self.getValue(SEGMENT) != seg) {
+            next = next.setValue(SEGMENT, seg);
+        }
+        if (self.getValue(SIDE_OPEN_NEG) != openNeg) {
+            next = next.setValue(SIDE_OPEN_NEG, openNeg);
+        }
+        if (self.getValue(SIDE_OPEN_POS) != openPos) {
+            next = next.setValue(SIDE_OPEN_POS, openPos);
+        }
+        if (next != self) {
+            level.setBlock(pos, next, Block.UPDATE_ALL);
         }
     }
 
-    /** 刷子换色后：重算 SEGMENT 并刷新同朝向邻格（材质不影响成柱）。 */
+    /** 放置/换色后刷新本格与上下、水平邻格链接态。 */
+    private void refreshCabinetNeighbors(Level level, BlockPos pos, Direction facing) {
+        applyComputedLinks(level, pos, facing);
+        for (Direction dir : new Direction[] {
+            Direction.UP, Direction.DOWN, facing.getCounterClockWise(), facing.getClockWise()
+        }) {
+            applyComputedLinks(level, pos.relative(dir), facing);
+        }
+    }
+
+    /** 刷子换色后：重算 SEGMENT/SIDE_OPEN_* 并刷新同朝向邻格（材质不影响成柱）。 */
     public void applyMaterialRecolor(Level level, BlockPos pos, BlockState recolored) {
         if (kind != CabinetKind.CABINET_1) {
             level.setBlock(pos, recolored, Block.UPDATE_ALL_IMMEDIATE);
@@ -267,9 +322,15 @@ public final class CabinetBlock extends GeolibFacingEntityBlockWithFactory<Cabin
         }
         Direction facing = recolored.getValue(FACING);
         CabinetSegment seg = computeSegment(level, pos, facing);
-        BlockState local = recolored.setValue(SEGMENT, seg);
+        boolean openNeg = hasSideNeighbor(level, pos, facing.getCounterClockWise(), facing);
+        boolean openPos = hasSideNeighbor(level, pos, facing.getClockWise(), facing);
+        BlockState local =
+                recolored
+                        .setValue(SEGMENT, seg)
+                        .setValue(SIDE_OPEN_NEG, openNeg)
+                        .setValue(SIDE_OPEN_POS, openPos);
         level.setBlock(pos, local, Block.UPDATE_ALL_IMMEDIATE);
-        refreshSegmentNeighbors(level, pos, facing);
+        refreshCabinetNeighbors(level, pos, facing);
     }
 
     /**
@@ -781,13 +842,27 @@ public final class CabinetBlock extends GeolibFacingEntityBlockWithFactory<Cabin
             }
             if (!level.isClientSide() && kind == CabinetKind.CABINET_1) {
                 Direction facing = state.getValue(FACING);
-                for (Direction dir : new Direction[] {Direction.UP, Direction.DOWN}) {
+                for (Direction dir : new Direction[] {
+                    Direction.UP, Direction.DOWN, facing.getCounterClockWise(), facing.getClockWise()
+                }) {
                     BlockPos n = pos.relative(dir);
                     BlockState ns = level.getBlockState(n);
                     if (ns.is(this) && ns.getValue(FACING) == facing) {
                         CabinetSegment seg = computeSegment(level, n, facing);
+                        boolean openNeg = hasSideNeighbor(level, n, facing.getCounterClockWise(), facing);
+                        boolean openPos = hasSideNeighbor(level, n, facing.getClockWise(), facing);
+                        BlockState next = ns;
                         if (ns.getValue(SEGMENT) != seg) {
-                            level.setBlock(n, ns.setValue(SEGMENT, seg), Block.UPDATE_ALL);
+                            next = next.setValue(SEGMENT, seg);
+                        }
+                        if (ns.getValue(SIDE_OPEN_NEG) != openNeg) {
+                            next = next.setValue(SIDE_OPEN_NEG, openNeg);
+                        }
+                        if (ns.getValue(SIDE_OPEN_POS) != openPos) {
+                            next = next.setValue(SIDE_OPEN_POS, openPos);
+                        }
+                        if (next != ns) {
+                            level.setBlock(n, next, Block.UPDATE_ALL);
                         }
                     }
                 }

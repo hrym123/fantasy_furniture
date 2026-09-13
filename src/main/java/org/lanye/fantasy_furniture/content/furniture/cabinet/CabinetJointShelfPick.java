@@ -26,9 +26,44 @@ public final class CabinetJointShelfPick {
     private static final AABB JOINT_GEO_LOCAL =
             new AABB(-6.0 / 16.0, 15.0 / 16.0, -8.0 / 16.0, 6.0 / 16.0, 17.0 / 16.0, 6.0 / 16.0);
 
+    /** {@code cabinet_1_open_*} 连接板伸至 −X 开口边。 */
+    private static final AABB JOINT_GEO_LOCAL_OPEN_NEG =
+            new AABB(-8.0 / 16.0, 15.0 / 16.0, -8.0 / 16.0, 6.0 / 16.0, 17.0 / 16.0, 6.0 / 16.0);
+
+    /** {@code cabinet_1_open_px_*} 连接板伸至 +X 开口边。 */
+    private static final AABB JOINT_GEO_LOCAL_OPEN_POS =
+            new AABB(-6.0 / 16.0, 15.0 / 16.0, -8.0 / 16.0, 8.0 / 16.0, 17.0 / 16.0, 6.0 / 16.0);
+
+    /** 双侧开口连接板。 */
+    private static final AABB JOINT_GEO_LOCAL_OPEN_BOTH =
+            new AABB(-8.0 / 16.0, 15.0 / 16.0, -8.0 / 16.0, 8.0 / 16.0, 17.0 / 16.0, 6.0 / 16.0);
+
     public record Hit(BlockPos ownerPos, int shelf, Direction facing) {}
 
     private CabinetJointShelfPick() {}
+
+    public static AABB jointOutlineLocal() {
+        return JOINT_GEO_LOCAL;
+    }
+
+    /** @deprecated 使用 {@link #jointOutlineLocal(boolean, boolean)} */
+    @Deprecated
+    public static AABB jointOutlineLocal(boolean sideOpen) {
+        return jointOutlineLocal(sideOpen, false);
+    }
+
+    public static AABB jointOutlineLocal(boolean openNeg, boolean openPos) {
+        if (openNeg && openPos) {
+            return JOINT_GEO_LOCAL_OPEN_BOTH;
+        }
+        if (openNeg) {
+            return JOINT_GEO_LOCAL_OPEN_NEG;
+        }
+        if (openPos) {
+            return JOINT_GEO_LOCAL_OPEN_POS;
+        }
+        return JOINT_GEO_LOCAL;
+    }
 
     @Nullable
     public static Hit pick(
@@ -218,11 +253,16 @@ public final class CabinetJointShelfPick {
         if (!be.isShelfPresent(JOINT_SHELF) && !includeAbsent) {
             return null;
         }
+        boolean openNeg =
+                state.hasProperty(CabinetBlock.SIDE_OPEN_NEG) && state.getValue(CabinetBlock.SIDE_OPEN_NEG);
+        boolean openPos =
+                state.hasProperty(CabinetBlock.SIDE_OPEN_POS) && state.getValue(CabinetBlock.SIDE_OPEN_POS);
+        AABB jointBox = jointOutlineLocal(openNeg, openPos);
 
         // 命中点落在 geo 精确盒内（浮点容差，非加厚判定）
         if (hitLocation != null) {
             Vec3 local = CabinetKind.toNorthLocal(ownerPos, expectedFacing, hitLocation);
-            if (JOINT_GEO_LOCAL.contains(local.x, local.y, local.z)) {
+            if (jointBox.contains(local.x, local.y, local.z)) {
                 return new Hit(ownerPos, JOINT_SHELF, expectedFacing);
             }
         }
@@ -235,15 +275,8 @@ public final class CabinetJointShelfPick {
             return null;
         }
         Vec3 dir = look.scale(1.0 / Math.sqrt(lenSq));
-        var pt = JOINT_GEO_LOCAL.clip(eye, eye.add(dir.scale(16.0)));
+        var pt = jointBox.clip(eye, eye.add(dir.scale(16.0)));
         return pt.isPresent() ? new Hit(ownerPos, JOINT_SHELF, expectedFacing) : null;
-    }
-
-    /**
-     * 描边用：与 geo 连接板完全一致（可跨本格顶面伸入上格 1px）。
-     */
-    public static AABB jointOutlineLocal() {
-        return JOINT_GEO_LOCAL;
     }
 
     /** @deprecated 使用 {@link #jointOutlineLocal()} */

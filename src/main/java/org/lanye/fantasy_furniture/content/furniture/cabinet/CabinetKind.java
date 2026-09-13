@@ -336,10 +336,39 @@ public enum CabinetKind {
      * index 0..3 自下而上。
      */
     public AABB shelfLocalAabb(int shelf) {
+        return shelfLocalAabb(shelf, false, false);
+    }
+
+    /** @deprecated 使用 {@link #shelfLocalAabb(int, boolean, boolean)} */
+    @Deprecated
+    public AABB shelfLocalAabb(int shelf, boolean sideOpen) {
+        return shelfLocalAabb(shelf, sideOpen, false);
+    }
+
+    public AABB shelfLocalAabb(int shelf, boolean openNeg, boolean openPos) {
         int i = Math.floorMod(shelf, SHELF_COUNT);
+        if (this == CABINET_1 && (openNeg || openPos)) {
+            double ox = openNeg ? -8 : -6;
+            double sx = 12;
+            if (openNeg && openPos) {
+                ox = -8;
+                sx = 16;
+            } else if (openNeg) {
+                ox = -8;
+                sx = 14;
+            } else {
+                ox = -6;
+                sx = 14;
+            }
+            return switch (i) {
+                case 0 -> aabbPx(ox, 0, -8, sx, 2, 14);
+                case 1 -> aabbPx(ox, 15, -8, sx, 2, 14);
+                case 2 -> aabbPx(ox, 15, -8, sx, 2, 14);
+                default -> aabbPx(ox, 14, -8, sx, 2, 14);
+            };
+        }
         return switch (this) {
             case CABINET_1 -> switch (i) {
-                // 底板 / 连接中隔（对齐 2X·2Z geo） / 保留位 / 顶盖
                 case 0 -> aabbPx(-6, 0, -8, 12, 2, 14);
                 case 1 -> aabbPx(-6, 15, -8, 12, 2, 14);
                 case 2 -> aabbPx(-6, 15, -8, 12, 2, 14);
@@ -372,8 +401,18 @@ public enum CabinetKind {
 
     /** 北向局部 → 方块体素坐标（+0.5 XZ）的隔板形，供描边（须贴合 geo，勿用加厚点选盒）。 */
     public VoxelShape shelfNorthShape(int shelf) {
+        return shelfNorthShape(shelf, false, false);
+    }
+
+    /** @deprecated 使用 {@link #shelfNorthShape(int, boolean, boolean)} */
+    @Deprecated
+    public VoxelShape shelfNorthShape(int shelf, boolean sideOpen) {
+        return shelfNorthShape(shelf, sideOpen, false);
+    }
+
+    public VoxelShape shelfNorthShape(int shelf, boolean openNeg, boolean openPos) {
         if (this == CABINET_1 && Math.floorMod(shelf, SHELF_COUNT) == CabinetJointShelfPick.JOINT_SHELF) {
-            AABB local = CabinetJointShelfPick.jointOutlineLocal();
+            AABB local = CabinetJointShelfPick.jointOutlineLocal(openNeg, openPos);
             return Shapes.create(
                     local.minX + 0.5,
                     local.minY,
@@ -382,7 +421,7 @@ public enum CabinetKind {
                     local.maxY,
                     local.maxZ + 0.5);
         }
-        AABB local = shelfLocalAabb(shelf);
+        AABB local = shelfLocalAabb(shelf, openNeg, openPos);
         return Shapes.create(
                 local.minX + 0.5,
                 local.minY,
