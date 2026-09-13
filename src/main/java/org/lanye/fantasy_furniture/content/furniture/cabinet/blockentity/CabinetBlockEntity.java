@@ -219,7 +219,7 @@ public final class CabinetBlockEntity extends BlockEntity implements GeoBlockEnt
             }
             return CabinetKind.SHELF_CLEARANCE;
         }
-        // TOP / MIDDLE：连接板在下格 Y15–17，伸入本格 0–1/16
+        // TOP / MIDDLE：连接中隔上半片在本格 Y0–1（下半在下格 Y15–16）
         if (level != null) {
             BlockPos below = worldPosition.below();
             if (level.getBlockEntity(below) instanceof CabinetBlockEntity lower

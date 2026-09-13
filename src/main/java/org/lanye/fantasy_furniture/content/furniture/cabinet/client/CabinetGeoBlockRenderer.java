@@ -4,13 +4,17 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.lanye.fantasy_furniture.FantasyFurniture;
+import org.lanye.fantasy_furniture.content.furniture.cabinet.CabinetJointShelfPick;
 import org.lanye.fantasy_furniture.content.furniture.cabinet.CabinetKind;
 import org.lanye.fantasy_furniture.content.furniture.cabinet.CabinetMaterials;
 import org.lanye.fantasy_furniture.content.furniture.cabinet.block.CabinetBlock;
@@ -182,14 +186,17 @@ public final class CabinetGeoBlockRenderer extends ReverieGeoBlockRenderer<Cabin
     /**
      * 柜子1 拼装 geo 无 {@code shelf_*} 骨：按立方体厚度（像素）与顶点 Y（方块）对齐
      * {@link CabinetKind#shelfLocalAabb}。注意 GeckoLib 的 {@link GeoCube#size()} 为像素，不是 /16。
+     *
+     * <p>连接中隔为上下各 1px、分属两格：本格拥有下半（Y15–16），上格底部 1px 属下格中隔的上半片，
+     * 拆中隔时须两侧一并隐藏。
      */
     private static boolean shouldHideCabinet1Cube(GeoCube cube, CabinetBlockEntity be) {
         Vec3 sizePx = cube.size();
-        // 隔板约 2px 厚；侧/背板更高
-        if (sizePx.y < 1.5 || sizePx.y > 2.5) {
+        // 双侧隔板约 2px；连接中隔上下半片 / 开口底板常为 1px
+        if (sizePx.y < 0.9 || sizePx.y > 2.5) {
             return false;
         }
-        // 开口隔板约 12×14；2S 顶盖略宽 13
+        // 闭口约 12×14；开口约 14×14；both 满宽 16；2S 顶盖略宽 13
         if (sizePx.x < 10.0 || sizePx.z < 12.0) {
             return false;
         }
@@ -207,6 +214,11 @@ public final class CabinetGeoBlockRenderer extends ReverieGeoBlockRenderer<Cabin
         }
         double centerY = (minY + maxY) * 0.5;
         CabinetSegment segment = be.segment();
+        var state = be.getBlockState();
+        boolean openNeg =
+                state.hasProperty(CabinetBlock.SIDE_OPEN_NEG) && state.getValue(CabinetBlock.SIDE_OPEN_NEG);
+        boolean openPos =
+                state.hasProperty(CabinetBlock.SIDE_OPEN_POS) && state.getValue(CabinetBlock.SIDE_OPEN_POS);
         for (int shelf = 0; shelf < CabinetKind.SHELF_COUNT; shelf++) {
             if (shelf == 2) {
                 continue;
@@ -214,12 +226,39 @@ public final class CabinetGeoBlockRenderer extends ReverieGeoBlockRenderer<Cabin
             if (!be.kind().shelfInSegment(shelf, segment) || be.isShelfPresent(shelf)) {
                 continue;
             }
-            AABB box = be.kind().shelfLocalAabb(shelf);
-            if (centerY >= box.minY - 0.02 && centerY <= box.maxY + 0.02) {
+            AABB box = be.kind().shelfLocalAabb(shelf, openNeg, openPos);
+            // 1px 半片相对名义盒略偏；放宽上下各约 1px
+            if (centerY >= box.minY - 0.04 && centerY <= box.maxY + 0.04) {
                 return true;
             }
         }
+        // 上格（middle/top）底部 1px：归属下格连接中隔
+        if (centerY <= 1.5 / 16.0 + 0.04 && isLowerJointShelfAbsent(be)) {
+            return true;
+        }
         return false;
+    }
+
+    /** 同柱下格的连接中隔已拆除（或本格无下格中隔半片）。 */
+    private static boolean isLowerJointShelfAbsent(CabinetBlockEntity be) {
+        CabinetSegment segment = be.segment();
+        if (segment != CabinetSegment.MIDDLE && segment != CabinetSegment.TOP) {
+            return false;
+        }
+        Level level = be.getLevel();
+        if (level == null || !be.getBlockState().hasProperty(CabinetBlock.FACING)) {
+            return false;
+        }
+        Direction facing = be.getBlockState().getValue(CabinetBlock.FACING);
+        BlockPos below = be.getBlockPos().below();
+        if (!CabinetBlock.areLinkedInStack(level, be.getBlockPos(), below, facing)) {
+            return false;
+        }
+        if (!(level.getBlockEntity(below) instanceof CabinetBlockEntity lower)
+                || lower.kind() != CabinetKind.CABINET_1) {
+            return false;
+        }
+        return !lower.isShelfActive(CabinetJointShelfPick.JOINT_SHELF);
     }
 
     private static Map<GeoBone, Boolean> applyShelfBoneVisibility(

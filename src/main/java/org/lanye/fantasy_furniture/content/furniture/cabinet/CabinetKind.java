@@ -360,18 +360,19 @@ public enum CabinetKind {
                 ox = -6;
                 sx = 14;
             }
+            // 连接中隔下半片 1px（上半片在上格 Y0–1，描边仍用 jointOutline 跨两半）
             return switch (i) {
                 case 0 -> aabbPx(ox, 0, -8, sx, 2, 14);
-                case 1 -> aabbPx(ox, 15, -8, sx, 2, 14);
-                case 2 -> aabbPx(ox, 15, -8, sx, 2, 14);
+                case 1 -> aabbPx(ox, 15, -8, sx, 1, 14);
+                case 2 -> aabbPx(ox, 15, -8, sx, 1, 14);
                 default -> aabbPx(ox, 14, -8, sx, 2, 14);
             };
         }
         return switch (this) {
             case CABINET_1 -> switch (i) {
                 case 0 -> aabbPx(-6, 0, -8, 12, 2, 14);
-                case 1 -> aabbPx(-6, 15, -8, 12, 2, 14);
-                case 2 -> aabbPx(-6, 15, -8, 12, 2, 14);
+                case 1 -> aabbPx(-6, 15, -8, 12, 1, 14);
+                case 2 -> aabbPx(-6, 15, -8, 12, 1, 14);
                 default -> aabbPx(-6, 14, -8, 12, 2, 14);
             };
             case CABINET_2 -> switch (i) {

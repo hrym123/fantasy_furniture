@@ -59,8 +59,8 @@ import org.lanye.reverie_core.util.VoxelShapeRotation;
  *   <li>潜行持方块右击（未对准展品）→ 不放展品，回退原版放置
  *   <li>柜子1型：每次放 1 格；对准同朝向顶面向上续放，同柱最多 {@link CabinetKind#CABINET_1_MAX_STACK} 格相连；
  *       超出后新格正常放置为新柱起点；{@link #SEGMENT} 由上下邻接刷新（alone/2x/2z/2s）；
- *       {@link #SIDE_OPEN_NEG}/{@link #SIDE_OPEN_POS}：局部 −X/+X 有同朝向邻柜时去该侧隔板，
- *       两柱并排时双方都变，开口相对相连
+ *       {@link #SIDE_OPEN_NEG}/{@link #SIDE_OPEN_POS}：局部 −X/+X 有<strong>同一节</strong>水平邻柜时去该侧隔板
+ *       （同柱规则：每 {@link CabinetKind#CABINET_1_MAX_STACK} 格一节，满节后与邻节互不去侧）
  *   <li>柜子2型：单格；3×3 九槽，按命中点映射最近格；{@link #SEGMENT} 恒 alone
  * </ul>
  */
@@ -71,13 +71,13 @@ public final class CabinetBlock extends GeolibFacingEntityBlockWithFactory<Cabin
             EnumProperty.create("segment", CabinetSegment.class);
 
     /**
-     * 去侧面：北向局部 −X（{@link Direction#getCounterClockWise()}）有同朝向邻柜。
+     * 去侧面：北向局部 −X（{@link Direction#getCounterClockWise()}）有<strong>同节</strong>邻柜。
      * 使用 {@code cabinet_1_open_*}（缺 −X）。柜子2 恒 false。
      */
     public static final BooleanProperty SIDE_OPEN_NEG = BooleanProperty.create("side_open_neg");
 
     /**
-     * 去侧面：北向局部 +X（{@link Direction#getClockWise()}）有同朝向邻柜。
+     * 去侧面：北向局部 +X（{@link Direction#getClockWise()}）有<strong>同节</strong>邻柜。
      * 使用 {@code cabinet_1_open_px_*}（缺 +X）。柜子2 恒 false。
      */
     public static final BooleanProperty SIDE_OPEN_POS = BooleanProperty.create("side_open_pos");
@@ -143,8 +143,8 @@ public final class CabinetBlock extends GeolibFacingEntityBlockWithFactory<Cabin
                 base = base.setValue(FACING, facing);
             }
             return base.setValue(SEGMENT, computeSegment(level, pos, facing))
-                    .setValue(SIDE_OPEN_NEG, hasSideNeighbor(level, pos, facing.getCounterClockWise(), facing))
-                    .setValue(SIDE_OPEN_POS, hasSideNeighbor(level, pos, facing.getClockWise(), facing));
+                    .setValue(SIDE_OPEN_NEG, hasLinkedSideNeighbor(level, pos, facing.getCounterClockWise(), facing))
+                    .setValue(SIDE_OPEN_POS, hasLinkedSideNeighbor(level, pos, facing.getClockWise(), facing));
         }
         return base.setValue(SEGMENT, CabinetSegment.ALONE)
                 .setValue(SIDE_OPEN_NEG, false)
@@ -192,8 +192,8 @@ public final class CabinetBlock extends GeolibFacingEntityBlockWithFactory<Cabin
             }
         }
         if (direction.getAxis().isHorizontal()) {
-            boolean openNeg = hasSideNeighbor(level, currentPos, facing.getCounterClockWise(), facing);
-            boolean openPos = hasSideNeighbor(level, currentPos, facing.getClockWise(), facing);
+            boolean openNeg = hasLinkedSideNeighbor(level, currentPos, facing.getCounterClockWise(), facing);
+            boolean openPos = hasLinkedSideNeighbor(level, currentPos, facing.getClockWise(), facing);
             if (next.getValue(SIDE_OPEN_NEG) != openNeg) {
                 next = next.setValue(SIDE_OPEN_NEG, openNeg);
             }
@@ -259,10 +259,46 @@ public final class CabinetBlock extends GeolibFacingEntityBlockWithFactory<Cabin
         return a / max == b / max;
     }
 
-    /** 指定世界方向上一格是否为同朝向柜子1。 */
-    private static boolean hasSideNeighbor(
+    /**
+     * 自连续同朝向水平行「−X 端」（{@code facing.counterClockWise}）起的 0-based 序号；非本行格返回 -1。
+     * 每 {@link CabinetKind#CABINET_1_MAX_STACK} 格为一节，满节后再排的邻格属新节。
+     */
+    private static int rowRankFromNegEnd(LevelReader level, BlockPos pos, Direction facing) {
+        if (!isSameColumnCell(level, pos, facing)) {
+            return -1;
+        }
+        Direction neg = facing.getCounterClockWise();
+        int rank = 0;
+        BlockPos p = pos.relative(neg);
+        while (isSameColumnCell(level, p, facing)) {
+            rank++;
+            p = p.relative(neg);
+        }
+        return rank;
+    }
+
+    /**
+     * 两格是否属于同一节水平行（同朝向且自 −X 端起落在同一 {@link CabinetKind#CABINET_1_MAX_STACK} 分组内）。
+     * 满三格后再横排的邻格互不去侧，与竖柱 {@link #areLinkedInStack} 对称。
+     */
+    public static boolean areLinkedInRow(
+            LevelReader level, BlockPos pos, BlockPos neighbor, Direction facing) {
+        if (!isSameColumnCell(level, neighbor, facing)) {
+            return false;
+        }
+        int a = rowRankFromNegEnd(level, pos, facing);
+        int b = rowRankFromNegEnd(level, neighbor, facing);
+        if (a < 0 || b < 0) {
+            return false;
+        }
+        int max = CabinetKind.CABINET_1_MAX_STACK;
+        return a / max == b / max;
+    }
+
+    /** 指定世界方向上一格是否为<strong>同节</strong>同朝向柜子1（用于 side_open）。 */
+    private static boolean hasLinkedSideNeighbor(
             LevelReader level, BlockPos pos, Direction side, Direction facing) {
-        return isSameColumnCell(level, pos.relative(side), facing);
+        return areLinkedInRow(level, pos, pos.relative(side), facing);
     }
 
     private static CabinetSegment computeSegment(LevelReader level, BlockPos pos, Direction facing) {
@@ -287,8 +323,8 @@ public final class CabinetBlock extends GeolibFacingEntityBlockWithFactory<Cabin
             return;
         }
         CabinetSegment seg = computeSegment(level, pos, facing);
-        boolean openNeg = hasSideNeighbor(level, pos, facing.getCounterClockWise(), facing);
-        boolean openPos = hasSideNeighbor(level, pos, facing.getClockWise(), facing);
+        boolean openNeg = hasLinkedSideNeighbor(level, pos, facing.getCounterClockWise(), facing);
+        boolean openPos = hasLinkedSideNeighbor(level, pos, facing.getClockWise(), facing);
         BlockState next = self;
         if (self.getValue(SEGMENT) != seg) {
             next = next.setValue(SEGMENT, seg);
@@ -322,8 +358,8 @@ public final class CabinetBlock extends GeolibFacingEntityBlockWithFactory<Cabin
         }
         Direction facing = recolored.getValue(FACING);
         CabinetSegment seg = computeSegment(level, pos, facing);
-        boolean openNeg = hasSideNeighbor(level, pos, facing.getCounterClockWise(), facing);
-        boolean openPos = hasSideNeighbor(level, pos, facing.getClockWise(), facing);
+        boolean openNeg = hasLinkedSideNeighbor(level, pos, facing.getCounterClockWise(), facing);
+        boolean openPos = hasLinkedSideNeighbor(level, pos, facing.getClockWise(), facing);
         BlockState local =
                 recolored
                         .setValue(SEGMENT, seg)
@@ -849,8 +885,8 @@ public final class CabinetBlock extends GeolibFacingEntityBlockWithFactory<Cabin
                     BlockState ns = level.getBlockState(n);
                     if (ns.is(this) && ns.getValue(FACING) == facing) {
                         CabinetSegment seg = computeSegment(level, n, facing);
-                        boolean openNeg = hasSideNeighbor(level, n, facing.getCounterClockWise(), facing);
-                        boolean openPos = hasSideNeighbor(level, n, facing.getClockWise(), facing);
+                        boolean openNeg = hasLinkedSideNeighbor(level, n, facing.getCounterClockWise(), facing);
+                        boolean openPos = hasLinkedSideNeighbor(level, n, facing.getClockWise(), facing);
                         BlockState next = ns;
                         if (ns.getValue(SEGMENT) != seg) {
                             next = next.setValue(SEGMENT, seg);

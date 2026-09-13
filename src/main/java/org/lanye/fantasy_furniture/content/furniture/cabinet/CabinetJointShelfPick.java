@@ -20,8 +20,8 @@ public final class CabinetJointShelfPick {
     public static final int JOINT_SHELF = 1;
 
     /**
-     * 与 {@code cabinet_1_2x}/{@code 2z} 连接板立方一致：origin=(-6,15,-8) size=(12,2,14)。
-     * 北向局部，原点底心。
+     * 连接中隔描边：下格 Y15–16 + 上格 Y0–1 两半片并成 2px（北向局部相对下格底心）。
+     * geo 分属两格各 1px；点选仍用此跨格盒。
      */
     private static final AABB JOINT_GEO_LOCAL =
             new AABB(-6.0 / 16.0, 15.0 / 16.0, -8.0 / 16.0, 6.0 / 16.0, 17.0 / 16.0, 6.0 / 16.0);
