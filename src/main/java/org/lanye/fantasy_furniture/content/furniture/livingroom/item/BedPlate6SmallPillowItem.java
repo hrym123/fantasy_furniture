@@ -6,6 +6,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
@@ -23,7 +24,7 @@ import org.lanye.fantasy_furniture.content.furniture.livingroom.blockentity.BedP
 /**
  * 床板 6 小号枕头：仅当 {@link BedPlate6BlockEntity#canAddSmallPillow()} 为真时可放置并消耗（底枕为「大+一中」或「二中」，即大中小 / 中中小）。
  */
-public final class BedPlate6SmallPillowItem extends BedPlate6GeolibDecorItem {
+public final class BedPlate6SmallPillowItem extends Item {
 
     private final int materialId;
 

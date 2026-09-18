@@ -1,6 +1,6 @@
 {
   "parent": "minecraft:item/generated",
   "textures": {
-    "layer0": "fantasy_furniture:item/bed_plate6_pillow_large_plain_rose_ui"
+    "layer0": "fantasy_furniture:item/bed_plate6_pillow_large_plain_rose"
   }
 }

@@ -6,6 +6,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
@@ -23,10 +24,10 @@ import org.lanye.fantasy_furniture.content.furniture.livingroom.blockentity.BedP
 import org.lanye.fantasy_furniture.content.furniture.livingroom.blockentity.BedPlate6BlockEntity;
 
 /**
- * 床板 6 大号枕头：三种款式互斥，每款至多七种材质（部分款式+材质组合已从模组移除）；仅能在已铺床单的 {@link
- * ModBlocks#BED_PLATE6} 上放置。
+ * 大号枕头：三种款式互斥，每款至多七种材质（部分款式+材质组合已从模组移除）。
+ * 物品栏 / 手持为单材质图；世界叠层仍走床板 Geo。
  */
-public final class BedPlate6LargePillowItem extends BedPlate6GeolibDecorItem {
+public final class BedPlate6LargePillowItem extends Item {
 
     private final int styleId;
     private final int materialId;
