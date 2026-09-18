@@ -21,7 +21,7 @@ import software.bernie.geckolib.cache.object.BakedGeoModel;
 import software.bernie.geckolib.model.GeoModel;
 import software.bernie.geckolib.renderer.GeoBlockRenderer;
 
-/** 床板4型：床体 Geo + 可选床单 / 被套叠层（床单贴图暂借板3六色）。 */
+/** 床板4型：床体 Geo + 可选床单 / 被套叠层。 */
 @OnlyIn(Dist.CLIENT)
 public final class BedPlate4GeoBlockRenderer implements BlockEntityRenderer<BedPlateBaseBlockEntity> {
 
