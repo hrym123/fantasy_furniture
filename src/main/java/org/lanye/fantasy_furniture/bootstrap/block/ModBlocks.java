@@ -14,6 +14,8 @@ import org.lanye.fantasy_furniture.bootstrap.block.BedPlate3Registration;
 import org.lanye.fantasy_furniture.bootstrap.block.BedPlate6Registration;
 import org.lanye.fantasy_furniture.content.furniture.cabinet.blockentity.CabinetBlockEntity;
 import org.lanye.fantasy_furniture.content.furniture.decor.blockentity.ComputerBlockEntity;
+import org.lanye.fantasy_furniture.content.furniture.bar.blockentity.BarCounterBlockEntity;
+import org.lanye.fantasy_furniture.content.furniture.bar.blockentity.CornerBarBlockEntity;
 import org.lanye.fantasy_furniture.content.furniture.decor.blockentity.DrinkwareBlockEntity;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.blockentity.BanquetteBlockEntity;
 import org.lanye.reverie_core.geolib.bed.BedPlateBaseBlockEntity;
@@ -173,6 +175,10 @@ public final class ModBlocks {
     public static final AnimatedBlockEntry<CabinetBlockEntity> CABINET_2 = FurnitureAnimatedBlocks.CABINET_2;
 
     public static final AnimatedBlockEntry<DrinkwareBlockEntity> DRINKWARE = FurnitureAnimatedBlocks.DRINKWARE;
+
+    public static final AnimatedBlockEntry<BarCounterBlockEntity> BAR_COUNTER = BarCounterRegistration.entry();
+
+    public static final AnimatedBlockEntry<CornerBarBlockEntity> CORNER_BAR = CornerBarRegistration.entry();
 
     public static void register(IEventBus modEventBus) {
         BLOCKS.register(modEventBus);

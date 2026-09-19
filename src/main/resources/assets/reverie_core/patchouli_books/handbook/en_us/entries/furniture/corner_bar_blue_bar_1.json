@@ -1,0 +1,14 @@
+{
+  "name": "block.fantasy_furniture.corner_bar_blue_bar_1",
+  "icon": "fantasy_furniture:corner_bar_blue_bar_1",
+  "category": "reverie_core:furniture",
+  "read_by_default": true,
+  "sortnum": 98,
+  "pages": [
+    {
+      "type": "patchouli:spotlight",
+      "item": "fantasy_furniture:corner_bar_blue_bar_1",
+      "text": "patchouli.reverie_core.handbook.entry.bar_piece"
+    }
+  ]
+}

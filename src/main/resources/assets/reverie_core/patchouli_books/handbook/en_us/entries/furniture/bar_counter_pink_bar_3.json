@@ -1,0 +1,14 @@
+{
+  "name": "block.fantasy_furniture.bar_counter_pink_bar_3",
+  "icon": "fantasy_furniture:bar_counter_pink_bar_3",
+  "category": "reverie_core:furniture",
+  "read_by_default": true,
+  "sortnum": 88,
+  "pages": [
+    {
+      "type": "patchouli:spotlight",
+      "item": "fantasy_furniture:bar_counter_pink_bar_3",
+      "text": "patchouli.reverie_core.handbook.entry.bar_piece"
+    }
+  ]
+}
