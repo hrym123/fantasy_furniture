@@ -69,15 +69,6 @@ public final class BedPlateSimpleBeddingClientPick {
             return bed;
         }
         PickedLayer layer = resolveLayer(plate, hitState, hitView, bhr);
-        if (layer == PickedLayer.MEDIUM && hitView.pillows() != null && hitView.pillows().hasPlate2Pose()) {
-            int slot =
-                    BedPlateSimpleBeddingShapes.mediumSlotAt(
-                            plate, hitState, hitView.pillows(), bhr.getLocation(), bhr.getBlockPos());
-            ItemStack medium =
-                    BedPlate6MediumPillowItem.stackForRegistry(
-                            hitView.pillows().mediumMatOnSide(slot == 0 ? 1 : slot));
-            return medium.isEmpty() ? bed : medium;
-        }
         ItemStack layerStack = stackForLayer(hitView, layer);
         return layerStack.isEmpty() ? bed : layerStack;
     }
@@ -92,9 +83,29 @@ public final class BedPlateSimpleBeddingClientPick {
                     view.hasDuvet()
                             ? BedPlate6DuvetItem.stackForRegistry(view.duvetMat())
                             : ItemStack.EMPTY;
-            case LARGE -> BedPlate6LargePillowItem.stackForRegistry(view.largeStyle(), view.largeMat());
-            case MEDIUM -> BedPlate6MediumPillowItem.stackForRegistry(view.mediumMat());
+            case LARGE_1, LARGE_2, LARGE_3 -> {
+                BedPlateSheetPillowSlots pillows = view.pillows();
+                int slot = layer.slot();
+                if (pillows == null || !pillows.hasLargeSlot(slot)) {
+                    yield ItemStack.EMPTY;
+                }
+                yield BedPlate6LargePillowItem.stackForRegistry(
+                        pillows.largeStyleOnSide(slot), pillows.largeMaterialOnSide(slot));
+            }
+            case MEDIUM_1, MEDIUM_2, MEDIUM_3 -> {
+                BedPlateSheetPillowSlots pillows = view.pillows();
+                int mat =
+                        pillows != null
+                                ? pillows.mediumMatOnSide(layer.slot())
+                                : view.mediumMat();
+                yield BedPlate6MediumPillowItem.stackForRegistry(mat);
+            }
             case SMALL -> BedPlate6SmallPillowItem.stackForRegistry(view.smallMat());
+            case SMALL_3, SMALL_4 -> {
+                BedPlateSheetPillowSlots pillows = view.pillows();
+                int mat = pillows != null ? pillows.smallMatOnSlot(layer.slot()) : 0;
+                yield BedPlate6SmallPillowItem.stackForRegistry(mat);
+            }
             case BODY -> ItemStack.EMPTY;
         };
     }

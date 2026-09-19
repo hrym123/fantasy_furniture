@@ -46,6 +46,12 @@ public final class BedPlate2DecorStorage {
                     BedPlate6LargePillowItem.stackForRegistry(
                             plate.getLargePillowStyleId(2), plate.getLargePillowMaterialId(2)));
         }
+        if (plate.hasLargePillowSlot(3)) {
+            addIfNonEmpty(
+                    stacks,
+                    BedPlate6LargePillowItem.stackForRegistry(
+                            plate.getLargePillowStyleId(3), plate.getLargePillowMaterialId(3)));
+        }
         for (int slot = 1; slot <= 3; slot++) {
             if (plate.hasMediumPillowSlot(slot)) {
                 addIfNonEmpty(

@@ -3,7 +3,7 @@
 	"minecraft:geometry": [
 		{
 			"description": {
-				"identifier": "geometry.bed_plate4_pillow_small_x1",
+				"identifier": "geometry.bed_plate4_pillow_small_x4",
 				"texture_width": 16,
 				"texture_height": 16,
 				"visible_bounds_width": 1,
@@ -16,7 +16,7 @@
 			},
 			"bones": [
 				{
-					"name": "bed_plate6_pillow_small_X1",
+					"name": "小号枕头斜放4",
 					"pivot": [
 						0.0,
 						8.0,

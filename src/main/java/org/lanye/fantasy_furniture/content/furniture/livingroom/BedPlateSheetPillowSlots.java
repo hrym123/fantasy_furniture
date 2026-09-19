@@ -35,6 +35,7 @@ public final class BedPlateSheetPillowSlots {
     private static final String NBT_MEDIUM_SIDE = "MdSide";
     private static final String NBT_MEDIUM_2_POSE = "Md2Pose";
     private static final String NBT_SMALL = "SmPillow";
+    private static final String NBT_SMALL_5 = "SmPillow5";
     private static final String NBT_LARGE1_FLAT = "Lg1Flat";
     private static final String NBT_LARGE2_FLAT = "Lg2Flat";
     private static final String NBT_MEDIUM_POSE = "MdPose";
@@ -75,6 +76,9 @@ public final class BedPlateSheetPillowSlots {
     private int large1MaterialId;
     private int large2StyleId;
     private int large2MaterialId;
+    /** 只给床板2第三只大号。床板1/3/4放不进这一槽。 */
+    private int large3StyleId;
+    private int large3MaterialId;
     /** 大号平放。缺省竖放，与已放置的床一致。 */
     private boolean large1Flat;
     private boolean large2Flat;
@@ -88,19 +92,31 @@ public final class BedPlateSheetPillowSlots {
     /** -1 跟随同侧大号；0 平放；1 竖放。床板3/4只用第一槽。 */
     private int medium1Pose = -1;
     private int medium2Pose = -1;
+    /** 床板1左列（槽 4），床板3/4 的槽 3。 */
     private int smallMat;
+    /** 床板1右列（槽 5），床板3/4 的槽 4。 */
+    private int small5Mat;
+    /** {@link #smallMat} 的槽位。床板1是 4，床板3/4是 3。 */
+    private int smallSlot = 4;
+    /** {@link #small5Mat} 的槽位。床板1是 5，床板3/4是 4。 */
+    private int small2Slot = 5;
     private int smallPlace = 4;
 
     public boolean hasLarge() {
-        return hasLargeSlot(1) || hasLargeSlot(2);
+        return hasLargeSlot(1) || hasLargeSlot(2) || hasLargeSlot(3);
     }
 
     public boolean hasLargeSlot(int index) {
-        return index == 1 ? validLarge(large1StyleId, large1MaterialId) : validLarge(large2StyleId, large2MaterialId);
+        return switch (index) {
+            case 1 -> validLarge(large1StyleId, large1MaterialId);
+            case 2 -> validLarge(large2StyleId, large2MaterialId);
+            case 3 -> validLarge(large3StyleId, large3MaterialId);
+            default -> false;
+        };
     }
 
     public int largeCount() {
-        return (hasLargeSlot(1) ? 1 : 0) + (hasLargeSlot(2) ? 1 : 0);
+        return (hasLargeSlot(1) ? 1 : 0) + (hasLargeSlot(2) ? 1 : 0) + (hasLargeSlot(3) ? 1 : 0);
     }
 
     /** 绘制用：优先第一只，没有则第二只。 */
@@ -108,14 +124,14 @@ public final class BedPlateSheetPillowSlots {
         if (hasLargeSlot(1)) {
             return large1StyleId;
         }
-        return hasLargeSlot(2) ? large2StyleId : 0;
+        return hasLargeSlot(2) ? large2StyleId : (hasLargeSlot(3) ? large3StyleId : 0);
     }
 
     public int largeMaterialId() {
         if (hasLargeSlot(1)) {
             return large1MaterialId;
         }
-        return hasLargeSlot(2) ? large2MaterialId : 0;
+        return hasLargeSlot(2) ? large2MaterialId : (hasLargeSlot(3) ? large3MaterialId : 0);
     }
 
     public boolean hasMedium() {
@@ -168,57 +184,23 @@ public final class BedPlateSheetPillowSlots {
     }
 
     public int resolvedMode(int plate) {
-        if (plate2Pose >= 0 && plate2Pose <= 2 && modeFits(plate, plate2Pose)) {
-            return plate2Pose;
+        if (plate != 1 && hasSmall() && !hasLarge() && !hasMedium()) {
+            return BedPlatePillowMode.TILTED;
         }
         for (int mode = 0; mode < 3; mode++) {
             if (modeFits(plate, mode)) {
                 return mode;
             }
         }
-        return hasSmall() ? BedPlatePillowMode.TILTED : BedPlatePillowMode.FLAT;
+        return plate == 1 || !hasSmall() ? BedPlatePillowMode.FLAT : BedPlatePillowMode.TILTED;
     }
 
-    /** @return 切换后的模式；没有可切换的枕头时 -1 */
-    public int cycleSharedMode(int plate) {
-        if (plate == 1 && !hasLarge() && !hasMedium()) {
-            if (!hasSmall()) {
-                return -1;
-            }
-            setPlate2Pose(BedPlatePillowMode.TILTED);
-            return BedPlatePillowMode.TILTED;
-        }
-        if (!hasLarge() && !hasMedium() && !hasSmall()) {
-            return -1;
-        }
-        int current = resolvedMode(plate);
-        int next = current;
-        for (int step = 1; step <= 3; step++) {
-            int candidate = (current + step) % 3;
-            if (modeFits(plate, candidate)) {
-                next = candidate;
-                break;
-            }
-        }
-        setPlate2Pose(next);
-        return next;
-    }
-
-    /** 当前字母放不下时，改成 P、S、X 里第一个放得下的。 */
+    /**
+     * 按件数落在第一个放得下的字母：一只平放，两只竖放，斜放有三槽时三只改斜放。
+     * 卸到更少也会退回，不保留调试棒留下的字母。
+     */
     public void promoteMode(int plate) {
-        if (plate2Pose >= 0 && modeFits(plate, plate2Pose)) {
-            return;
-        }
-        if (plate != 1 && hasSmall() && !hasLarge() && !hasMedium() && modeFits(plate, BedPlatePillowMode.TILTED)) {
-            setPlate2Pose(BedPlatePillowMode.TILTED);
-            return;
-        }
-        for (int mode = 0; mode < 3; mode++) {
-            if (modeFits(plate, mode)) {
-                setPlate2Pose(mode);
-                return;
-            }
-        }
+        setPlate2Pose(resolvedMode(plate));
     }
 
     public boolean canFitCounts(int plate, int large, int medium, int small) {
@@ -232,6 +214,9 @@ public final class BedPlateSheetPillowSlots {
     }
 
     private boolean modeFits(int plate, int mode) {
+        if (plate == 1 && mode == BedPlatePillowMode.TILTED) {
+            return false;
+        }
         int[] max = limits(plate, mode);
         if (largeCount() > max[0] || mediumCount() > max[1]) {
             return false;
@@ -245,18 +230,18 @@ public final class BedPlateSheetPillowSlots {
         return hasLarge() || hasMedium() || hasSmall();
     }
 
-    /** [大号, 中号, 小号]。床板1的小号不跟字母走。 */
+    /** [大号, 中号, 小号]。平放只有 1 槽。床板1没有斜放，第三只中号在竖放。 */
     private static int[] limits(int plate, int mode) {
         if (plate == 1) {
             return switch (mode) {
                 case BedPlatePillowMode.UPRIGHT -> new int[] {2, 3, 99};
                 case BedPlatePillowMode.TILTED -> new int[] {0, 0, 99};
-                default -> new int[] {2, 2, 99};
+                default -> new int[] {1, 1, 99};
             };
         }
         return switch (mode) {
-            case BedPlatePillowMode.UPRIGHT -> new int[] {2, 2, 1};
-            case BedPlatePillowMode.TILTED -> new int[] {0, 0, 1};
+            case BedPlatePillowMode.UPRIGHT -> new int[] {2, 2, 0};
+            case BedPlatePillowMode.TILTED -> new int[] {0, 0, 2};
             default -> new int[] {1, 1, 0};
         };
     }
@@ -271,12 +256,60 @@ public final class BedPlateSheetPillowSlots {
         return smallPlace >= 4 && smallPlace <= 7 ? smallPlace : 4;
     }
 
-    public boolean hasSmall() {
-        return BedPlate6SmallPillowMaterials.isValid(smallMat);
+    /** 床板1：4 左列，5 右列。旧存档的 6、7 归到同一侧。 */
+    public int plate1SmallSlot() {
+        int place = smallPlace();
+        return place == 5 || place == 7 ? 5 : 4;
     }
 
+    public boolean hasSmallSlot(int slot) {
+        if (BedPlate6SmallPillowMaterials.isValid(smallMat) && slot == smallSlot) {
+            return true;
+        }
+        return BedPlate6SmallPillowMaterials.isValid(small5Mat) && slot == small2Slot;
+    }
+
+    public int smallMatOnSlot(int slot) {
+        if (BedPlate6SmallPillowMaterials.isValid(smallMat) && slot == smallSlot) {
+            return smallMat;
+        }
+        if (BedPlate6SmallPillowMaterials.isValid(small5Mat) && slot == small2Slot) {
+            return small5Mat;
+        }
+        return 0;
+    }
+
+    public boolean hasSmall() {
+        return BedPlate6SmallPillowMaterials.isValid(smallMat)
+                || BedPlate6SmallPillowMaterials.isValid(small5Mat);
+    }
+
+    public int smallCount() {
+        return (BedPlate6SmallPillowMaterials.isValid(smallMat) ? 1 : 0)
+                + (BedPlate6SmallPillowMaterials.isValid(small5Mat) ? 1 : 0);
+    }
+
+    /**
+     * 床板3/4 旧存档把唯一一只小号记在槽 4。组合文件现在是斜放槽 3、槽 4。
+     */
+    public void adoptSmallSlots(int plate) {
+        if (plate != 3 && plate != 4 && plate != 34) {
+            return;
+        }
+        if (BedPlate6SmallPillowMaterials.isValid(smallMat) && smallSlot != 3 && smallSlot != 4) {
+            smallSlot = 3;
+        }
+        if (BedPlate6SmallPillowMaterials.isValid(small5Mat) && small2Slot != 3 && small2Slot != 4) {
+            small2Slot = 4;
+        }
+    }
+
+    /** 只有一只时返回它；两只时返回先放下的那只。 */
     public int smallMat() {
-        return hasSmall() ? smallMat : 0;
+        if (BedPlate6SmallPillowMaterials.isValid(smallMat)) {
+            return smallMat;
+        }
+        return BedPlate6SmallPillowMaterials.isValid(small5Mat) ? small5Mat : 0;
     }
 
     public boolean hasAny() {
@@ -284,7 +317,7 @@ public final class BedPlateSheetPillowSlots {
     }
 
     public boolean canAddLarge() {
-        return largeCount() < 2;
+        return !hasSmall() && largeCount() < 2;
     }
 
     public boolean tryAddLarge(int styleId, int materialId) {
@@ -302,24 +335,35 @@ public final class BedPlateSheetPillowSlots {
      * S1 在导出里靠 +X，默认 Geo 会做 X 镜像，画到床尾右锚点的 −X，也就是面朝与床正面相同方向时的左手边。
      */
     public boolean canAddLargeSide(int side) {
-        return side == 2 ? !hasLargeSlot(2) : !hasLargeSlot(1);
+        return switch (side) {
+            case 2 -> !hasLargeSlot(2);
+            case 3 -> !hasLargeSlot(3);
+            default -> !hasLargeSlot(1);
+        };
     }
 
     public boolean tryAddLargeSide(int side, int styleId, int materialId) {
         if (!canAddLargeSide(side) || !validLarge(styleId, materialId)) {
             return false;
         }
-        return writeLargeSlot(side == 2 ? 2 : 1, styleId, materialId);
+        int slot = side == 2 || side == 3 ? side : 1;
+        return writeLargeSlot(slot, styleId, materialId);
     }
 
     public int largeStyleOnSide(int side) {
-        return side == 2 ? (hasLargeSlot(2) ? large2StyleId : 0) : (hasLargeSlot(1) ? large1StyleId : 0);
+        return switch (side) {
+            case 2 -> hasLargeSlot(2) ? large2StyleId : 0;
+            case 3 -> hasLargeSlot(3) ? large3StyleId : 0;
+            default -> hasLargeSlot(1) ? large1StyleId : 0;
+        };
     }
 
     public int largeMaterialOnSide(int side) {
-        return side == 2
-                ? (hasLargeSlot(2) ? large2MaterialId : 0)
-                : (hasLargeSlot(1) ? large1MaterialId : 0);
+        return switch (side) {
+            case 2 -> hasLargeSlot(2) ? large2MaterialId : 0;
+            case 3 -> hasLargeSlot(3) ? large3MaterialId : 0;
+            default -> hasLargeSlot(1) ? large1MaterialId : 0;
+        };
     }
 
     /** 床板1型大号：true 平放（DAP），false 竖放（S）。 */
@@ -382,7 +426,7 @@ public final class BedPlateSheetPillowSlots {
         if (hasMediumSlot(1) && hasMediumSlot(2)) {
             return false;
         }
-        return canFitCounts(34, largeCount(), mediumCount() + 1, hasSmall() ? 1 : 0);
+        return canFitCounts(34, largeCount(), mediumCount() + 1, smallCount());
     }
 
     /** 床板1型：该列还没有中号就能放。 */
@@ -420,20 +464,47 @@ public final class BedPlateSheetPillowSlots {
         return true;
     }
 
+    /** 床板3/4：斜放槽 3、槽 4 各一只。有大号或中号时没有小号模型。 */
     public boolean canAddSmall() {
-        return !hasSmall();
+        return !hasLarge() && !hasMedium() && smallCount() < 2;
+    }
+
+    /** 床板1：左列 4、右列 5 各一只。 */
+    public boolean canAddSmallSlot(int slot) {
+        return !hasSmallSlot(slot == 5 ? 5 : 4);
     }
 
     public boolean tryAddSmall(int materialId) {
-        return tryAddSmallPlace(4, materialId);
-    }
-
-    public boolean tryAddSmallPlace(int place, int materialId) {
         if (!canAddSmall() || !BedPlate6SmallPillowMaterials.isValid(materialId)) {
             return false;
         }
-        this.smallMat = materialId;
-        this.smallPlace = place >= 4 && place <= 7 ? place : 4;
+        if (!BedPlate6SmallPillowMaterials.isValid(smallMat)) {
+            smallMat = materialId;
+            smallSlot = 3;
+            smallPlace = 3;
+            return true;
+        }
+        small5Mat = materialId;
+        small2Slot = 4;
+        return true;
+    }
+
+    public boolean tryAddSmallPlace(int place, int materialId) {
+        if (!BedPlate6SmallPillowMaterials.isValid(materialId)) {
+            return false;
+        }
+        int slot = place == 5 || place == 7 ? 5 : 4;
+        if (!canAddSmallSlot(slot)) {
+            return false;
+        }
+        if (slot == 5) {
+            small5Mat = materialId;
+            small2Slot = 5;
+        } else {
+            smallMat = materialId;
+            smallSlot = 4;
+            smallPlace = 4;
+        }
         return true;
     }
 
@@ -464,18 +535,16 @@ public final class BedPlateSheetPillowSlots {
             return null;
         }
         if (hasPlate2Pose()) {
-            int ordinal = side == 2 && hasLargeSlot(1) ? 2 : 1;
-            return plate2Letter() + ordinal;
+            return plate2Letter() + side;
         }
         int geo = largeGeo(side);
         if (geo >= 0 && geo < COMBO_GEOS.length) {
             return COMBO_GEOS[geo];
         }
-        if (largeCount() >= 2) {
-            return side == 2 ? "s2" : "s1";
+        if (largeCount() >= 2 || side == 2) {
+            return "s" + side;
         }
-        boolean propped = hasMediumSlot(side);
-        return propped ? "s" + side : "p1";
+        return hasMediumSlot(side) ? "s" + side : "p1";
     }
 
     /** 不含 {@code medium_} 前缀。没有中号时返回 null。 */
@@ -527,6 +596,11 @@ public final class BedPlateSheetPillowSlots {
     }
 
     public void clearLargeSlot(int side) {
+        if (side == 3) {
+            large3StyleId = 0;
+            large3MaterialId = 0;
+            return;
+        }
         if (side == 2) {
             large2StyleId = 0;
             large2MaterialId = 0;
@@ -562,7 +636,20 @@ public final class BedPlateSheetPillowSlots {
     }
 
     public void clearSmall() {
+        clearSmallSlot(4);
+        clearSmallSlot(5);
+    }
+
+    public void clearSmallSlot(int slot) {
+        if (slot == small2Slot) {
+            small5Mat = 0;
+            if (slot != 5) {
+                small2Slot = 5;
+            }
+            return;
+        }
         smallMat = 0;
+        smallSlot = 4;
         smallPlace = 4;
     }
 
@@ -575,14 +662,15 @@ public final class BedPlateSheetPillowSlots {
         large2MaterialId = 0;
         large2Flat = false;
         large2Geo = -1;
+        large3StyleId = 0;
+        large3MaterialId = 0;
         medium1Mat = 0;
         medium2Mat = 0;
         medium3Mat = 0;
         medium1Pose = -1;
         medium2Pose = -1;
         mediumGeo = -1;
-        smallMat = 0;
-        smallPlace = 4;
+        clearSmall();
         plate2Pose = -1;
     }
 
@@ -617,9 +705,12 @@ public final class BedPlateSheetPillowSlots {
                 tag.putInt(NBT_MEDIUM_2_POSE, medium2Pose);
             }
         }
-        if (smallMat != 0) {
+        if (hasSmallSlot(4)) {
             tag.putInt(NBT_SMALL, smallMat);
             tag.putInt("SmPlace", smallPlace);
+        }
+        if (hasSmallSlot(5)) {
+            tag.putInt(NBT_SMALL_5, small5Mat);
         }
         if (plate2Pose >= 0) {
             tag.putInt(NBT_PILLOW_MODE, plate2Pose);
@@ -674,13 +765,23 @@ public final class BedPlateSheetPillowSlots {
             int pose2 = tag.contains(NBT_MEDIUM_2_POSE) ? tag.getInt(NBT_MEDIUM_2_POSE) : -1;
             medium2Pose = pose2 == 0 || pose2 == 1 ? pose2 : -1;
         }
-        smallMat = tag.getInt(NBT_SMALL);
-        if (!BedPlate6SmallPillowMaterials.isValid(smallMat)) {
-            smallMat = 0;
-            smallPlace = 4;
-        } else {
+        smallMat = 0;
+        small5Mat = 0;
+        smallPlace = 4;
+        int storedSmall = tag.getInt(NBT_SMALL);
+        if (BedPlate6SmallPillowMaterials.isValid(storedSmall)) {
             int place = tag.getInt("SmPlace");
             smallPlace = place >= 4 && place <= 7 ? place : 4;
+            if (!tag.contains(NBT_SMALL_5) && (smallPlace == 5 || smallPlace == 7)) {
+                small5Mat = storedSmall;
+                smallPlace = 4;
+            } else {
+                smallMat = storedSmall;
+            }
+        }
+        int storedSmall5 = tag.getInt(NBT_SMALL_5);
+        if (BedPlate6SmallPillowMaterials.isValid(storedSmall5)) {
+            small5Mat = storedSmall5;
         }
         plate2Pose = -1;
         if (tag.contains(NBT_PILLOW_MODE)) {
@@ -709,6 +810,9 @@ public final class BedPlateSheetPillowSlots {
         if (hasLargeSlot(2)) {
             add(stacks, BedPlate6LargePillowItem.stackForRegistry(large2StyleId, large2MaterialId));
         }
+        if (hasLargeSlot(3)) {
+            add(stacks, BedPlate6LargePillowItem.stackForRegistry(large3StyleId, large3MaterialId));
+        }
         if (hasMediumSlot(1)) {
             add(stacks, BedPlate6MediumPillowItem.stackForRegistry(medium1Mat));
         }
@@ -718,8 +822,11 @@ public final class BedPlateSheetPillowSlots {
         if (hasMediumSlot(3)) {
             add(stacks, BedPlate6MediumPillowItem.stackForRegistry(medium3Mat));
         }
-        if (hasSmall()) {
+        if (BedPlate6SmallPillowMaterials.isValid(smallMat)) {
             add(stacks, BedPlate6SmallPillowItem.stackForRegistry(smallMat));
+        }
+        if (BedPlate6SmallPillowMaterials.isValid(small5Mat)) {
+            add(stacks, BedPlate6SmallPillowItem.stackForRegistry(small5Mat));
         }
     }
 
@@ -781,9 +888,7 @@ public final class BedPlateSheetPillowSlots {
                             yield side == 0
                                     ? host.sheetPillows().tryAddSmall(held.getMaterialId())
                                     : host.sheetPillows()
-                                            .tryAddSmallPlace(
-                                                    smallPlaceFor(host.sheetPillows(), side),
-                                                    held.getMaterialId());
+                                            .tryAddSmallPlace(smallPlaceFor(side), held.getMaterialId());
                         }
                     };
             if (!added) {
@@ -811,7 +916,7 @@ public final class BedPlateSheetPillowSlots {
                     yield false;
                 }
                 int plate = side == 0 ? 34 : 1;
-                int small = slots.hasSmall() ? 1 : 0;
+                int small = slots.smallCount();
                 if (!slots.canFitCounts(plate, slots.largeCount(), slots.mediumCount() + 1, small)) {
                     yield false;
                 }
@@ -820,7 +925,8 @@ public final class BedPlateSheetPillowSlots {
                 }
                 yield slots.canAddMediumSide(side) || slots.canAddMediumSide(3);
             }
-            case SMALL -> stack.getItem() instanceof BedPlate6SmallPillowItem && slots.canAddSmall();
+            case SMALL -> stack.getItem() instanceof BedPlate6SmallPillowItem
+                    && (side == 0 ? slots.canAddSmall() : slots.canAddSmallSlot(smallPlaceFor(side)));
         };
     }
 
@@ -835,11 +941,9 @@ public final class BedPlateSheetPillowSlots {
         return state.getValue(BedPlate1Block.SIDE) == BedPlateSide.LEFT ? 1 : 2;
     }
 
-    private static int smallPlaceFor(BedPlateSheetPillowSlots slots, int side) {
-        if (side == 2) {
-            return slots.hasLargeSlot(2) ? 7 : 5;
-        }
-        return slots.hasLargeSlot(1) ? 6 : 4;
+    /** 床板1小号只有左右两槽。4 左列，5 右列。有被套时换模型，不另占槽。 */
+    private static int smallPlaceFor(int side) {
+        return side == 2 ? 5 : 4;
     }
 
     private static BedPlateSheetPillowHost host(Level level, BlockState state, BlockPos pos) {
@@ -870,7 +974,10 @@ public final class BedPlateSheetPillowSlots {
     }
 
     private boolean writeLargeSlot(int side, int styleId, int materialId) {
-        if (side == 2) {
+        if (side == 3) {
+            large3StyleId = styleId;
+            large3MaterialId = materialId;
+        } else if (side == 2) {
             large2StyleId = styleId;
             large2MaterialId = materialId;
             large2Flat = false;

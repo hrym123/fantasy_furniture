@@ -19,7 +19,8 @@ import software.bernie.geckolib.renderer.GeoBlockRenderer;
 
 /**
  * 床板1型枕头：几何来自组合 bbmodel 拆出的 geo，不在这里平移。
- * 大号两槽：竖放 S / 平放 P；中号平放 P / 竖放 S；小号 X4–X7。
+ * 大号两槽：竖放 S / 平放 P；中号平放 P / 竖放 S。
+ * 小号是 PS，平放和竖放都用；有被套时用抬高的那一组。床板1没有斜放。
  */
 @OnlyIn(Dist.CLIENT)
 public final class BedPlate1ComboPillowRenderer {
@@ -54,6 +55,7 @@ public final class BedPlate1ComboPillowRenderer {
     public void render(
             BedPlateBaseBlockEntity blockEntity,
             BedPlateSheetPillowSlots slots,
+            boolean hasCover,
             float partialTick,
             PoseStack poseStack,
             MultiBufferSource bufferSource,
@@ -70,15 +72,31 @@ public final class BedPlate1ComboPillowRenderer {
                 drawMedium(blockEntity, slots, slot, partialTick, poseStack, bufferSource, packedLight, packedOverlay);
             }
         }
-        if (slots.hasSmall()) {
-            this.geoName = "bed_plate1_pillow_small_x" + slots.smallPlace();
-            int mat = slots.smallMat();
-            if (!BedPlate6SmallPillowMaterials.isValid(mat)) {
-                mat = 1;
-            }
-            this.texturePath = "textures/block/bed_plate6_pillow_small_" + mat + ".png";
-            renderer.render(blockEntity, partialTick, poseStack, bufferSource, packedLight, packedOverlay);
+        if (slots.hasSmallSlot(4)) {
+            drawSmall(blockEntity, slots, 4, hasCover, partialTick, poseStack, bufferSource, packedLight, packedOverlay);
         }
+        if (slots.hasSmallSlot(5)) {
+            drawSmall(blockEntity, slots, 5, hasCover, partialTick, poseStack, bufferSource, packedLight, packedOverlay);
+        }
+    }
+
+    private void drawSmall(
+            BedPlateBaseBlockEntity blockEntity,
+            BedPlateSheetPillowSlots slots,
+            int slot,
+            boolean hasCover,
+            float partialTick,
+            PoseStack poseStack,
+            MultiBufferSource bufferSource,
+            int packedLight,
+            int packedOverlay) {
+        int mat = slots.smallMatOnSlot(slot);
+        if (!BedPlate6SmallPillowMaterials.isValid(mat)) {
+            return;
+        }
+        this.geoName = "bed_plate1_pillow_small_ps" + slot + (hasCover ? "_cover" : "");
+        this.texturePath = "textures/block/bed_plate6_pillow_small_" + mat + ".png";
+        renderer.render(blockEntity, partialTick, poseStack, bufferSource, packedLight, packedOverlay);
     }
 
     private void drawLarge(

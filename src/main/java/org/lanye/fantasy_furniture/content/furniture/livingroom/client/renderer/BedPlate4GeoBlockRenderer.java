@@ -73,6 +73,7 @@ public final class BedPlate4GeoBlockRenderer implements BlockEntityRenderer<BedP
             pillows.render(
                     blockEntity,
                     plate4.sheetPillows(),
+                    plate4.hasCover(),
                     partialTick,
                     poseStack,
                     bufferSource,

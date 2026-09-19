@@ -6,17 +6,27 @@ import java.util.List;
 /**
  * 床板2/3/4 枕头用哪一组组合 geo。
  * 后缀与导出文件 {@code bed_plateN_pillow_<后缀>.geo.json} 一致，不在渲染里平移。
- * 床板2：整套枕头共用一个字母（P/S/X），槽位按 1、2、3 顺序，不混用字母。
- * 床板3/4：调试棒把该槽写成 p1 / s1 / s2 之后，不再走自动选择。
+ * 床板2/3/4：整套枕头共用一个字母（P/S/X），数字就是槽位，不把后一槽画成前一槽。
+ * 床板1不走这里：它按左右列，不按填满顺序。
  */
 public final class BedPlateComboPillowLayout {
 
     private BedPlateComboPillowLayout() {}
 
     public static List<String> suffixes(int plate, BedPlateSheetPillowSlots slots) {
+        return suffixes(plate, slots, false);
+    }
+
+    public static List<String> suffixes(int plate, BedPlateSheetPillowSlots slots, boolean hasCover) {
         List<String> out = new ArrayList<>();
         if (slots == null) {
             return out;
+        }
+        if (plate == 3 || plate == 4) {
+            slots.adoptSmallSlots(plate);
+        }
+        if (plate != 2) {
+            slots.setPlate2Pose(slots.resolvedMode(plate == 1 ? 1 : 34));
         }
         boolean large1 = slots.hasLargeSlot(1);
         boolean large2 = slots.hasLargeSlot(2);
@@ -25,6 +35,9 @@ public final class BedPlateComboPillowLayout {
         }
         if (large2) {
             out.add("large_" + slots.largeSuffix(2));
+        }
+        if (slots.hasLargeSlot(3)) {
+            out.add("large_" + slots.largeSuffix(3));
         }
         if (slots.hasPlate2Pose()) {
             for (int slot = 1; slot <= 3; slot++) {
@@ -36,14 +49,20 @@ public final class BedPlateComboPillowLayout {
         } else if (slots.hasMedium()) {
             out.add("medium_" + slots.mediumSuffix());
         }
-        if (slots.hasSmall()) {
+        if (plate == 3 || plate == 4) {
+            for (int slot = 3; slot <= 4; slot++) {
+                if (slots.hasSmallSlot(slot)) {
+                    out.add("small_x" + slot + (hasCover ? "_cover" : ""));
+                }
+            }
+        } else if (slots.hasSmall()) {
             String plate2Small = slots.plate2SmallSuffix();
             out.add(plate2Small != null ? plate2Small : smallSuffix(plate, slots));
         }
         return out;
     }
 
-    /** 床板2 小号是 P/S；床板3/4 是 X（落床面）/ S（落在大号上）。 */
+    /** 床板2 小号跟随整床字母，槽位是 1。床板3/4 不走这里。 */
     private static String smallSuffix(int plate, BedPlateSheetPillowSlots slots) {
         int place = slots.smallPlace();
         if (plate == 2) {

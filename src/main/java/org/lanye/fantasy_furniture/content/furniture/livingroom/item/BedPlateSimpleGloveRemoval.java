@@ -138,34 +138,38 @@ public final class BedPlateSimpleGloveRemoval {
             java.util.function.IntConsumer setCover,
             Runnable syncPillows) {
         return switch (layer) {
-            case LARGE -> {
-                int side = BedPlateSimpleBeddingShapes.largeSlotAt(plate, state, slots, hit.getLocation(), pos);
+            case LARGE_1, LARGE_2, LARGE_3 -> {
+                int side = layer.slot();
                 if (!slots.hasLargeSlot(side)) {
                     yield false;
                 }
                 int style = slots.largeStyleOnSide(side);
                 int mat = slots.largeMaterialOnSide(side);
                 slots.clearLargeSlot(side);
+                slots.promoteMode(34);
                 syncPillows.run();
                 give(player, BedPlate6LargePillowItem.stackForRegistry(style, mat));
                 yield true;
             }
-            case MEDIUM -> {
-                if (!slots.hasMedium()) {
+            case MEDIUM_1, MEDIUM_2, MEDIUM_3 -> {
+                int side = layer.slot();
+                if (!slots.hasMediumSlot(side)) {
                     yield false;
                 }
-                int mat = slots.mediumMat();
-                slots.clearMedium();
+                int mat = slots.mediumMatOnSide(side);
+                slots.clearMediumSlot(side);
+                slots.promoteMode(34);
                 syncPillows.run();
                 give(player, BedPlate6MediumPillowItem.stackForRegistry(mat));
                 yield true;
             }
-            case SMALL -> {
+            case SMALL, SMALL_3, SMALL_4 -> {
                 if (!slots.hasSmall()) {
                     yield false;
                 }
                 int mat = slots.smallMat();
                 slots.clearSmall();
+                slots.promoteMode(34);
                 syncPillows.run();
                 give(player, BedPlate6SmallPillowItem.stackForRegistry(mat));
                 yield true;
@@ -230,8 +234,9 @@ public final class BedPlateSimpleGloveRemoval {
     private static boolean plate2RemovalBlocked(BedPlate2BlockEntity plate, PickedLayer layer) {
         return switch (layer) {
             case DUVET -> plate.hasCover();
-            case MEDIUM -> plate.hasSmallPillow() && plate.getMediumPillowCount() <= 1;
-            case LARGE -> plate.hasSmallPillow() && plate.getLargePillowCount() <= 1;
+            case MEDIUM_1, MEDIUM_2, MEDIUM_3 ->
+                    plate.hasSmallPillow() && plate.getMediumPillowCount() <= 1;
+            case LARGE_1, LARGE_2, LARGE_3 -> plate.hasSmallPillow() && plate.getLargePillowCount() <= 1;
             default -> false;
         };
     }
@@ -246,28 +251,20 @@ public final class BedPlateSimpleGloveRemoval {
             BedPlateSheetPillowSlots slots,
             PickedLayer layer) {
         return switch (layer) {
-            case LARGE -> {
-                int side = BedPlateSimpleBeddingShapes.largeSlotAt(plate, state, slots, hit.getLocation(), pos);
-                if (plate2.getLargePillowCount() == 1) {
-                    side = plate2.hasLargePillowSlot(1) ? 1 : 2;
-                } else if (!plate2.hasLargePillowSlot(side)) {
+            case LARGE_1, LARGE_2, LARGE_3 -> {
+                int side = layer.slot();
+                if (!plate2.hasLargePillowSlot(side)
+                        || (plate2.hasSmallPillow() && plate2.getLargePillowCount() <= 1)) {
                     yield false;
                 }
                 int style = plate2.getLargePillowStyleId(side);
                 int mat = plate2.getLargePillowMaterialId(side);
-                if (plate2.hasSmallPillow() && plate2.getLargePillowCount() <= 1) {
-                    yield false;
-                }
                 plate2.clearLargePillowSlot(side);
                 give(player, BedPlate6LargePillowItem.stackForRegistry(style, mat));
                 yield true;
             }
-            case MEDIUM -> {
-                int slot = BedPlateSimpleBeddingShapes.mediumSlotAt(
-                        plate, state, slots, hit.getLocation(), pos);
-                if (slot == 0) {
-                    slot = plate2.hasMediumPillowSlot(1) ? 1 : 0;
-                }
+            case MEDIUM_1, MEDIUM_2, MEDIUM_3 -> {
+                int slot = layer.slot();
                 if (!plate2.hasMediumPillowSlot(slot)
                         || (plate2.hasSmallPillow() && plate2.getMediumPillowCount() <= 1)) {
                     yield false;
@@ -277,7 +274,7 @@ public final class BedPlateSimpleGloveRemoval {
                 give(player, BedPlate6MediumPillowItem.stackForRegistry(mat));
                 yield true;
             }
-            case SMALL -> {
+            case SMALL, SMALL_3, SMALL_4 -> {
                 if (!plate2.hasSmallPillow()) {
                     yield false;
                 }

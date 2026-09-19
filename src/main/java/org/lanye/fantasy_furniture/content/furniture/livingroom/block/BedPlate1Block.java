@@ -27,7 +27,6 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.BedPlate1DecorStorage;
-import org.lanye.fantasy_furniture.content.furniture.livingroom.BedPlatePillowMode;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.BedPlate1MaterialVariant;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.BedPlate6DecorStorage;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.BedPlateSheetPillowSlots;
@@ -254,7 +253,7 @@ public final class BedPlate1Block extends BedPlateBlock {
             InteractionHand hand,
             BlockHitResult hit) {
         if (player.getItemInHand(hand).getItem() instanceof FantasyDebugStickItem) {
-            return cyclePillowPose(state, level, pos, player, hit);
+            return InteractionResult.PASS;
         }
         // 拆卸手套：按准心卸选中的枕头、被套，或床单（卸床单连带被套）。对准木架则不睡。
         if (hand == InteractionHand.MAIN_HAND
@@ -315,8 +314,8 @@ public final class BedPlate1Block extends BedPlateBlock {
     }
 
     /**
-     * 主手拆卸手套对准的那一层。上层还在时不能拆它的前置：有被套不能拆床单；
-     * 小号叠在某一侧大号上（落点 6 左、7 右）时不能先拆该侧大号。
+     * 主手拆卸手套对准的那一层。上层还在时不能拆它的前置：有被套不能拆床单。
+     * 小号是 PS，和同侧大号、中号不占同一槽，可以一起拆。
      */
     private static InteractionResult removeWithGlove(
             BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
@@ -334,7 +333,7 @@ public final class BedPlate1Block extends BedPlateBlock {
         if (layer == BedPlate1CollisionShapes.PickedLayer.BODY) {
             return InteractionResult.PASS;
         }
-        if (plate1RemovalBlocked(plate, slots, layer)) {
+        if (plate1RemovalBlocked(plate, layer)) {
             return InteractionResult.FAIL;
         }
         if (!level.isClientSide && !popPlate1Layer(level, state, pos, player, plate, slots, layer)) {
@@ -344,15 +343,8 @@ public final class BedPlate1Block extends BedPlateBlock {
     }
 
     private static boolean plate1RemovalBlocked(
-            BedPlate1BlockEntity plate,
-            BedPlateSheetPillowSlots slots,
-            BedPlate1CollisionShapes.PickedLayer layer) {
-        return switch (layer) {
-            case DUVET -> plate.hasCover();
-            case LARGE_1 -> slots.hasSmall() && slots.smallPlace() == 6;
-            case LARGE_2 -> slots.hasSmall() && slots.smallPlace() == 7;
-            default -> false;
-        };
+            BedPlate1BlockEntity plate, BedPlate1CollisionShapes.PickedLayer layer) {
+        return layer == BedPlate1CollisionShapes.PickedLayer.DUVET && plate.hasCover();
     }
 
     private static boolean popPlate1Layer(
@@ -369,7 +361,8 @@ public final class BedPlate1Block extends BedPlateBlock {
             case MEDIUM_1 -> takeMedium(player, plate, slots, 1);
             case MEDIUM_2 -> takeMedium(player, plate, slots, 2);
             case MEDIUM_3 -> takeMedium(player, plate, slots, 3);
-            case SMALL -> takeSmall(player, plate, slots);
+            case SMALL_4 -> takeSmall(player, plate, slots, 4);
+            case SMALL_5 -> takeSmall(player, plate, slots, 5);
             case DUVET_COVER -> {
                 if (!plate.hasCover()) {
                     yield false;
@@ -402,6 +395,7 @@ public final class BedPlate1Block extends BedPlateBlock {
         int style = slots.largeStyleOnSide(side);
         int mat = slots.largeMaterialOnSide(side);
         slots.clearLargeSlot(side);
+        slots.promoteMode(1);
         plate.syncSheetPillows();
         BedPlate6DecorStorage.giveOrDropToPlayer(
                 player, BedPlate6LargePillowItem.stackForRegistry(style, mat));
@@ -415,18 +409,19 @@ public final class BedPlate1Block extends BedPlateBlock {
         }
         int mat = slots.mediumMatOnSide(side);
         slots.clearMediumSlot(side);
+        slots.promoteMode(1);
         plate.syncSheetPillows();
         BedPlate6DecorStorage.giveOrDropToPlayer(player, BedPlate6MediumPillowItem.stackForRegistry(mat));
         return true;
     }
 
     private static boolean takeSmall(
-            Player player, BedPlate1BlockEntity plate, BedPlateSheetPillowSlots slots) {
-        if (!slots.hasSmall()) {
+            Player player, BedPlate1BlockEntity plate, BedPlateSheetPillowSlots slots, int slot) {
+        if (!slots.hasSmallSlot(slot)) {
             return false;
         }
-        int mat = slots.smallMat();
-        slots.clearSmall();
+        int mat = slots.smallMatOnSlot(slot);
+        slots.clearSmallSlot(slot);
         plate.syncSheetPillows();
         BedPlate6DecorStorage.giveOrDropToPlayer(player, BedPlate6SmallPillowItem.stackForRegistry(mat));
         return true;
@@ -497,38 +492,5 @@ public final class BedPlate1Block extends BedPlateBlock {
     protected boolean enablesSoftLanding(BlockGetter level, BlockState state, BlockPos pos) {
         BedPlate1BlockEntity plate = decorEntity(level, state, pos);
         return plate != null && plate.hasDuvet();
-    }
-
-    /**
-     * 幻想调试棒右键对准枕头，整套在平放、竖放、斜放之间切换。
-     * 当前件数放不下的字母会跳过。未对准枕头则不处理，也不睡觉。
-     */
-    private static InteractionResult cyclePillowPose(
-            BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
-        BedPlate1BlockEntity plate = decorEntity(level, state, pos);
-        if (plate == null) {
-            return InteractionResult.PASS;
-        }
-        BedPlateSheetPillowSlots slots = plate.sheetPillows();
-        BedPlate1CollisionShapes.PickedLayer layer =
-                BedPlate1CollisionShapes.pickLayer(
-                        state, plate.hasDuvet(), plate.hasCover(), slots, hit.getLocation(), pos);
-        boolean pillow =
-                switch (layer) {
-                    case LARGE_1, LARGE_2, MEDIUM_1, MEDIUM_2, MEDIUM_3, SMALL -> true;
-                    default -> false;
-                };
-        if (!pillow) {
-            return InteractionResult.PASS;
-        }
-        if (!level.isClientSide) {
-            int mode = slots.cycleSharedMode(1);
-            if (mode < 0) {
-                return InteractionResult.PASS;
-            }
-            plate.syncSheetPillows();
-            BedPlatePillowMode.tell(player, mode);
-        }
-        return InteractionResult.sidedSuccess(level.isClientSide);
     }
 }

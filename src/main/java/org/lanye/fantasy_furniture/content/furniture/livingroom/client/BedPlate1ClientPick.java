@@ -67,7 +67,8 @@ public final class BedPlate1ClientPick {
             case MEDIUM_1 -> BedPlate6MediumPillowItem.stackForRegistry(slots.mediumMatOnSide(1));
             case MEDIUM_2 -> BedPlate6MediumPillowItem.stackForRegistry(slots.mediumMatOnSide(2));
             case MEDIUM_3 -> BedPlate6MediumPillowItem.stackForRegistry(slots.mediumMatOnSide(3));
-            case SMALL -> BedPlate6SmallPillowItem.stackForRegistry(slots.smallMat());
+            case SMALL_4 -> BedPlate6SmallPillowItem.stackForRegistry(slots.smallMatOnSlot(4));
+            case SMALL_5 -> BedPlate6SmallPillowItem.stackForRegistry(slots.smallMatOnSlot(5));
             case BODY -> ItemStack.EMPTY;
         };
     }

@@ -67,7 +67,19 @@ public final class BedPlateComboPillowRenderer {
             MultiBufferSource bufferSource,
             int packedLight,
             int packedOverlay) {
-        List<String> suffixes = BedPlateComboPillowLayout.suffixes(plate, slots);
+        render(blockEntity, slots, false, partialTick, poseStack, bufferSource, packedLight, packedOverlay);
+    }
+
+    public void render(
+            BedPlateBaseBlockEntity blockEntity,
+            BedPlateSheetPillowSlots slots,
+            boolean hasCover,
+            float partialTick,
+            PoseStack poseStack,
+            MultiBufferSource bufferSource,
+            int packedLight,
+            int packedOverlay) {
+        List<String> suffixes = BedPlateComboPillowLayout.suffixes(plate, slots, hasCover);
         for (String suffix : suffixes) {
             if (!bind(slots, suffix)) {
                 continue;
@@ -79,13 +91,7 @@ public final class BedPlateComboPillowRenderer {
     private boolean bind(BedPlateSheetPillowSlots slots, String suffix) {
         this.geoName = "bed_plate" + plate + "_pillow_" + suffix;
         if (suffix.startsWith("large_")) {
-            String bare = suffix.substring("large_".length());
-            int side = 1;
-            if (bare.equals(slots.largeSuffix(2)) && !bare.equals(slots.largeSuffix(1))) {
-                side = 2;
-            } else if (!slots.hasLargeSlot(1)) {
-                side = 2;
-            }
+            int side = suffixSlot(suffix);
             int style = slots.largeStyleOnSide(side);
             int mat = slots.largeMaterialOnSide(side);
             if (!BedPlate6LargePillowStyles.isValid(style) || !BedPlate6DuvetMaterials.isValid(mat)) {
@@ -107,7 +113,11 @@ public final class BedPlateComboPillowRenderer {
             this.texturePath = "textures/block/bed_plate6_pillow_medium_" + mat + ".png";
             return true;
         }
-        int mat = slots.smallMat();
+        int slot = suffixSlot(suffix);
+        int mat = slots.smallMatOnSlot(slot);
+        if (!BedPlate6SmallPillowMaterials.isValid(mat)) {
+            mat = slots.smallMat();
+        }
         if (!BedPlate6SmallPillowMaterials.isValid(mat)) {
             return false;
         }
@@ -116,7 +126,8 @@ public final class BedPlateComboPillowRenderer {
     }
 
     private static int suffixSlot(String suffix) {
-        char last = suffix.charAt(suffix.length() - 1);
-        return last >= '1' && last <= '3' ? last - '0' : 1;
+        String bare = suffix.endsWith("_cover") ? suffix.substring(0, suffix.length() - "_cover".length()) : suffix;
+        char last = bare.charAt(bare.length() - 1);
+        return last >= '1' && last <= '4' ? last - '0' : 1;
     }
 }

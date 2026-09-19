@@ -33,9 +33,32 @@ public final class BedPlateSimpleBeddingShapes {
         BODY,
         DUVET,
         DUVET_COVER,
-        LARGE,
-        MEDIUM,
-        SMALL
+        LARGE_1,
+        LARGE_2,
+        LARGE_3,
+        MEDIUM_1,
+        MEDIUM_2,
+        MEDIUM_3,
+        SMALL,
+        SMALL_3,
+        SMALL_4;
+
+        /** 同类型的两只枕头是两个槽，不是一个并集。0 表示这一层不分槽。 */
+        public int slot() {
+            return switch (this) {
+                case LARGE_1, MEDIUM_1 -> 1;
+                case LARGE_2, MEDIUM_2 -> 2;
+                case LARGE_3, MEDIUM_3, SMALL_3 -> 3;
+                case SMALL_4 -> 4;
+                default -> 0;
+            };
+        }
+
+        public boolean isPillow() {
+            return this == SMALL || this == SMALL_3 || this == SMALL_4
+                    || this == LARGE_1 || this == LARGE_2 || this == LARGE_3
+                    || this == MEDIUM_1 || this == MEDIUM_2 || this == MEDIUM_3;
+        }
     }
 
     private static final double PICK_BOUNDARY_EPS = 1.0E-3;
@@ -104,9 +127,15 @@ public final class BedPlateSimpleBeddingShapes {
         if (hasCover) {
             s = Shapes.or(s, coverShape(plate, state));
         }
-        s = Shapes.or(s, pillowCell(plate, state, PickedLayer.LARGE, pillows));
-        s = Shapes.or(s, pillowCell(plate, state, PickedLayer.MEDIUM, pillows));
-        s = Shapes.or(s, pillowCell(plate, state, PickedLayer.SMALL, pillows));
+        s = Shapes.or(s, pillowCell(plate, state, PickedLayer.LARGE_1, pillows));
+        s = Shapes.or(s, pillowCell(plate, state, PickedLayer.LARGE_2, pillows));
+        s = Shapes.or(s, pillowCell(plate, state, PickedLayer.LARGE_3, pillows));
+        s = Shapes.or(s, pillowCell(plate, state, PickedLayer.MEDIUM_1, pillows));
+        s = Shapes.or(s, pillowCell(plate, state, PickedLayer.MEDIUM_2, pillows));
+        s = Shapes.or(s, pillowCell(plate, state, PickedLayer.MEDIUM_3, pillows));
+        s = Shapes.or(s, pillowCell(plate, state, PickedLayer.SMALL, pillows, hasCover));
+        s = Shapes.or(s, pillowCell(plate, state, PickedLayer.SMALL_3, pillows, hasCover));
+        s = Shapes.or(s, pillowCell(plate, state, PickedLayer.SMALL_4, pillows, hasCover));
         return s;
     }
 
@@ -122,14 +151,32 @@ public final class BedPlateSimpleBeddingShapes {
             BedPlateSheetPillowSlots pillows,
             Vec3 hitWorld,
             BlockPos pos) {
-        if (hitPillow(plate, state, PickedLayer.SMALL, pillows, hitWorld, pos)) {
+        if (hitPillow(plate, state, PickedLayer.SMALL_3, pillows, hasCover, hitWorld, pos)) {
+            return PickedLayer.SMALL_3;
+        }
+        if (hitPillow(plate, state, PickedLayer.SMALL_4, pillows, hasCover, hitWorld, pos)) {
+            return PickedLayer.SMALL_4;
+        }
+        if (hitPillow(plate, state, PickedLayer.SMALL, pillows, hasCover, hitWorld, pos)) {
             return PickedLayer.SMALL;
         }
-        if (hitPillow(plate, state, PickedLayer.MEDIUM, pillows, hitWorld, pos)) {
-            return PickedLayer.MEDIUM;
+        if (hitPillow(plate, state, PickedLayer.MEDIUM_1, pillows, hitWorld, pos)) {
+            return PickedLayer.MEDIUM_1;
         }
-        if (hitPillow(plate, state, PickedLayer.LARGE, pillows, hitWorld, pos)) {
-            return PickedLayer.LARGE;
+        if (hitPillow(plate, state, PickedLayer.MEDIUM_2, pillows, hitWorld, pos)) {
+            return PickedLayer.MEDIUM_2;
+        }
+        if (hitPillow(plate, state, PickedLayer.MEDIUM_3, pillows, hitWorld, pos)) {
+            return PickedLayer.MEDIUM_3;
+        }
+        if (hitPillow(plate, state, PickedLayer.LARGE_1, pillows, hitWorld, pos)) {
+            return PickedLayer.LARGE_1;
+        }
+        if (hitPillow(plate, state, PickedLayer.LARGE_2, pillows, hitWorld, pos)) {
+            return PickedLayer.LARGE_2;
+        }
+        if (hitPillow(plate, state, PickedLayer.LARGE_3, pillows, hitWorld, pos)) {
+            return PickedLayer.LARGE_3;
         }
         if (hasCover && containsLocal(coverShape(plate, state), hitWorld, pos)) {
             return PickedLayer.DUVET_COVER;
@@ -140,74 +187,9 @@ public final class BedPlateSimpleBeddingShapes {
         return PickedLayer.BODY;
     }
 
-    /** 准心打中的是哪一只大号。平放共用 {@code large_p1} 时，按还在的那一槽。 */
-    public static int largeSlotAt(
-            Plate plate,
-            BlockState state,
-            BedPlateSheetPillowSlots pillows,
-            Vec3 hitWorld,
-            BlockPos pos) {
-        if (pillows == null) {
-            return 0;
-        }
-        int plateId =
-                switch (plate) {
-                    case PLATE2 -> 2;
-                    case PLATE3 -> 3;
-                    case PLATE4 -> 4;
-                };
-        BedPart part = state.getValue(BedBlock.PART);
-        for (String suffix : BedPlateComboPillowLayout.suffixes(plateId, pillows)) {
-            if (!suffix.startsWith("large_")) {
-                continue;
-            }
-            VoxelShape cell =
-                    orient(sliceCover(BedPlateComboPillowPickShapes.of(plateId, suffix), part), state);
-            if (cell.isEmpty() || !containsLocal(cell, hitWorld, pos)) {
-                continue;
-            }
-            if (suffix.endsWith("2")) {
-                return 2;
-            }
-            return pillows.hasLargeSlot(1) ? 1 : 2;
-        }
-        return 0;
-    }
-
-    /** 命中的中号槽。后缀末位是 1/2/3；没有命中返回 0。 */
-    public static int mediumSlotAt(
-            Plate plate,
-            BlockState state,
-            BedPlateSheetPillowSlots pillows,
-            Vec3 hitWorld,
-            BlockPos pos) {
-        if (pillows == null) {
-            return 0;
-        }
-        int plateId =
-                switch (plate) {
-                    case PLATE2 -> 2;
-                    case PLATE3 -> 3;
-                    case PLATE4 -> 4;
-                };
-        BedPart part = state.getValue(BedBlock.PART);
-        for (String suffix : BedPlateComboPillowLayout.suffixes(plateId, pillows)) {
-            if (!suffix.startsWith("medium_")) {
-                continue;
-            }
-            VoxelShape cell =
-                    orient(sliceCover(BedPlateComboPillowPickShapes.of(plateId, suffix), part), state);
-            if (cell.isEmpty() || !containsLocal(cell, hitWorld, pos)) {
-                continue;
-            }
-            char last = suffix.charAt(suffix.length() - 1);
-            return last >= '1' && last <= '3' ? last - '0' : 1;
-        }
-        return 0;
-    }
-
     /**
      * 组件描边：相对床尾的整件（不裁格、不含木架）。床体返回空，由调用方画命中格。
+     * 枕头只描准心命中的那一槽。
      */
     public static VoxelShape outlineComponent(
             Plate plate,
@@ -220,7 +202,8 @@ public final class BedPlateSimpleBeddingShapes {
                 switch (layer) {
                     case DUVET -> hasDuvet ? duvetWhole(plate) : Shapes.empty();
                     case DUVET_COVER -> hasCover ? coverWhole(plate) : Shapes.empty();
-                    case SMALL, MEDIUM, LARGE -> unionBoxes(pillowBoxes(plate, layer, pillows));
+                    case SMALL, SMALL_3, SMALL_4, MEDIUM_1, MEDIUM_2, MEDIUM_3, LARGE_1, LARGE_2, LARGE_3 ->
+                            unionBoxes(pillowBoxes(plate, layer, pillows, hasCover));
                     case BODY -> Shapes.empty();
                 };
         return north.isEmpty() ? Shapes.empty() : orient(north, state);
@@ -237,7 +220,8 @@ public final class BedPlateSimpleBeddingShapes {
             BedPlateSheetPillowSlots pillows,
             PickedLayer layer) {
         return switch (layer) {
-            case SMALL, MEDIUM, LARGE -> pillowCell(plate, state, layer, pillows);
+            case SMALL, SMALL_3, SMALL_4, MEDIUM_1, MEDIUM_2, MEDIUM_3, LARGE_1, LARGE_2, LARGE_3 ->
+                    pillowCell(plate, state, layer, pillows, hasCover);
             case DUVET_COVER -> hasCover ? coverShape(plate, state) : bodyShape(plate, state);
             case DUVET -> hasDuvet ? duvetShape(plate, state) : bodyShape(plate, state);
             case BODY -> bodyShape(plate, state);
@@ -251,21 +235,42 @@ public final class BedPlateSimpleBeddingShapes {
             BedPlateSheetPillowSlots pillows,
             Vec3 hitWorld,
             BlockPos pos) {
-        VoxelShape cell = pillowCell(plate, state, layer, pillows);
+        return hitPillow(plate, state, layer, pillows, false, hitWorld, pos);
+    }
+
+    private static boolean hitPillow(
+            Plate plate,
+            BlockState state,
+            PickedLayer layer,
+            BedPlateSheetPillowSlots pillows,
+            boolean hasCover,
+            Vec3 hitWorld,
+            BlockPos pos) {
+        VoxelShape cell = pillowCell(plate, state, layer, pillows, hasCover);
         return !cell.isEmpty() && containsLocal(cell, hitWorld, pos);
     }
 
     /** 组合枕头盒已在床尾北向（含床头负 z），按格裁切，不再沿用床板6的整段平移。 */
     private static VoxelShape pillowCell(
             Plate plate, BlockState state, PickedLayer layer, BedPlateSheetPillowSlots pillows) {
-        List<AABB> north = pillowBoxes(plate, layer, pillows);
+        return pillowCell(plate, state, layer, pillows, false);
+    }
+
+    private static VoxelShape pillowCell(
+            Plate plate,
+            BlockState state,
+            PickedLayer layer,
+            BedPlateSheetPillowSlots pillows,
+            boolean hasCover) {
+        List<AABB> north = pillowBoxes(plate, layer, pillows, hasCover);
         if (north.isEmpty()) {
             return Shapes.empty();
         }
         return orient(sliceCover(north, state.getValue(BedBlock.PART)), state);
     }
 
-    private static List<AABB> pillowBoxes(Plate plate, PickedLayer layer, BedPlateSheetPillowSlots pillows) {
+    private static List<AABB> pillowBoxes(
+            Plate plate, PickedLayer layer, BedPlateSheetPillowSlots pillows, boolean hasCover) {
         if (pillows == null) {
             return List.of();
         }
@@ -277,21 +282,33 @@ public final class BedPlateSimpleBeddingShapes {
                 };
         String prefix =
                 switch (layer) {
-                    case LARGE -> "large_";
-                    case MEDIUM -> "medium_";
-                    case SMALL -> "small_";
+                    case LARGE_1, LARGE_2, LARGE_3 -> "large_";
+                    case MEDIUM_1, MEDIUM_2, MEDIUM_3 -> "medium_";
+                    case SMALL, SMALL_3, SMALL_4 -> "small_";
                     case BODY, DUVET, DUVET_COVER -> "";
                 };
         if (prefix.isEmpty()) {
             return List.of();
         }
+        int slot = layer.slot();
         List<AABB> out = new ArrayList<>();
-        for (String suffix : BedPlateComboPillowLayout.suffixes(plateId, pillows)) {
-            if (suffix.startsWith(prefix)) {
-                out.addAll(BedPlateComboPillowPickShapes.of(plateId, suffix));
+        for (String suffix : BedPlateComboPillowLayout.suffixes(plateId, pillows, hasCover)) {
+            if (!suffix.startsWith(prefix)) {
+                continue;
             }
+            if (slot != 0 && suffixSlot(suffix) != slot) {
+                continue;
+            }
+            out.addAll(BedPlateComboPillowPickShapes.of(plateId, suffix));
         }
         return out;
+    }
+
+    /** 组合后缀末位是槽位号。{@code _cover} 不算槽。没有数字时当作槽 1。 */
+    private static int suffixSlot(String suffix) {
+        String bare = suffix.endsWith("_cover") ? suffix.substring(0, suffix.length() - "_cover".length()) : suffix;
+        char last = bare.charAt(bare.length() - 1);
+        return last >= '1' && last <= '4' ? last - '0' : 1;
     }
 
     private static VoxelShape wholeDuvet(VoxelShape foot, VoxelShape head) {

@@ -30,7 +30,8 @@ public final class BedPlate1CollisionShapes {
         MEDIUM_1,
         MEDIUM_2,
         MEDIUM_3,
-        SMALL
+        SMALL_4,
+        SMALL_5
     }
 
     private static final double PICK_BOUNDARY_EPS = 1.0E-3;
@@ -105,7 +106,7 @@ public final class BedPlate1CollisionShapes {
             s = Shapes.or(s, coverShape(state));
         }
         if (slots != null && slots.hasAny()) {
-            s = Shapes.or(s, pillowUnion(state, slots));
+            s = Shapes.or(s, pillowUnion(state, hasCover, slots));
         }
         return s;
     }
@@ -119,22 +120,25 @@ public final class BedPlate1CollisionShapes {
             Vec3 hitWorld,
             BlockPos pos) {
         if (slots != null) {
-            if (hitPillow(state, slots, PickedLayer.SMALL, hitWorld, pos)) {
-                return PickedLayer.SMALL;
+            if (hitPillow(state, hasCover, slots, PickedLayer.SMALL_4, hitWorld, pos)) {
+                return PickedLayer.SMALL_4;
             }
-            if (hitPillow(state, slots, PickedLayer.MEDIUM_1, hitWorld, pos)) {
+            if (hitPillow(state, hasCover, slots, PickedLayer.SMALL_5, hitWorld, pos)) {
+                return PickedLayer.SMALL_5;
+            }
+            if (hitPillow(state, hasCover, slots, PickedLayer.MEDIUM_1, hitWorld, pos)) {
                 return PickedLayer.MEDIUM_1;
             }
-            if (hitPillow(state, slots, PickedLayer.MEDIUM_2, hitWorld, pos)) {
+            if (hitPillow(state, hasCover, slots, PickedLayer.MEDIUM_2, hitWorld, pos)) {
                 return PickedLayer.MEDIUM_2;
             }
-            if (hitPillow(state, slots, PickedLayer.MEDIUM_3, hitWorld, pos)) {
+            if (hitPillow(state, hasCover, slots, PickedLayer.MEDIUM_3, hitWorld, pos)) {
                 return PickedLayer.MEDIUM_3;
             }
-            if (hitPillow(state, slots, PickedLayer.LARGE_1, hitWorld, pos)) {
+            if (hitPillow(state, hasCover, slots, PickedLayer.LARGE_1, hitWorld, pos)) {
                 return PickedLayer.LARGE_1;
             }
-            if (hitPillow(state, slots, PickedLayer.LARGE_2, hitWorld, pos)) {
+            if (hitPillow(state, hasCover, slots, PickedLayer.LARGE_2, hitWorld, pos)) {
                 return PickedLayer.LARGE_2;
             }
         }
@@ -160,8 +164,10 @@ public final class BedPlate1CollisionShapes {
                 switch (layer) {
                     case DUVET -> hasDuvet ? DUVET_WHOLE : Shapes.empty();
                     case DUVET_COVER -> hasCover ? COVER_WHOLE : Shapes.empty();
-                    case SMALL, MEDIUM_1, MEDIUM_2, MEDIUM_3, LARGE_1, LARGE_2 ->
-                            slots == null ? Shapes.empty() : BedPlate1PillowPickShapes.northFor(slots, layer);
+                    case SMALL_4, SMALL_5, MEDIUM_1, MEDIUM_2, MEDIUM_3, LARGE_1, LARGE_2 ->
+                            slots == null
+                                    ? Shapes.empty()
+                                    : BedPlate1PillowPickShapes.northFor(slots, layer, hasCover);
                     case BODY -> Shapes.empty();
                 };
         return north.isEmpty() ? Shapes.empty() : orient(north, state);
@@ -174,7 +180,8 @@ public final class BedPlate1CollisionShapes {
             BedPlateSheetPillowSlots slots,
             PickedLayer layer) {
         return switch (layer) {
-            case SMALL, MEDIUM_1, MEDIUM_2, MEDIUM_3, LARGE_1, LARGE_2 -> pillowCell(state, slots, layer);
+            case SMALL_4, SMALL_5, MEDIUM_1, MEDIUM_2, MEDIUM_3, LARGE_1, LARGE_2 ->
+                    pillowCell(state, hasCover, slots, layer);
             case DUVET_COVER -> hasCover ? coverShape(state) : bodyShape(state);
             case DUVET -> hasDuvet ? duvetShape(state) : bodyShape(state);
             case BODY -> bodyShape(state);
@@ -183,15 +190,16 @@ public final class BedPlate1CollisionShapes {
 
     private static boolean hitPillow(
             BlockState state,
+            boolean hasCover,
             BedPlateSheetPillowSlots slots,
             PickedLayer layer,
             Vec3 hitWorld,
             BlockPos pos) {
-        VoxelShape cell = pillowCell(state, slots, layer);
+        VoxelShape cell = pillowCell(state, hasCover, slots, layer);
         return !cell.isEmpty() && containsLocal(cell, hitWorld, pos);
     }
 
-    private static VoxelShape pillowUnion(BlockState state, BedPlateSheetPillowSlots slots) {
+    private static VoxelShape pillowUnion(BlockState state, boolean hasCover, BedPlateSheetPillowSlots slots) {
         VoxelShape s = Shapes.empty();
         for (PickedLayer layer :
                 new PickedLayer[] {
@@ -200,9 +208,10 @@ public final class BedPlate1CollisionShapes {
                     PickedLayer.MEDIUM_1,
                     PickedLayer.MEDIUM_2,
                     PickedLayer.MEDIUM_3,
-                    PickedLayer.SMALL
+                    PickedLayer.SMALL_4,
+                    PickedLayer.SMALL_5
                 }) {
-            s = Shapes.or(s, pillowCell(state, slots, layer));
+            s = Shapes.or(s, pillowCell(state, hasCover, slots, layer));
         }
         return s;
     }
@@ -219,8 +228,9 @@ public final class BedPlate1CollisionShapes {
     }
 
     /** 锚点北向体素裁进当前格（0–1），再按朝向转正。 */
-    private static VoxelShape pillowCell(BlockState state, BedPlateSheetPillowSlots slots, PickedLayer layer) {
-        VoxelShape north = BedPlate1PillowPickShapes.northFor(slots, layer);
+    private static VoxelShape pillowCell(
+            BlockState state, boolean hasCover, BedPlateSheetPillowSlots slots, PickedLayer layer) {
+        VoxelShape north = BedPlate1PillowPickShapes.northFor(slots, layer, hasCover);
         if (north.isEmpty()) {
             return Shapes.empty();
         }

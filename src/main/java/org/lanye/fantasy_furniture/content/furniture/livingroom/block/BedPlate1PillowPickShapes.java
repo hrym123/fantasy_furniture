@@ -24,12 +24,13 @@ public final class BedPlate1PillowPickShapes {
     private static final VoxelShape MEDIUM_S1 = mirrorGeckoX(mediumS1Raw());
     private static final VoxelShape MEDIUM_S2 = mirrorGeckoX(mediumS2Raw());
     private static final VoxelShape MEDIUM_S3 = mirrorGeckoX(shiftPixels(mediumS1Raw(), -8.5, 0.0, 2.0));
-    private static final VoxelShape SMALL_X4 = mirrorGeckoX(smallX4Raw());
-    private static final VoxelShape SMALL_X5 = mirrorGeckoX(smallX5Raw());
-    private static final VoxelShape SMALL_X6 = mirrorGeckoX(smallX6Raw());
-    private static final VoxelShape SMALL_X7 = mirrorGeckoX(smallX7Raw());
+    private static final VoxelShape SMALL_PS4 = mirrorGeckoX(smallPs4Raw());
+    private static final VoxelShape SMALL_PS5 = mirrorGeckoX(smallPs5Raw());
+    private static final VoxelShape SMALL_PS4_COVER = mirrorGeckoX(smallPs4CoverRaw());
+    private static final VoxelShape SMALL_PS5_COVER = mirrorGeckoX(smallPs5CoverRaw());
 
-    public static VoxelShape northFor(BedPlateSheetPillowSlots slots, BedPlate1CollisionShapes.PickedLayer layer) {
+    public static VoxelShape northFor(
+            BedPlateSheetPillowSlots slots, BedPlate1CollisionShapes.PickedLayer layer, boolean hasCover) {
         if (slots == null || layer == null) {
             return Shapes.empty();
         }
@@ -39,7 +40,8 @@ public final class BedPlate1PillowPickShapes {
             case MEDIUM_1 -> medium(slots, 1);
             case MEDIUM_2 -> medium(slots, 2);
             case MEDIUM_3 -> medium(slots, 3);
-            case SMALL -> small(slots);
+            case SMALL_4 -> small(slots, 4, hasCover);
+            case SMALL_5 -> small(slots, 5, hasCover);
             case BODY, DUVET, DUVET_COVER -> Shapes.empty();
         };
     }
@@ -58,16 +60,14 @@ public final class BedPlate1PillowPickShapes {
         return standing ? MEDIUM_S1 : MEDIUM_P1;
     }
 
-    private static VoxelShape small(BedPlateSheetPillowSlots slots) {
-        if (!slots.hasSmall()) {
+    private static VoxelShape small(BedPlateSheetPillowSlots slots, int slot, boolean hasCover) {
+        if (!slots.hasSmallSlot(slot)) {
             return Shapes.empty();
         }
-        return switch (slots.smallPlace()) {
-            case 5 -> SMALL_X5;
-            case 6 -> SMALL_X6;
-            case 7 -> SMALL_X7;
-            default -> SMALL_X4;
-        };
+        if (slot == 5) {
+            return hasCover ? SMALL_PS5_COVER : SMALL_PS5;
+        }
+        return hasCover ? SMALL_PS4_COVER : SMALL_PS4;
     }
 
     /** 像素平移，用在 Gecko 镜像之前。中号 S3 相对 S1 的模型原点差。 */
@@ -212,32 +212,32 @@ public final class BedPlate1PillowPickShapes {
         return s;
     }
 
-    /** {@code bed_plate1_pillow_small_x4.geo.json} sha256[:12]=5b0bd7f5ccd5；尚未做 Gecko X 镜像。 */
-    private static VoxelShape smallX4Raw() {
+    /** {@code bed_plate1_pillow_small_ps4.geo.json}；尚未做 Gecko X 镜像。 */
+    private static VoxelShape smallPs4Raw() {
         VoxelShape s = Shapes.empty();
         s = Shapes.or(s, Block.box(21.07, 7.40, -6.71, 26.73, 7.50, -1.05));
         s = Shapes.or(s, Block.box(21.78, 7.00, -6.00, 26.02, 8.00, -1.76));
         return s;
     }
 
-    /** {@code bed_plate1_pillow_small_x5.geo.json} sha256[:12]=8a3f764e70bc；尚未做 Gecko X 镜像。 */
-    private static VoxelShape smallX5Raw() {
+    /** {@code bed_plate1_pillow_small_ps5.geo.json}；尚未做 Gecko X 镜像。 */
+    private static VoxelShape smallPs5Raw() {
         VoxelShape s = Shapes.empty();
         s = Shapes.or(s, Block.box(4.25, 7.40, -0.42, 9.47, 7.50, 4.80));
         s = Shapes.or(s, Block.box(4.90, 7.00, 0.23, 8.82, 8.00, 4.15));
         return s;
     }
 
-    /** {@code bed_plate1_pillow_small_x6.geo.json} sha256[:12]=6f5c2d0305fa；尚未做 Gecko X 镜像。 */
-    private static VoxelShape smallX6Raw() {
+    /** {@code bed_plate1_pillow_small_ps4_cover.geo.json}；尚未做 Gecko X 镜像。 */
+    private static VoxelShape smallPs4CoverRaw() {
         VoxelShape s = Shapes.empty();
         s = Shapes.or(s, Block.box(21.07, 12.90, -6.71, 26.73, 13.00, -1.05));
         s = Shapes.or(s, Block.box(21.78, 12.50, -6.00, 26.02, 13.50, -1.76));
         return s;
     }
 
-    /** {@code bed_plate1_pillow_small_x7.geo.json} sha256[:12]=3aee7a702f2d；尚未做 Gecko X 镜像。 */
-    private static VoxelShape smallX7Raw() {
+    /** {@code bed_plate1_pillow_small_ps5_cover.geo.json}；尚未做 Gecko X 镜像。 */
+    private static VoxelShape smallPs5CoverRaw() {
         VoxelShape s = Shapes.empty();
         s = Shapes.or(s, Block.box(4.25, 11.10, -0.42, 9.47, 11.20, 4.80));
         s = Shapes.or(s, Block.box(4.90, 10.70, 0.23, 8.82, 11.70, 4.15));
