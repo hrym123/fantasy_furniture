@@ -174,6 +174,38 @@ public final class BedPlateSimpleBeddingShapes {
         return 0;
     }
 
+    /** 命中的中号槽。后缀末位是 1/2/3；没有命中返回 0。 */
+    public static int mediumSlotAt(
+            Plate plate,
+            BlockState state,
+            BedPlateSheetPillowSlots pillows,
+            Vec3 hitWorld,
+            BlockPos pos) {
+        if (pillows == null) {
+            return 0;
+        }
+        int plateId =
+                switch (plate) {
+                    case PLATE2 -> 2;
+                    case PLATE3 -> 3;
+                    case PLATE4 -> 4;
+                };
+        BedPart part = state.getValue(BedBlock.PART);
+        for (String suffix : BedPlateComboPillowLayout.suffixes(plateId, pillows)) {
+            if (!suffix.startsWith("medium_")) {
+                continue;
+            }
+            VoxelShape cell =
+                    orient(sliceCover(BedPlateComboPillowPickShapes.of(plateId, suffix), part), state);
+            if (cell.isEmpty() || !containsLocal(cell, hitWorld, pos)) {
+                continue;
+            }
+            char last = suffix.charAt(suffix.length() - 1);
+            return last >= '1' && last <= '3' ? last - '0' : 1;
+        }
+        return 0;
+    }
+
     /**
      * 组件描边：相对床尾的整件（不裁格、不含木架）。床体返回空，由调用方画命中格。
      */

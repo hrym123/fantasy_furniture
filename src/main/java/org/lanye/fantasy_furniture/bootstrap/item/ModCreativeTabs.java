@@ -98,6 +98,9 @@ public final class ModCreativeTabs {
         for (Supplier<? extends ItemLike> bedPlate6 : BedPlate6Registration.creativeTabSegment()) {
             list.add(out -> out.accept(bedPlate6.get()));
         }
+        for (var ro : ModItems.LONG_PILLOW_ITEMS) {
+            list.add(out -> out.accept(ro.get()));
+        }
         for (var ro : StyledWindow0Registration.items()) {
             list.add(out -> out.accept(ro.get()));
         }

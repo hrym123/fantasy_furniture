@@ -6,7 +6,8 @@ import java.util.List;
 /**
  * 床板2/3/4 枕头用哪一组组合 geo。
  * 后缀与导出文件 {@code bed_plateN_pillow_<后缀>.geo.json} 一致，不在渲染里平移。
- * 一只大号且中号不靠在该槽上用平放 {@code large_p1}；两只大号或中号竖放时用 {@code large_s1}/{@code large_s2}。
+ * 床板2：整套枕头共用一个字母（P/S/X），槽位按 1、2、3 顺序，不混用字母。
+ * 床板3/4：调试棒把该槽写成 p1 / s1 / s2 之后，不再走自动选择。
  */
 public final class BedPlateComboPillowLayout {
 
@@ -19,21 +20,25 @@ public final class BedPlateComboPillowLayout {
         }
         boolean large1 = slots.hasLargeSlot(1);
         boolean large2 = slots.hasLargeSlot(2);
-        if (large1 && large2) {
-            out.add("large_s1");
-            out.add("large_s2");
-        } else if (large1 || large2) {
-            int side = large1 ? 1 : 2;
-            boolean propped = slots.hasMedium() && slots.mediumSide() == side;
-            out.add(propped ? "large_s" + side : "large_p1");
+        if (large1) {
+            out.add("large_" + slots.largeSuffix(1));
         }
-        if (slots.hasMedium()) {
-            int side = slots.mediumSide();
-            boolean standing = slots.hasLargeSlot(side);
-            out.add(standing ? "medium_s" + side : "medium_p1");
+        if (large2) {
+            out.add("large_" + slots.largeSuffix(2));
+        }
+        if (slots.hasPlate2Pose()) {
+            for (int slot = 1; slot <= 3; slot++) {
+                String medium = slots.plate2MediumSuffix(slot);
+                if (medium != null) {
+                    out.add("medium_" + medium);
+                }
+            }
+        } else if (slots.hasMedium()) {
+            out.add("medium_" + slots.mediumSuffix());
         }
         if (slots.hasSmall()) {
-            out.add(smallSuffix(plate, slots));
+            String plate2Small = slots.plate2SmallSuffix();
+            out.add(plate2Small != null ? plate2Small : smallSuffix(plate, slots));
         }
         return out;
     }

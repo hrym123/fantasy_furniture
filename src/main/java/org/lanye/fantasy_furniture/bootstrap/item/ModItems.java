@@ -10,9 +10,11 @@ import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
 import org.lanye.fantasy_furniture.FantasyFurniture;
 import org.lanye.fantasy_furniture.bootstrap.block.BedPlate6Registration;
+import org.lanye.fantasy_furniture.content.furniture.livingroom.item.LongPillowItem;
 import org.lanye.fantasy_furniture.content.soap.item.SoapDebugStickItem;
 import org.lanye.fantasy_furniture.content.soap.item.SoapFlatLiquidItem;
 import org.lanye.fantasy_furniture.content.furniture.common.item.ArcaneWandItem;
+import org.lanye.reverie_core.geolib.GeolibFurnitureRegistration;
 import org.lanye.reverie_core.geolib.GeolibItemAssets;
 import org.lanye.reverie_core.item.DecorativeHelmetRegistration;
 
@@ -40,6 +42,16 @@ public final class ModItems {
     public static final List<RegistryObject<Item>> BED_PLATE6_PILLOW_MEDIUM_ITEMS = BedPlate6Registration.pillowMediumItems();
 
     public static final List<RegistryObject<Item>> BED_PLATE6_PILLOW_SMALL_ITEMS = BedPlate6Registration.pillowSmallItems();
+
+    /** 长枕头：六色单材质图。1 蓝、2 绿、3 粉、4 紫、5 红、6 黄。 */
+    public static final List<RegistryObject<Item>> LONG_PILLOW_ITEMS =
+            GeolibFurnitureRegistration.registerIndexedComponents(
+                    ITEMS,
+                    "long_pillow_",
+                    1,
+                    LongPillowItem.COUNT,
+                    new Item.Properties().stacksTo(64),
+                    LongPillowItem::new);
 
     /** 沐浴液：单材质图原料，六色；不可放置。 */
     public static final RegistryObject<Item> BODY_WASH_LIQUID =

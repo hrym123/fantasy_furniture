@@ -11,6 +11,7 @@ import org.lanye.fantasy_furniture.content.furniture.livingroom.BedPlate6LargePi
 import org.lanye.fantasy_furniture.content.furniture.livingroom.BedPlate6MediumPillowMaterials;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.BedPlate6PillowPalette;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.BedPlate6SmallPillowMaterials;
+import org.lanye.fantasy_furniture.content.furniture.livingroom.BedPlatePillowMode;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.BedPlateSheetPillowSlots;
 import org.lanye.reverie_core.geolib.bed.BedPlateBaseBlockEntity;
 import software.bernie.geckolib.model.GeoModel;
@@ -59,38 +60,15 @@ public final class BedPlate1ComboPillowRenderer {
             int packedLight,
             int packedOverlay) {
         if (slots.hasLargeSlot(1)) {
-            drawLarge(
-                    blockEntity,
-                    slots,
-                    1,
-                    (slots.largeFlat(1) ? "p" : "s") + "1",
-                    partialTick,
-                    poseStack,
-                    bufferSource,
-                    packedLight,
-                    packedOverlay);
+            drawLarge(blockEntity, slots, 1, slots.poseLetter(1) + "1", partialTick, poseStack, bufferSource, packedLight, packedOverlay);
         }
         if (slots.hasLargeSlot(2)) {
-            drawLarge(
-                    blockEntity,
-                    slots,
-                    2,
-                    (slots.largeFlat(2) ? "p" : "s") + "2",
-                    partialTick,
-                    poseStack,
-                    bufferSource,
-                    packedLight,
-                    packedOverlay);
+            drawLarge(blockEntity, slots, 2, slots.poseLetter(1) + "2", partialTick, poseStack, bufferSource, packedLight, packedOverlay);
         }
-        if (slots.hasMedium()) {
-            int side = slots.mediumSide();
-            this.geoName = "bed_plate1_pillow_medium_" + (slots.mediumStanding() ? "s" : "p") + side;
-            int mat = slots.mediumMat();
-            if (!BedPlate6MediumPillowMaterials.isValid(mat)) {
-                mat = 1;
+        for (int slot = 1; slot <= 3; slot++) {
+            if (slots.hasMediumSlot(slot)) {
+                drawMedium(blockEntity, slots, slot, partialTick, poseStack, bufferSource, packedLight, packedOverlay);
             }
-            this.texturePath = "textures/block/bed_plate6_pillow_medium_" + mat + ".png";
-            renderer.render(blockEntity, partialTick, poseStack, bufferSource, packedLight, packedOverlay);
         }
         if (slots.hasSmall()) {
             this.geoName = "bed_plate1_pillow_small_x" + slots.smallPlace();
@@ -125,6 +103,25 @@ public final class BedPlate1ComboPillowRenderer {
                         + "_"
                         + BedPlate6PillowPalette.colorSlug(mat)
                         + ".png";
+        renderer.render(blockEntity, partialTick, poseStack, bufferSource, packedLight, packedOverlay);
+    }
+
+    private void drawMedium(
+            BedPlateBaseBlockEntity blockEntity,
+            BedPlateSheetPillowSlots slots,
+            int side,
+            float partialTick,
+            PoseStack poseStack,
+            MultiBufferSource bufferSource,
+            int packedLight,
+            int packedOverlay) {
+        int mat = slots.mediumMatOnSide(side);
+        if (!BedPlate6MediumPillowMaterials.isValid(mat)) {
+            return;
+        }
+        String letter = side == 3 || slots.resolvedMode(1) == BedPlatePillowMode.UPRIGHT ? "s" : "p";
+        this.geoName = "bed_plate1_pillow_medium_" + letter + side;
+        this.texturePath = "textures/block/bed_plate6_pillow_medium_" + mat + ".png";
         renderer.render(blockEntity, partialTick, poseStack, bufferSource, packedLight, packedOverlay);
     }
 }

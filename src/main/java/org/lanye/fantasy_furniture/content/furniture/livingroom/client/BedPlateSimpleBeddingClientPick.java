@@ -69,6 +69,15 @@ public final class BedPlateSimpleBeddingClientPick {
             return bed;
         }
         PickedLayer layer = resolveLayer(plate, hitState, hitView, bhr);
+        if (layer == PickedLayer.MEDIUM && hitView.pillows() != null && hitView.pillows().hasPlate2Pose()) {
+            int slot =
+                    BedPlateSimpleBeddingShapes.mediumSlotAt(
+                            plate, hitState, hitView.pillows(), bhr.getLocation(), bhr.getBlockPos());
+            ItemStack medium =
+                    BedPlate6MediumPillowItem.stackForRegistry(
+                            hitView.pillows().mediumMatOnSide(slot == 0 ? 1 : slot));
+            return medium.isEmpty() ? bed : medium;
+        }
         ItemStack layerStack = stackForLayer(hitView, layer);
         return layerStack.isEmpty() ? bed : layerStack;
     }

@@ -79,13 +79,15 @@ public final class BedPlateComboPillowRenderer {
     private boolean bind(BedPlateSheetPillowSlots slots, String suffix) {
         this.geoName = "bed_plate" + plate + "_pillow_" + suffix;
         if (suffix.startsWith("large_")) {
-            int side = suffix.endsWith("2") ? 2 : 1;
+            String bare = suffix.substring("large_".length());
+            int side = 1;
+            if (bare.equals(slots.largeSuffix(2)) && !bare.equals(slots.largeSuffix(1))) {
+                side = 2;
+            } else if (!slots.hasLargeSlot(1)) {
+                side = 2;
+            }
             int style = slots.largeStyleOnSide(side);
             int mat = slots.largeMaterialOnSide(side);
-            if (suffix.endsWith("p1")) {
-                style = slots.largeStyleId();
-                mat = slots.largeMaterialId();
-            }
             if (!BedPlate6LargePillowStyles.isValid(style) || !BedPlate6DuvetMaterials.isValid(mat)) {
                 return false;
             }
@@ -98,7 +100,7 @@ public final class BedPlateComboPillowRenderer {
             return true;
         }
         if (suffix.startsWith("medium_")) {
-            int mat = slots.mediumMat();
+            int mat = slots.hasPlate2Pose() ? slots.mediumMatOnSide(suffixSlot(suffix)) : slots.mediumMat();
             if (!BedPlate6MediumPillowMaterials.isValid(mat)) {
                 return false;
             }
@@ -111,5 +113,10 @@ public final class BedPlateComboPillowRenderer {
         }
         this.texturePath = "textures/block/bed_plate6_pillow_small_" + mat + ".png";
         return true;
+    }
+
+    private static int suffixSlot(String suffix) {
+        char last = suffix.charAt(suffix.length() - 1);
+        return last >= '1' && last <= '3' ? last - '0' : 1;
     }
 }

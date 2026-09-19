@@ -23,6 +23,7 @@ public final class BedPlate1PillowPickShapes {
     private static final VoxelShape MEDIUM_P2 = mirrorGeckoX(mediumP2Raw());
     private static final VoxelShape MEDIUM_S1 = mirrorGeckoX(mediumS1Raw());
     private static final VoxelShape MEDIUM_S2 = mirrorGeckoX(mediumS2Raw());
+    private static final VoxelShape MEDIUM_S3 = mirrorGeckoX(shiftPixels(mediumS1Raw(), -8.5, 0.0, 2.0));
     private static final VoxelShape SMALL_X4 = mirrorGeckoX(smallX4Raw());
     private static final VoxelShape SMALL_X5 = mirrorGeckoX(smallX5Raw());
     private static final VoxelShape SMALL_X6 = mirrorGeckoX(smallX6Raw());
@@ -33,20 +34,24 @@ public final class BedPlate1PillowPickShapes {
             return Shapes.empty();
         }
         return switch (layer) {
-            case LARGE_1 -> slots.hasLargeSlot(1) ? (slots.largeFlat(1) ? LARGE_P1 : LARGE_S1) : Shapes.empty();
-            case LARGE_2 -> slots.hasLargeSlot(2) ? (slots.largeFlat(2) ? LARGE_P2 : LARGE_S2) : Shapes.empty();
-            case MEDIUM -> medium(slots);
+            case LARGE_1 -> slots.hasLargeSlot(1) ? (slots.resolvedMode(1) == 0 ? LARGE_P1 : LARGE_S1) : Shapes.empty();
+            case LARGE_2 -> slots.hasLargeSlot(2) ? (slots.resolvedMode(1) == 0 ? LARGE_P2 : LARGE_S2) : Shapes.empty();
+            case MEDIUM_1 -> medium(slots, 1);
+            case MEDIUM_2 -> medium(slots, 2);
+            case MEDIUM_3 -> medium(slots, 3);
             case SMALL -> small(slots);
             case BODY, DUVET, DUVET_COVER -> Shapes.empty();
         };
     }
 
-    private static VoxelShape medium(BedPlateSheetPillowSlots slots) {
-        if (!slots.hasMedium()) {
+    private static VoxelShape medium(BedPlateSheetPillowSlots slots, int side) {
+        if (!slots.hasMediumSlot(side)) {
             return Shapes.empty();
         }
-        int side = slots.mediumSide();
-        boolean standing = slots.mediumStanding();
+        if (side == 3) {
+            return MEDIUM_S3;
+        }
+        boolean standing = slots.resolvedMode(1) != 0;
         if (side == 2) {
             return standing ? MEDIUM_S2 : MEDIUM_P2;
         }
@@ -63,6 +68,21 @@ public final class BedPlate1PillowPickShapes {
             case 7 -> SMALL_X7;
             default -> SMALL_X4;
         };
+    }
+
+    /** 像素平移，用在 Gecko 镜像之前。中号 S3 相对 S1 的模型原点差。 */
+    private static VoxelShape shiftPixels(VoxelShape shape, double dx, double dy, double dz) {
+        VoxelShape out = Shapes.empty();
+        double sx = dx / 16.0;
+        double sy = dy / 16.0;
+        double sz = dz / 16.0;
+        for (AABB box : shape.toAabbs()) {
+            out = Shapes.or(
+                    out,
+                    Shapes.box(
+                            box.minX + sx, box.minY + sy, box.minZ + sz, box.maxX + sx, box.maxY + sy, box.maxZ + sz));
+        }
+        return out;
     }
 
     /** 默认 GeoBlockRenderer：模型 +X 在北向画到锚点 -X，选取盒相对导出做 {@code x' = 1 - x}。 */

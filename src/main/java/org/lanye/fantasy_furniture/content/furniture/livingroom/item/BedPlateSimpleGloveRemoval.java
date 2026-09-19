@@ -111,6 +111,9 @@ public final class BedPlateSimpleGloveRemoval {
         if (layer == PickedLayer.BODY) {
             return InteractionResult.PASS;
         }
+        if (hasCover && layer == PickedLayer.DUVET) {
+            return InteractionResult.FAIL;
+        }
         if (!level.isClientSide
                 && !popSlots(
                         plate, state, pos, player, hit, slots, layer, hasDuvet, hasCover, duvetMat, coverMat, setDuvet, setCover, syncPillows)) {
@@ -176,14 +179,11 @@ public final class BedPlateSimpleGloveRemoval {
                 yield true;
             }
             case DUVET -> {
-                if (!hasDuvet) {
+                if (!hasDuvet || hasCover) {
                     yield false;
                 }
                 setDuvet.accept(0);
                 give(player, BedPlate6DuvetItem.stackForRegistry(duvetMat));
-                if (hasCover) {
-                    give(player, BedPlate6DuvetCoverItem.stackForRegistry(coverMat));
-                }
                 yield true;
             }
             case BODY -> false;
@@ -217,10 +217,23 @@ public final class BedPlateSimpleGloveRemoval {
         if (layer == PickedLayer.BODY) {
             return InteractionResult.PASS;
         }
+        if (plate2RemovalBlocked(plate2, layer)) {
+            return InteractionResult.FAIL;
+        }
         if (!level.isClientSide && !popPlate2(plate, state, pos, player, hit, plate2, slots, layer)) {
             return InteractionResult.PASS;
         }
         return InteractionResult.sidedSuccess(level.isClientSide);
+    }
+
+    /** 被套要床单；小号要中号，并且至少还留一只大号。 */
+    private static boolean plate2RemovalBlocked(BedPlate2BlockEntity plate, PickedLayer layer) {
+        return switch (layer) {
+            case DUVET -> plate.hasCover();
+            case MEDIUM -> plate.hasSmallPillow() && plate.getMediumPillowCount() <= 1;
+            case LARGE -> plate.hasSmallPillow() && plate.getLargePillowCount() <= 1;
+            default -> false;
+        };
     }
 
     private static boolean popPlate2(
@@ -242,29 +255,26 @@ public final class BedPlateSimpleGloveRemoval {
                 }
                 int style = plate2.getLargePillowStyleId(side);
                 int mat = plate2.getLargePillowMaterialId(side);
+                if (plate2.hasSmallPillow() && plate2.getLargePillowCount() <= 1) {
+                    yield false;
+                }
                 plate2.clearLargePillowSlot(side);
                 give(player, BedPlate6LargePillowItem.stackForRegistry(style, mat));
-                if (plate2.getLargePillowCount() == 0 && plate2.hasSmallPillow()) {
-                    int small = plate2.getSmallPillowMat();
-                    plate2.clearSmallPillow();
-                    give(player, BedPlate6SmallPillowItem.stackForRegistry(small));
-                }
                 yield true;
             }
             case MEDIUM -> {
-                if (!plate2.hasMediumPillow()) {
+                int slot = BedPlateSimpleBeddingShapes.mediumSlotAt(
+                        plate, state, slots, hit.getLocation(), pos);
+                if (slot == 0) {
+                    slot = plate2.hasMediumPillowSlot(1) ? 1 : 0;
+                }
+                if (!plate2.hasMediumPillowSlot(slot)
+                        || (plate2.hasSmallPillow() && plate2.getMediumPillowCount() <= 1)) {
                     yield false;
                 }
-                int mat = plate2.getMediumPillowMat();
-                int small = plate2.hasSmallPillow() ? plate2.getSmallPillowMat() : 0;
-                plate2.clearMediumPillow();
-                if (small != 0) {
-                    plate2.clearSmallPillow();
-                }
+                int mat = plate2.getMediumPillowMat(slot);
+                plate2.clearMediumPillowSlot(slot);
                 give(player, BedPlate6MediumPillowItem.stackForRegistry(mat));
-                if (small != 0) {
-                    give(player, BedPlate6SmallPillowItem.stackForRegistry(small));
-                }
                 yield true;
             }
             case SMALL -> {
@@ -286,16 +296,12 @@ public final class BedPlateSimpleGloveRemoval {
                 yield true;
             }
             case DUVET -> {
-                if (!plate2.hasDuvet()) {
+                if (!plate2.hasDuvet() || plate2.hasCover()) {
                     yield false;
                 }
                 int duvet = plate2.getDuvetMaterialId();
-                int cover = plate2.hasCover() ? plate2.getCoverMaterialId() : 0;
                 plate2.setDuvetMaterialId(0);
                 give(player, BedPlate6DuvetItem.stackForRegistry(duvet));
-                if (cover != 0) {
-                    give(player, BedPlate6DuvetCoverItem.stackForRegistry(cover));
-                }
                 yield true;
             }
             case BODY -> false;

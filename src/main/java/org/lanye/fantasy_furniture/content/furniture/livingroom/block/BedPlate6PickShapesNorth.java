@@ -366,16 +366,11 @@ public final class BedPlate6PickShapesNorth {
     return s;
   }
 
-  // voxel_pick_from_geo: bed_plate6_duvet_cover.geo.json（不合并 group4，避免整床外框）
+  // 被面两块：床身顶 y=8.4，床头折起 y=9.4。斜折边外包会高出被面，不收进描边。
   private static VoxelShape duvetCoverNorth() {
     VoxelShape s = Shapes.empty();
-    s = Shapes.or(s, Block.box(0.8000, 6.4000, 18.0000, 15.2000, 9.4000, 24.0000));
-    s = Shapes.or(s, Block.box(0.3000, 6.4000, 0.0000, 15.7000, 8.4000, 18.0000));
-    s = Shapes.or(s, Block.box(0.0000, 3.5522, 0.0000, 16.0000, 6.5522, 24.0000));
-    s = Shapes.or(s, Block.box(0.0000, 6.5522, 0.0000, 1.3824, 9.1654, 18.0000));
-    s = Shapes.or(s, Block.box(0.0000, 6.4000, 18.0000, 1.4478, 9.9370, 24.0000));
-    s = Shapes.or(s, Block.box(14.6176, 6.5522, 0.0000, 16.0000, 9.1654, 18.0000));
-    s = Shapes.or(s, Block.box(14.5522, 6.4000, 18.0000, 16.0000, 9.9370, 24.0000));
+    s = Shapes.or(s, Block.box(0.0, 3.5522, 0.0, 16.0, 8.4, 18.0));
+    s = Shapes.or(s, Block.box(0.0, 3.5522, 18.0, 16.0, 9.4, 24.0));
     return s;
   }
 

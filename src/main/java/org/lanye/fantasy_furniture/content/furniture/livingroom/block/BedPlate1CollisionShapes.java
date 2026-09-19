@@ -27,7 +27,9 @@ public final class BedPlate1CollisionShapes {
         DUVET_COVER,
         LARGE_1,
         LARGE_2,
-        MEDIUM,
+        MEDIUM_1,
+        MEDIUM_2,
+        MEDIUM_3,
         SMALL
     }
 
@@ -120,8 +122,14 @@ public final class BedPlate1CollisionShapes {
             if (hitPillow(state, slots, PickedLayer.SMALL, hitWorld, pos)) {
                 return PickedLayer.SMALL;
             }
-            if (hitPillow(state, slots, PickedLayer.MEDIUM, hitWorld, pos)) {
-                return PickedLayer.MEDIUM;
+            if (hitPillow(state, slots, PickedLayer.MEDIUM_1, hitWorld, pos)) {
+                return PickedLayer.MEDIUM_1;
+            }
+            if (hitPillow(state, slots, PickedLayer.MEDIUM_2, hitWorld, pos)) {
+                return PickedLayer.MEDIUM_2;
+            }
+            if (hitPillow(state, slots, PickedLayer.MEDIUM_3, hitWorld, pos)) {
+                return PickedLayer.MEDIUM_3;
             }
             if (hitPillow(state, slots, PickedLayer.LARGE_1, hitWorld, pos)) {
                 return PickedLayer.LARGE_1;
@@ -152,7 +160,7 @@ public final class BedPlate1CollisionShapes {
                 switch (layer) {
                     case DUVET -> hasDuvet ? DUVET_WHOLE : Shapes.empty();
                     case DUVET_COVER -> hasCover ? COVER_WHOLE : Shapes.empty();
-                    case SMALL, MEDIUM, LARGE_1, LARGE_2 ->
+                    case SMALL, MEDIUM_1, MEDIUM_2, MEDIUM_3, LARGE_1, LARGE_2 ->
                             slots == null ? Shapes.empty() : BedPlate1PillowPickShapes.northFor(slots, layer);
                     case BODY -> Shapes.empty();
                 };
@@ -166,7 +174,7 @@ public final class BedPlate1CollisionShapes {
             BedPlateSheetPillowSlots slots,
             PickedLayer layer) {
         return switch (layer) {
-            case SMALL, MEDIUM, LARGE_1, LARGE_2 -> pillowCell(state, slots, layer);
+            case SMALL, MEDIUM_1, MEDIUM_2, MEDIUM_3, LARGE_1, LARGE_2 -> pillowCell(state, slots, layer);
             case DUVET_COVER -> hasCover ? coverShape(state) : bodyShape(state);
             case DUVET -> hasDuvet ? duvetShape(state) : bodyShape(state);
             case BODY -> bodyShape(state);
@@ -186,7 +194,14 @@ public final class BedPlate1CollisionShapes {
     private static VoxelShape pillowUnion(BlockState state, BedPlateSheetPillowSlots slots) {
         VoxelShape s = Shapes.empty();
         for (PickedLayer layer :
-                new PickedLayer[] {PickedLayer.LARGE_1, PickedLayer.LARGE_2, PickedLayer.MEDIUM, PickedLayer.SMALL}) {
+                new PickedLayer[] {
+                    PickedLayer.LARGE_1,
+                    PickedLayer.LARGE_2,
+                    PickedLayer.MEDIUM_1,
+                    PickedLayer.MEDIUM_2,
+                    PickedLayer.MEDIUM_3,
+                    PickedLayer.SMALL
+                }) {
             s = Shapes.or(s, pillowCell(state, slots, layer));
         }
         return s;
