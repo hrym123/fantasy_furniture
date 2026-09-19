@@ -1,0 +1,23 @@
+{
+  "name": "item.fantasy_furniture.shampoo",
+  "icon": "fantasy_furniture:shampoo",
+  "category": "reverie_core:hygiene",
+  "read_by_default": true,
+  "sortnum": 90,
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "text": "patchouli.reverie_core.handbook.entry.shampoo"
+    },
+    {
+      "type": "reverie_core:gallery6",
+      "caption": "patchouli.reverie_core.handbook.page.variants",
+      "i1": "fantasy_furniture:shampoo{ShampooMat:1}",
+      "i2": "fantasy_furniture:shampoo{ShampooMat:2}",
+      "i3": "fantasy_furniture:shampoo{ShampooMat:3}",
+      "i4": "fantasy_furniture:shampoo{ShampooMat:4}",
+      "i5": "fantasy_furniture:shampoo{ShampooMat:5}",
+      "i6": "fantasy_furniture:shampoo{ShampooMat:6}"
+    }
+  ]
+}

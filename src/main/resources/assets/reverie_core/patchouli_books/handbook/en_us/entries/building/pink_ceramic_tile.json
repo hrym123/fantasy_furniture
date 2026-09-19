@@ -1,0 +1,14 @@
+{
+  "name": "block.fantasy_furniture.pink_ceramic_tile",
+  "icon": "fantasy_furniture:pink_ceramic_tile",
+  "category": "reverie_core:building",
+  "read_by_default": true,
+  "sortnum": 10,
+  "pages": [
+    {
+      "type": "patchouli:spotlight",
+      "item": "fantasy_furniture:pink_ceramic_tile",
+      "text": "patchouli.reverie_core.handbook.entry.ceramic_tile"
+    }
+  ]
+}

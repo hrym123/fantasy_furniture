@@ -1,0 +1,23 @@
+{
+  "name": "item.fantasy_furniture.soap_bar",
+  "icon": "fantasy_furniture:soap_bar",
+  "category": "reverie_core:hygiene",
+  "read_by_default": true,
+  "sortnum": 10,
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "text": "patchouli.reverie_core.handbook.entry.soap_bar"
+    },
+    {
+      "type": "reverie_core:gallery6",
+      "caption": "patchouli.reverie_core.handbook.page.soap_bar",
+      "i1": "fantasy_furniture:soap_bar{SoapMat:1,SoapDurability:3}",
+      "i2": "fantasy_furniture:soap_bar{SoapMat:2,SoapDurability:3}",
+      "i3": "fantasy_furniture:soap_bar{SoapMat:3,SoapDurability:3}",
+      "i4": "fantasy_furniture:soap_bar{SoapMat:4,SoapDurability:3}",
+      "i5": "fantasy_furniture:soap_bar{SoapMat:5,SoapDurability:3}",
+      "i6": "fantasy_furniture:soap_bar{SoapMat:6,SoapDurability:3}"
+    }
+  ]
+}

@@ -1,0 +1,23 @@
+{
+  "name": "block.fantasy_furniture.computer_1",
+  "icon": "fantasy_furniture:computer_1",
+  "category": "reverie_core:furniture",
+  "read_by_default": true,
+  "sortnum": 70,
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "text": "patchouli.reverie_core.handbook.entry.computer"
+    },
+    {
+      "type": "reverie_core:gallery6",
+      "caption": "patchouli.reverie_core.handbook.page.variants",
+      "i1": "fantasy_furniture:computer_1{ComputerMaterial:1}",
+      "i2": "fantasy_furniture:computer_1{ComputerMaterial:2}",
+      "i3": "fantasy_furniture:computer_1{ComputerMaterial:3}",
+      "i4": "fantasy_furniture:computer_1{ComputerMaterial:4}",
+      "i5": "fantasy_furniture:computer_1{ComputerMaterial:5}",
+      "i6": "fantasy_furniture:computer_1{ComputerMaterial:6}"
+    }
+  ]
+}

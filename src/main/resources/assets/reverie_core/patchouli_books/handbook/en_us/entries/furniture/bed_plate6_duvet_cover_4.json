@@ -1,0 +1,14 @@
+{
+  "name": "item.fantasy_furniture.bed_plate6_duvet_cover_4",
+  "icon": "fantasy_furniture:bed_plate6_duvet_cover_4",
+  "category": "reverie_core:furniture",
+  "read_by_default": true,
+  "sortnum": 311,
+  "pages": [
+    {
+      "type": "patchouli:spotlight",
+      "item": "fantasy_furniture:bed_plate6_duvet_cover_4",
+      "text": "patchouli.reverie_core.handbook.entry.bed_sheet_cover"
+    }
+  ]
+}

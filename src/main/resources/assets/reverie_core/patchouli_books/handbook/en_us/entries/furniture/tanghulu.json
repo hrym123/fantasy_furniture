@@ -1,0 +1,14 @@
+{
+  "name": "item.fantasy_furniture.tanghulu",
+  "icon": "fantasy_furniture:tanghulu",
+  "category": "reverie_core:furniture",
+  "read_by_default": true,
+  "sortnum": 210,
+  "pages": [
+    {
+      "type": "patchouli:spotlight",
+      "item": "fantasy_furniture:tanghulu",
+      "text": "patchouli.reverie_core.handbook.entry.tanghulu"
+    }
+  ]
+}

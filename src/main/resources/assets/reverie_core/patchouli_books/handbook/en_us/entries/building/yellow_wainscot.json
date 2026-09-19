@@ -1,0 +1,14 @@
+{
+  "name": "block.fantasy_furniture.yellow_wainscot",
+  "icon": "fantasy_furniture:yellow_wainscot",
+  "category": "reverie_core:building",
+  "read_by_default": true,
+  "sortnum": 23,
+  "pages": [
+    {
+      "type": "patchouli:spotlight",
+      "item": "fantasy_furniture:yellow_wainscot",
+      "text": "patchouli.reverie_core.handbook.entry.wallpaper"
+    }
+  ]
+}

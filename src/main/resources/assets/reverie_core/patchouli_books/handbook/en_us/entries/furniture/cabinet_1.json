@@ -1,0 +1,21 @@
+{
+  "name": "block.fantasy_furniture.cabinet_1",
+  "icon": "fantasy_furniture:cabinet_1",
+  "category": "reverie_core:furniture",
+  "read_by_default": true,
+  "sortnum": 50,
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "text": "patchouli.reverie_core.handbook.entry.cabinet_1"
+    },
+    {
+      "type": "reverie_core:gallery4",
+      "caption": "patchouli.reverie_core.handbook.page.variants",
+      "i1": "fantasy_furniture:cabinet_1{CabinetMaterial:1}",
+      "i2": "fantasy_furniture:cabinet_1{CabinetMaterial:2}",
+      "i3": "fantasy_furniture:cabinet_1{CabinetMaterial:3}",
+      "i4": "fantasy_furniture:cabinet_1{CabinetMaterial:4}"
+    }
+  ]
+}

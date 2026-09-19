@@ -1,0 +1,14 @@
+{
+  "name": "block.fantasy_furniture.purple_wallpaper",
+  "icon": "fantasy_furniture:purple_wallpaper",
+  "category": "reverie_core:building",
+  "read_by_default": true,
+  "sortnum": 26,
+  "pages": [
+    {
+      "type": "patchouli:spotlight",
+      "item": "fantasy_furniture:purple_wallpaper",
+      "text": "patchouli.reverie_core.handbook.entry.wallpaper"
+    }
+  ]
+}

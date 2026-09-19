@@ -1,0 +1,23 @@
+{
+  "name": "item.fantasy_furniture.body_wash",
+  "icon": "fantasy_furniture:body_wash",
+  "category": "reverie_core:hygiene",
+  "read_by_default": true,
+  "sortnum": 80,
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "text": "patchouli.reverie_core.handbook.entry.body_wash"
+    },
+    {
+      "type": "reverie_core:gallery6",
+      "caption": "patchouli.reverie_core.handbook.page.variants",
+      "i1": "fantasy_furniture:body_wash{WashMat:1}",
+      "i2": "fantasy_furniture:body_wash{WashMat:2}",
+      "i3": "fantasy_furniture:body_wash{WashMat:3}",
+      "i4": "fantasy_furniture:body_wash{WashMat:4}",
+      "i5": "fantasy_furniture:body_wash{WashMat:5}",
+      "i6": "fantasy_furniture:body_wash{WashMat:6}"
+    }
+  ]
+}

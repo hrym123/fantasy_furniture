@@ -1,0 +1,14 @@
+{
+  "name": "block.fantasy_furniture.banquette",
+  "icon": "fantasy_furniture:banquette",
+  "category": "reverie_core:furniture",
+  "read_by_default": true,
+  "sortnum": 40,
+  "pages": [
+    {
+      "type": "patchouli:spotlight",
+      "item": "fantasy_furniture:banquette",
+      "text": "patchouli.reverie_core.handbook.entry.banquette"
+    }
+  ]
+}

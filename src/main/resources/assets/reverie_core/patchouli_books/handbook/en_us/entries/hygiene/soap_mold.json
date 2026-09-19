@@ -1,0 +1,14 @@
+{
+  "name": "item.fantasy_furniture.soap_mold",
+  "icon": "fantasy_furniture:soap_mold",
+  "category": "reverie_core:hygiene",
+  "read_by_default": true,
+  "sortnum": 60,
+  "pages": [
+    {
+      "type": "patchouli:spotlight",
+      "item": "fantasy_furniture:soap_mold",
+      "text": "patchouli.reverie_core.handbook.entry.soap_mold"
+    }
+  ]
+}

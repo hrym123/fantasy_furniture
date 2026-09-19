@@ -1,0 +1,14 @@
+{
+  "name": "item.fantasy_furniture.soap_rack",
+  "icon": "fantasy_furniture:soap_rack",
+  "category": "reverie_core:hygiene",
+  "read_by_default": true,
+  "sortnum": 30,
+  "pages": [
+    {
+      "type": "patchouli:spotlight",
+      "item": "fantasy_furniture:soap_rack",
+      "text": "patchouli.reverie_core.handbook.entry.soap_rack"
+    }
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "name": "block.fantasy_furniture.styled_window_2_5_black",
+  "icon": "fantasy_furniture:styled_window_2_5_black",
+  "category": "reverie_core:building",
+  "read_by_default": true,
+  "sortnum": 133,
+  "pages": [
+    {
+      "type": "patchouli:spotlight",
+      "item": "fantasy_furniture:styled_window_2_5_black",
+      "text": "patchouli.reverie_core.handbook.entry.window_open4"
+    }
+  ]
+}

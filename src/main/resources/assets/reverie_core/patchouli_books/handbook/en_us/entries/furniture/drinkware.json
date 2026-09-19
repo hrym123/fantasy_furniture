@@ -1,0 +1,26 @@
+{
+  "name": "block.fantasy_furniture.drinkware",
+  "icon": "fantasy_furniture:drinkware",
+  "category": "reverie_core:furniture",
+  "read_by_default": true,
+  "sortnum": 190,
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "text": "patchouli.reverie_core.handbook.entry.drinkware"
+    },
+    {
+      "type": "reverie_core:gallery9",
+      "caption": "patchouli.reverie_core.handbook.page.variants",
+      "i1": "fantasy_furniture:drinkware{DrinkwareMaterial:1}",
+      "i2": "fantasy_furniture:drinkware{DrinkwareMaterial:2}",
+      "i3": "fantasy_furniture:drinkware{DrinkwareMaterial:3}",
+      "i4": "fantasy_furniture:drinkware{DrinkwareMaterial:4}",
+      "i5": "fantasy_furniture:drinkware{DrinkwareMaterial:5}",
+      "i6": "fantasy_furniture:drinkware{DrinkwareMaterial:6}",
+      "i7": "fantasy_furniture:drinkware{DrinkwareMaterial:7}",
+      "i8": "fantasy_furniture:drinkware{DrinkwareMaterial:8}",
+      "i9": "fantasy_furniture:drinkware{DrinkwareMaterial:9}"
+    }
+  ]
+}

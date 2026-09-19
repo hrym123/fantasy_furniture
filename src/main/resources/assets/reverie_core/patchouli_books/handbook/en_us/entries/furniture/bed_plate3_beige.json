@@ -1,0 +1,14 @@
+{
+  "name": "block.fantasy_furniture.bed_plate3_beige",
+  "icon": "fantasy_furniture:bed_plate3_beige",
+  "category": "reverie_core:furniture",
+  "read_by_default": true,
+  "sortnum": 125,
+  "pages": [
+    {
+      "type": "patchouli:spotlight",
+      "item": "fantasy_furniture:bed_plate3_beige",
+      "text": "patchouli.reverie_core.handbook.entry.bed_plate3"
+    }
+  ]
+}

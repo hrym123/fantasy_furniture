@@ -1,0 +1,14 @@
+{
+  "name": "item.fantasy_furniture.arcane_wand",
+  "icon": "fantasy_furniture:arcane_wand",
+  "category": "reverie_core:furniture",
+  "read_by_default": true,
+  "sortnum": 220,
+  "pages": [
+    {
+      "type": "patchouli:spotlight",
+      "item": "fantasy_furniture:arcane_wand",
+      "text": "patchouli.reverie_core.handbook.entry.arcane_wand"
+    }
+  ]
+}

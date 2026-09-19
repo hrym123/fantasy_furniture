@@ -1,0 +1,14 @@
+{
+  "name": "block.fantasy_furniture.styled_stairs_pink",
+  "icon": "fantasy_furniture:styled_stairs_pink",
+  "category": "reverie_core:building",
+  "read_by_default": true,
+  "sortnum": 219,
+  "pages": [
+    {
+      "type": "patchouli:spotlight",
+      "item": "fantasy_furniture:styled_stairs_pink",
+      "text": "patchouli.reverie_core.handbook.entry.stairs"
+    }
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "name": "block.fantasy_furniture.styled_stairs_colorful_2",
+  "icon": "fantasy_furniture:styled_stairs_colorful_2",
+  "category": "reverie_core:building",
+  "read_by_default": true,
+  "sortnum": 206,
+  "pages": [
+    {
+      "type": "patchouli:spotlight",
+      "item": "fantasy_furniture:styled_stairs_colorful_2",
+      "text": "patchouli.reverie_core.handbook.entry.stairs"
+    }
+  ]
+}

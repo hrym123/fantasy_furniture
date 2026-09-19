@@ -1,0 +1,14 @@
+{
+  "name": "block.fantasy_furniture.green_sofa",
+  "icon": "fantasy_furniture:green_sofa",
+  "category": "reverie_core:furniture",
+  "read_by_default": true,
+  "sortnum": 20,
+  "pages": [
+    {
+      "type": "patchouli:spotlight",
+      "item": "fantasy_furniture:green_sofa",
+      "text": "patchouli.reverie_core.handbook.entry.green_sofa"
+    }
+  ]
+}

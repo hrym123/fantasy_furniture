@@ -1,0 +1,14 @@
+{
+  "name": "item.fantasy_furniture.bed_plate6_pillow_large_plain_denim",
+  "icon": "fantasy_furniture:bed_plate6_pillow_large_plain_denim",
+  "category": "reverie_core:furniture",
+  "read_by_default": true,
+  "sortnum": 324,
+  "pages": [
+    {
+      "type": "patchouli:spotlight",
+      "item": "fantasy_furniture:bed_plate6_pillow_large_plain_denim",
+      "text": "patchouli.reverie_core.handbook.entry.pillow_large"
+    }
+  ]
+}

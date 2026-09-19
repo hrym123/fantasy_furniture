@@ -1,0 +1,23 @@
+{
+  "name": "item.fantasy_furniture.body_cream",
+  "icon": "fantasy_furniture:body_cream",
+  "category": "reverie_core:hygiene",
+  "read_by_default": true,
+  "sortnum": 70,
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "text": "patchouli.reverie_core.handbook.entry.body_cream"
+    },
+    {
+      "type": "reverie_core:gallery6",
+      "caption": "patchouli.reverie_core.handbook.page.variants",
+      "i1": "fantasy_furniture:body_cream{CreamMat:1}",
+      "i2": "fantasy_furniture:body_cream{CreamMat:2}",
+      "i3": "fantasy_furniture:body_cream{CreamMat:3}",
+      "i4": "fantasy_furniture:body_cream{CreamMat:4}",
+      "i5": "fantasy_furniture:body_cream{CreamMat:5}",
+      "i6": "fantasy_furniture:body_cream{CreamMat:6}"
+    }
+  ]
+}

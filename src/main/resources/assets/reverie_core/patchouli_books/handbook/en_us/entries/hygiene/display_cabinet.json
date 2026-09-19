@@ -1,0 +1,23 @@
+{
+  "name": "item.fantasy_furniture.display_cabinet",
+  "icon": "fantasy_furniture:display_cabinet",
+  "category": "reverie_core:hygiene",
+  "read_by_default": true,
+  "sortnum": 100,
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "text": "patchouli.reverie_core.handbook.entry.display_cabinet"
+    },
+    {
+      "type": "reverie_core:gallery6",
+      "caption": "patchouli.reverie_core.handbook.page.variants",
+      "i1": "fantasy_furniture:display_cabinet{BoxMat:1}",
+      "i2": "fantasy_furniture:display_cabinet{BoxMat:2}",
+      "i3": "fantasy_furniture:display_cabinet{BoxMat:3}",
+      "i4": "fantasy_furniture:display_cabinet{BoxMat:4}",
+      "i5": "fantasy_furniture:display_cabinet{BoxMat:5}",
+      "i6": "fantasy_furniture:display_cabinet{BoxMat:6}"
+    }
+  ]
+}

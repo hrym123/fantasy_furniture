@@ -72,7 +72,8 @@ repositories {
     maven {
         name = 'BlameJared'
         url = 'https://maven.blamejared.com'
-        content { includeGroup 'mezz.jei' }
+        content { includeGroup 'mezz.jei'
+            includeGroup 'vazkii.patchouli' }
     }
     maven {
         name = 'Architectury'
@@ -155,6 +156,7 @@ dependencies {
 
     // JEI：全模组 / 单模组 runClient 随客户端运行；@JeiPlugin 在 reverie_core（API 为 compileOnly）
     runtimeOnly fg.deobf("mezz.jei:jei-${minecraft_version}-forge:${jei_version}")
+    runtimeOnly fg.deobf("vazkii.patchouli:Patchouli:${patchouli_version}")
 
     // Tickrate Changer：仅开发环境测 tick 加速（/tickrate）；不进发行包
     // 硬依赖 Architectury + Cloth Config（AutoConfig · ConfigData）
