@@ -14,10 +14,12 @@ import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.RegistryObject;
 import org.lanye.fantasy_furniture.FantasyFurniture;
+import org.lanye.fantasy_furniture.bootstrap.block.BarCounterRegistration;
 import org.lanye.fantasy_furniture.bootstrap.block.BedPlate1Registration;
 import org.lanye.fantasy_furniture.bootstrap.block.BedPlate2Registration;
 import org.lanye.fantasy_furniture.bootstrap.block.BedPlate3Registration;
 import org.lanye.fantasy_furniture.bootstrap.block.BedPlate6Registration;
+import org.lanye.fantasy_furniture.bootstrap.block.CornerBarRegistration;
 import org.lanye.fantasy_furniture.bootstrap.block.ModBlocks;
 import org.lanye.fantasy_furniture.bootstrap.block.StyledWindow0Registration;
 import org.lanye.fantasy_furniture.bootstrap.block.StyledWindowSeriesRegistration;
@@ -77,6 +79,12 @@ public final class ModCreativeTabs {
         ComputerCreativeTab.appendEntries(list);
         CabinetCreativeTab.appendEntries(list);
         DrinkwareCreativeTab.appendEntries(list);
+        for (var item : BarCounterRegistration.items()) {
+            list.add(out -> out.accept(item.get()));
+        }
+        for (var item : CornerBarRegistration.items()) {
+            list.add(out -> out.accept(item.get()));
+        }
         list.add(out -> out.accept(ModBlocks.SWEEPER_DOCK.item().get()));
         list.add(out -> out.accept(ModBlocks.GREEN_SOFA.item().get()));
         for (var ro : BedPlate1Registration.items()) {

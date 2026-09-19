@@ -1,0 +1,6 @@
+{
+  "parent": "fantasy_furniture:item/bar_counter_item_base",
+  "textures": {
+    "particle": "fantasy_furniture:block/purple_bar_1"
+  }
+}
