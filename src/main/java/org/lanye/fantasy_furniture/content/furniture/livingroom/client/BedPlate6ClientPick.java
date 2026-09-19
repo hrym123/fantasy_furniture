@@ -8,7 +8,6 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.BedBlock;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.block.state.properties.BedPart;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
@@ -22,7 +21,6 @@ import org.lanye.fantasy_furniture.content.furniture.livingroom.block.BedPlate6B
 import org.lanye.fantasy_furniture.content.furniture.livingroom.block.BedPlate6PickShapesNorth;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.block.BedPlate6PickShapesNorth.PickedDecorLayer;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.blockentity.BedPlate6BlockEntity;
-import org.lanye.reverie_core.util.VoxelShapeTranslation;
 
 /** 床板 6 客户端准心 / 描边（读 {@link Minecraft#hitResult}，无 Mixin）。 */
 @OnlyIn(Dist.CLIENT)
@@ -91,37 +89,24 @@ public final class BedPlate6ClientPick {
     }
 
     /**
-     * 准心黑框用：按命中点解析当前子件 3D 体素（与 {@link #resolveDecorLayer} 同源）。
+     * 组件描边：床尾局部的整件（不裁到命中格、不平移到床头）。未命中组件时为空。
      */
-    public static VoxelShape crosshairOutlinePieceShape(
+    public static VoxelShape crosshairOutlineComponentShape(
             Level level,
             BlockState state,
             BlockPos pos,
-            VoxelShape mattressBase,
             BedPlate6BlockEntity plate,
             Direction facing,
             BlockHitResult bhr) {
         PickedDecorLayer layer = resolveDecorLayer(level, state, pos, plate, facing, bhr);
-        VoxelShape pieceLocal;
         if (layer == PickedDecorLayer.NONE) {
-            pieceLocal = Shapes.empty();
-        } else {
-            VoxelShape pieceNorth = BedPlate6PickShapesNorth.northOutlinePieceNorth(plate, layer);
-            if (pieceNorth == null || pieceNorth.isEmpty()) {
-                pieceLocal = Shapes.empty();
-            } else {
-                pieceLocal = BedPlate6PickShapesNorth.orientForBedFacing(pieceNorth, facing);
-            }
+            return Shapes.empty();
         }
-
-        if (state.getValue(BedBlock.PART) != BedPart.FOOT) {
-            double tx = -facing.getStepX();
-            double ty = -facing.getStepY();
-            double tz = -facing.getStepZ();
-            VoxelShape inHead = VoxelShapeTranslation.translate(pieceLocal, tx, ty, tz);
-            return pieceLocal.isEmpty() ? mattressBase : inHead;
+        VoxelShape pieceNorth = BedPlate6PickShapesNorth.northOutlinePieceNorth(plate, layer);
+        if (pieceNorth == null || pieceNorth.isEmpty()) {
+            return Shapes.empty();
         }
-        return pieceLocal.isEmpty() ? mattressBase : pieceLocal;
+        return BedPlate6PickShapesNorth.orientForBedFacing(pieceNorth, facing);
     }
 
     static PickedDecorLayer resolveDecorLayer(

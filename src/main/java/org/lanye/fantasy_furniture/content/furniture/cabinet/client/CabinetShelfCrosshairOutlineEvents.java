@@ -41,6 +41,6 @@ public final class CabinetShelfCrosshairOutlineEvents {
             return;
         }
         BlockPos origin = CabinetShelfClientPick.outlineOrigin(mc.level, state, pos, bhr, includeAbsent);
-        CompositeCrosshairOutlines.renderPartOutline(event, origin, outline);
+        CompositeCrosshairOutlines.renderMultiCell(event, true, pos, outline, origin, outline);
     }
 }
