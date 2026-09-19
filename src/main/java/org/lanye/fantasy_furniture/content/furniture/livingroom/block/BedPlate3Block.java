@@ -24,7 +24,6 @@ import org.lanye.fantasy_furniture.content.furniture.livingroom.blockentity.BedP
 import org.lanye.fantasy_furniture.content.furniture.livingroom.client.BedPlateSimpleBeddingClientPick;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.block.BedPlateSimpleBeddingShapes.Plate;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.item.BedPlate6DisassemblyGloveItem;
-import org.lanye.fantasy_furniture.content.furniture.livingroom.item.BedPlateSimplePoseCycle;
 import org.lanye.reverie_core.content.fantasy_core.item.FantasyDebugStickItem;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.item.BedPlate6DuvetCoverItem;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.item.BedPlate6DuvetItem;
@@ -182,7 +181,7 @@ public final class BedPlate3Block extends BedPlateBlock {
             InteractionHand hand,
             BlockHitResult hit) {
         if (player.getItemInHand(hand).getItem() instanceof FantasyDebugStickItem) {
-            return BedPlateSimplePoseCycle.cycle(Plate.PLATE3, level, state, pos, player, hand, hit);
+            return InteractionResult.PASS;
         }
         if (hand == InteractionHand.MAIN_HAND
                 && player.getItemInHand(hand).getItem() instanceof BedPlate6DisassemblyGloveItem) {
