@@ -8,6 +8,7 @@ import org.lanye.fantasy_furniture.content.furniture.livingroom.BedPlateSheetPil
 
 /**
  * 床板1型枕头选取：自组合导出 geo 的北向体素，再按默认 Geo 渲染做 X 镜像（相对床尾右锚点）。
+ * 倾斜立方按 Gecko 烘焙：先翻 X，再以 {@code (-rx,-ry,rz)} 绕轴转。勿先转再镜像 AABB。
  * 与床单裁切同一坐标系，不另加厚。
  */
 public final class BedPlate1PillowPickShapes {
@@ -16,6 +17,8 @@ public final class BedPlate1PillowPickShapes {
 
     private static final VoxelShape LARGE_S1 = mirrorGeckoX(largeS1Raw());
     private static final VoxelShape LARGE_S2 = mirrorGeckoX(largeS2Raw());
+    private static final VoxelShape LARGE_P1 = mirrorGeckoX(largeP1Raw());
+    private static final VoxelShape LARGE_P2 = mirrorGeckoX(largeP2Raw());
     private static final VoxelShape MEDIUM_P1 = mirrorGeckoX(mediumP1Raw());
     private static final VoxelShape MEDIUM_P2 = mirrorGeckoX(mediumP2Raw());
     private static final VoxelShape MEDIUM_S1 = mirrorGeckoX(mediumS1Raw());
@@ -30,8 +33,8 @@ public final class BedPlate1PillowPickShapes {
             return Shapes.empty();
         }
         return switch (layer) {
-            case LARGE_1 -> slots.hasLargeSlot(1) ? LARGE_S1 : Shapes.empty();
-            case LARGE_2 -> slots.hasLargeSlot(2) ? LARGE_S2 : Shapes.empty();
+            case LARGE_1 -> slots.hasLargeSlot(1) ? (slots.largeFlat(1) ? LARGE_P1 : LARGE_S1) : Shapes.empty();
+            case LARGE_2 -> slots.hasLargeSlot(2) ? (slots.largeFlat(2) ? LARGE_P2 : LARGE_S2) : Shapes.empty();
             case MEDIUM -> medium(slots);
             case SMALL -> small(slots);
             case BODY, DUVET, DUVET_COVER -> Shapes.empty();
@@ -43,7 +46,7 @@ public final class BedPlate1PillowPickShapes {
             return Shapes.empty();
         }
         int side = slots.mediumSide();
-        boolean standing = slots.hasLargeSlot(side);
+        boolean standing = slots.mediumStanding();
         if (side == 2) {
             return standing ? MEDIUM_S2 : MEDIUM_P2;
         }
@@ -76,16 +79,32 @@ public final class BedPlate1PillowPickShapes {
     /** {@code bed_plate1_pillow_large_s1.geo.json} sha256[:12]=168e65b0d370；尚未做 Gecko X 镜像。 */
     private static VoxelShape largeS1Raw() {
         VoxelShape s = Shapes.empty();
-        s = Shapes.or(s, Block.box(16.50, 6.96, -13.96, 29.50, 13.50, -11.09));
-        s = Shapes.or(s, Block.box(17.50, 6.61, -14.79, 28.50, 13.84, -10.26));
+        s = Shapes.or(s, Block.box(16.50, 6.94, -11.74, 29.50, 13.49, -8.87));
+        s = Shapes.or(s, Block.box(17.50, 6.60, -12.57, 28.50, 13.83, -8.04));
         return s;
     }
 
     /** {@code bed_plate1_pillow_large_s2.geo.json} sha256[:12]=0b2d8e401587；尚未做 Gecko X 镜像。 */
     private static VoxelShape largeS2Raw() {
         VoxelShape s = Shapes.empty();
-        s = Shapes.or(s, Block.box(0.50, 6.96, -13.96, 13.50, 13.50, -11.09));
-        s = Shapes.or(s, Block.box(1.50, 6.61, -14.79, 12.50, 13.84, -10.26));
+        s = Shapes.or(s, Block.box(0.50, 6.94, -11.74, 13.50, 13.49, -8.87));
+        s = Shapes.or(s, Block.box(1.50, 6.60, -12.57, 12.50, 13.83, -8.04));
+        return s;
+    }
+
+    /** {@code bed_plate1_pillow_large_p1.geo.json} sha256[:12]=dba057cdae47；尚未做 Gecko X 镜像。 */
+    private static VoxelShape largeP1Raw() {
+        VoxelShape s = Shapes.empty();
+        s = Shapes.or(s, Block.box(15.50, 7.78, -14.00, 28.50, 7.98, -7.00));
+        s = Shapes.or(s, Block.box(16.50, 6.88, -14.00, 27.50, 8.88, -7.00));
+        return s;
+    }
+
+    /** {@code bed_plate1_pillow_large_p2.geo.json} sha256[:12]=b133b1cf32ac；尚未做 Gecko X 镜像。 */
+    private static VoxelShape largeP2Raw() {
+        VoxelShape s = Shapes.empty();
+        s = Shapes.or(s, Block.box(1.50, 7.78, -14.00, 14.50, 7.98, -7.00));
+        s = Shapes.or(s, Block.box(2.50, 6.88, -14.00, 13.50, 8.88, -7.00));
         return s;
     }
 
@@ -134,42 +153,42 @@ public final class BedPlate1PillowPickShapes {
     /** {@code bed_plate1_pillow_medium_s1.geo.json} sha256[:12]=710adc26db37；尚未做 Gecko X 镜像。 */
     private static VoxelShape mediumS1Raw() {
         VoxelShape s = Shapes.empty();
-        s = Shapes.or(s, Block.box(19.00, 6.62, -9.92, 29.00, 13.85, -5.40));
-        s = Shapes.or(s, Block.box(17.60, 6.89, -9.09, 19.00, 7.96, -8.34));
-        s = Shapes.or(s, Block.box(17.60, 9.73, -8.13, 19.00, 10.81, -7.38));
-        s = Shapes.or(s, Block.box(17.60, 11.58, -7.36, 19.00, 12.66, -6.61));
-        s = Shapes.or(s, Block.box(17.60, 8.73, -8.33, 19.00, 9.81, -7.57));
-        s = Shapes.or(s, Block.box(17.60, 12.43, -6.80, 19.00, 13.51, -6.04));
-        s = Shapes.or(s, Block.box(17.60, 7.89, -8.89, 19.00, 8.96, -8.14));
-        s = Shapes.or(s, Block.box(17.60, 10.58, -7.56, 19.00, 11.66, -6.81));
-        s = Shapes.or(s, Block.box(29.00, 6.89, -9.09, 30.40, 7.96, -8.34));
-        s = Shapes.or(s, Block.box(29.00, 9.73, -8.13, 30.40, 10.81, -7.38));
-        s = Shapes.or(s, Block.box(29.00, 11.58, -7.36, 30.40, 12.66, -6.61));
-        s = Shapes.or(s, Block.box(29.00, 8.73, -8.33, 30.40, 9.81, -7.57));
-        s = Shapes.or(s, Block.box(29.00, 12.43, -6.80, 30.40, 13.51, -6.04));
-        s = Shapes.or(s, Block.box(29.00, 7.89, -8.89, 30.40, 8.96, -8.14));
-        s = Shapes.or(s, Block.box(29.00, 10.58, -7.56, 30.40, 11.66, -6.81));
+        s = Shapes.or(s, Block.box(19.00, 6.62, -12.60, 29.00, 13.85, -8.08));
+        s = Shapes.or(s, Block.box(17.60, 6.96, -9.48, 19.00, 8.04, -8.72));
+        s = Shapes.or(s, Block.box(17.60, 9.66, -10.81, 19.00, 10.73, -10.06));
+        s = Shapes.or(s, Block.box(17.60, 11.50, -11.57, 19.00, 12.58, -10.82));
+        s = Shapes.or(s, Block.box(17.60, 8.81, -10.24, 19.00, 9.89, -9.49));
+        s = Shapes.or(s, Block.box(17.60, 12.51, -11.77, 19.00, 13.58, -11.02));
+        s = Shapes.or(s, Block.box(17.60, 7.81, -10.04, 19.00, 8.89, -9.29));
+        s = Shapes.or(s, Block.box(17.60, 10.66, -11.01, 19.00, 11.73, -10.25));
+        s = Shapes.or(s, Block.box(29.00, 6.96, -9.48, 30.40, 8.04, -8.72));
+        s = Shapes.or(s, Block.box(29.00, 9.66, -10.81, 30.40, 10.73, -10.06));
+        s = Shapes.or(s, Block.box(29.00, 11.50, -11.57, 30.40, 12.58, -10.82));
+        s = Shapes.or(s, Block.box(29.00, 8.81, -10.24, 30.40, 9.89, -9.49));
+        s = Shapes.or(s, Block.box(29.00, 12.51, -11.77, 30.40, 13.58, -11.02));
+        s = Shapes.or(s, Block.box(29.00, 7.81, -10.04, 30.40, 8.89, -9.29));
+        s = Shapes.or(s, Block.box(29.00, 10.66, -11.01, 30.40, 11.73, -10.25));
         return s;
     }
 
     /** {@code bed_plate1_pillow_medium_s2.geo.json} sha256[:12]=b30a16576540；尚未做 Gecko X 镜像。 */
     private static VoxelShape mediumS2Raw() {
         VoxelShape s = Shapes.empty();
-        s = Shapes.or(s, Block.box(2.00, 6.62, -9.92, 12.00, 13.85, -5.40));
-        s = Shapes.or(s, Block.box(0.60, 6.89, -9.09, 2.00, 7.96, -8.34));
-        s = Shapes.or(s, Block.box(0.60, 9.73, -8.13, 2.00, 10.81, -7.38));
-        s = Shapes.or(s, Block.box(0.60, 11.58, -7.36, 2.00, 12.66, -6.61));
-        s = Shapes.or(s, Block.box(0.60, 8.73, -8.33, 2.00, 9.81, -7.57));
-        s = Shapes.or(s, Block.box(0.60, 12.43, -6.80, 2.00, 13.51, -6.04));
-        s = Shapes.or(s, Block.box(0.60, 7.89, -8.89, 2.00, 8.96, -8.14));
-        s = Shapes.or(s, Block.box(0.60, 10.58, -7.56, 2.00, 11.66, -6.81));
-        s = Shapes.or(s, Block.box(12.00, 6.89, -9.09, 13.40, 7.96, -8.34));
-        s = Shapes.or(s, Block.box(12.00, 9.73, -8.13, 13.40, 10.81, -7.38));
-        s = Shapes.or(s, Block.box(12.00, 11.58, -7.36, 13.40, 12.66, -6.61));
-        s = Shapes.or(s, Block.box(12.00, 8.73, -8.33, 13.40, 9.81, -7.57));
-        s = Shapes.or(s, Block.box(12.00, 12.43, -6.80, 13.40, 13.51, -6.04));
-        s = Shapes.or(s, Block.box(12.00, 7.89, -8.89, 13.40, 8.96, -8.14));
-        s = Shapes.or(s, Block.box(12.00, 10.58, -7.56, 13.40, 11.66, -6.81));
+        s = Shapes.or(s, Block.box(2.00, 6.62, -12.60, 12.00, 13.85, -8.08));
+        s = Shapes.or(s, Block.box(0.60, 6.96, -9.48, 2.00, 8.04, -8.72));
+        s = Shapes.or(s, Block.box(0.60, 9.66, -10.81, 2.00, 10.73, -10.06));
+        s = Shapes.or(s, Block.box(0.60, 11.50, -11.57, 2.00, 12.58, -10.82));
+        s = Shapes.or(s, Block.box(0.60, 8.81, -10.24, 2.00, 9.89, -9.49));
+        s = Shapes.or(s, Block.box(0.60, 12.51, -11.77, 2.00, 13.58, -11.02));
+        s = Shapes.or(s, Block.box(0.60, 7.81, -10.04, 2.00, 8.89, -9.29));
+        s = Shapes.or(s, Block.box(0.60, 10.66, -11.01, 2.00, 11.73, -10.25));
+        s = Shapes.or(s, Block.box(12.00, 6.96, -9.48, 13.40, 8.04, -8.72));
+        s = Shapes.or(s, Block.box(12.00, 9.66, -10.81, 13.40, 10.73, -10.06));
+        s = Shapes.or(s, Block.box(12.00, 11.50, -11.57, 13.40, 12.58, -10.82));
+        s = Shapes.or(s, Block.box(12.00, 8.81, -10.24, 13.40, 9.89, -9.49));
+        s = Shapes.or(s, Block.box(12.00, 12.51, -11.77, 13.40, 13.58, -11.02));
+        s = Shapes.or(s, Block.box(12.00, 7.81, -10.04, 13.40, 8.89, -9.29));
+        s = Shapes.or(s, Block.box(12.00, 10.66, -11.01, 13.40, 11.73, -10.25));
         return s;
     }
 

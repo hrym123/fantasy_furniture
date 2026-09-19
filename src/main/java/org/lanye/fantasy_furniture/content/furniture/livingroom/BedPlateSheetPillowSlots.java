@@ -32,13 +32,21 @@ public final class BedPlateSheetPillowSlots {
     private static final String NBT_LARGE2_MAT = "Lg2Mat";
     private static final String NBT_MEDIUM = "MdPillow";
     private static final String NBT_SMALL = "SmPillow";
+    private static final String NBT_LARGE1_FLAT = "Lg1Flat";
+    private static final String NBT_LARGE2_FLAT = "Lg2Flat";
+    private static final String NBT_MEDIUM_POSE = "MdPose";
 
     private int large1StyleId;
     private int large1MaterialId;
     private int large2StyleId;
     private int large2MaterialId;
+    /** 大号平放。缺省竖放，与已放置的床一致。 */
+    private boolean large1Flat;
+    private boolean large2Flat;
     private int mediumMat;
     private int mediumSide = 1;
+    /** -1 跟随同侧大号；0 平放；1 竖放。 */
+    private int mediumPose = -1;
     private int smallMat;
     private int smallPlace = 4;
 
@@ -133,6 +141,48 @@ public final class BedPlateSheetPillowSlots {
                 : (hasLargeSlot(1) ? large1MaterialId : 0);
     }
 
+    /** 床板1型大号：true 平放（DAP），false 竖放（S）。 */
+    public boolean largeFlat(int side) {
+        if (!hasLargeSlot(side)) {
+            return false;
+        }
+        return side == 2 ? large2Flat : large1Flat;
+    }
+
+    /** @return 切换后是否平放 */
+    public boolean toggleLargeFlat(int side) {
+        if (side == 2) {
+            large2Flat = hasLargeSlot(2) && !large2Flat;
+            return large2Flat;
+        }
+        large1Flat = hasLargeSlot(1) && !large1Flat;
+        return large1Flat;
+    }
+
+    /** 中号：调试指定优先，否则同侧大号竖放时竖放、否则平放。 */
+    public boolean mediumStanding() {
+        if (!hasMedium()) {
+            return false;
+        }
+        if (mediumPose == 0) {
+            return false;
+        }
+        if (mediumPose == 1) {
+            return true;
+        }
+        return hasLargeSlot(mediumSide()) && !largeFlat(mediumSide());
+    }
+
+    /** @return 切换后是否竖放 */
+    public boolean toggleMediumStanding() {
+        if (!hasMedium()) {
+            return false;
+        }
+        boolean standing = !mediumStanding();
+        mediumPose = standing ? 1 : 0;
+        return standing;
+    }
+
     public boolean canAddMedium() {
         return !hasMedium();
     }
@@ -147,6 +197,7 @@ public final class BedPlateSheetPillowSlots {
         }
         this.mediumMat = materialId;
         this.mediumSide = side == 2 ? 2 : 1;
+        this.mediumPose = -1;
         return true;
     }
 
@@ -170,10 +221,13 @@ public final class BedPlateSheetPillowSlots {
     public void clear() {
         large1StyleId = 0;
         large1MaterialId = 0;
+        large1Flat = false;
         large2StyleId = 0;
         large2MaterialId = 0;
+        large2Flat = false;
         mediumMat = 0;
         mediumSide = 1;
+        mediumPose = -1;
         smallMat = 0;
         smallPlace = 4;
     }
@@ -181,9 +235,18 @@ public final class BedPlateSheetPillowSlots {
     public void write(CompoundTag tag) {
         writeLarge(tag, NBT_LARGE1_STYLE, NBT_LARGE1_MAT, large1StyleId, large1MaterialId);
         writeLarge(tag, NBT_LARGE2_STYLE, NBT_LARGE2_MAT, large2StyleId, large2MaterialId);
+        if (large1Flat && validLarge(large1StyleId, large1MaterialId)) {
+            tag.putBoolean(NBT_LARGE1_FLAT, true);
+        }
+        if (large2Flat && validLarge(large2StyleId, large2MaterialId)) {
+            tag.putBoolean(NBT_LARGE2_FLAT, true);
+        }
         if (mediumMat != 0) {
             tag.putInt(NBT_MEDIUM, mediumMat);
             tag.putInt("MdSide", mediumSide == 2 ? 2 : 1);
+            if (mediumPose == 0 || mediumPose == 1) {
+                tag.putInt(NBT_MEDIUM_POSE, mediumPose);
+            }
         }
         if (smallMat != 0) {
             tag.putInt(NBT_SMALL, smallMat);
@@ -197,19 +260,28 @@ public final class BedPlateSheetPillowSlots {
         if (!validLarge(large1StyleId, large1MaterialId)) {
             large1StyleId = 0;
             large1MaterialId = 0;
+            large1Flat = false;
+        } else {
+            large1Flat = tag.getBoolean(NBT_LARGE1_FLAT);
         }
         large2StyleId = tag.getInt(NBT_LARGE2_STYLE);
         large2MaterialId = tag.getInt(NBT_LARGE2_MAT);
         if (!validLarge(large2StyleId, large2MaterialId)) {
             large2StyleId = 0;
             large2MaterialId = 0;
+            large2Flat = false;
+        } else {
+            large2Flat = tag.getBoolean(NBT_LARGE2_FLAT);
         }
         mediumMat = tag.getInt(NBT_MEDIUM);
         if (!BedPlate6MediumPillowMaterials.isValid(mediumMat)) {
             mediumMat = 0;
             mediumSide = 1;
+            mediumPose = -1;
         } else {
             mediumSide = tag.getInt("MdSide") == 2 ? 2 : 1;
+            int pose = tag.contains(NBT_MEDIUM_POSE) ? tag.getInt(NBT_MEDIUM_POSE) : -1;
+            mediumPose = pose == 0 || pose == 1 ? pose : -1;
         }
         smallMat = tag.getInt(NBT_SMALL);
         if (!BedPlate6SmallPillowMaterials.isValid(smallMat)) {
@@ -359,9 +431,11 @@ public final class BedPlateSheetPillowSlots {
         if (side == 2) {
             large2StyleId = styleId;
             large2MaterialId = materialId;
+            large2Flat = false;
         } else {
             large1StyleId = styleId;
             large1MaterialId = materialId;
+            large1Flat = false;
         }
         return true;
     }
