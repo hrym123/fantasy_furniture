@@ -151,6 +151,8 @@
   "debug.fantasy_furniture.variant.styled_window_0_shape": "Shape %s",
   "debug.fantasy_furniture.variant.styled_window_0_material": "Material %s",
   "debug.fantasy_furniture.variant.banquette_shape": "Banquette %s",
+"debug.fantasy_furniture.variant.bed_plate1_pillow_flat": "Pillow · flat",
+"debug.fantasy_furniture.variant.bed_plate1_pillow_standing": "Pillow · upright",
   "debug.fantasy_furniture.variant.soap_paper_box_stack_style": "Paper box stack style %s",
   "debug.fantasy_furniture.variant.sweeper_dock_texture": "Dock texture %s",
   "item.fantasy_furniture.tanghulu": "Tanghulu",
