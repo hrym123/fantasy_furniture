@@ -1,0 +1,16 @@
+{
+  "variants": {
+    "facing=east": {
+      "model": "fantasy_furniture:block/bar_counter_yellow_bar_3"
+    },
+    "facing=north": {
+      "model": "fantasy_furniture:block/bar_counter_yellow_bar_3"
+    },
+    "facing=south": {
+      "model": "fantasy_furniture:block/bar_counter_yellow_bar_3"
+    },
+    "facing=west": {
+      "model": "fantasy_furniture:block/bar_counter_yellow_bar_3"
+    }
+  }
+}

@@ -17,6 +17,8 @@ import org.lanye.fantasy_furniture.content.soap.client.SoapDissolveParticle;
 import org.lanye.fantasy_furniture.content.sweeper.blockentity.SweeperDockBlockEntity;
 import org.lanye.fantasy_furniture.bootstrap.block.ModBlocks;
 import org.lanye.fantasy_furniture.content.furniture.cabinet.client.CabinetGeoBlockRenderer;
+import org.lanye.fantasy_furniture.content.furniture.bar.blockentity.BarCounterBlockEntity;
+import org.lanye.fantasy_furniture.content.furniture.bar.blockentity.CornerBarBlockEntity;
 import org.lanye.fantasy_furniture.content.furniture.decor.client.model.ComputerGeoModel;
 import org.lanye.fantasy_furniture.content.furniture.decor.client.model.DrinkwareGeoModel;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.client.model.BanquetteBlockGeoModel;
@@ -130,6 +132,14 @@ public final class ClientModEvents {
                 ModBlocks.DRINKWARE,
                 ReveriePerfRender.wrapBer(
                         ctx -> new ReverieGeoBlockRenderer<>(new DrinkwareGeoModel(), GeoRenderTier.STATIC)));
+        AnimatedBlockClientRegistration.registerBlockEntityRenderer(
+                ModBlocks.BAR_COUNTER,
+                GeolibAnimatedBlockRenderers.variableTextureGeoRendererProvider(
+                        FantasyFurniture.MODID, "bar_counter", BarCounterBlockEntity::getTextureLocation));
+        AnimatedBlockClientRegistration.registerBlockEntityRenderer(
+                ModBlocks.CORNER_BAR,
+                GeolibAnimatedBlockRenderers.variableTextureGeoRendererProvider(
+                        FantasyFurniture.MODID, "corner_bar", CornerBarBlockEntity::getTextureLocation));
     }
 
     @SubscribeEvent
