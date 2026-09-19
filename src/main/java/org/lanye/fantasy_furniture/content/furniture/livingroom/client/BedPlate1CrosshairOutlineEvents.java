@@ -12,10 +12,12 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import org.lanye.fantasy_furniture.FantasyFurniture;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.block.BedPlate1Block;
+import org.lanye.fantasy_furniture.content.furniture.livingroom.block.BedPlate1CollisionShapes;
+import org.lanye.fantasy_furniture.content.furniture.livingroom.block.BedPlate1CollisionShapes.PickedLayer;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.blockentity.BedPlate1BlockEntity;
 import org.lanye.reverie_core.composite.client.CompositeCrosshairOutlines;
 
-/** 床板1 准心黑框：只画当前选中的床体 / 床单 / 被套 / 单只枕头。 */
+/** 床板1 准心黑框：木架只描命中格；床单 / 被套 / 枕头描整件（床尾右锚点）。 */
 @OnlyIn(Dist.CLIENT)
 @Mod.EventBusSubscriber(modid = FantasyFurniture.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
 public final class BedPlate1CrosshairOutlineEvents {
@@ -39,10 +41,16 @@ public final class BedPlate1CrosshairOutlineEvents {
                 || (!plate.hasDuvet() && !plate.hasCover() && !plate.sheetPillows().hasAny())) {
             return;
         }
-        VoxelShape outline = BedPlate1ClientPick.crosshairOutlinePieceShape(mc.level, state, pos, bhr);
-        if (outline == null || outline.isEmpty()) {
-            return;
-        }
-        CompositeCrosshairOutlines.renderPartOutline(event, pos, outline);
+        PickedLayer layer = BedPlate1ClientPick.resolveLayer(mc.level, state, bhr);
+        VoxelShape component =
+                BedPlate1CollisionShapes.outlineComponent(
+                        state, plate.hasDuvet(), plate.hasCover(), plate.sheetPillows(), layer);
+        CompositeCrosshairOutlines.renderMultiCell(
+                event,
+                layer != PickedLayer.BODY && !component.isEmpty(),
+                pos,
+                BedPlate1CollisionShapes.bodyShape(state),
+                BedPlate1Block.renderAnchorPos(state, pos),
+                component);
     }
 }

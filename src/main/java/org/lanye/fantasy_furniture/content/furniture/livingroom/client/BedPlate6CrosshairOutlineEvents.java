@@ -2,9 +2,9 @@ package org.lanye.fantasy_furniture.content.furniture.livingroom.client;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
-import net.minecraft.world.level.block.BedBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
@@ -16,7 +16,7 @@ import org.lanye.fantasy_furniture.content.furniture.livingroom.block.BedPlate6B
 import org.lanye.fantasy_furniture.content.furniture.livingroom.blockentity.BedPlate6BlockEntity;
 import org.lanye.reverie_core.composite.client.CompositeCrosshairOutlines;
 
-/** 床板 6 准心黑框：只画当前子件（避免并集多框同亮）；描边见 core。 */
+/** 床板 6 准心黑框：木架只描命中格；床单 / 枕头 / 被套描整件（床尾锚点）。 */
 @OnlyIn(Dist.CLIENT)
 @Mod.EventBusSubscriber(modid = FantasyFurniture.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
 public final class BedPlate6CrosshairOutlineEvents {
@@ -36,24 +36,18 @@ public final class BedPlate6CrosshairOutlineEvents {
             return;
         }
         BlockPos foot = BedPlate6Block.bedFootWorldPos(state, pos);
-        var be = mc.level.getBlockEntity(foot);
-        if (!(be instanceof BedPlate6BlockEntity plate) || !plate.hasDuvet()) {
-            return;
+        VoxelShape piece = Shapes.empty();
+        if (mc.level.getBlockEntity(foot) instanceof BedPlate6BlockEntity plate && plate.hasDuvet()) {
+            piece =
+                    BedPlate6ClientPick.crosshairOutlineComponentShape(
+                            mc.level, state, pos, plate, state.getValue(BedPlate6Block.FACING), bhr);
         }
-
-        VoxelShape mattressBase = BedPlate6Block.mattressBaseShape(state);
-        VoxelShape outline =
-                BedPlate6ClientPick.crosshairOutlinePieceShape(
-                        mc.level,
-                        state,
-                        pos,
-                        mattressBase,
-                        plate,
-                        state.getValue(BedBlock.FACING),
-                        bhr);
-        if (outline.isEmpty()) {
-            return;
-        }
-        CompositeCrosshairOutlines.renderPartOutline(event, pos, outline);
+        CompositeCrosshairOutlines.renderMultiCell(
+                event,
+                !piece.isEmpty(),
+                pos,
+                BedPlate6Block.mattressBaseShape(state),
+                foot,
+                piece);
     }
 }
