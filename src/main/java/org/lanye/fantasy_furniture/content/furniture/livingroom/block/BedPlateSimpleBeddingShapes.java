@@ -140,6 +140,40 @@ public final class BedPlateSimpleBeddingShapes {
         return PickedLayer.BODY;
     }
 
+    /** 准心打中的是哪一只大号。平放共用 {@code large_p1} 时，按还在的那一槽。 */
+    public static int largeSlotAt(
+            Plate plate,
+            BlockState state,
+            BedPlateSheetPillowSlots pillows,
+            Vec3 hitWorld,
+            BlockPos pos) {
+        if (pillows == null) {
+            return 0;
+        }
+        int plateId =
+                switch (plate) {
+                    case PLATE2 -> 2;
+                    case PLATE3 -> 3;
+                    case PLATE4 -> 4;
+                };
+        BedPart part = state.getValue(BedBlock.PART);
+        for (String suffix : BedPlateComboPillowLayout.suffixes(plateId, pillows)) {
+            if (!suffix.startsWith("large_")) {
+                continue;
+            }
+            VoxelShape cell =
+                    orient(sliceCover(BedPlateComboPillowPickShapes.of(plateId, suffix), part), state);
+            if (cell.isEmpty() || !containsLocal(cell, hitWorld, pos)) {
+                continue;
+            }
+            if (suffix.endsWith("2")) {
+                return 2;
+            }
+            return pillows.hasLargeSlot(1) ? 1 : 2;
+        }
+        return 0;
+    }
+
     /**
      * 组件描边：相对床尾的整件（不裁格、不含木架）。床体返回空，由调用方画命中格。
      */

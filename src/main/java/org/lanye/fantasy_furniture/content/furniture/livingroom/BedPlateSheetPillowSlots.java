@@ -119,7 +119,10 @@ public final class BedPlateSheetPillowSlots {
         return writeLargeSlot(2, styleId, materialId);
     }
 
-    /** 床板1型：1=右列（组合组 S1），2=左列（组合组 S2）。该列已有大号则失败。 */
+    /**
+     * 床板1型：1=左列（组合组 S1），2=右列（组合组 S2）。该列已有大号则失败。
+     * S1 在导出里靠 +X，默认 Geo 会做 X 镜像，画到床尾右锚点的 −X，也就是面朝与床正面相同方向时的左手边。
+     */
     public boolean canAddLargeSide(int side) {
         return side == 2 ? !hasLargeSlot(2) : !hasLargeSlot(1);
     }
@@ -216,6 +219,29 @@ public final class BedPlateSheetPillowSlots {
         this.smallMat = materialId;
         this.smallPlace = place >= 4 && place <= 7 ? place : 4;
         return true;
+    }
+
+    public void clearLargeSlot(int side) {
+        if (side == 2) {
+            large2StyleId = 0;
+            large2MaterialId = 0;
+            large2Flat = false;
+            return;
+        }
+        large1StyleId = 0;
+        large1MaterialId = 0;
+        large1Flat = false;
+    }
+
+    public void clearMedium() {
+        mediumMat = 0;
+        mediumSide = 1;
+        mediumPose = -1;
+    }
+
+    public void clearSmall() {
+        smallMat = 0;
+        smallPlace = 4;
     }
 
     public void clear() {
@@ -393,12 +419,15 @@ public final class BedPlateSheetPillowSlots {
         };
     }
 
-    /** 0=不是床板1型；1=右列；2=左列。 */
+    /**
+     * 0=不是床板1型；1=左列；2=右列。
+     * 左右跟床的朝向走：面朝与床正面相同的方向时，左手边是左列。不要按“正对着床头看”来镜像。
+     */
     private static int plate1Side(BlockState state) {
         if (!(state.getBlock() instanceof BedPlate1Block)) {
             return 0;
         }
-        return state.getValue(BedPlate1Block.SIDE) == BedPlateSide.LEFT ? 2 : 1;
+        return state.getValue(BedPlate1Block.SIDE) == BedPlateSide.LEFT ? 1 : 2;
     }
 
     private static int smallPlaceFor(BedPlateSheetPillowSlots slots, int side) {

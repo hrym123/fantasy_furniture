@@ -256,48 +256,10 @@ public final class BedPlate1Block extends BedPlateBlock {
         if (player.getItemInHand(hand).getItem() instanceof FantasyDebugStickItem) {
             return cyclePillowPose(state, level, pos, player, hit);
         }
-        // 拆卸手套：按准心层卸被套或床单（卸床单连带被套）
+        // 拆卸手套：按准心卸选中的枕头、被套，或床单（卸床单连带被套）。对准木架则不睡。
         if (hand == InteractionHand.MAIN_HAND
                 && player.getItemInHand(hand).getItem() instanceof BedPlate6DisassemblyGloveItem) {
-            BedPlate1BlockEntity plate = decorEntity(level, state, pos);
-            if (plate == null || !plate.hasDuvet()) {
-                return InteractionResult.PASS;
-            }
-            BedPlate1CollisionShapes.PickedLayer layer =
-                    BedPlate1CollisionShapes.pickLayer(
-                            state, true, plate.hasCover(), plate.sheetPillows(), hit.getLocation(), pos);
-            if (layer == BedPlate1CollisionShapes.PickedLayer.BODY
-                    || layer == BedPlate1CollisionShapes.PickedLayer.LARGE_1
-                    || layer == BedPlate1CollisionShapes.PickedLayer.LARGE_2
-                    || layer == BedPlate1CollisionShapes.PickedLayer.MEDIUM
-                    || layer == BedPlate1CollisionShapes.PickedLayer.SMALL) {
-                return InteractionResult.PASS;
-            }
-            if (layer == BedPlate1CollisionShapes.PickedLayer.DUVET_COVER) {
-                if (!plate.hasCover()) {
-                    return InteractionResult.PASS;
-                }
-                int coverMat = plate.getCoverMaterialId();
-                clearAllCovers(level, state, pos);
-                if (!level.isClientSide) {
-                    BedPlate6DecorStorage.giveOrDropToPlayer(
-                            player, BedPlate6DuvetCoverItem.stackForRegistry(coverMat));
-                }
-                return InteractionResult.sidedSuccess(level.isClientSide);
-            }
-            /* 床单层：连带被套 */
-            int duvetMat = plate.getDuvetMaterialId();
-            int coverMat = plate.hasCover() ? plate.getCoverMaterialId() : 0;
-            clearAllDuvets(level, state, pos);
-            if (!level.isClientSide) {
-                BedPlate6DecorStorage.giveOrDropToPlayer(
-                        player, BedPlate6DuvetItem.stackForRegistry(duvetMat));
-                if (coverMat != 0) {
-                    BedPlate6DecorStorage.giveOrDropToPlayer(
-                            player, BedPlate6DuvetCoverItem.stackForRegistry(coverMat));
-                }
-            }
-            return InteractionResult.sidedSuccess(level.isClientSide);
+            return removeWithGlove(state, level, pos, player, hit);
         }
         if (player.getItemInHand(hand).getItem() instanceof BedPlate6LargePillowItem) {
             InteractionResult pillow = BedPlate6LargePillowItem.applyToBed(level, pos, state, player, hand);
@@ -350,6 +312,123 @@ public final class BedPlate1Block extends BedPlateBlock {
             }
         }
         super.playerWillDestroy(level, pos, state, player);
+    }
+
+    /**
+     * 主手拆卸手套对准的那一层。枕头只卸这一只；被套只卸被套；床单连带被套。
+     * 大号底下叠着的小号（落点 6 靠左列、7 靠右列）一起还回。
+     */
+    private static InteractionResult removeWithGlove(
+            BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
+        BedPlate1BlockEntity plate = decorEntity(level, state, pos);
+        if (plate == null) {
+            return InteractionResult.PASS;
+        }
+        BedPlateSheetPillowSlots slots = plate.sheetPillows();
+        if (!plate.hasDuvet() && !plate.hasCover() && !slots.hasAny()) {
+            return InteractionResult.PASS;
+        }
+        BedPlate1CollisionShapes.PickedLayer layer =
+                BedPlate1CollisionShapes.pickLayer(
+                        state, plate.hasDuvet(), plate.hasCover(), slots, hit.getLocation(), pos);
+        if (layer == BedPlate1CollisionShapes.PickedLayer.BODY) {
+            return InteractionResult.PASS;
+        }
+        if (!level.isClientSide && !popPlate1Layer(level, state, pos, player, plate, slots, layer)) {
+            return InteractionResult.PASS;
+        }
+        return InteractionResult.sidedSuccess(level.isClientSide);
+    }
+
+    private static boolean popPlate1Layer(
+            Level level,
+            BlockState state,
+            BlockPos pos,
+            Player player,
+            BedPlate1BlockEntity plate,
+            BedPlateSheetPillowSlots slots,
+            BedPlate1CollisionShapes.PickedLayer layer) {
+        return switch (layer) {
+            case LARGE_1 -> takeLarge(player, plate, slots, 1);
+            case LARGE_2 -> takeLarge(player, plate, slots, 2);
+            case MEDIUM -> takeMedium(player, plate, slots);
+            case SMALL -> takeSmall(player, plate, slots);
+            case DUVET_COVER -> {
+                if (!plate.hasCover()) {
+                    yield false;
+                }
+                int coverMat = plate.getCoverMaterialId();
+                clearAllCovers(level, state, pos);
+                BedPlate6DecorStorage.giveOrDropToPlayer(
+                        player, BedPlate6DuvetCoverItem.stackForRegistry(coverMat));
+                yield true;
+            }
+            case DUVET -> {
+                if (!plate.hasDuvet()) {
+                    yield false;
+                }
+                int duvetMat = plate.getDuvetMaterialId();
+                int coverMat = plate.hasCover() ? plate.getCoverMaterialId() : 0;
+                clearAllDuvets(level, state, pos);
+                BedPlate6DecorStorage.giveOrDropToPlayer(
+                        player, BedPlate6DuvetItem.stackForRegistry(duvetMat));
+                if (coverMat != 0) {
+                    BedPlate6DecorStorage.giveOrDropToPlayer(
+                            player, BedPlate6DuvetCoverItem.stackForRegistry(coverMat));
+                }
+                yield true;
+            }
+            case BODY -> false;
+        };
+    }
+
+    private static boolean takeLarge(
+            Player player, BedPlate1BlockEntity plate, BedPlateSheetPillowSlots slots, int side) {
+        if (!slots.hasLargeSlot(side)) {
+            return false;
+        }
+        int style = slots.largeStyleOnSide(side);
+        int mat = slots.largeMaterialOnSide(side);
+        int smallPlace = slots.smallPlace();
+        boolean stackedSmall =
+                slots.hasSmall() && ((side == 1 && smallPlace == 6) || (side == 2 && smallPlace == 7));
+        int smallMat = stackedSmall ? slots.smallMat() : 0;
+        if (stackedSmall) {
+            slots.clearSmall();
+        }
+        slots.clearLargeSlot(side);
+        plate.syncSheetPillows();
+        BedPlate6DecorStorage.giveOrDropToPlayer(
+                player, BedPlate6LargePillowItem.stackForRegistry(style, mat));
+        if (smallMat != 0) {
+            BedPlate6DecorStorage.giveOrDropToPlayer(
+                    player, BedPlate6SmallPillowItem.stackForRegistry(smallMat));
+        }
+        return true;
+    }
+
+    private static boolean takeMedium(
+            Player player, BedPlate1BlockEntity plate, BedPlateSheetPillowSlots slots) {
+        if (!slots.hasMedium()) {
+            return false;
+        }
+        int mat = slots.mediumMat();
+        slots.clearMedium();
+        plate.syncSheetPillows();
+        BedPlate6DecorStorage.giveOrDropToPlayer(player, BedPlate6MediumPillowItem.stackForRegistry(mat));
+        return true;
+    }
+
+    private static boolean takeSmall(
+            Player player, BedPlate1BlockEntity plate, BedPlateSheetPillowSlots slots) {
+        if (!slots.hasSmall()) {
+            return false;
+        }
+        int mat = slots.smallMat();
+        slots.clearSmall();
+        plate.syncSheetPillows();
+        BedPlate6DecorStorage.giveOrDropToPlayer(player, BedPlate6SmallPillowItem.stackForRegistry(mat));
+        return true;
     }
 
     /** 清掉 2×2 上所有格残留的床单（及连带被套）数据。 */

@@ -1,9 +1,9 @@
 {
   "name": "block.fantasy_furniture.decorative_screen",
   "icon": "fantasy_furniture:decorative_screen",
-  "category": "reverie_core:building",
+  "category": "reverie_core:furniture",
   "read_by_default": true,
-  "sortnum": 30,
+  "sortnum": 72,
   "pages": [
     {
       "type": "patchouli:spotlight",

@@ -242,6 +242,27 @@ public final class BedPlate2BlockEntity extends BedPlateBaseBlockEntity {
         return true;
     }
 
+    public void clearLargePillowSlot(int index) {
+        if (index == 2) {
+            large2StyleId = 0;
+            large2MaterialId = 0;
+        } else {
+            large1StyleId = 0;
+            large1MaterialId = 0;
+        }
+        syncClients();
+    }
+
+    public void clearMediumPillow() {
+        mediumPillowMat = 0;
+        syncClients();
+    }
+
+    public void clearSmallPillow() {
+        smallPillowMat = 0;
+        syncClients();
+    }
+
     public void clearAllBedding() {
         duvetMaterialId = 0;
         coverMaterialId = 0;

@@ -23,11 +23,14 @@ import org.lanye.fantasy_furniture.content.furniture.livingroom.BedPlateBedFootP
 import org.lanye.fantasy_furniture.content.furniture.livingroom.BedPlateSimpleBeddingStorage;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.blockentity.BedPlate4BlockEntity;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.client.BedPlateSimpleBeddingClientPick;
+import org.lanye.fantasy_furniture.content.furniture.livingroom.block.BedPlateSimpleBeddingShapes.Plate;
+import org.lanye.fantasy_furniture.content.furniture.livingroom.item.BedPlate6DisassemblyGloveItem;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.item.BedPlate6DuvetCoverItem;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.item.BedPlate6DuvetItem;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.item.BedPlate6LargePillowItem;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.item.BedPlate6MediumPillowItem;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.item.BedPlate6SmallPillowItem;
+import org.lanye.fantasy_furniture.content.furniture.livingroom.item.BedPlateSimpleGloveRemoval;
 import org.lanye.reverie_core.geolib.bed.BedPlateBaseBlockEntity;
 import org.lanye.reverie_core.geolib.bed.BedPlateBlock;
 
@@ -173,6 +176,10 @@ public final class BedPlate4Block extends BedPlateBlock {
             Player player,
             InteractionHand hand,
             BlockHitResult hit) {
+        if (hand == InteractionHand.MAIN_HAND
+                && player.getItemInHand(hand).getItem() instanceof BedPlate6DisassemblyGloveItem) {
+            return BedPlateSimpleGloveRemoval.tryRemove(Plate.PLATE4, level, state, pos, player, hand, hit);
+        }
         if (player.getItemInHand(hand).getItem() instanceof BedPlate6LargePillowItem) {
             InteractionResult pillow = BedPlate6LargePillowItem.applyToBed(level, pos, state, player, hand);
             if (pillow != InteractionResult.PASS) {
