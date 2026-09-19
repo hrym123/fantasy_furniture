@@ -151,6 +151,8 @@
   "debug.fantasy_furniture.variant.styled_window_0_shape": "造型 %s",
   "debug.fantasy_furniture.variant.styled_window_0_material": "材质 %s",
   "debug.fantasy_furniture.variant.banquette_shape": "卡座 %s",
+"debug.fantasy_furniture.variant.bed_plate1_pillow_flat": "枕头 · 平放",
+"debug.fantasy_furniture.variant.bed_plate1_pillow_standing": "枕头 · 竖放",
   "debug.fantasy_furniture.variant.soap_paper_box_stack_style": "包装盒堆叠样式 %s",
   "debug.fantasy_furniture.variant.sweeper_dock_texture": "机仓贴图 %s",
   "item.fantasy_furniture.tanghulu": "糖葫芦",

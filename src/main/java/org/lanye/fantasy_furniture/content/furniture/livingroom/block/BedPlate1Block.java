@@ -4,6 +4,7 @@ import java.util.List;
 import javax.annotation.Nullable;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.network.chat.Component;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.LivingEntity;
@@ -29,6 +30,7 @@ import net.minecraft.world.phys.shapes.VoxelShape;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.BedPlate1DecorStorage;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.BedPlate1MaterialVariant;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.BedPlate6DecorStorage;
+import org.lanye.fantasy_furniture.content.furniture.livingroom.BedPlateSheetPillowSlots;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.blockentity.BedPlate1BlockEntity;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.client.BedPlate1ClientPick;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.item.BedPlate6DisassemblyGloveItem;
@@ -37,6 +39,7 @@ import org.lanye.fantasy_furniture.content.furniture.livingroom.item.BedPlate6Du
 import org.lanye.fantasy_furniture.content.furniture.livingroom.item.BedPlate6LargePillowItem;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.item.BedPlate6MediumPillowItem;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.item.BedPlate6SmallPillowItem;
+import org.lanye.reverie_core.content.fantasy_core.item.FantasyDebugStickItem;
 import org.lanye.reverie_core.geolib.bed.BedPlateBlock;
 import org.lanye.reverie_core.geolib.bed.BedPlateSide;
 
@@ -250,6 +253,9 @@ public final class BedPlate1Block extends BedPlateBlock {
             Player player,
             InteractionHand hand,
             BlockHitResult hit) {
+        if (player.getItemInHand(hand).getItem() instanceof FantasyDebugStickItem) {
+            return cyclePillowPose(state, level, pos, player, hit);
+        }
         // 拆卸手套：按准心层卸被套或床单（卸床单连带被套）
         if (hand == InteractionHand.MAIN_HAND
                 && player.getItemInHand(hand).getItem() instanceof BedPlate6DisassemblyGloveItem) {
@@ -411,5 +417,39 @@ public final class BedPlate1Block extends BedPlateBlock {
     protected boolean enablesSoftLanding(BlockGetter level, BlockState state, BlockPos pos) {
         BedPlate1BlockEntity plate = decorEntity(level, state, pos);
         return plate != null && plate.hasDuvet();
+    }
+
+    /**
+     * 幻想调试棒右键对准的枕头，在平放与竖放之间切换。
+     * 大号用组合里的 S / DAP；中号用 P / S。未对准枕头则不处理，也不睡觉。
+     */
+    private static InteractionResult cyclePillowPose(
+            BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
+        BedPlate1BlockEntity plate = decorEntity(level, state, pos);
+        if (plate == null) {
+            return InteractionResult.PASS;
+        }
+        BedPlateSheetPillowSlots slots = plate.sheetPillows();
+        BedPlate1CollisionShapes.PickedLayer layer =
+                BedPlate1CollisionShapes.pickLayer(
+                        state, plate.hasDuvet(), plate.hasCover(), slots, hit.getLocation(), pos);
+        boolean large1 = layer == BedPlate1CollisionShapes.PickedLayer.LARGE_1 && slots.hasLargeSlot(1);
+        boolean large2 = layer == BedPlate1CollisionShapes.PickedLayer.LARGE_2 && slots.hasLargeSlot(2);
+        boolean medium = layer == BedPlate1CollisionShapes.PickedLayer.MEDIUM && slots.hasMedium();
+        if (!large1 && !large2 && !medium) {
+            return InteractionResult.PASS;
+        }
+        if (!level.isClientSide) {
+            boolean flat =
+                    medium ? !slots.toggleMediumStanding() : slots.toggleLargeFlat(large2 ? 2 : 1);
+            plate.syncSheetPillows();
+            player.displayClientMessage(
+                    Component.translatable(
+                            flat
+                                    ? "debug.fantasy_furniture.variant.bed_plate1_pillow_flat"
+                                    : "debug.fantasy_furniture.variant.bed_plate1_pillow_standing"),
+                    true);
+        }
+        return InteractionResult.sidedSuccess(level.isClientSide);
     }
 }

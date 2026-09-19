@@ -18,7 +18,7 @@ import software.bernie.geckolib.renderer.GeoBlockRenderer;
 
 /**
  * 床板1型枕头：几何来自组合 bbmodel 拆出的 geo，不在这里平移。
- * 大号两槽 S1/S2；中号平放 P / 竖放 S；小号 X4–X7。
+ * 大号两槽：竖放 S / 平放 P；中号平放 P / 竖放 S；小号 X4–X7。
  */
 @OnlyIn(Dist.CLIENT)
 public final class BedPlate1ComboPillowRenderer {
@@ -59,15 +59,32 @@ public final class BedPlate1ComboPillowRenderer {
             int packedLight,
             int packedOverlay) {
         if (slots.hasLargeSlot(1)) {
-            drawLarge(blockEntity, slots, 1, "s1", partialTick, poseStack, bufferSource, packedLight, packedOverlay);
+            drawLarge(
+                    blockEntity,
+                    slots,
+                    1,
+                    (slots.largeFlat(1) ? "p" : "s") + "1",
+                    partialTick,
+                    poseStack,
+                    bufferSource,
+                    packedLight,
+                    packedOverlay);
         }
         if (slots.hasLargeSlot(2)) {
-            drawLarge(blockEntity, slots, 2, "s2", partialTick, poseStack, bufferSource, packedLight, packedOverlay);
+            drawLarge(
+                    blockEntity,
+                    slots,
+                    2,
+                    (slots.largeFlat(2) ? "p" : "s") + "2",
+                    partialTick,
+                    poseStack,
+                    bufferSource,
+                    packedLight,
+                    packedOverlay);
         }
         if (slots.hasMedium()) {
             int side = slots.mediumSide();
-            boolean standing = slots.hasLargeSlot(side);
-            this.geoName = "bed_plate1_pillow_medium_" + (standing ? "s" : "p") + side;
+            this.geoName = "bed_plate1_pillow_medium_" + (slots.mediumStanding() ? "s" : "p") + side;
             int mat = slots.mediumMat();
             if (!BedPlate6MediumPillowMaterials.isValid(mat)) {
                 mat = 1;
