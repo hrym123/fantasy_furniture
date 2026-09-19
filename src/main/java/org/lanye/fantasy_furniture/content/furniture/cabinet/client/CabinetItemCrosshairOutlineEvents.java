@@ -54,7 +54,7 @@ public final class CabinetItemCrosshairOutlineEvents {
             VoxelShape shelf = CabinetShelfClientPick.aimedShelfShape(mc.level, state, pos, bhr);
             if (shelf != null && !shelf.isEmpty()) {
                 BlockPos origin = CabinetShelfClientPick.outlineOrigin(mc.level, state, pos, bhr, false);
-                CompositeCrosshairOutlines.renderPartOutline(event, origin, shelf);
+                CompositeCrosshairOutlines.renderMultiCell(event, true, pos, shelf, origin, shelf);
                 return;
             }
         }
@@ -74,10 +74,10 @@ public final class CabinetItemCrosshairOutlineEvents {
             if (outline == null || outline.isEmpty()) {
                 return;
             }
-            CompositeCrosshairOutlines.renderPartOutline(event, master, outline);
+            CompositeCrosshairOutlines.renderMultiCell(event, false, pos, outline, pos, outline);
             return;
         }
-        CompositeCrosshairOutlines.renderPartOutline(event, origin, outline);
+        CompositeCrosshairOutlines.renderMultiCell(event, true, pos, outline, origin, outline);
     }
 
     private static VoxelShape cabinetShellOutline(BlockEntity raw, CabinetKind kind, BlockState state) {

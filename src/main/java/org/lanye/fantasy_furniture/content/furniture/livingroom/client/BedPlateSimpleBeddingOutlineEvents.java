@@ -11,10 +11,13 @@ import net.minecraftforge.client.event.RenderHighlightEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import org.lanye.fantasy_furniture.FantasyFurniture;
+import org.lanye.fantasy_furniture.content.furniture.livingroom.BedPlateBedFootPos;
+import org.lanye.fantasy_furniture.content.furniture.livingroom.block.BedPlateSimpleBeddingShapes;
+import org.lanye.fantasy_furniture.content.furniture.livingroom.block.BedPlateSimpleBeddingShapes.PickedLayer;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.block.BedPlateSimpleBeddingShapes.Plate;
 import org.lanye.reverie_core.composite.client.CompositeCrosshairOutlines;
 
-/** 床板2/3/4 准心黑框：有床单时只画当前选中层。 */
+/** 床板2/3/4 准心黑框：木架只描命中格；床单 / 被套 / 枕头描整件（床尾锚点）。 */
 @OnlyIn(Dist.CLIENT)
 @Mod.EventBusSubscriber(modid = FantasyFurniture.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
 public final class BedPlateSimpleBeddingOutlineEvents {
@@ -34,11 +37,26 @@ public final class BedPlateSimpleBeddingOutlineEvents {
         if (plate == null) {
             return;
         }
-        VoxelShape outline =
-                BedPlateSimpleBeddingClientPick.crosshairOutlinePieceShape(mc.level, state, pos, bhr);
-        if (outline == null || outline.isEmpty()) {
+        BedPlateSimpleBeddingClientPick.BeddingView view =
+                BedPlateSimpleBeddingClientPick.beddingAt(mc.level, state, pos);
+        if (view == null || (!view.hasDuvet() && !view.hasCover() && !view.hasPillow())) {
             return;
         }
-        CompositeCrosshairOutlines.renderPartOutline(event, pos, outline);
+        PickedLayer layer = BedPlateSimpleBeddingClientPick.resolveLayer(plate, state, view, bhr);
+        VoxelShape component =
+                BedPlateSimpleBeddingShapes.outlineComponent(
+                        plate,
+                        state,
+                        view.hasDuvet(),
+                        view.hasCover(),
+                        view.pillows(),
+                        layer);
+        CompositeCrosshairOutlines.renderMultiCell(
+                event,
+                layer != PickedLayer.BODY && !component.isEmpty(),
+                pos,
+                BedPlateSimpleBeddingShapes.bodyShape(plate, state),
+                BedPlateBedFootPos.footPos(state, pos),
+                component);
     }
 }

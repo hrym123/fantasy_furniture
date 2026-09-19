@@ -12,6 +12,7 @@ import net.minecraft.world.phys.shapes.VoxelShape;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.BedPlateSheetPillowSlots;
 import org.lanye.reverie_core.geolib.bed.BedPlateSide;
 import org.lanye.reverie_core.util.VoxelShapeRotation;
+import org.lanye.reverie_core.util.VoxelShapeTranslation;
 
 /**
  * 床板1型北向分格碰撞 / 选取（相对<strong>床尾右</strong>渲染锚点 + Gecko X 镜像后裁切）。
@@ -63,6 +64,16 @@ public final class BedPlate1CollisionShapes {
             Block.box(0.00, 4.00, 2.00, 16.00, 7.00, 16.00);
     private static final VoxelShape DUVET_HEAD_LEFT =
             Block.box(2.00, 4.00, 2.00, 16.00, 7.00, 16.00);
+
+    /** 整条床单，相对床尾右锚点（左列 x−1，床头 z−1）。 */
+    private static final VoxelShape DUVET_WHOLE =
+            Shapes.or(
+                    DUVET_FOOT_RIGHT,
+                    VoxelShapeTranslation.translate(DUVET_FOOT_LEFT, -1.0, 0.0, 0.0),
+                    VoxelShapeTranslation.translate(DUVET_HEAD_RIGHT, 0.0, 0.0, -1.0),
+                    VoxelShapeTranslation.translate(DUVET_HEAD_LEFT, -1.0, 0.0, -1.0));
+
+    private static final VoxelShape COVER_WHOLE = unionBoxes(BedPlateCoverPickShapes.plate1());
 
     public static VoxelShape bodyShape(BlockState state) {
         return orient(northBody(state.getValue(BedPlate1Block.PART), state.getValue(BedPlate1Block.SIDE)), state);
@@ -128,6 +139,26 @@ public final class BedPlate1CollisionShapes {
         return PickedLayer.BODY;
     }
 
+    /**
+     * 组件描边：相对床尾右的整件（不裁格、不含木架）。床体返回空，由调用方画命中格。
+     */
+    public static VoxelShape outlineComponent(
+            BlockState state,
+            boolean hasDuvet,
+            boolean hasCover,
+            BedPlateSheetPillowSlots slots,
+            PickedLayer layer) {
+        VoxelShape north =
+                switch (layer) {
+                    case DUVET -> hasDuvet ? DUVET_WHOLE : Shapes.empty();
+                    case DUVET_COVER -> hasCover ? COVER_WHOLE : Shapes.empty();
+                    case SMALL, MEDIUM, LARGE_1, LARGE_2 ->
+                            slots == null ? Shapes.empty() : BedPlate1PillowPickShapes.northFor(slots, layer);
+                    case BODY -> Shapes.empty();
+                };
+        return north.isEmpty() ? Shapes.empty() : orient(north, state);
+    }
+
     public static VoxelShape outlineShape(
             BlockState state,
             boolean hasDuvet,
@@ -159,6 +190,17 @@ public final class BedPlate1CollisionShapes {
             s = Shapes.or(s, pillowCell(state, slots, layer));
         }
         return s;
+    }
+
+    private static VoxelShape unionBoxes(List<AABB> boxes) {
+        VoxelShape out = Shapes.empty();
+        for (AABB box : boxes) {
+            if (box.getXsize() < 1.0E-4 || box.getYsize() < 1.0E-4 || box.getZsize() < 1.0E-4) {
+                continue;
+            }
+            out = Shapes.or(out, Shapes.box(box.minX, box.minY, box.minZ, box.maxX, box.maxY, box.maxZ));
+        }
+        return out;
     }
 
     /** 锚点北向体素裁进当前格（0–1），再按朝向转正。 */

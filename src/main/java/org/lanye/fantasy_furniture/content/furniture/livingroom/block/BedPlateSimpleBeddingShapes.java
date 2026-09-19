@@ -14,6 +14,7 @@ import net.minecraft.world.phys.shapes.VoxelShape;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.BedPlateComboPillowLayout;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.BedPlateSheetPillowSlots;
 import org.lanye.reverie_core.util.VoxelShapeRotation;
+import org.lanye.reverie_core.util.VoxelShapeTranslation;
 
 /**
  * 床板2/3/4（1×2）：独立床单 / 被套 / 枕头的北向选取盒。
@@ -52,6 +53,15 @@ public final class BedPlateSimpleBeddingShapes {
     /* 板4 */
     private static final VoxelShape P4_DUVET_FOOT = Block.box(0.50, 3.00, 0.00, 15.50, 5.00, 15.50);
     private static final VoxelShape P4_DUVET_HEAD = Block.box(0.50, 3.00, 1.00, 15.50, 5.00, 16.00);
+
+    /** 整条床单，相对床尾（床头半段在 z−1）。 */
+    private static final VoxelShape P2_DUVET_WHOLE = wholeDuvet(P2_DUVET_FOOT, P2_DUVET_HEAD);
+    private static final VoxelShape P3_DUVET_WHOLE = wholeDuvet(P3_DUVET_FOOT, P3_DUVET_HEAD);
+    private static final VoxelShape P4_DUVET_WHOLE = wholeDuvet(P4_DUVET_FOOT, P4_DUVET_HEAD);
+
+    private static final VoxelShape P2_COVER_WHOLE = unionBoxes(BedPlateCoverPickShapes.plate2());
+    private static final VoxelShape P3_COVER_WHOLE = unionBoxes(BedPlateCoverPickShapes.plate3());
+    private static final VoxelShape P4_COVER_WHOLE = unionBoxes(BedPlateCoverPickShapes.plate4());
 
     public static VoxelShape bodyShape(Plate plate, BlockState state) {
         return switch (plate) {
@@ -130,6 +140,26 @@ public final class BedPlateSimpleBeddingShapes {
         return PickedLayer.BODY;
     }
 
+    /**
+     * 组件描边：相对床尾的整件（不裁格、不含木架）。床体返回空，由调用方画命中格。
+     */
+    public static VoxelShape outlineComponent(
+            Plate plate,
+            BlockState state,
+            boolean hasDuvet,
+            boolean hasCover,
+            BedPlateSheetPillowSlots pillows,
+            PickedLayer layer) {
+        VoxelShape north =
+                switch (layer) {
+                    case DUVET -> hasDuvet ? duvetWhole(plate) : Shapes.empty();
+                    case DUVET_COVER -> hasCover ? coverWhole(plate) : Shapes.empty();
+                    case SMALL, MEDIUM, LARGE -> unionBoxes(pillowBoxes(plate, layer, pillows));
+                    case BODY -> Shapes.empty();
+                };
+        return north.isEmpty() ? Shapes.empty() : orient(north, state);
+    }
+
     public static VoxelShape outlineShape(
             Plate plate,
             BlockState state,
@@ -194,6 +224,37 @@ public final class BedPlateSimpleBeddingShapes {
             if (suffix.startsWith(prefix)) {
                 out.addAll(BedPlateComboPillowPickShapes.of(plateId, suffix));
             }
+        }
+        return out;
+    }
+
+    private static VoxelShape wholeDuvet(VoxelShape foot, VoxelShape head) {
+        return Shapes.or(foot, VoxelShapeTranslation.translate(head, 0.0, 0.0, -1.0));
+    }
+
+    private static VoxelShape duvetWhole(Plate plate) {
+        return switch (plate) {
+            case PLATE2 -> P2_DUVET_WHOLE;
+            case PLATE3 -> P3_DUVET_WHOLE;
+            case PLATE4 -> P4_DUVET_WHOLE;
+        };
+    }
+
+    private static VoxelShape coverWhole(Plate plate) {
+        return switch (plate) {
+            case PLATE2 -> P2_COVER_WHOLE;
+            case PLATE3 -> P3_COVER_WHOLE;
+            case PLATE4 -> P4_COVER_WHOLE;
+        };
+    }
+
+    private static VoxelShape unionBoxes(List<AABB> boxes) {
+        VoxelShape out = Shapes.empty();
+        for (AABB box : boxes) {
+            if (box.getXsize() < 1.0E-4 || box.getYsize() < 1.0E-4 || box.getZsize() < 1.0E-4) {
+                continue;
+            }
+            out = Shapes.or(out, Shapes.box(box.minX, box.minY, box.minZ, box.maxX, box.maxY, box.maxZ));
         }
         return out;
     }
