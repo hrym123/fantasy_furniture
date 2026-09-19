@@ -15,7 +15,7 @@ import org.lanye.fantasy_furniture.content.furniture.livingroom.block.BedPlate1B
 import org.lanye.fantasy_furniture.content.furniture.livingroom.blockentity.BedPlate1BlockEntity;
 import org.lanye.reverie_core.composite.client.CompositeCrosshairOutlines;
 
-/** 床板1 准心黑框：有床单时只画当前选中层（床体或床单），避免并集同亮。 */
+/** 床板1 准心黑框：只画当前选中的床体 / 床单 / 被套 / 单只枕头。 */
 @OnlyIn(Dist.CLIENT)
 @Mod.EventBusSubscriber(modid = FantasyFurniture.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
 public final class BedPlate1CrosshairOutlineEvents {
@@ -35,7 +35,8 @@ public final class BedPlate1CrosshairOutlineEvents {
             return;
         }
         BedPlate1BlockEntity plate = BedPlate1Block.decorEntity(mc.level, state, pos);
-        if (plate == null || !plate.hasDuvet()) {
+        if (plate == null
+                || (!plate.hasDuvet() && !plate.hasCover() && !plate.sheetPillows().hasAny())) {
             return;
         }
         VoxelShape outline = BedPlate1ClientPick.crosshairOutlinePieceShape(mc.level, state, pos, bhr);

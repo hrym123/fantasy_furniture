@@ -25,11 +25,14 @@ import org.lanye.fantasy_furniture.content.furniture.livingroom.blockentity.BedP
 import org.lanye.fantasy_furniture.content.furniture.livingroom.client.BedPlateSimpleBeddingClientPick;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.item.BedPlate6DuvetCoverItem;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.item.BedPlate6DuvetItem;
+import org.lanye.fantasy_furniture.content.furniture.livingroom.item.BedPlate6LargePillowItem;
+import org.lanye.fantasy_furniture.content.furniture.livingroom.item.BedPlate6MediumPillowItem;
+import org.lanye.fantasy_furniture.content.furniture.livingroom.item.BedPlate6SmallPillowItem;
 import org.lanye.reverie_core.geolib.bed.BedPlateBaseBlockEntity;
 import org.lanye.reverie_core.geolib.bed.BedPlateBlock;
 
 /**
- * 床板4型：共用床单 / 被套。顺序：被套 → 床单 → 睡眠。
+ * 床板4型：共用床单 / 被套 / 枕头。顺序：枕头 → 被套 → 床单 → 睡眠。
  *
  * <p>落地弹跳与摔落减免：仅已铺床单时启用。空床体碰撞见 {@link BedPlateEmptyBedCollision}。
  */
@@ -47,9 +50,24 @@ public final class BedPlate4Block extends BedPlateBlock {
     public VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
         var be = level.getBlockEntity(bedFootWorldPos(state, pos));
         boolean hasDuvet = be instanceof BedPlate4BlockEntity plate && plate.hasDuvet();
-        boolean hasCover = be instanceof BedPlate4BlockEntity plate && plate.hasCover();
+        boolean hasCover = be instanceof BedPlate4BlockEntity plate2 && plate2.hasCover();
+        int largeStyle = 0;
+        int mediumMat = 0;
+        int smallMat = 0;
+        if (be instanceof BedPlate4BlockEntity pillows) {
+            largeStyle = pillows.sheetPillows().largeStyleId();
+            mediumMat = pillows.sheetPillows().mediumMat();
+            smallMat = pillows.sheetPillows().smallMat();
+        }
         return BedPlateSimpleBeddingShapes.pickShapeFor(
-                BedPlateSimpleBeddingShapes.Plate.PLATE4, state, hasDuvet, hasCover);
+                BedPlateSimpleBeddingShapes.Plate.PLATE4,
+                state,
+                hasDuvet,
+                hasCover,
+                largeStyle,
+                mediumMat,
+                smallMat,
+                be instanceof BedPlate4BlockEntity plate ? plate.sheetPillows() : null);
     }
 
     @Override
@@ -110,18 +128,28 @@ public final class BedPlate4Block extends BedPlateBlock {
             return;
         }
         boolean hasBedding = plate.hasDuvet() || plate.hasCover();
-        if (hasBedding) {
+        boolean hasPillows = plate.sheetPillows().hasAny();
+        if (hasBedding || hasPillows) {
+            List<ItemStack> pillows = plate.sheetPillows().collect();
+            plate.sheetPillows().clear();
             if (creative) {
                 plate.clearBedding();
             } else {
-                BedPlateSimpleBeddingStorage.spill(
-                        level,
-                        foot,
-                        plate.hasDuvet(),
-                        plate.getDuvetMaterialId(),
-                        plate.hasCover(),
-                        plate.getCoverMaterialId(),
-                        plate::clearBedding);
+                if (hasBedding) {
+                    BedPlateSimpleBeddingStorage.spill(
+                            level,
+                            foot,
+                            plate.hasDuvet(),
+                            plate.getDuvetMaterialId(),
+                            plate.hasCover(),
+                            plate.getCoverMaterialId(),
+                            plate::clearBedding);
+                } else {
+                    plate.syncSheetPillows();
+                }
+                for (ItemStack pillow : pillows) {
+                    Block.popResource(level, foot, pillow);
+                }
             }
         }
         if (!creative
@@ -145,6 +173,24 @@ public final class BedPlate4Block extends BedPlateBlock {
             Player player,
             InteractionHand hand,
             BlockHitResult hit) {
+        if (player.getItemInHand(hand).getItem() instanceof BedPlate6LargePillowItem) {
+            InteractionResult pillow = BedPlate6LargePillowItem.applyToBed(level, pos, state, player, hand);
+            if (pillow != InteractionResult.PASS) {
+                return pillow;
+            }
+        }
+        if (player.getItemInHand(hand).getItem() instanceof BedPlate6MediumPillowItem) {
+            InteractionResult medium = BedPlate6MediumPillowItem.applyToBed(level, pos, state, player, hand);
+            if (medium != InteractionResult.PASS) {
+                return medium;
+            }
+        }
+        if (player.getItemInHand(hand).getItem() instanceof BedPlate6SmallPillowItem) {
+            InteractionResult small = BedPlate6SmallPillowItem.applyToBed(level, pos, state, player, hand);
+            if (small != InteractionResult.PASS) {
+                return small;
+            }
+        }
         if (player.getItemInHand(hand).getItem() instanceof BedPlate6DuvetCoverItem) {
             InteractionResult cover = BedPlate6DuvetCoverItem.applyToBed(level, pos, state, player, hand);
             if (cover != InteractionResult.PASS) {

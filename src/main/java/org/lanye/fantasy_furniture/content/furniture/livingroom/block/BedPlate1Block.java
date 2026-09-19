@@ -34,6 +34,9 @@ import org.lanye.fantasy_furniture.content.furniture.livingroom.client.BedPlate1
 import org.lanye.fantasy_furniture.content.furniture.livingroom.item.BedPlate6DisassemblyGloveItem;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.item.BedPlate6DuvetCoverItem;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.item.BedPlate6DuvetItem;
+import org.lanye.fantasy_furniture.content.furniture.livingroom.item.BedPlate6LargePillowItem;
+import org.lanye.fantasy_furniture.content.furniture.livingroom.item.BedPlate6MediumPillowItem;
+import org.lanye.fantasy_furniture.content.furniture.livingroom.item.BedPlate6SmallPillowItem;
 import org.lanye.reverie_core.geolib.bed.BedPlateBlock;
 import org.lanye.reverie_core.geolib.bed.BedPlateSide;
 
@@ -129,7 +132,8 @@ public final class BedPlate1Block extends BedPlateBlock {
         BedPlate1BlockEntity plate = decorEntity(level, state, pos);
         boolean hasDuvet = plate != null && plate.hasDuvet();
         boolean hasCover = plate != null && plate.hasCover();
-        return BedPlate1CollisionShapes.pickShapeFor(state, hasDuvet, hasCover);
+        return BedPlate1CollisionShapes.pickShapeFor(
+                state, hasDuvet, hasCover, plate != null ? plate.sheetPillows() : null);
     }
 
     @Override
@@ -255,8 +259,12 @@ public final class BedPlate1Block extends BedPlateBlock {
             }
             BedPlate1CollisionShapes.PickedLayer layer =
                     BedPlate1CollisionShapes.pickLayer(
-                            state, true, plate.hasCover(), hit.getLocation(), pos);
-            if (layer == BedPlate1CollisionShapes.PickedLayer.BODY) {
+                            state, true, plate.hasCover(), plate.sheetPillows(), hit.getLocation(), pos);
+            if (layer == BedPlate1CollisionShapes.PickedLayer.BODY
+                    || layer == BedPlate1CollisionShapes.PickedLayer.LARGE_1
+                    || layer == BedPlate1CollisionShapes.PickedLayer.LARGE_2
+                    || layer == BedPlate1CollisionShapes.PickedLayer.MEDIUM
+                    || layer == BedPlate1CollisionShapes.PickedLayer.SMALL) {
                 return InteractionResult.PASS;
             }
             if (layer == BedPlate1CollisionShapes.PickedLayer.DUVET_COVER) {
@@ -284,6 +292,24 @@ public final class BedPlate1Block extends BedPlateBlock {
                 }
             }
             return InteractionResult.sidedSuccess(level.isClientSide);
+        }
+        if (player.getItemInHand(hand).getItem() instanceof BedPlate6LargePillowItem) {
+            InteractionResult pillow = BedPlate6LargePillowItem.applyToBed(level, pos, state, player, hand);
+            if (pillow != InteractionResult.PASS) {
+                return pillow;
+            }
+        }
+        if (player.getItemInHand(hand).getItem() instanceof BedPlate6MediumPillowItem) {
+            InteractionResult medium = BedPlate6MediumPillowItem.applyToBed(level, pos, state, player, hand);
+            if (medium != InteractionResult.PASS) {
+                return medium;
+            }
+        }
+        if (player.getItemInHand(hand).getItem() instanceof BedPlate6SmallPillowItem) {
+            InteractionResult small = BedPlate6SmallPillowItem.applyToBed(level, pos, state, player, hand);
+            if (small != InteractionResult.PASS) {
+                return small;
+            }
         }
         if (player.getItemInHand(hand).getItem() instanceof BedPlate6DuvetCoverItem) {
             InteractionResult cover = BedPlate6DuvetCoverItem.applyToBed(level, pos, state, player, hand);

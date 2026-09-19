@@ -50,9 +50,28 @@ public final class BedPlate2Block extends BedPlateBlock {
     public VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
         var be = level.getBlockEntity(bedFootWorldPos(state, pos));
         boolean hasDuvet = be instanceof BedPlate2BlockEntity plate && plate.hasDuvet();
-        boolean hasCover = be instanceof BedPlate2BlockEntity plate && plate.hasCover();
+        boolean hasCover = be instanceof BedPlate2BlockEntity plate2 && plate2.hasCover();
+        int largeStyle = 0;
+        int mediumMat = 0;
+        int smallMat = 0;
+        if (be instanceof BedPlate2BlockEntity pillows) {
+            if (pillows.hasLargePillowSlot(1)) {
+                largeStyle = pillows.getLargePillowStyleId(1);
+            } else if (pillows.hasLargePillowSlot(2)) {
+                largeStyle = pillows.getLargePillowStyleId(2);
+            }
+            mediumMat = pillows.getMediumPillowMat();
+            smallMat = pillows.getSmallPillowMat();
+        }
         return BedPlateSimpleBeddingShapes.pickShapeFor(
-                BedPlateSimpleBeddingShapes.Plate.PLATE2, state, hasDuvet, hasCover);
+                BedPlateSimpleBeddingShapes.Plate.PLATE2,
+                state,
+                hasDuvet,
+                hasCover,
+                largeStyle,
+                mediumMat,
+                smallMat,
+                be instanceof BedPlate2BlockEntity plate ? plate.pillowSlots() : null);
     }
 
     @Override

@@ -6,6 +6,7 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import org.lanye.fantasy_furniture.bootstrap.block.ModBlocks;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.BedPlate6DuvetCoverMaterials;
+import org.lanye.fantasy_furniture.content.furniture.livingroom.BedPlateSheetPillowSlots;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.BedPlate6DuvetMaterials;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.BedPlate6LargePillowStyles;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.BedPlate6MediumPillowMaterials;
@@ -14,7 +15,7 @@ import org.lanye.fantasy_furniture.content.furniture.livingroom.item.BedPlate6La
 import org.lanye.reverie_core.geolib.bed.BedPlateBaseBlockEntity;
 
 /**
- * 床板2型：共用寝具物品；枕头外形由拼装 Geo 表达（拼装 1–4）。
+ * 床板2型：共用寝具物品；枕头按槽位分色叠层，不再换拼装床体。
  *
  * @see org.lanye.fantasy_furniture.content.furniture.livingroom.block.BedPlate2Block
  */
@@ -99,6 +100,24 @@ public final class BedPlate2BlockEntity extends BedPlateBaseBlockEntity {
 
     public boolean hasSmallPillow() {
         return BedPlate6SmallPillowMaterials.isValid(smallPillowMat);
+    }
+
+    /** 给组合枕头绘制 / 选取用的槽位快照。床板2没有左右列，中号固定在 1 槽。 */
+    public BedPlateSheetPillowSlots pillowSlots() {
+        BedPlateSheetPillowSlots slots = new BedPlateSheetPillowSlots();
+        if (hasLargePillowSlot(1)) {
+            slots.tryAddLarge(large1StyleId, large1MaterialId);
+        }
+        if (hasLargePillowSlot(2)) {
+            slots.tryAddLarge(large2StyleId, large2MaterialId);
+        }
+        if (hasMediumPillow()) {
+            slots.tryAddMedium(mediumPillowMat);
+        }
+        if (hasSmallPillow()) {
+            slots.tryAddSmall(smallPillowMat);
+        }
+        return slots;
     }
 
     public int getSmallPillowMat() {

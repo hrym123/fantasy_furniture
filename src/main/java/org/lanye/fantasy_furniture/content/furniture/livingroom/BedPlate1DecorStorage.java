@@ -10,13 +10,13 @@ import org.lanye.fantasy_furniture.content.furniture.livingroom.blockentity.BedP
 import org.lanye.fantasy_furniture.content.furniture.livingroom.item.BedPlate6DuvetCoverItem;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.item.BedPlate6DuvetItem;
 
-/** 床板1型：破坏时散落共用床单 / 被套等寝具。 */
+/** 床板1型：破坏时散落共用床单 / 被套 / 枕头。 */
 public final class BedPlate1DecorStorage {
 
     private BedPlate1DecorStorage() {}
 
     public static boolean hasStoredDecor(BedPlate1BlockEntity plate) {
-        return plate.hasDuvet() || plate.hasCover();
+        return plate.hasDuvet() || plate.hasCover() || plate.sheetPillows().hasAny();
     }
 
     public static List<ItemStack> collectStoredDecorStacks(BedPlate1BlockEntity plate) {
@@ -33,10 +33,12 @@ public final class BedPlate1DecorStorage {
                 stacks.add(duvet);
             }
         }
+        plate.sheetPillows().collect(stacks);
         return stacks;
     }
 
     public static void clearAllStoredDecor(BedPlate1BlockEntity plate) {
+        plate.sheetPillows().clear();
         plate.clearDuvet();
     }
 

@@ -1,0 +1,187 @@
+{
+	"format_version": "1.21.110",
+	"minecraft:geometry": [
+		{
+			"description": {
+				"identifier": "geometry.bed_plate4_pillow_large_p1",
+				"texture_width": 16,
+				"texture_height": 16,
+				"visible_bounds_width": 1,
+				"visible_bounds_height": 1,
+				"visible_bounds_offset": [
+					0,
+					0,
+					0
+				]
+			},
+			"bones": [
+				{
+					"name": "bed_plate6_pillow_large_P1",
+					"pivot": [
+						0.0,
+						8.0,
+						-0.0
+					],
+					"cubes": [
+						{
+							"origin": [
+								-5.0,
+								5.0,
+								-23.0
+							],
+							"size": [
+								10.0,
+								2.0,
+								7.0
+							],
+							"uv": {
+								"north": {
+									"uv": [
+										5.0,
+										8.0
+									],
+									"uv_size": [
+										-5.0,
+										-1.0
+									]
+								},
+								"south": {
+									"uv": [
+										10.0,
+										7.0
+									],
+									"uv_size": [
+										-5.0,
+										1.0
+									],
+									"uv_rotation": 180
+								},
+								"east": {
+									"uv": [
+										1.0,
+										8.0
+									],
+									"uv_size": [
+										1.0,
+										3.5
+									],
+									"uv_rotation": 90
+								},
+								"west": {
+									"uv": [
+										0.0,
+										8.0
+									],
+									"uv_size": [
+										1.0,
+										3.5
+									],
+									"uv_rotation": 270
+								},
+								"up": {
+									"uv": [
+										11.0,
+										3.5
+									],
+									"uv_size": [
+										-5.0,
+										-3.5
+									],
+									"uv_rotation": 180
+								},
+								"down": {
+									"uv": [
+										11.0,
+										7.0
+									],
+									"uv_size": [
+										-5.0,
+										-3.5
+									]
+								}
+							}
+						},
+						{
+							"origin": [
+								-6.0,
+								5.9,
+								-23.0
+							],
+							"size": [
+								12.0,
+								0.1999999999999993,
+								7.0
+							],
+							"uv": {
+								"north": {
+									"uv": [
+										8.0,
+										8.25
+									],
+									"uv_size": [
+										-6.0,
+										-0.25
+									]
+								},
+								"south": {
+									"uv": [
+										14.0,
+										8.0
+									],
+									"uv_size": [
+										-6.0,
+										0.25
+									],
+									"uv_rotation": 180
+								},
+								"east": {
+									"uv": [
+										2.5,
+										8.5
+									],
+									"uv_size": [
+										0.25,
+										3.5
+									],
+									"uv_rotation": 90
+								},
+								"west": {
+									"uv": [
+										2.0,
+										8.5
+									],
+									"uv_size": [
+										0.25,
+										3.5
+									],
+									"uv_rotation": 270
+								},
+								"up": {
+									"uv": [
+										6.0,
+										3.5
+									],
+									"uv_size": [
+										-6.0,
+										-3.5
+									],
+									"uv_rotation": 180
+								},
+								"down": {
+									"uv": [
+										6.0,
+										7.0
+									],
+									"uv_size": [
+										-6.0,
+										-3.5
+									]
+								}
+							}
+						}
+					]
+				}
+			]
+		}
+	]
+}

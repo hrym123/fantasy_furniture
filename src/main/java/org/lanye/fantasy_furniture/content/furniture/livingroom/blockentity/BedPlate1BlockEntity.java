@@ -13,19 +13,22 @@ import org.lanye.fantasy_furniture.content.furniture.livingroom.BedPlate1Materia
 import org.lanye.fantasy_furniture.content.furniture.livingroom.BedPlate1Materials;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.BedPlate6DuvetCoverMaterials;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.BedPlate6DuvetMaterials;
+import org.lanye.fantasy_furniture.content.furniture.livingroom.BedPlateSheetPillowHost;
+import org.lanye.fantasy_furniture.content.furniture.livingroom.BedPlateSheetPillowSlots;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.block.BedPlate1Block;
 import org.lanye.reverie_core.geolib.bed.BedPlateBaseBlockEntity;
 
 /**
  * 床板1型：床体贴图随材质档；寝具数据写在<strong>床尾左</strong>（放置格）BE，渲染仍在床尾右。
  */
-public final class BedPlate1BlockEntity extends BedPlateBaseBlockEntity {
+public final class BedPlate1BlockEntity extends BedPlateBaseBlockEntity implements BedPlateSheetPillowHost {
 
     private static final String NBT_DUVET = "DuvetMat";
     private static final String NBT_COVER = "CoverMat";
 
     private int duvetMaterialId;
     private int coverMaterialId;
+    private final BedPlateSheetPillowSlots sheetPillows = new BedPlateSheetPillowSlots();
 
     public BedPlate1BlockEntity(BlockPos pos, BlockState state) {
         super(BedPlate1Registration.blockEntityType().get(), pos, state);
@@ -80,6 +83,16 @@ public final class BedPlate1BlockEntity extends BedPlateBaseBlockEntity {
     public void clearDuvet() {
         this.duvetMaterialId = 0;
         this.coverMaterialId = 0;
+        syncClients();
+    }
+
+    @Override
+    public BedPlateSheetPillowSlots sheetPillows() {
+        return sheetPillows;
+    }
+
+    @Override
+    public void syncSheetPillows() {
         syncClients();
     }
 
@@ -138,6 +151,7 @@ public final class BedPlate1BlockEntity extends BedPlateBaseBlockEntity {
         super.saveAdditional(tag);
         tag.putInt(NBT_DUVET, duvetMaterialId);
         tag.putInt(NBT_COVER, coverMaterialId);
+        sheetPillows.write(tag);
     }
 
     @Override
@@ -151,6 +165,7 @@ public final class BedPlate1BlockEntity extends BedPlateBaseBlockEntity {
         if (!BedPlate6DuvetCoverMaterials.isValid(coverMaterialId) || !hasDuvet()) {
             coverMaterialId = 0;
         }
+        sheetPillows.read(tag);
     }
 
     @Override
@@ -158,6 +173,7 @@ public final class BedPlate1BlockEntity extends BedPlateBaseBlockEntity {
         CompoundTag tag = super.getUpdateTag();
         tag.putInt(NBT_DUVET, duvetMaterialId);
         tag.putInt(NBT_COVER, coverMaterialId);
+        sheetPillows.write(tag);
         return tag;
     }
 

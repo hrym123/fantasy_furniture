@@ -21,7 +21,7 @@ import software.bernie.geckolib.cache.object.BakedGeoModel;
 import software.bernie.geckolib.model.GeoModel;
 import software.bernie.geckolib.renderer.GeoBlockRenderer;
 
-/** 床板3型：床体 Geo + 可选床单 / 被套叠层。 */
+/** 床板3型：床体 Geo + 可选床单 / 被套 / 分色枕头。 */
 @OnlyIn(Dist.CLIENT)
 public final class BedPlate3GeoBlockRenderer implements BlockEntityRenderer<BedPlateBaseBlockEntity> {
 
@@ -44,6 +44,7 @@ public final class BedPlate3GeoBlockRenderer implements BlockEntityRenderer<BedP
             footOnlyRenderer(ignored -> DUVET_GEO, this::duvetTexture, DUVET_ANIM);
     private final GeoBlockRenderer<BedPlateBaseBlockEntity> coverRenderer =
             footOnlyRenderer(ignored -> COVER_GEO, this::coverTexture, COVER_ANIM);
+    private final BedPlateComboPillowRenderer pillows = new BedPlateComboPillowRenderer(3);
 
     @Override
     public void render(
@@ -67,6 +68,16 @@ public final class BedPlate3GeoBlockRenderer implements BlockEntityRenderer<BedP
         if (plate3.hasCover()
                 && BedPlate6DuvetCoverMaterials.isSupportedOnBedPlate3(plate3.getCoverMaterialId())) {
             coverRenderer.render(blockEntity, partialTick, poseStack, bufferSource, packedLight, packedOverlay);
+        }
+        if (plate3.sheetPillows().hasAny()) {
+            pillows.render(
+                    blockEntity,
+                    plate3.sheetPillows(),
+                    partialTick,
+                    poseStack,
+                    bufferSource,
+                    packedLight,
+                    packedOverlay);
         }
     }
 

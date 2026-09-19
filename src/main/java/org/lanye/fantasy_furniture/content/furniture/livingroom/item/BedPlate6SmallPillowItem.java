@@ -17,6 +17,7 @@ import net.minecraft.world.level.block.state.properties.BedPart;
 import org.lanye.fantasy_furniture.FantasyFurniture;
 import org.lanye.fantasy_furniture.bootstrap.block.ModBlocks;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.BedPlate6SmallPillowMaterials;
+import org.lanye.fantasy_furniture.content.furniture.livingroom.BedPlateSheetPillowSlots;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.BedPlateBedFootPos;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.blockentity.BedPlate2BlockEntity;
 import org.lanye.fantasy_furniture.content.furniture.livingroom.blockentity.BedPlate6BlockEntity;
@@ -56,6 +57,10 @@ public final class BedPlate6SmallPillowItem extends Item {
 
     public static InteractionResult applyToBed(
             Level level, BlockPos pos, BlockState state, Player player, InteractionHand hand) {
+        InteractionResult onPlate134 = BedPlateSheetPillowSlots.applySmall(level, pos, state, player, hand);
+        if (onPlate134 != InteractionResult.PASS) {
+            return onPlate134;
+        }
         if (state.is(ModBlocks.BED_PLATE2.block().get())) {
             BlockPos footPos = BedPlateBedFootPos.footPos(state, pos);
             BlockEntity be = level.getBlockEntity(footPos);

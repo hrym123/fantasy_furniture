@@ -366,10 +366,16 @@ public final class BedPlate6PickShapesNorth {
     return s;
   }
 
-  // voxel_pick_from_geo: sha256[:12]=811cc52d1691 bed_plate6_duvet_cover.geo.json
+  // voxel_pick_from_geo: bed_plate6_duvet_cover.geo.json（不合并 group4，避免整床外框）
   private static VoxelShape duvetCoverNorth() {
     VoxelShape s = Shapes.empty();
-    s = Shapes.or(s, Block.box(0.0, 3.5522, 0.0, 16.0, 9.4, 24.0));
+    s = Shapes.or(s, Block.box(0.8000, 6.4000, 18.0000, 15.2000, 9.4000, 24.0000));
+    s = Shapes.or(s, Block.box(0.3000, 6.4000, 0.0000, 15.7000, 8.4000, 18.0000));
+    s = Shapes.or(s, Block.box(0.0000, 3.5522, 0.0000, 16.0000, 6.5522, 24.0000));
+    s = Shapes.or(s, Block.box(0.0000, 6.5522, 0.0000, 1.3824, 9.1654, 18.0000));
+    s = Shapes.or(s, Block.box(0.0000, 6.4000, 18.0000, 1.4478, 9.9370, 24.0000));
+    s = Shapes.or(s, Block.box(14.6176, 6.5522, 0.0000, 16.0000, 9.1654, 18.0000));
+    s = Shapes.or(s, Block.box(14.5522, 6.4000, 18.0000, 16.0000, 9.9370, 24.0000));
     return s;
   }
 
@@ -427,5 +433,18 @@ public final class BedPlate6PickShapesNorth {
     s = Shapes.or(s, Block.box(0.4, 7.3085, 27.2706, 4.4, 11.0422, 28.8937));
     s = Shapes.or(s, Block.box(0.9, 7.6173, 27.0, 3.9, 10.7716, 29.0719));
     return s;
+  }
+
+  /** 床板2/3/4 当前叠的是床板6枕头 geo，选取盒与之一致。 */
+  public static VoxelShape overlayLargeNorth(int styleId) {
+    return largePillowNorth(styleId);
+  }
+
+  public static VoxelShape overlayMediumNorth(boolean standingOnLarge) {
+    return standingOnLarge ? pillowMediumPairFrontNorth() : pillowMediumSoloNorth();
+  }
+
+  public static VoxelShape overlaySmallNorth() {
+    return pillowSmallStackNorth();
   }
 }
